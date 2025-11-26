@@ -10,13 +10,31 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra")
 set(CMAKE_C_FLAGS_DEBUG "-g -O0")
 set(CMAKE_C_FLAGS_RELEASE "-O2")
 
+# Detect platform and set AmigaStack for non-Amiga builds
+if(NOT CMAKE_SYSTEM_NAME MATCHES "Amiga")
+    set(USE_AMIGA_STACK ON)
+    message(STATUS "Using AmigaStack compatibility layer for ${CMAKE_SYSTEM_NAME}")
+else()
+    set(USE_AMIGA_STACK OFF)
+    message(STATUS "Native AmigaOS build - no compatibility layer needed")
+endif()
+
 # Include directories
-include_directories(
-    ${CMAKE_SOURCE_DIR}/include
-    ${CMAKE_SOURCE_DIR}/os-include
-    ${CMAKE_SOURCE_DIR}/cjson
-    ${CMAKE_SOURCE_DIR}/aukstreamcache/include
-)
+if(USE_AMIGA_STACK)
+    include_directories(
+        ${CMAKE_SOURCE_DIR}/include
+        ${CMAKE_SOURCE_DIR}/AmigaStack/include
+        ${CMAKE_SOURCE_DIR}/cjson
+        ${CMAKE_SOURCE_DIR}/aukstreamcache/include
+    )
+else()
+    include_directories(
+        ${CMAKE_SOURCE_DIR}/include
+        ${CMAKE_SOURCE_DIR}/os-include
+        ${CMAKE_SOURCE_DIR}/cjson
+        ${CMAKE_SOURCE_DIR}/aukstreamcache/include
+    )
+endif()
 
 # Aukadicty source files
 set(AUKADICTY_SOURCES
@@ -32,6 +50,14 @@ set(AUKADICTY_SOURCES
     src/aukjson.c
     cjson/cJSON.c
 )
+
+# AmigaStack source files (for non-Amiga platforms)
+if(USE_AMIGA_STACK)
+    set(AMIGASTACK_SOURCES
+        AmigaStack/src/exec.c
+        AmigaStack/src/dos.c
+    )
+endif()
 
 # AukStreamCache source files
 set(AUKSTREAMCACHE_SOURCES
@@ -67,17 +93,31 @@ set(AUKSTREAMCACHE_HEADERS
 )
 
 # Create aukadicty static library
-add_library(aukadicty STATIC ${AUKADICTY_SOURCES})
+if(USE_AMIGA_STACK)
+    add_library(aukadicty STATIC ${AUKADICTY_SOURCES} ${AMIGASTACK_SOURCES})
+else()
+    add_library(aukadicty STATIC ${AUKADICTY_SOURCES})
+endif()
 set_target_properties(aukadicty PROPERTIES
     ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
 )
 
 # Create aukstreamcache static library
-add_library(aukstreamcache STATIC ${AUKSTREAMCACHE_SOURCES})
+if(USE_AMIGA_STACK)
+    add_library(aukstreamcache STATIC ${AUKSTREAMCACHE_SOURCES} ${AMIGASTACK_SOURCES})
+else()
+    add_library(aukstreamcache STATIC ${AUKSTREAMCACHE_SOURCES})
+endif()
 target_link_libraries(aukstreamcache aukadicty)
 set_target_properties(aukstreamcache PROPERTIES
     ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
 )
+
+# Add pthread library for POSIX systems
+if(USE_AMIGA_STACK AND UNIX AND NOT APPLE)
+    target_link_libraries(aukadicty pthread)
+    target_link_libraries(aukstreamcache pthread)
+endif()
 
 # Install targets
 install(TARGETS aukadicty aukstreamcache
