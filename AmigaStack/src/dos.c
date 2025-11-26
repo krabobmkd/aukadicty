@@ -7,8 +7,21 @@
 #include <stdio.h>
 #include <time.h>
 
+#ifdef BOOL
+ #undef BOOL
+#endif
+
+#ifdef BYTE
+ #undef BYTE
+#endif
+
+#ifdef WORD
+ #undef WORD
+#endif
+
+
 #ifdef _WIN32
-#include <windows.h>
+//#include <windows.h>
 #else
 #include <sys/time.h>
 #endif

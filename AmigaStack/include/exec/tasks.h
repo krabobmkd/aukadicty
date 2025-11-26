@@ -6,23 +6,11 @@
  */
 
 #include <exec/types.h>
+#include <exec/ports.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/* Message structure */
-struct Message {
-    struct Message* mn_ReplyPort;
-    unsigned short mn_Length;
-};
-
-/* Message port structure */
-struct MsgPort {
-    struct Message* head;
-    struct Message* tail;
-    void* sigbit;
-};
 
 /* Process structure */
 struct Process {

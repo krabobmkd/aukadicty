@@ -7,8 +7,24 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef BOOL
+ #undef BOOL
+#endif
+
+#ifdef BYTE
+ #undef BYTE
+#endif
+
+#ifdef WORD
+ #undef WORD
+#endif
+
+#ifndef HANDLE
+  typedef void *HANDLE;
+#endif
+
 #ifdef _WIN32
-#include <windows.h>
+//#include <windows.h>
 #include <process.h>
 #else
 #include <pthread.h>
