@@ -5,6 +5,8 @@
  * AmigaStack - DOS Types
  */
 
+#include <exec/types.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif

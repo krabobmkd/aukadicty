@@ -6,6 +6,7 @@
  * Redirects AmigaOS dos.library calls to standard C stdio equivalents
  */
 
+#include <exec/types.h>
 #include <dos/dos.h>
 
 #ifdef __cplusplus

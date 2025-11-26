@@ -6,6 +6,7 @@
  * Redirects AmigaOS exec.library calls to standard C equivalents
  */
 
+#include <exec/types.h>
 #include <exec/memory.h>
 #include <exec/tasks.h>
 #include <dos/dostags.h>

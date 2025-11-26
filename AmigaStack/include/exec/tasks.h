@@ -5,6 +5,8 @@
  * AmigaStack - Exec Tasks and Processes
  */
 
+#include <exec/types.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif

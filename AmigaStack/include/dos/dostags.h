@@ -5,6 +5,8 @@
  * AmigaStack - DOS Tags for Process Creation
  */
 
+#include <exec/types.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
