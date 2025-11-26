@@ -10,6 +10,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+#include "compilers.h"
 
 /* Fixed-point type: 32.32 format */
 typedef long long AukFixed;
@@ -18,6 +19,9 @@ typedef long long AukFixed;
 #define AUK_FIXED_SHIFT 32
 #define AUK_FIXED_ONE ((AukFixed)1 << AUK_FIXED_SHIFT)
 #define AUK_FIXED_HALF ((AukFixed)1 << (AUK_FIXED_SHIFT - 1))
+
+/* TOOL */
+INLINE  AukFixed AukFixed_FromDouble(double d) { return (AukFixed)(d * (double)(1LL<<AUK_FIXED_SHIFT)); }
 
 /* Conversion functions */
 AukFixed AukFixed_FromInt(long value);

@@ -41,8 +41,8 @@ static cJSON* AukJson_SerializeEnvelope(AukEnvelopePoint* envelope) {
     while (current) {
         point = cJSON_CreateObject();
         if (point) {
-            cJSON_AddNumberToObject(point, "time", AukJson_FixedToInt(current->time));
-            cJSON_AddNumberToObject(point, "value", AukJson_FixedToInt(current->value));
+            cJSON_AddNumberToObjectFixed(point, "time", current->time);
+            cJSON_AddNumberToObjectFixed(point, "value", current->value);
             cJSON_AddItemToArray(array, point);
         }
         current = current->next;
@@ -54,7 +54,7 @@ static cJSON* AukJson_SerializeEnvelope(AukEnvelopePoint* envelope) {
 /* Deserialize envelope points from JSON array */
 static void AukJson_DeserializeEnvelope(AukTrack* track, cJSON* array) {
     cJSON* point;
-    long time, value;
+    AukFixed time, value;
 
     if (!track || !array || !cJSON_IsArray(array)) {
         return;
@@ -62,9 +62,9 @@ static void AukJson_DeserializeEnvelope(AukTrack* track, cJSON* array) {
 
     cJSON_ArrayForEach(point, array) {
         if (cJSON_IsObject(point)) {
-            time = cJSON_GetObjectItem(point, "time")->valueint;
-            value = cJSON_GetObjectItem(point, "value")->valueint;
-            track->AddEnvelopePoint(track, AukJson_IntToFixed(time), AukJson_IntToFixed(value));
+            time = cJSON_GetNumberFixed(cJSON_GetObjectItem(point, "time"));
+            value = cJSON_GetNumberFixed(cJSON_GetObjectItem(point, "value"));
+            track->AddEnvelopePoint(track, time, value);
         }
     }
 }
@@ -103,17 +103,17 @@ static cJSON* AukJson_SerializeSound(AukSound* sound, AukProject* project) {
             }
         }
 
-        cJSON_AddNumberToObject(obj, "sampleRate", soundFile->sampleRate);
-        cJSON_AddNumberToObject(obj, "channels", soundFile->channels);
-        cJSON_AddNumberToObject(obj, "frameCount", soundFile->frameCount);
+        cJSON_AddNumberToObjectInt(obj, "sampleRate", soundFile->sampleRate);
+        cJSON_AddNumberToObjectInt(obj, "channels", soundFile->channels);
+        cJSON_AddNumberToObjectInt(obj, "frameCount", soundFile->frameCount);
     }
 
     /* Sound properties */
-    cJSON_AddNumberToObject(obj, "startTime", AukJson_FixedToInt(sound->startTime));
-    cJSON_AddNumberToObject(obj, "endTime", AukJson_FixedToInt(sound->endTime));
-    cJSON_AddNumberToObject(obj, "fileStartFrame", sound->fileStartFrame);
-    cJSON_AddNumberToObject(obj, "fileEndFrame", sound->fileEndFrame);
-    cJSON_AddNumberToObject(obj, "loopCount", sound->loopCount);
+    cJSON_AddNumberToObjectFixed(obj, "startTime", sound->startTime);
+    cJSON_AddNumberToObjectFixed(obj, "endTime", sound->endTime);
+    cJSON_AddNumberToObjectInt(obj, "fileStartFrame", sound->fileStartFrame);
+    cJSON_AddNumberToObjectInt(obj, "fileEndFrame", sound->fileEndFrame);
+    cJSON_AddNumberToObjectInt(obj, "loopCount", sound->loopCount);
 
     return obj;
 }
@@ -127,7 +127,7 @@ static AukSound* AukJson_DeserializeSound(cJSON* obj, AukProject* project) {
     char* absPath;
     unsigned long sampleRate, channels, frameCount;
     unsigned long fileStartFrame, fileEndFrame, loopCount;
-    long startTime, endTime;
+    AukFixed startTime, endTime;
 
     if (!obj || !cJSON_IsObject(obj)) {
         return NULL;
@@ -171,14 +171,14 @@ static AukSound* AukJson_DeserializeSound(cJSON* obj, AukProject* project) {
     AukSound_SetSoundFile(sound, soundFile);
 
     /* Get sound properties */
-    startTime = cJSON_GetObjectItem(obj, "startTime")->valueint;
-    endTime = cJSON_GetObjectItem(obj, "endTime")->valueint;
+    startTime = cJSON_GetNumberFixed(cJSON_GetObjectItem(obj, "startTime"));
+    endTime = cJSON_GetNumberFixed(cJSON_GetObjectItem(obj, "endTime"));
     fileStartFrame = cJSON_GetObjectItem(obj, "fileStartFrame")->valueint;
     fileEndFrame = cJSON_GetObjectItem(obj, "fileEndFrame")->valueint;
     loopCount = cJSON_GetObjectItem(obj, "loopCount")->valueint;
 
     /* Set properties */
-    sound->SetTimeRange(sound, AukJson_IntToFixed(startTime), AukJson_IntToFixed(endTime));
+    sound->SetTimeRange(sound, startTime, endTime);
     sound->SetFileRange(sound, fileStartFrame, fileEndFrame);
     sound->SetLoopCount(sound, loopCount);
 
@@ -309,8 +309,8 @@ char* AukJson_SerializeProject(AukProject* project) {
     /* Preferences */
     prefs = cJSON_CreateObject();
     if (prefs) {
-        cJSON_AddNumberToObject(prefs, "sampleRate", project->prefs.sampleRate);
-        cJSON_AddNumberToObject(prefs, "maxTracks", project->prefs.maxTracks);
+        cJSON_AddNumberToObjectInt(prefs, "sampleRate", project->prefs.sampleRate);
+        cJSON_AddNumberToObjectInt(prefs, "maxTracks", project->prefs.maxTracks);
         cJSON_AddItemToObject(root, "preferences", prefs);
     }
 

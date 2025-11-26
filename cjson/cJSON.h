@@ -32,6 +32,12 @@ extern "C"
 //krb added, amiga usefull in some case.
 #define JSON_DONTUSE_FLOAT 1
 
+/* AukFixed support - 64-bit fixed-point (32.32 format) */
+#ifndef AUKFIXED_DEFINED
+typedef long long AukFixed;
+#define AUKFIXED_DEFINED
+#endif
+
 #if !defined(__WINDOWS__) && (defined(WIN32) || defined(WIN64) || defined(_MSC_VER) || defined(_WIN32))
 #define __WINDOWS__
 #endif
@@ -216,6 +222,7 @@ CJSON_PUBLIC(cJSON *) cJSON_CreateNumber(float num);
 #else
 CJSON_PUBLIC(cJSON *) cJSON_CreateNumberInt(int num);
 #endif
+CJSON_PUBLIC(cJSON *) cJSON_CreateNumberFixed(AukFixed fixed);
 CJSON_PUBLIC(cJSON *) cJSON_CreateString(const char *string);
 /* raw json */
 CJSON_PUBLIC(cJSON *) cJSON_CreateRaw(const char *raw);
@@ -291,6 +298,8 @@ CJSON_PUBLIC(cJSON*) cJSON_AddNumberToObject(cJSON * const object, const char * 
 #else
 CJSON_PUBLIC(cJSON*) cJSON_AddNumberToObjectInt(cJSON * const object, const char * const name, const int number);
 #endif
+CJSON_PUBLIC(cJSON*) cJSON_AddNumberToObjectFixed(cJSON * const object, const char * const name, const AukFixed fixed);
+CJSON_PUBLIC(AukFixed) cJSON_GetNumberFixed(const cJSON * const item);
 CJSON_PUBLIC(cJSON*) cJSON_AddStringToObject(cJSON * const object, const char * const name, const char * const string);
 CJSON_PUBLIC(cJSON*) cJSON_AddRawToObject(cJSON * const object, const char * const name, const char * const raw);
 CJSON_PUBLIC(cJSON*) cJSON_AddObjectToObject(cJSON * const object, const char * const name);

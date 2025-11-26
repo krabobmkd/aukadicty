@@ -29,6 +29,7 @@ set(AUKADICTY_SOURCES
     src/auksound.c
     src/auksoundfile.c
     src/aukoperations.c
+    src/aukjson.c
     cjson/cJSON.c
 )
 
@@ -92,7 +93,7 @@ install(FILES ${AUKSTREAMCACHE_HEADERS}
 )
 
 # Optional: Build examples
-option(BUILD_EXAMPLES "Build example programs" OFF)
+option(BUILD_EXAMPLES "Build example programs" ON)
 
 if(BUILD_EXAMPLES)
     # Example: Basic usage

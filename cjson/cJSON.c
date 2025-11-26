@@ -2238,6 +2238,83 @@ CJSON_PUBLIC(cJSON*) cJSON_AddNumberToObjectInt(cJSON * const object, const char
     return NULL;
 }
 #endif
+
+/* Get AukFixed value from cJSON number item */
+CJSON_PUBLIC(AukFixed) cJSON_GetNumberFixed(const cJSON * const item)
+{
+    AukFixed result = 0;
+
+    if (!item || !cJSON_IsNumber(item)) {
+        return 0;
+    }
+
+    /* If we stored it as a string (from cJSON_CreateNumberFixed), parse it */
+    if (item->valuestring) {
+        long long integer_part = 0;
+        unsigned long long fractional_part = 0;
+        int is_negative = 0;
+        const char* str = item->valuestring;
+        const char* dot_pos;
+
+        /* Handle negative sign */
+        if (*str == '-') {
+            is_negative = 1;
+            str++;
+        }
+
+        /* Parse integer part */
+        while (*str && *str != '.') {
+            integer_part = integer_part * 10 + (*str - '0');
+            str++;
+        }
+
+        /* Parse fractional part */
+        if (*str == '.') {
+            str++;
+            unsigned long long multiplier = 100000;  /* 6 decimal places */
+            while (*str && multiplier > 0) {
+                fractional_part = fractional_part * 10 + (*str - '0');
+                str++;
+                multiplier /= 10;
+            }
+            /* Pad to 6 digits if needed */
+            while (multiplier > 0) {
+                fractional_part *= 10;
+                multiplier /= 10;
+            }
+        }
+
+        /* Convert decimal fractional part back to binary */
+        /* fractional_binary = (fractional_decimal * 2^32) / 10^6 */
+        unsigned long long fractional_binary = (fractional_part * 4294967296ULL) / 1000000ULL;
+
+        /* Combine integer and fractional parts */
+        result = ((AukFixed)integer_part << 32) | (fractional_binary & 0xFFFFFFFFULL);
+
+        if (is_negative) {
+            result = -result;
+        }
+    } else {
+        /* Fallback: use valueint */
+        result = (AukFixed)item->valueint << 32;
+    }
+
+    return result;
+}
+
+/* Add AukFixed number to cJSON object */
+CJSON_PUBLIC(cJSON*) cJSON_AddNumberToObjectFixed(cJSON * const object, const char * const name, const AukFixed fixed)
+{
+    cJSON *number_item = cJSON_CreateNumberFixed(fixed);
+    if (add_item_to_object(object, name, number_item, &global_hooks, false))
+    {
+        return number_item;
+    }
+
+    cJSON_Delete(number_item);
+    return NULL;
+}
+
 CJSON_PUBLIC(cJSON*) cJSON_AddStringToObject(cJSON * const object, const char * const name, const char * const string)
 {
     cJSON *string_item = cJSON_CreateString(string);
@@ -2571,6 +2648,56 @@ CJSON_PUBLIC(cJSON *) cJSON_CreateNumberInt(int num)
     return item;
 }
 #endif
+
+/* Create a cJSON number from AukFixed (32.32 fixed-point) */
+CJSON_PUBLIC(cJSON *) cJSON_CreateNumberFixed(AukFixed fixed)
+{
+    cJSON *item = cJSON_New_Item(&global_hooks);
+    if(item)
+    {
+        char buffer[64];
+        long long integer_part;
+        unsigned long long fractional_part;
+        unsigned long long decimal_part;
+        int is_negative = 0;
+
+        item->type = cJSON_Number;
+
+        /* Handle negative numbers */
+        if (fixed < 0) {
+            is_negative = 1;
+            fixed = -fixed;
+        }
+
+        /* Extract integer and fractional parts */
+        integer_part = fixed >> 32;  /* Upper 32 bits */
+        fractional_part = (unsigned long long)fixed & 0xFFFFFFFFULL;  /* Lower 32 bits */
+
+        /* Convert fractional part to decimal (6 decimal places) */
+        /* fractional_part / 2^32 * 10^6 */
+        decimal_part = (fractional_part * 1000000ULL) >> 32;
+
+        /* Format as string with decimal point */
+        if (is_negative) {
+            sprintf(buffer, "-%lld.%06llu", integer_part, decimal_part);
+        } else {
+            sprintf(buffer, "%lld.%06llu", integer_part, decimal_part);
+        }
+
+        /* Store as valuestring for precision */
+        item->valuestring = (char*)cJSON_strdup((const unsigned char*)buffer, &global_hooks);
+        if(!item->valuestring)
+        {
+            cJSON_Delete(item);
+            return NULL;
+        }
+
+        /* Also store integer approximation in valueint */
+        item->valueint = (int)integer_part * (is_negative ? -1 : 1);
+    }
+
+    return item;
+}
 
 CJSON_PUBLIC(cJSON *) cJSON_CreateString(const char *string)
 {
