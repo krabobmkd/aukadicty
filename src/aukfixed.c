@@ -5,9 +5,6 @@
  * 32.32 format: 32 bits for integer part, 32 bits for fractional part
  */
 
-AukFixed AukFixed_FromInt(long value) {
-    return (AukFixed)value << AUK_FIXED_SHIFT;
-}
 
 long AukFixed_ToInt(AukFixed value) {
     /* Round to nearest integer */

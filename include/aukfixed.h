@@ -20,11 +20,11 @@ typedef long long AukFixed;
 #define AUK_FIXED_ONE ((AukFixed)1 << AUK_FIXED_SHIFT)
 #define AUK_FIXED_HALF ((AukFixed)1 << (AUK_FIXED_SHIFT - 1))
 
-/* TOOL */
+/* Conversion functions */
 INLINE  AukFixed AukFixed_FromDouble(double d) { return (AukFixed)(d * (double)(1LL<<AUK_FIXED_SHIFT)); }
 
-/* Conversion functions */
-AukFixed AukFixed_FromInt(long value);
+INLINE AukFixed AukFixed_FromInt(long value) {  return (AukFixed)value << AUK_FIXED_SHIFT; }
+
 long AukFixed_ToInt(AukFixed value);
 AukFixed AukFixed_FromFraction(long numerator, long denominator);
 
