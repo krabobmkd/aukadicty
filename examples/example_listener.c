@@ -74,9 +74,9 @@ int main(void) {
     soundView = MockGUIView_New("SoundView");
 
     /* Wrap views in shared pointers for listener registration */
-    projectViewShared = AukShared_Create(projectView, &projectView->base);
-    trackViewShared = AukShared_Create(trackView, &trackView->base);
-    soundViewShared = AukShared_Create(soundView, &soundView->base);
+    projectViewShared = AukShared_Create( &projectView->base);
+    trackViewShared = AukShared_Create( &trackView->base);
+    soundViewShared = AukShared_Create( &soundView->base);
 
     /* Register listeners */
     printf("Registering listeners...\n\n");

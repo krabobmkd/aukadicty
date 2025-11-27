@@ -69,7 +69,7 @@ int main(void) {
 
     /* Add envelope points to track1 */
     track1->AddEnvelopePoint(track1,
-                             AukFixed_FromInt(0),
+                             AukFixed_FromDouble(-0.25),
                              AukFixed_FromInt(1));  /* Full volume at start */
     track1->AddEnvelopePoint(track1,
                              AukFixed_FromInt(5),

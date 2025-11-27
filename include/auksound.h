@@ -17,7 +17,7 @@ extern "C" {
 
 /* Forward declarations */
 typedef struct AukSound AukSound;
-typedef struct AukTrack AukTrack;
+typedef struct sAukTrack AukTrack;
 
 /* AukSound structure - inherits from AukObject */
 struct AukSound {

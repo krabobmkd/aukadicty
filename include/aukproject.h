@@ -16,13 +16,25 @@ extern "C" {
 
 /* Forward declarations */
 typedef struct AukProject AukProject;
-typedef struct AukTrack AukTrack;
+struct sAukTrack;
+typedef struct sAukTrack AukTrack;
+
+typedef struct AukArray AukArray;
+typedef AukArray *AukArrayPtr;
 
 /* Project preferences */
 typedef struct AukProjectPrefs {
+    AukObject base;          /* Must be first - inheritance */
     unsigned long sampleRate;    /* Audio mixing rate (e.g., 44100) */
     unsigned long maxTracks;     /* Maximum number of tracks */
 } AukProjectPrefs;
+
+typedef struct AukProjectPrefs AukProjectPrefs;
+typedef AukProjectPrefs *AukProjectPrefsPtr;
+
+
+void AukProjectPrefs_New(AukShared *firstPtr);
+void AukProjectPrefs_Init(AukProjectPrefs *prefs);
 
 /* Dynamic array for tracks */
 typedef struct AukTrackArray {
@@ -38,8 +50,10 @@ struct AukProject {
     /* Data members */
     char* name;              /* Project name */
     char* path;              /* Project file path (directory) */
-    AukProjectPrefs prefs;   /* Project preferences */
-    AukTrackArray tracks;    /* Array of tracks */
+    //AukProjectPrefs prefs;   /* Project preferences */
+    AukProjectPrefsPtr prefs;
+    AukArrayPtr tracks;
+//    AukTrackArray tracks;    /* Array of tracks */
 
     /* Virtual methods specific to AukProject */
     int (*SetName)(void* This, const char* name);
@@ -55,8 +69,8 @@ struct AukProject {
 };
 
 /* Constructor/Destructor */
-void* AukProject_New(void);
-void AukProject_Delete(void* This);
+void AukProject_New(AukShared *firstPtr);
+//private void AukProject_Delete(void* This);
 const char* AukProject_GetTypeName(void* This);
 
 /* Initialize AukProject structure */

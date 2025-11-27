@@ -230,7 +230,7 @@ AukShared* AukOp_CreateSoundFile(const char* filename, unsigned long sampleRate,
     AukSoundFile_SetProperties(soundFile, sampleRate, channels, frameCount);
 
     /* Create shared pointer */
-    shared = AukShared_Create(soundFile, &soundFile->base);
+    shared = AukShared_Create(&soundFile->base);
     if (!shared) {
         AukSoundFile_Delete(soundFile);
         return NULL;

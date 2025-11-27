@@ -15,7 +15,7 @@ extern "C" {
 #endif
 
 /* Forward declarations */
-typedef struct AukTrack AukTrack;
+typedef struct sAukTrack AukTrack;
 typedef struct AukSound AukSound;
 typedef struct AukProject AukProject;
 typedef struct AukEnvelopePoint AukEnvelopePoint;
@@ -35,7 +35,7 @@ typedef struct AukSoundArray {
 } AukSoundArray;
 
 /* AukTrack structure - inherits from AukObject */
-struct AukTrack {
+struct sAukTrack {
     AukObject base;          /* Must be first - inheritance */
 
     /* Data members */
@@ -52,7 +52,7 @@ struct AukTrack {
     int (*AddEnvelopePoint)(void* This, AukFixed time, AukFixed value);
     AukFixed (*GetEnvelopeValue)(void* This, AukFixed time);
 };
-
+typedef struct sAukTrack AukTrack;
 /* Constructor/Destructor */
 void* AukTrack_New(void);
 void AukTrack_Delete(void* This);

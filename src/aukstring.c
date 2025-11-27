@@ -66,11 +66,11 @@ char* AukString_Concat3(const char* str1, const char* str2, const char* str3) {
     return result;
 }
 
-void AukString_Free(char* str) {
-    if (str) {
-        FreeVec(str);
-    }
-}
+// void AukString_Free(char* str) {
+//     if (str) {
+//         FreeVec(str);
+//     }
+// }
 
 unsigned long AukString_Length(const char* str) {
     return str ? strlen(str) : 0;

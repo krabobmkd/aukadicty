@@ -1,6 +1,6 @@
 #ifndef AUKSTRING_H
 #define AUKSTRING_H
-
+#include <proto/exec.h>
 /*
  * String management library for Aukadicty
  * Uses AllocVec/FreeVec for all string operations
@@ -10,6 +10,8 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#include "compilers.h"
 
 /* Allocate and copy a string */
 char* AukString_Duplicate(const char* str);
@@ -21,7 +23,11 @@ char* AukString_Concat(const char* str1, const char* str2);
 char* AukString_Concat3(const char* str1, const char* str2, const char* str3);
 
 /* Free a string allocated by AukString functions */
-void AukString_Free(char* str);
+INLINE void AukString_Free(char* str) {
+    if (str) {
+        FreeVec(str);
+    }
+}
 
 /* Get length of string */
 unsigned long AukString_Length(const char* str);

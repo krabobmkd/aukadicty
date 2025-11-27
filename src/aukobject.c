@@ -1,5 +1,4 @@
 #include "aukobject.h"
-#include "aukshared.h"
 #include <proto/exec.h>
 #include <string.h>
 
@@ -9,16 +8,16 @@
  * Includes listener/observer pattern implementation
  */
 
-void* AukObject_New(void) {
+void AukObject_New(AukShared *firstPtr) {
+    if(!firstPtr) return;
     AukObject* obj = (AukObject*)AllocVec(sizeof(AukObject), MEMF_CLEAR);
     if (obj) {
         AukObject_Init(obj);
+        AukShared_Set(firstPtr,obj);
     }
-    return obj;
 }
 
-void AukObject_Delete(void* This) {
-    AukObject* obj = (AukObject*)This;
+void AukObject_Delete(AukObject* obj) {
     AukListener* listener;
     AukListener* nextListener;
 
@@ -30,7 +29,7 @@ void AukObject_Delete(void* This) {
 
             /* Release reference to listener object */
             if (listener->listenerObject) {
-                AukShared_Release(listener->listenerObject);
+                AukShared_Release(&listener->listenerObject);
             }
 
             FreeVec(listener);
@@ -41,29 +40,22 @@ void AukObject_Delete(void* This) {
     }
 }
 
-const char* AukObject_GetTypeName(void* This) {
+const char* AukObject_GetTypeName(AukObject* This) {
     (void)This; /* Unused */
     return "AukObject";
 }
 
-int AukObject_AddListener(void* This, AukShared* listenerObject, AukUpdateCallback callback) {
-    AukObject* obj = (AukObject*)This;
+int AukObject_AddListener(AukObject* obj, AukObject* listenerObject, AukUpdateCallback callback) {
     AukListener* newListener;
-    void* listenerPtr;
 
     if (!obj || !listenerObject || !callback) {
-        return 0;
-    }
-
-    listenerPtr = AukShared_GetObject(listenerObject);
-    if (!listenerPtr) {
         return 0;
     }
 
     /* Check if listener already exists */
     AukListener* current = obj->listeners;
     while (current) {
-        if (AukShared_GetObject(current->listenerObject) == listenerPtr) {
+        if (AukShared_GetObject(&current->listenerObject) == listenerObject) {
             /* Already registered */
             return 1;
         }
@@ -77,7 +69,7 @@ int AukObject_AddListener(void* This, AukShared* listenerObject, AukUpdateCallba
     }
 
     /* Retain reference to listener object */
-    newListener->listenerObject = AukShared_Retain(listenerObject);
+    AukShared_Set(&newListener->listenerObject,listenerObject);
     newListener->callback = callback;
     newListener->next = obj->listeners;
 
@@ -87,8 +79,7 @@ int AukObject_AddListener(void* This, AukShared* listenerObject, AukUpdateCallba
     return 1;
 }
 
-int AukObject_RemoveListener(void* This, void* listenerObject) {
-    AukObject* obj = (AukObject*)This;
+int AukObject_RemoveListener(AukObject* obj, AukObject* listenerObject) {
     AukListener* current;
     AukListener* prev;
 
@@ -101,21 +92,19 @@ int AukObject_RemoveListener(void* This, void* listenerObject) {
 
     /* Find and remove listener */
     while (current) {
-        if (AukShared_GetObject(current->listenerObject) == listenerObject) {
+        if (AukShared_GetObject(&current->listenerObject) == listenerObject) {
             /* Remove from list */
             if (prev) {
                 prev->next = current->next;
             } else {
                 obj->listeners = current->next;
             }
-
             /* Release reference and free node */
-            AukShared_Release(current->listenerObject);
+            AukShared_Release(&current->listenerObject);
             FreeVec(current);
 
             return 1;
         }
-
         prev = current;
         current = current->next;
     }
@@ -123,10 +112,9 @@ int AukObject_RemoveListener(void* This, void* listenerObject) {
     return 0;
 }
 
-void AukObject_SendUpdate(void* This) {
-    AukObject* obj = (AukObject*)This;
+void AukObject_SendUpdate(AukObject* obj,void *message) {
     AukListener* current;
-    void* listenerPtr;
+    AukObject* listenerPtr;
 
     if (!obj) {
         return;
@@ -135,9 +123,9 @@ void AukObject_SendUpdate(void* This) {
     /* Notify all listeners */
     current = obj->listeners;
     while (current) {
-        listenerPtr = AukShared_GetObject(current->listenerObject);
+        listenerPtr = AukShared_GetObject(&current->listenerObject);
         if (listenerPtr && current->callback) {
-            current->callback(listenerPtr, This);
+            current->callback(listenerPtr, obj,message);
         }
         current = current->next;
     }
@@ -158,3 +146,46 @@ void AukObject_Init(AukObject* obj) {
         obj->listeners = NULL;
     }
 }
+
+
+/*
+ * Shared pointer implementation
+ * Reference counted smart pointer for automatic memory management
+ */
+
+/*  shared retain the object, if previous, previous is released. object can be NULL to just release. */
+
+void AukShared_Set(AukShared* shared, AukObject* object )
+{
+    AukObject *previous;
+    if(!shared) return;
+    if((*shared) == object) return;
+
+    previous = *shared;
+    if(previous)
+    {
+        previous->refcount--;
+        if (previous->refcount == 0) {
+            /* Call object's Delete method */
+            if (previous->Delete) {
+                previous->Delete(previous);
+            }
+        }
+    }
+    /* note: can be null */
+    (*shared) = object;
+    if(object)
+    {
+        object->refcount++;
+    }
+}
+
+
+AukObject* AukShared_GetObject(AukShared* shared) {
+    return (shared && (*shared))  ? (*shared) : NULL;
+}
+
+unsigned long AukShared_GetRefCount(AukShared* shared) {
+    return (shared && (*shared)) ? (*shared)->refcount : 0;
+}
+

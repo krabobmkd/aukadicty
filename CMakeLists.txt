@@ -39,7 +39,7 @@ endif()
 # Aukadicty source files
 set(AUKADICTY_SOURCES
     src/aukobject.c
-    src/aukshared.c
+    src/aukarray.c
     src/aukstring.c
     src/aukfixed.c
     src/aukproject.c
@@ -73,7 +73,7 @@ set(AUKSTREAMCACHE_SOURCES
 set(AUKADICTY_HEADERS
     include/aukadicty.h
     include/aukobject.h
-    include/aukshared.h
+    include/aukarray.h
     include/aukstring.h
     include/aukfixed.h
     include/aukproject.h

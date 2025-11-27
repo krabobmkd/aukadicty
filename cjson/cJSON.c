@@ -2656,16 +2656,18 @@ CJSON_PUBLIC(cJSON *) cJSON_CreateNumberFixed(AukFixed fixed)
     cJSON *item = cJSON_New_Item(&global_hooks);
     if(item)
     {
-        char buffer[17]; /* 16 hex chars + null terminator */
+        char buffer[18]; /* 16 hex chars + null terminator */
         unsigned long long value;
         int i;
 
-        item->type = cJSON_Number;
+        // hack item->type = cJSON_Number;
+        item->type = cJSON_String;
 
         /* Convert signed to unsigned for hex representation */
         value = (unsigned long long)fixed;
 
         /* Format as 16-character hexadecimal string (uppercase) */
+       // int ndbc = snprintf(buffer,17,"%d.%08x",(int)(fixed>>32),(unsigned int)fixed);
         for (i = 15; i >= 0; i--) {
             int nibble = (int)(value & 0xF);
             buffer[i] = (nibble < 10) ? ('0' + nibble) : ('A' + nibble - 10);
