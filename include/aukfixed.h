@@ -23,10 +23,10 @@ typedef long long AukFixed;
 /* Conversion functions */
 INLINE  AukFixed AukFixed_FromDouble(double d) { return (AukFixed)(d * (double)(1LL<<AUK_FIXED_SHIFT)); }
 
-INLINE AukFixed AukFixed_FromInt(long value) {  return (AukFixed)value << AUK_FIXED_SHIFT; }
+INLINE AukFixed AukFixed_FromInt(int value) {  return (AukFixed)value << AUK_FIXED_SHIFT; }
 
-long AukFixed_ToInt(AukFixed value);
-AukFixed AukFixed_FromFraction(long numerator, long denominator);
+int AukFixed_ToInt(AukFixed value);
+AukFixed AukFixed_FromFraction(int numerator, int denominator);
 
 /* Arithmetic operations */
 AukFixed AukFixed_Add(AukFixed a, AukFixed b);

@@ -6,6 +6,7 @@
 #include <proto/exec.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 #ifdef BOOL
  #undef BOOL
@@ -32,11 +33,112 @@
 #endif
 
 /*
+ * Memory allocation tracking
+ */
+struct AllocNode {
+    void* ptr;
+    unsigned long size;
+    struct AllocNode* next;
+};
+
+static struct AllocNode* alloc_list_head = NULL;
+static int atexit_registered = 0;
+static unsigned long total_allocs = 0;
+static unsigned long total_frees = 0;
+static unsigned long total_bytes_allocated = 0;
+
+/* Report allocations at program exit */
+static void report_allocations(void) {
+    struct AllocNode* node;
+    unsigned long leak_count = 0;
+    unsigned long leak_bytes = 0;
+
+    printf("\n========== AllocVec/FreeVec Memory Report ==========\n");
+    printf("Total allocations: %lu\n", total_allocs);
+    printf("Total frees: %lu\n", total_frees);
+    printf("Total bytes allocated: %lu\n", total_bytes_allocated);
+    printf("\n");
+
+    /* List any remaining allocations (leaks) */
+    node = alloc_list_head;
+    while (node) {
+        leak_count++;
+        leak_bytes += node->size;
+        printf("LEAK: %lu bytes at address %p\n", node->size, node->ptr);
+        node = node->next;
+    }
+
+    if (leak_count == 0) {
+        printf("No memory leaks detected - all allocations were freed!\n");
+    } else {
+        printf("\nWARNING: %lu allocation(s) not freed (%lu bytes leaked)\n",
+               leak_count, leak_bytes);
+    }
+    printf("====================================================\n");
+}
+
+/* Add allocation to tracking list */
+static void track_allocation(void* ptr, unsigned long size) {
+    struct AllocNode* node;
+
+    /* Register atexit handler once */
+    if (!atexit_registered) {
+        atexit(report_allocations);
+        atexit_registered = 1;
+    }
+
+    /* Create tracking node using malloc (not AllocVec to avoid recursion) */
+    node = (struct AllocNode*)malloc(sizeof(struct AllocNode));
+    if (!node) {
+        /* Failed to track, but continue - don't fail the allocation */
+        return;
+    }
+
+    node->ptr = ptr;
+    node->size = size;
+    node->next = alloc_list_head;
+    alloc_list_head = node;
+
+    total_allocs++;
+    total_bytes_allocated += size;
+}
+
+/* Remove allocation from tracking list */
+static void untrack_allocation(void* ptr) {
+    struct AllocNode* node = alloc_list_head;
+    struct AllocNode* prev = NULL;
+
+    while (node) {
+        if (node->ptr == ptr) {
+            /* Found it - remove from list */
+            if (prev) {
+                prev->next = node->next;
+            } else {
+                alloc_list_head = node->next;
+            }
+            free(node);  /* Free tracking node */
+            total_frees++;
+            return;
+        }
+        prev = node;
+        node = node->next;
+    }
+
+    /* If we get here, trying to free something not in our list */
+    printf("WARNING: FreeVec called on untracked pointer %p\n", ptr);
+}
+
+/*
  * AllocVec - Allocate memory
  * Maps to calloc (which clears memory by default)
  */
 void* AllocVec(unsigned long size, unsigned long flags) {
     void* ptr;
+
+if(size==128)
+{
+ printf("\n");
+}
 
     if (size == 0) {
         return NULL;
@@ -50,6 +152,11 @@ void* AllocVec(unsigned long size, unsigned long flags) {
         ptr = malloc(size);
     }
 
+    /* Track the allocation */
+    if (ptr) {
+        track_allocation(ptr, size);
+    }
+
     return ptr;
 }
 
@@ -59,6 +166,8 @@ void* AllocVec(unsigned long size, unsigned long flags) {
  */
 void FreeVec(void* ptr) {
     if (ptr) {
+        /* Untrack the allocation */
+        untrack_allocation(ptr);
         free(ptr);
     }
 }
@@ -260,3 +369,9 @@ struct Process* CreateNewProc(const struct TagItem* tags) {
 
     return proc;
 }
+
+void WaitTOF()
+{
+
+}
+

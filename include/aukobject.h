@@ -13,10 +13,13 @@
 extern "C" {
 #endif
 #include "compilers.h"
+#include "aukmutex.h"
 /* Forward declarations */
 typedef struct AukObject AukObject;
 typedef struct AukListener AukListener;
-typedef AukObject* AukShared;
+
+/* Typed pointer system - replaces generic AukShared */
+typedef AukObject* AukObjectPtr;
 
 /* Update callback function type */
 /* Parameters: listenerObject, modifiedObject */
@@ -24,7 +27,7 @@ typedef void (*AukUpdateCallback)(AukObject* listenerObject, AukObject* modified
 
 /* Listener node in linked list */
 struct AukListener {
-    AukShared listenerObject;      /* Shared pointer to listener object */
+    AukObjectPtr listenerObject;    /* Shared pointer to listener object */
     AukUpdateCallback callback;     /* Update notification callback */
     AukListener* next;              /* Next listener in list */
 };
@@ -35,10 +38,10 @@ typedef struct sISerializer ISerializer;
 /* Base object vtable - all objects must implement these */
 struct AukObject {
     /* Virtual methods - all take void* This as first parameter */
-    void (*New)(AukShared *firstPtr);     /* Constructor */
+    void (*New)(AukObjectPtr *firstPtr);     /* Constructor */
     void (*Delete)(AukObject* This);            /* Destructor */
     const char* (*GetTypeName)(AukObject* This); /* Get object type name */
-    void (*Serialize)(void* This,ISerializer *ser,const char *pName); /* both load/save */
+    void (*Serialize)(AukObject* This,ISerializer *ser,const char *pName); /* both load/save */
 
     /* Listener management - inherited by all objects */
     int (*AddListener)(AukObject* This, AukObject* listenerObject, AukUpdateCallback callback);
@@ -47,7 +50,8 @@ struct AukObject {
 
     /* Listener list - managed by base object */
     AukListener* listeners;
-    unsigned long refcount;
+    AukMutex    listeners_mutex;
+    unsigned int refcount;
 };
 
 /* Helper macros for calling virtual methods */
@@ -57,7 +61,7 @@ struct AukObject {
 #define AUK_SEND_UPDATE(obj, this) ((obj)->SendUpdate(this))
 
 /* Base object functions */
-void AukObject_New(AukShared *firstPtr);
+void AukObject_New(AukObjectPtr *firstPtr);
 /* internal, used externaly just to used as super method.
  * Should only be used by internal release mecanism, and root object delete. */
 void AukObject_Delete(AukObject* This);
@@ -74,20 +78,19 @@ void AukObject_Init(AukObject* obj);
 
 
 
-/* Shared pointer structure,all AukObject pointers should use. */
+/* Typed pointer management functions - all AukObject pointers should use these */
 
+/*  Set pointer, retaining the object. If previous exists, it is released. object can be NULL to just release. */
+void AukObjectPtr_Set(AukObjectPtr* ptr, AukObject* object);
 
-
-/*  shared retain the object, if previous, previous is released. object can be NULL to just release. */
-void AukShared_Set(AukShared* shared,AukObject* object );
-/* release object, can be inline */
-INLINE void AukShared_Release(AukShared* shared) {  AukShared_Set(shared,0L); }
+/* Release object, can be inline */
+INLINE void AukObjectPtr_Release(AukObjectPtr* ptr) { AukObjectPtr_Set(ptr, 0L); }
 
 /* Get the managed object pointer */
-AukObject* AukShared_GetObject(AukShared* shared);
+AukObject* AukObjectPtr_GetObject(AukObjectPtr* ptr);
 
 /* Get current reference count */
-unsigned long AukShared_GetRefCount(AukShared* shared);
+unsigned int AukObjectPtr_GetRefCount(AukObjectPtr* ptr);
 
 
 #ifdef __cplusplus

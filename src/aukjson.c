@@ -2,7 +2,6 @@
 #include "auktrack.h"
 #include "auksound.h"
 #include "auksoundfile.h"
-#include "aukoperations.h"
 #include "aukstring.h"
 #include "cJSON.h"
 #include <proto/exec.h>
@@ -85,7 +84,7 @@ static cJSON* AukJson_SerializeSound(AukSound* sound, AukProject* project) {
     }
 
     /* Get sound file info */
-    soundFile = (AukSoundFile*)AukShared_GetObject(sound->soundFile);
+    soundFile = sound->soundFile;
     if (soundFile) {
         filename = soundFile->GetFilename(soundFile);
         if (filename) {
@@ -121,7 +120,7 @@ static cJSON* AukJson_SerializeSound(AukSound* sound, AukProject* project) {
 /* Deserialize sound from JSON object */
 static AukSound* AukJson_DeserializeSound(cJSON* obj, AukProject* project) {
     AukSound* sound;
-    AukShared* soundFile;
+    AukSoundFilePtr soundFile = NULL;
     cJSON* item;
     const char* filename;
     char* absPath;
@@ -152,18 +151,22 @@ static AukSound* AukJson_DeserializeSound(cJSON* obj, AukProject* project) {
     channels = cJSON_GetObjectItem(obj, "channels")->valueint;
     frameCount = cJSON_GetObjectItem(obj, "frameCount")->valueint;
 
-    /* Create or find sound file (simplified - always creates new) */
-    soundFile = AukOp_CreateSoundFile(absPath, sampleRate, channels, frameCount);
-    AukString_Free(absPath);
-
+    /* Create sound file */
+    AukSoundFile_New(&soundFile);
     if (!soundFile) {
+        AukString_Free(absPath);
         return NULL;
     }
+    AukSoundFile_SetFilename(soundFile, absPath);
+    AukSoundFile_SetProperties(soundFile, sampleRate, channels, frameCount);
+    AukString_Free(absPath);
 
     /* Create sound */
-    sound = (AukSound*)AukSound_New();
+    AukSoundPtr soundPtr = NULL;
+    AukSound_New(&soundPtr);
+    sound = soundPtr;
     if (!sound) {
-        AukShared_Release(soundFile);
+        AukObjectPtr_Release((AukObjectPtr*)&soundFile);
         return NULL;
     }
 
@@ -183,7 +186,7 @@ static AukSound* AukJson_DeserializeSound(cJSON* obj, AukProject* project) {
     sound->SetLoopCount(sound, loopCount);
 
     /* Release our reference (sound now owns it) */
-    AukShared_Release(soundFile);
+    AukObjectPtr_Release((AukObjectPtr*)&soundFile);
 
     return sound;
 }
@@ -238,22 +241,15 @@ static cJSON* AukJson_SerializeTrack(AukTrack* track, AukProject* project) {
 }
 
 /* Deserialize track from JSON object */
-static AukTrack* AukJson_DeserializeTrack(cJSON* obj, AukProject* project) {
-    AukTrack* track;
+static void AukJson_DeserializeTrack(AukTrack*track, cJSON* obj, AukProject* project) {
     cJSON* item;
     cJSON* soundsArray;
     cJSON* soundObj;
     cJSON* envelope;
     AukSound* sound;
 
-    if (!obj || !cJSON_IsObject(obj)) {
-        return NULL;
-    }
-
-    /* Create track */
-    track = (AukTrack*)AukTrack_New();
-    if (!track) {
-        return NULL;
+    if (!track || !obj || !cJSON_IsObject(obj)) {
+        return;
     }
 
     /* Set name */
@@ -279,7 +275,6 @@ static AukTrack* AukJson_DeserializeTrack(cJSON* obj, AukProject* project) {
         AukJson_DeserializeEnvelope(track, envelope);
     }
 
-    return track;
 }
 
 char* AukJson_SerializeProject(AukProject* project) {
@@ -309,8 +304,8 @@ char* AukJson_SerializeProject(AukProject* project) {
     /* Preferences */
     prefs = cJSON_CreateObject();
     if (prefs) {
-        cJSON_AddNumberToObjectInt(prefs, "sampleRate", project->prefs.sampleRate);
-        cJSON_AddNumberToObjectInt(prefs, "maxTracks", project->prefs.maxTracks);
+        cJSON_AddNumberToObjectInt(prefs, "sampleRate", project->prefs->sampleRate);
+        cJSON_AddNumberToObjectInt(prefs, "maxTracks", project->prefs->maxTracks);
         cJSON_AddItemToObject(root, "preferences", prefs);
     }
 
@@ -337,7 +332,7 @@ char* AukJson_SerializeProject(AukProject* project) {
     return jsonString;
 }
 
-AukProject* AukJson_DeserializeProject(const char* jsonString) {
+void AukJson_DeserializeProject(AukProjectPtr* projectPtr, const char* jsonString) {
     cJSON* root;
     cJSON* prefs;
     cJSON* tracksArray;
@@ -347,20 +342,21 @@ AukProject* AukJson_DeserializeProject(const char* jsonString) {
     AukTrack* track;
     unsigned long sampleRate, maxTracks;
 
-    if (!jsonString) {
-        return NULL;
+    if (!projectPtr || !jsonString) {
+        return;
     }
 
     root = cJSON_Parse(jsonString);
     if (!root) {
-        return NULL;
+        return;
     }
 
     /* Create project */
-    project = (AukProject*)AukProject_New();
+    AukProject_New(projectPtr);
+    project = *projectPtr;
     if (!project) {
         cJSON_Delete(root);
-        return NULL;
+        return;
     }
 
     /* Load name */
@@ -381,15 +377,14 @@ AukProject* AukJson_DeserializeProject(const char* jsonString) {
     tracksArray = cJSON_GetObjectItem(root, "tracks");
     if (tracksArray && cJSON_IsArray(tracksArray)) {
         cJSON_ArrayForEach(trackObj, tracksArray) {
-            track = AukJson_DeserializeTrack(trackObj, project);
+            track = project->CreateTrack(project);
             if (track) {
-                project->AddTrack(project, track);
+                AukJson_DeserializeTrack(track, trackObj, project);
             }
         }
     }
 
     cJSON_Delete(root);
-    return project;
 }
 
 int AukJson_SaveProject(AukProject* project, const char* filename) {
@@ -425,20 +420,20 @@ int AukJson_SaveProject(AukProject* project, const char* filename) {
     return (written == length);
 }
 
-AukProject* AukJson_LoadProject(const char* filename) {
+void AukJson_LoadProject(AukProjectPtr* projectPtr, const char* filename) {
     BPTR file;
     long size;
     char* buffer;
     AukProject* project;
 
-    if (!filename) {
-        return NULL;
+    if (!projectPtr || !filename) {
+        return;
     }
 
     /* Open file for reading */
     file = Open((STRPTR)filename, MODE_OLDFILE);
     if (!file) {
-        return NULL;
+        return;
     }
 
     /* Get file size */
@@ -449,20 +444,21 @@ AukProject* AukJson_LoadProject(const char* filename) {
     buffer = (char*)AllocVec(size + 1, MEMF_CLEAR);
     if (!buffer) {
         Close(file);
-        return NULL;
+        return;
     }
 
     /* Read file */
     if (Read(file, buffer, size) != size) {
         Close(file);
         FreeVec(buffer);
-        return NULL;
+        return;
     }
 
     Close(file);
 
     /* Deserialize */
-    project = AukJson_DeserializeProject(buffer);
+    AukJson_DeserializeProject(projectPtr, buffer);
+    project = *projectPtr;
 
     FreeVec(buffer);
 
@@ -483,6 +479,4 @@ AukProject* AukJson_LoadProject(const char* filename) {
             }
         }
     }
-
-    return project;
 }

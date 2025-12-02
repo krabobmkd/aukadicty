@@ -26,7 +26,7 @@ void PutMsg(struct MsgPort* port, struct Message* msg);
 struct Message* GetMsg(struct MsgPort* port);
 void ReplyMsg(struct Message* msg);
 void WaitPort(struct MsgPort* port);
-
+void WaitTOF();
 /* Process creation */
 struct Process* CreateNewProc(const struct TagItem* tags);
 

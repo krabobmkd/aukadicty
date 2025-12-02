@@ -8,6 +8,7 @@
 #include <stdio.h>
 
 int main(int argc, char** argv) {
+    AukProjectPtr projectPtr = NULL;
     AukProject* project;
     AukTrack* track;
     AukSound* sound;
@@ -17,21 +18,25 @@ int main(int argc, char** argv) {
 
     if (argc < 2) {
         printf("Usage: %s <project_file.auk>\n", argv[0]);
-        return 1;
+          filename = "my_project.auk";
+//        return 1;
+    } else
+    {
+
+        filename = argv[1];
     }
 
-    filename = argv[1];
-
     /* Load project from JSON file */
-    project = AukJson_LoadProject(filename);
+    AukJson_LoadProject(&projectPtr, filename);
+    project = projectPtr;
     if (!project) {
         printf("Failed to load project from %s\n", filename);
         return 1;
     }
 
     printf("Loaded project: %s\n", project->GetName(project));
-    printf("Sample rate: %lu Hz\n", project->prefs.sampleRate);
-    printf("Max tracks: %lu\n", project->prefs.maxTracks);
+    printf("Sample rate: %lu Hz\n", ((AukProjectPrefs*)project->prefs)->sampleRate);
+    printf("Max tracks: %lu\n", ((AukProjectPrefs*)project->prefs)->maxTracks);
 
     /* Display all tracks and their sounds */
     trackCount = project->GetTrackCount(project);
@@ -48,7 +53,7 @@ int main(int argc, char** argv) {
             for (j = 0; j < soundCount; j++) {
                 sound = track->GetSound(track, j);
                 if (sound) {
-                    AukSoundFile* soundFile = (AukSoundFile*)AukShared_GetObject(sound->soundFile);
+                    AukSoundFile* soundFile = sound->soundFile;
 
                     printf("    Sound %lu:\n", j + 1);
                     if (soundFile) {
@@ -67,7 +72,7 @@ int main(int argc, char** argv) {
     }
 
     /* Clean up */
-    AukProject_Delete(project);
+    AukObjectPtr_Release((AukObjectPtr*)&projectPtr);
 
     return 0;
 }

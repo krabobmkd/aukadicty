@@ -12,14 +12,13 @@ LIB_STREAM = lib/libaukstreamcache.a
 
 # Aukadicty source files
 SRC = src/aukobject.c \
-      src/aukshared.c \
+      src/aukarray.c \
       src/aukstring.c \
       src/aukfixed.c \
       src/aukproject.c \
       src/auktrack.c \
       src/auksound.c \
       src/auksoundfile.c \
-      src/aukoperations.c \
       src/aukjson.c \
       cjson/cJSON.c
 

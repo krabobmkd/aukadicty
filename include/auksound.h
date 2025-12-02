@@ -8,7 +8,6 @@
  */
 
 #include "aukobject.h"
-#include "aukshared.h"
 #include "aukfixed.h"
 
 #ifdef __cplusplus
@@ -17,6 +16,11 @@ extern "C" {
 
 /* Forward declarations */
 typedef struct AukSound AukSound;
+typedef AukSound* AukSoundPtr;
+
+typedef struct AukSoundFile AukSoundFile;
+typedef AukSoundFile* AukSoundFilePtr;
+
 typedef struct sAukTrack AukTrack;
 
 /* AukSound structure - inherits from AukObject */
@@ -24,8 +28,8 @@ struct AukSound {
     AukObject base;          /* Must be first - inheritance */
 
     /* Data members */
-    AukShared* soundFile;    /* Shared pointer to AukSoundFile */
-    AukTrack* track;         /* Pointer to parent track (weak reference) */
+    AukSoundFilePtr soundFile;   /* Shared pointer to AukSoundFile */
+    AukTrack* track;             /* Pointer to parent track (weak reference) */
 
     AukFixed startTime;      /* Start time in project timeline */
     AukFixed endTime;        /* End time in project timeline */
@@ -43,7 +47,7 @@ struct AukSound {
 };
 
 /* Constructor/Destructor */
-void* AukSound_New(void);
+void AukSound_New(AukSoundPtr* firstPtr);
 void AukSound_Delete(void* This);
 const char* AukSound_GetTypeName(void* This);
 
@@ -51,7 +55,7 @@ const char* AukSound_GetTypeName(void* This);
 void AukSound_Init(AukSound* sound);
 
 /* Methods */
-void AukSound_SetSoundFile(AukSound* sound, AukShared* soundFile);
+void AukSound_SetSoundFile(AukSound* sound, AukSoundFilePtr soundFile);
 void AukSound_SetTrack(AukSound* sound, AukTrack* track);
 void AukSound_SetTimeRange(void* This, AukFixed start, AukFixed end);
 void AukSound_SetFileRange(void* This, unsigned long startFrame, unsigned long endFrame);

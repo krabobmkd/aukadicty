@@ -16,13 +16,13 @@ extern "C" {
 int AukJson_SaveProject(AukProject* project, const char* filename);
 
 /* Load project from JSON file */
-AukProject* AukJson_LoadProject(const char* filename);
+void AukJson_LoadProject(AukProjectPtr* projectPtr, const char* filename);
 
 /* Serialize project to JSON string (caller must free with AukString_Free) */
 char* AukJson_SerializeProject(AukProject* project);
 
 /* Deserialize project from JSON string */
-AukProject* AukJson_DeserializeProject(const char* jsonString);
+void AukJson_DeserializeProject(AukProjectPtr* projectPtr, const char* jsonString);
 
 #ifdef __cplusplus
 }

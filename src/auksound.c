@@ -6,12 +6,18 @@
  * Represents an instance of a sound on a track
  */
 
-void* AukSound_New(void) {
-    AukSound* sound = (AukSound*)AllocVec(sizeof(AukSound), MEMF_CLEAR);
+void AukSound_New(AukSoundPtr* firstPtr) {
+    AukSound* sound;
+
+    if (!firstPtr) {
+        return;
+    }
+
+    sound = (AukSound*)AllocVec(sizeof(AukSound), MEMF_CLEAR);
     if (sound) {
         AukSound_Init(sound);
+        AukObjectPtr_Set((AukObjectPtr*)firstPtr, &sound->base);
     }
-    return sound;
 }
 
 void AukSound_Delete(void* This) {
@@ -19,11 +25,11 @@ void AukSound_Delete(void* This) {
     if (sound) {
         /* Release shared sound file reference */
         if (sound->soundFile) {
-            AukShared_Release(sound->soundFile);
+            AukObjectPtr_Release((AukObjectPtr*)&sound->soundFile);
         }
 
-        /* Free the object itself */
-        FreeVec(sound);
+        /* Call base object delete (which will FreeVec) */
+        AukObject_Delete(&sound->base);
     }
 }
 
@@ -32,7 +38,7 @@ const char* AukSound_GetTypeName(void* This) {
     return "AukSound";
 }
 
-void AukSound_SetSoundFile(AukSound* sound, AukShared* soundFile) {
+void AukSound_SetSoundFile(AukSound* sound, AukSoundFilePtr soundFile) {
     int changed;
 
     if (!sound) {
@@ -48,17 +54,14 @@ void AukSound_SetSoundFile(AukSound* sound, AukShared* soundFile) {
 
     /* Release old reference */
     if (sound->soundFile) {
-        AukShared_Release(sound->soundFile);
+        AukObjectPtr_Release((AukObjectPtr*)&sound->soundFile);
     }
 
     /* Retain new reference */
-    sound->soundFile = soundFile;
-    if (soundFile) {
-        AukShared_Retain(soundFile);
-    }
+    AukObjectPtr_Set((AukObjectPtr*)&sound->soundFile, (AukObject*)soundFile);
 
     /* Send update notification */
-    sound->base.SendUpdate(sound);
+    sound->base.SendUpdate(&sound->base, NULL);
 }
 
 void AukSound_SetTrack(AukSound* sound, AukTrack* track) {
@@ -80,7 +83,7 @@ void AukSound_SetTimeRange(void* This, AukFixed start, AukFixed end) {
             sound->endTime = end;
 
             /* Send update notification */
-            sound->base.SendUpdate(sound);
+            sound->base.SendUpdate(&sound->base,NULL);
         }
     }
 }
@@ -98,7 +101,7 @@ void AukSound_SetFileRange(void* This, unsigned long startFrame, unsigned long e
             sound->fileEndFrame = endFrame;
 
             /* Send update notification */
-            sound->base.SendUpdate(sound);
+            sound->base.SendUpdate(&sound->base,NULL);
         }
     }
 }
@@ -115,7 +118,7 @@ void AukSound_SetLoopCount(void* This, unsigned long count) {
             sound->loopCount = count;
 
             /* Send update notification */
-            sound->base.SendUpdate(sound);
+            sound->base.SendUpdate(&sound->base,NULL);
         }
     }
 }

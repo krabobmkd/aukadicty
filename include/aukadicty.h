@@ -12,7 +12,6 @@ extern "C" {
 
 /* Core object system */
 #include "aukobject.h"
-#include "aukshared.h"
 
 /* Utility libraries */
 #include "aukstring.h"
@@ -23,9 +22,6 @@ extern "C" {
 #include "auktrack.h"
 #include "auksound.h"
 #include "auksoundfile.h"
-
-/* High-level operations */
-#include "aukoperations.h"
 
 /* JSON serialization */
 #include "aukjson.h"

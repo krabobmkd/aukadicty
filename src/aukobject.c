@@ -8,12 +8,12 @@
  * Includes listener/observer pattern implementation
  */
 
-void AukObject_New(AukShared *firstPtr) {
+void AukObject_New(AukObjectPtr *firstPtr) {
     if(!firstPtr) return;
     AukObject* obj = (AukObject*)AllocVec(sizeof(AukObject), MEMF_CLEAR);
     if (obj) {
         AukObject_Init(obj);
-        AukShared_Set(firstPtr,obj);
+        AukObjectPtr_Set(firstPtr,obj);
     }
 }
 
@@ -29,7 +29,7 @@ void AukObject_Delete(AukObject* obj) {
 
             /* Release reference to listener object */
             if (listener->listenerObject) {
-                AukShared_Release(&listener->listenerObject);
+                AukObjectPtr_Release(&listener->listenerObject);
             }
 
             FreeVec(listener);
@@ -52,11 +52,14 @@ int AukObject_AddListener(AukObject* obj, AukObject* listenerObject, AukUpdateCa
         return 0;
     }
 
+    aukMutex_lock( &obj->listeners_mutex );
+
     /* Check if listener already exists */
     AukListener* current = obj->listeners;
     while (current) {
-        if (AukShared_GetObject(&current->listenerObject) == listenerObject) {
+        if (AukObjectPtr_GetObject(&current->listenerObject) == listenerObject) {
             /* Already registered */
+            aukMutex_unlock( &obj->listeners_mutex );
             return 1;
         }
         current = current->next;
@@ -65,17 +68,18 @@ int AukObject_AddListener(AukObject* obj, AukObject* listenerObject, AukUpdateCa
     /* Allocate new listener node */
     newListener = (AukListener*)AllocVec(sizeof(AukListener), MEMF_CLEAR);
     if (!newListener) {
+        aukMutex_unlock( &obj->listeners_mutex );
         return 0;
     }
 
     /* Retain reference to listener object */
-    AukShared_Set(&newListener->listenerObject,listenerObject);
+    AukObjectPtr_Set(&newListener->listenerObject,listenerObject);
     newListener->callback = callback;
     newListener->next = obj->listeners;
 
     /* Add to front of list */
     obj->listeners = newListener;
-
+    aukMutex_unlock( &obj->listeners_mutex );
     return 1;
 }
 
@@ -86,13 +90,13 @@ int AukObject_RemoveListener(AukObject* obj, AukObject* listenerObject) {
     if (!obj || !listenerObject) {
         return 0;
     }
-
+    aukMutex_lock( &obj->listeners_mutex );
     prev = NULL;
     current = obj->listeners;
 
     /* Find and remove listener */
     while (current) {
-        if (AukShared_GetObject(&current->listenerObject) == listenerObject) {
+        if (AukObjectPtr_GetObject(&current->listenerObject) == listenerObject) {
             /* Remove from list */
             if (prev) {
                 prev->next = current->next;
@@ -100,15 +104,15 @@ int AukObject_RemoveListener(AukObject* obj, AukObject* listenerObject) {
                 obj->listeners = current->next;
             }
             /* Release reference and free node */
-            AukShared_Release(&current->listenerObject);
+            AukObjectPtr_Release(&current->listenerObject);
             FreeVec(current);
-
+            aukMutex_unlock( &obj->listeners_mutex );
             return 1;
         }
         prev = current;
         current = current->next;
     }
-
+    aukMutex_unlock( &obj->listeners_mutex );
     return 0;
 }
 
@@ -119,16 +123,18 @@ void AukObject_SendUpdate(AukObject* obj,void *message) {
     if (!obj) {
         return;
     }
-
+    if(obj->listeners_mutex.n>0) return; // recursive message shouldnt happen !
+    aukMutex_lock( &obj->listeners_mutex );
     /* Notify all listeners */
     current = obj->listeners;
     while (current) {
-        listenerPtr = AukShared_GetObject(&current->listenerObject);
+        listenerPtr = AukObjectPtr_GetObject(&current->listenerObject);
         if (listenerPtr && current->callback) {
             current->callback(listenerPtr, obj,message);
         }
         current = current->next;
     }
+    aukMutex_unlock( &obj->listeners_mutex );
 }
 
 void AukObject_Init(AukObject* obj) {
@@ -149,19 +155,19 @@ void AukObject_Init(AukObject* obj) {
 
 
 /*
- * Shared pointer implementation
+ * Typed pointer implementation
  * Reference counted smart pointer for automatic memory management
  */
 
-/*  shared retain the object, if previous, previous is released. object can be NULL to just release. */
+/*  Set pointer, retaining the object. If previous exists, it is released. object can be NULL to just release. */
 
-void AukShared_Set(AukShared* shared, AukObject* object )
+void AukObjectPtr_Set(AukObjectPtr* ptr, AukObject* object)
 {
     AukObject *previous;
-    if(!shared) return;
-    if((*shared) == object) return;
+    if(!ptr) return;
+    if((*ptr) == object) return;
 
-    previous = *shared;
+    previous = *ptr;
     if(previous)
     {
         previous->refcount--;
@@ -173,7 +179,7 @@ void AukShared_Set(AukShared* shared, AukObject* object )
         }
     }
     /* note: can be null */
-    (*shared) = object;
+    (*ptr) = object;
     if(object)
     {
         object->refcount++;
@@ -181,11 +187,11 @@ void AukShared_Set(AukShared* shared, AukObject* object )
 }
 
 
-AukObject* AukShared_GetObject(AukShared* shared) {
-    return (shared && (*shared))  ? (*shared) : NULL;
+AukObject* AukObjectPtr_GetObject(AukObjectPtr* ptr) {
+    return (ptr && (*ptr))  ? (*ptr) : NULL;
 }
 
-unsigned long AukShared_GetRefCount(AukShared* shared) {
-    return (shared && (*shared)) ? (*shared)->refcount : 0;
+unsigned int AukObjectPtr_GetRefCount(AukObjectPtr* ptr) {
+    return (ptr && (*ptr)) ? (*ptr)->refcount : 0;
 }
 

@@ -1,7 +1,10 @@
 #include "aukproject.h"
 #include "auktrack.h"
+#include "auksound.h"
+#include "auksoundfile.h"
 #include "aukstring.h"
 #include "aukjson.h"
+#include "aukarray.h"
 #include <proto/exec.h>
 #include <string.h>
 #include "serializer.h"
@@ -13,12 +16,12 @@
 
 #define INITIAL_TRACK_CAPACITY 8
 
-void AukProject_New(AukShared *firstPtr) {
+void AukProject_New(AukProjectPtr *firstPtr) {
     if(!firstPtr) return;
     AukProject* project = (AukProject*)AllocVec(sizeof(AukProject), MEMF_CLEAR);
-    if (project) {    
+    if (project) {
         AukProject_Init(project);
-        AukShared_Set(firstPtr,&project->base);
+        AukObjectPtr_Set((AukObjectPtr*)firstPtr, &project->base);
     }
 }
 
@@ -34,8 +37,8 @@ void AukProject_Delete(void* This) {
         if (project->path) {
             AukString_Free(project->path);
         }
-        AukShared_Release(&project->prefs);
-        AukShared_Release(&project->tracks);
+        AukObjectPtr_Release((AukObjectPtr*)&project->prefs);
+        AukObjectPtr_Release((AukObjectPtr*)&project->tracks);
 
         // /* Delete all tracks */
         // if (project->tracks.tracks) {
@@ -47,8 +50,8 @@ void AukProject_Delete(void* This) {
         //     FreeVec(project->tracks.tracks);
         // }
 
-        /* Free the object itself */
-        FreeVec(project);
+        /* Call base object delete (which will FreeVec) */
+        AukObject_Delete(&project->base);
     }
 }
 
@@ -69,7 +72,7 @@ void AukProject_Serialize(void* This,ISerializer *ser,const char *pName)
         ser->t_string(ser,"version",&version);
     }
     ser->t_object(ser,"prefs",&project->prefs);
-    ser->t_arrayobj(ser,"prefs",&project->tracks);
+    ser->t_arrayobj(ser,"tracks",&project->tracks);
 
     // ser->t_int(ser,"sampleRate",&project->prefs.sampleRate);
     // ser->t_int(ser,"maxTracks",&project->prefs.maxTracks);
@@ -150,7 +153,7 @@ const char* AukProject_GetPath(void* This) {
     return project ? project->path : NULL;
 }
 
-void AukProject_SetPreferences(AukProject* project, unsigned long sampleRate, unsigned long maxTracks) {
+void AukProject_SetPreferences(AukProject* project, unsigned int sampleRate, unsigned int maxTracks) {
     int changed;
 
     if (!project) return;
@@ -161,12 +164,15 @@ void AukProject_SetPreferences(AukProject* project, unsigned long sampleRate, un
         if(!project->prefs) return;
     }
 
+    /* Get typed pointer to prefs */
+    AukProjectPrefs* prefs = (AukProjectPrefs*)project->prefs;
+
     /* Check if values actually changed */
-    changed = (project->prefs->sampleRate != sampleRate || project->prefs->maxTracks != maxTracks);
+    changed = (prefs->sampleRate != sampleRate || prefs->maxTracks != maxTracks);
 
     if (changed) {
-        project->prefs->sampleRate = sampleRate;
-        project->prefs->maxTracks = maxTracks;
+        prefs->sampleRate = sampleRate;
+        prefs->maxTracks = maxTracks;
 
         /* Send update notification */
         project->base.SendUpdate(project,NULL);
@@ -174,101 +180,157 @@ void AukProject_SetPreferences(AukProject* project, unsigned long sampleRate, un
 
 }
 
-int AukProject_AddTrack(void* This, AukTrack* track) {
+
+static int AukProject_AddTrack(void* This, AukTrack* track) {
     AukProject* project = (AukProject*)This;
-    AukTrack** newTracks;
-    unsigned long newCapacity;
 
     if (!project || !track) {
         return 0;
     }
 
+    if (!project->tracks) {
+        return 0; /* No tracks array */
+    }
+
     /* Check max tracks limit */
-    if (project->tracks.count >= project->prefs.maxTracks) {
+    AukProjectPrefs* prefs = (AukProjectPrefs*)project->prefs;
+    AukArray* tracksArray = (AukArray*)project->tracks;
+
+    if (prefs && tracksArray->GetCount(tracksArray) >= prefs->maxTracks) {
         return 0; /* Maximum tracks reached */
     }
 
-    /* Grow array if needed */
-    if (project->tracks.count >= project->tracks.capacity) {
-        newCapacity = project->tracks.capacity == 0 ? INITIAL_TRACK_CAPACITY : project->tracks.capacity * 2;
-
-        /* Don't exceed max tracks */
-        if (newCapacity > project->prefs.maxTracks) {
-            newCapacity = project->prefs.maxTracks;
-        }
-
-        newTracks = (AukTrack**)AllocVec(newCapacity * sizeof(AukTrack*), MEMF_CLEAR);
-        if (!newTracks) {
-            return 0;
-        }
-
-        /* Copy existing tracks */
-        if (project->tracks.tracks) {
-            memcpy(newTracks, project->tracks.tracks, project->tracks.count * sizeof(AukTrack*));
-            FreeVec(project->tracks.tracks);
-        }
-
-        project->tracks.tracks = newTracks;
-        project->tracks.capacity = newCapacity;
+    /* Add track to array using AukArray */
+    if (!tracksArray->Add(tracksArray, &track->base)) {
+        return 0;
     }
-
-    /* Add track to array */
-    project->tracks.tracks[project->tracks.count] = track;
-    project->tracks.count++;
 
     /* Set project reference in track */
     AukTrack_SetProject(track, project);
 
     /* Send update notification */
-    project->base.SendUpdate(project);
+    project->base.SendUpdate(&project->base, NULL);
 
     return 1;
 }
 
+
+AukTrack* AukProject_CreateTrack(void* This) {
+    AukProject* project = (AukProject*)This;
+    AukTrackPtr trackPtr = NULL;
+    AukTrack* track;
+
+    if (!project) {
+        return NULL;
+    }
+
+    /* Create new track */
+    AukTrack_New(&trackPtr);
+    track = trackPtr;
+    if (!track) {
+        return NULL;
+    }
+
+    /* Add to project - this retains the track */
+    if (!AukProject_AddTrack(project, track)) {
+        /* Failed to add - release our reference */
+        AukObjectPtr_Release(&trackPtr);
+        return NULL;
+    }
+    /* Release our local reference, now it is retained by the array. */
+    AukObjectPtr_Release(&trackPtr);
+    /* Return raw pointer - the project owns the reference, caller doesn't */
+    return track;
+}
+
 int AukProject_RemoveTrack(void* This, AukTrack* track) {
     AukProject* project = (AukProject*)This;
-    unsigned long i;
+    AukArray* tracksArray;
 
     if (!project || !track) {
         return 0;
     }
 
-    /* Find and remove track */
-    for (i = 0; i < project->tracks.count; i++) {
-        if (project->tracks.tracks[i] == track) {
-            /* Shift remaining tracks down */
-            if (i < project->tracks.count - 1) {
-                memcpy(&project->tracks.tracks[i],
-                       &project->tracks.tracks[i + 1],
-                       (project->tracks.count - i - 1) * sizeof(AukTrack*));
-            }
+    if (!project->tracks) {
+        return 0; /* No tracks array */
+    }
 
-            project->tracks.count--;
-            AukTrack_SetProject(track, NULL);
+    tracksArray = (AukArray*)project->tracks;
 
-            /* Send update notification */
-            project->base.SendUpdate(project);
+    /* Remove track using AukArray */
+    if (tracksArray->Remove(tracksArray, &track->base)) {
+        AukTrack_SetProject(track, NULL);
 
-            return 1;
-        }
+        /* Send update notification */
+        project->base.SendUpdate(&project->base, NULL);
+
+        return 1;
     }
 
     return 0;
 }
 
-AukTrack* AukProject_GetTrack(void* This, unsigned long index) {
+AukTrack* AukProject_GetTrack(void* This, unsigned int index) {
     AukProject* project = (AukProject*)This;
+    AukArray* tracksArray;
+    AukObject* obj;
 
-    if (!project || index >= project->tracks.count) {
+    if (!project || !project->tracks) {
         return NULL;
     }
 
-    return project->tracks.tracks[index];
+    tracksArray = (AukArray*)project->tracks;
+    obj = tracksArray->Get(tracksArray, index);
+    return (AukTrack*)obj;
 }
 
-unsigned long AukProject_GetTrackCount(void* This) {
+unsigned int AukProject_GetTrackCount(void* This) {
     AukProject* project = (AukProject*)This;
-    return project ? project->tracks.count : 0;
+    AukArray* tracksArray;
+
+    if (!project || !project->tracks) {
+        return 0;
+    }
+
+    tracksArray = (AukArray*)project->tracks;
+    return tracksArray->GetCount(tracksArray);
+}
+
+AukFixed AukProject_GetDuration(void* This) {
+    AukProject* project = (AukProject*)This;
+    unsigned int i, trackCount;
+    unsigned int j, soundCount;
+    AukTrack* track;
+    AukSound* sound;
+    AukFixed maxEndTime;
+    AukFixed soundEndTime;
+
+    if (!project) {
+        return 0;
+    }
+
+    maxEndTime = 0;
+    trackCount = project->GetTrackCount(project);
+
+    /* Find latest end time across all tracks */
+    for (i = 0; i < trackCount; i++) {
+        track = project->GetTrack(project, i);
+        if (track) {
+            soundCount = track->GetSoundCount(track);
+
+            for (j = 0; j < soundCount; j++) {
+                sound = track->GetSound(track, j);
+                if (sound) {
+                    soundEndTime = sound->endTime;
+                    if (soundEndTime > maxEndTime) {
+                        maxEndTime = soundEndTime;
+                    }
+                }
+            }
+        }
+    }
+
+    return maxEndTime;
 }
 
 int AukProject_Save(void* This, const char* filename) {
@@ -301,40 +363,77 @@ void AukProject_Init(AukProject* project) {
         project->GetName = AukProject_GetName;
         project->SetPath = AukProject_SetPath;
         project->GetPath = AukProject_GetPath;
-        project->AddTrack = AukProject_AddTrack;
+        project->CreateTrack = AukProject_CreateTrack;
         project->RemoveTrack = AukProject_RemoveTrack;
         project->GetTrack = AukProject_GetTrack;
         project->GetTrackCount = AukProject_GetTrackCount;
+        project->GetDuration = AukProject_GetDuration;
         project->Save = AukProject_Save;
         project->Load = AukProject_Load;
 
         /* Initialize data members */
         project->name = NULL;
         project->path = NULL;
-        project->prefs.sampleRate = 44100;  /* Default */
-        project->prefs.maxTracks = 64;      /* Default */
-        project->tracks.tracks = NULL;
-        project->tracks.count = 0;
-        project->tracks.capacity = 0;
+
+        /* Initialize prefs as AukProjectPrefsPtr pointer */
+        project->prefs = NULL;
+        AukProjectPrefs_New(&project->prefs);
+
+        /* Initialize tracks array using AukArray */
+        project->tracks = NULL;
+        AukArray_New(&project->tracks, AukTrack_New, AukTrack_GetTypeName);
     }
 }
 
-void AukProjectPrefs_New(AukShared *firstPtr)
+void AukProjectPrefs_Delete(void* This) {
+    AukProjectPrefs* prefs = (AukProjectPrefs*)This;
+
+    if (prefs) {
+        /* Call base object delete */
+        AukObject_Delete(&prefs->base);
+    }
+}
+
+const char* AukProjectPrefs_GetTypeName(void* This) {
+    (void)This;
+    return "AukProjectPrefs";
+}
+
+void AukProjectPrefs_Serialize(void* This, ISerializer* ser, const char* pName) {
+    AukProjectPrefs* prefs = (AukProjectPrefs*)This;
+    (void)pName;
+
+    if (!prefs || !ser) {
+        return;
+    }
+
+    ser->t_uint(ser, "sampleRate", &prefs->sampleRate);
+    ser->t_uint(ser, "maxTracks", &prefs->maxTracks);
+}
+
+void AukProjectPrefs_New(AukProjectPrefsPtr *firstPtr)
 {
     if(!firstPtr) return;
     AukProjectPrefs* prefs = (AukProjectPrefs*)AllocVec(sizeof(AukProjectPrefs), MEMF_CLEAR);
     if (prefs) {
         AukProjectPrefs_Init(prefs);
-        AukShared_Set(firstPtr,&prefs->base);
+        AukObjectPtr_Set((AukObjectPtr*)firstPtr, &prefs->base);
     }
 
 }
+
 void AukProjectPrefs_Init(AukProjectPrefs *prefs)
 {
     if(!prefs) return;
     AukObject_Init(&prefs->base);
-    prefs->maxTracks = 0;
-    prefs->sampleRate = 0;
 
+    /* Override virtual methods */
+    prefs->base.Delete = AukProjectPrefs_Delete;
+    prefs->base.GetTypeName = AukProjectPrefs_GetTypeName;
+    prefs->base.Serialize = AukProjectPrefs_Serialize;
+
+    /* Initialize with defaults */
+    prefs->sampleRate = 44100;
+    prefs->maxTracks = 64;
 }
 

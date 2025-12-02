@@ -11,19 +11,20 @@
 
 #define INITIAL_SOUND_CAPACITY 16
 
-void* AukTrack_New(void) {
+void AukTrack_New(AukTrackPtr *firstPtr) {
+    if (!firstPtr) return;
     AukTrack* track = (AukTrack*)AllocVec(sizeof(AukTrack), MEMF_CLEAR);
     if (track) {
         AukTrack_Init(track);
+        AukObjectPtr_Set((AukObjectPtr*)firstPtr, &track->base);
     }
-    return track;
 }
 
 void AukTrack_Delete(void* This) {
     AukTrack* track = (AukTrack*)This;
     AukEnvelopePoint* point;
     AukEnvelopePoint* nextPoint;
-    unsigned long i;
+    unsigned int i;
 
     if (track) {
         /* Free name */
@@ -31,11 +32,11 @@ void AukTrack_Delete(void* This) {
             AukString_Free(track->name);
         }
 
-        /* Delete all sounds */
+        /* Release all sounds using reference counting */
         if (track->sounds.sounds) {
             for (i = 0; i < track->sounds.count; i++) {
                 if (track->sounds.sounds[i]) {
-                    AukSound_Delete(track->sounds.sounds[i]);
+                    AukObjectPtr_Release((AukObjectPtr*)&track->sounds.sounds[i]);
                 }
             }
             FreeVec(track->sounds.sounds);
@@ -49,8 +50,8 @@ void AukTrack_Delete(void* This) {
             point = nextPoint;
         }
 
-        /* Free the object itself */
-        FreeVec(track);
+        /* Call base object delete */
+        AukObject_Delete(This);
     }
 }
 
@@ -89,7 +90,7 @@ int AukTrack_SetName(AukTrack* track, const char* name) {
 
     if (track->name) {
         /* Send update notification */
-        track->base.SendUpdate(track);
+        track->base.SendUpdate(&track->base,NULL);
     }
 
     return track->name != NULL;
@@ -99,10 +100,41 @@ const char* AukTrack_GetName(AukTrack* track) {
     return track ? track->name : NULL;
 }
 
+AukSound* AukTrack_CreateSound(void* This, AukSoundFilePtr soundFile, AukFixed startTime, AukFixed endTime) {
+    AukTrack* track = (AukTrack*)This;
+    AukSoundPtr soundPtr = NULL;
+    AukSound* sound;
+
+    if (!track || !soundFile) {
+        return NULL;
+    }
+
+    /* Create new sound */
+    AukSound_New(&soundPtr);
+    sound = soundPtr;
+    if (!sound) {
+        return NULL;
+    }
+
+    /* Set properties */
+    AukSound_SetSoundFile(sound, soundFile);
+    AukSound_SetTimeRange(sound, startTime, endTime);
+
+    /* Add to track - this retains the sound */
+    if (!track->AddSound(track, sound)) {
+        /* Failed to add - release our reference */
+        AukObjectPtr_Release(&soundPtr);
+        return NULL;
+    }
+
+    /* Return raw pointer - the track owns the reference, caller doesn't */
+    return sound;
+}
+
 int AukTrack_AddSound(void* This, AukSound* sound) {
     AukTrack* track = (AukTrack*)This;
     AukSound** newSounds;
-    unsigned long newCapacity;
+    unsigned int newCapacity;
 
     if (!track || !sound) {
         return 0;
@@ -135,14 +167,14 @@ int AukTrack_AddSound(void* This, AukSound* sound) {
     AukSound_SetTrack(sound, track);
 
     /* Send update notification */
-    track->base.SendUpdate(track);
+    track->base.SendUpdate(&track->base,NULL);
 
     return 1;
 }
 
 int AukTrack_RemoveSound(void* This, AukSound* sound) {
     AukTrack* track = (AukTrack*)This;
-    unsigned long i;
+    unsigned int i;
 
     if (!track || !sound) {
         return 0;
@@ -162,7 +194,7 @@ int AukTrack_RemoveSound(void* This, AukSound* sound) {
             AukSound_SetTrack(sound, NULL);
 
             /* Send update notification */
-            track->base.SendUpdate(track);
+            track->base.SendUpdate(&track->base,NULL);
 
             return 1;
         }
@@ -171,7 +203,39 @@ int AukTrack_RemoveSound(void* This, AukSound* sound) {
     return 0;
 }
 
-AukSound* AukTrack_GetSound(void* This, unsigned long index) {
+int AukTrack_MoveSoundToTrack(void* This, AukSound* sound, AukTrack* destTrack) {
+    AukTrack* srcTrack = (AukTrack*)This;
+
+    if (!srcTrack || !sound || !destTrack) {
+        return 0;
+    }
+
+    /* If sound isn't on source track, fail */
+    if (sound->track != srcTrack) {
+        return 0;
+    }
+
+    /* If already on destination track, nothing to do */
+    if (srcTrack == destTrack) {
+        return 1;
+    }
+
+    /* Add to destination track first */
+    if (!destTrack->AddSound(destTrack, sound)) {
+        return 0;
+    }
+
+    /* Remove from source track */
+    if (!srcTrack->RemoveSound(srcTrack, sound)) {
+        /* Failed to remove - this shouldn't happen, but try to undo */
+        destTrack->RemoveSound(destTrack, sound);
+        return 0;
+    }
+
+    return 1;
+}
+
+AukSound* AukTrack_GetSound(void* This, unsigned int index) {
     AukTrack* track = (AukTrack*)This;
 
     if (!track || index >= track->sounds.count) {
@@ -181,7 +245,7 @@ AukSound* AukTrack_GetSound(void* This, unsigned long index) {
     return track->sounds.sounds[index];
 }
 
-unsigned long AukTrack_GetSoundCount(void* This) {
+unsigned int AukTrack_GetSoundCount(void* This) {
     AukTrack* track = (AukTrack*)This;
     return track ? track->sounds.count : 0;
 }
@@ -227,7 +291,7 @@ int AukTrack_AddEnvelopePoint(void* This, AukFixed time, AukFixed value) {
     }
 
     /* Send update notification */
-    track->base.SendUpdate(track);
+    track->base.SendUpdate(&track->base,NULL);
 
     return 1;
 }
@@ -278,8 +342,10 @@ void AukTrack_Init(AukTrack* track) {
         track->base.GetTypeName = AukTrack_GetTypeName;
 
         /* Set AukTrack specific methods */
+        track->CreateSound = AukTrack_CreateSound;
         track->AddSound = AukTrack_AddSound;
         track->RemoveSound = AukTrack_RemoveSound;
+        track->MoveSoundToTrack = AukTrack_MoveSoundToTrack;
         track->GetSound = AukTrack_GetSound;
         track->GetSoundCount = AukTrack_GetSoundCount;
         track->AddEnvelopePoint = AukTrack_AddEnvelopePoint;

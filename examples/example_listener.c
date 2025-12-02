@@ -9,7 +9,7 @@
 #include <stdio.h>
 
 /* Simulated GUI object that listens to project changes */
-typedef struct MockGUIView {
+typedef struct sMockGUIView {
     AukObject base;  /* Must be first for inheritance */
     char* viewName;
     int updateCount;
@@ -28,16 +28,18 @@ void MockGUIView_OnUpdate(void* listenerObject, void* modifiedObject) {
                view->updateCount);
     }
 }
+void MockGUIView_Delete(MockGUIView* view) ;
 
 /* Create mock GUI view */
-MockGUIView* MockGUIView_New(const char* name) {
+void MockGUIView_New(MockGUIView**ptr,const char* name) {
     MockGUIView* view = (MockGUIView*)AllocVec(sizeof(MockGUIView), MEMF_CLEAR);
     if (view) {
         AukObject_Init(&view->base);
+        view->base.Delete = MockGUIView_Delete;
         view->viewName = AukString_Duplicate(name);
         view->updateCount = 0;
+        AukObjectPtr_Set(ptr,&view->base);
     }
-    return view;
 }
 
 /* Delete mock GUI view */
@@ -46,42 +48,41 @@ void MockGUIView_Delete(MockGUIView* view) {
         if (view->viewName) {
             AukString_Free(view->viewName);
         }
-        FreeVec(view);
+        AukObject_Delete(view);
     }
 }
 
 int main(void) {
-    AukProject* project;
-    AukTrack* track;
-    AukSound* sound;
-    AukShared* soundFile;
-    MockGUIView* projectView;
-    MockGUIView* trackView;
-    MockGUIView* soundView;
-    AukShared* projectViewShared;
-    AukShared* trackViewShared;
-    AukShared* soundViewShared;
+    AukProjectPtr projectPtr = NULL;
+    AukProject* project= NULL;
+    AukTrack* track= NULL;
+    AukSound* sound= NULL;
+    AukSoundFilePtr soundFile = NULL;
+//    MockGUIView* projectView;
+//    MockGUIView* trackView;
+//    MockGUIView* soundView;
+    MockGUIView *projectView = NULL;
+    MockGUIView *trackView = NULL;
+    MockGUIView *soundView = NULL;
 
     printf("=== Listener Pattern Example ===\n\n");
 
     /* Create project and GUI views */
-    project = AukOp_CreateProject("Test Project", "Work:");
-    track = AukOp_AddTrackToProject(project, "Track 1");
-
+    AukProject_New(&projectPtr);
+    project = projectPtr;
+    project->SetName(project, "Test Project");
+    project->SetPath(project, "Work:");
+    track = project->CreateTrack(project);
+    AukTrack_SetName(track, "Track 1");
     /* Create GUI view objects (would be actual GUI widgets in real app) */
-    projectView = MockGUIView_New("ProjectView");
-    trackView = MockGUIView_New("TrackView");
-    soundView = MockGUIView_New("SoundView");
-
-    /* Wrap views in shared pointers for listener registration */
-    projectViewShared = AukShared_Create( &projectView->base);
-    trackViewShared = AukShared_Create( &trackView->base);
-    soundViewShared = AukShared_Create( &soundView->base);
+    MockGUIView_New(&projectView,"ProjectView");
+    MockGUIView_New(&trackView,"TrackView");
+    MockGUIView_New(&soundView,"SoundView");
 
     /* Register listeners */
     printf("Registering listeners...\n\n");
-    project->base.AddListener(project, projectViewShared, MockGUIView_OnUpdate);
-    track->base.AddListener(track, trackViewShared, MockGUIView_OnUpdate);
+    project->base.AddListener(project, &projectView->base, MockGUIView_OnUpdate);
+    track->base.AddListener(track, &trackView->base, MockGUIView_OnUpdate);
 
     /* Modify project - should trigger projectView update */
     printf("Setting project name...\n");
@@ -95,28 +96,30 @@ int main(void) {
 
     /* Add sound to track - should trigger trackView update */
     printf("Adding sound to track...\n");
-    soundFile = AukOp_CreateSoundFile("test.wav", 44100, 2, 88200);
-    sound = AukOp_AddSoundToTrack(track, soundFile,
-                                   AukFixed_FromInt(0),
-                                   AukFixed_FromInt(5));
+    AukSoundFile_New(&soundFile);
+    AukSoundFile_SetFilename(soundFile, "test.wav");
+    AukSoundFile_SetProperties(soundFile, 44100, 2, 88200);
+    sound = track->CreateSound(track, soundFile,
+                               AukFixed_FromInt(0),
+                               AukFixed_FromInt(5));
 
     /* Register listener on sound */
-    sound->base.AddListener(sound, soundViewShared, MockGUIView_OnUpdate);
+    sound->base.AddListener(sound, &soundView->base, MockGUIView_OnUpdate);
     printf("\n");
 
     /* Modify sound - should trigger soundView update */
     printf("Changing sound time range...\n");
-    AukOp_SetSoundTimeRange(sound, AukFixed_FromInt(1), AukFixed_FromInt(6));
+    sound->SetTimeRange(sound, AukFixed_FromInt(1), AukFixed_FromInt(6));
     printf("\n");
 
     /* Modify sound loop count - should trigger soundView update */
     printf("Setting sound loop count...\n");
-    AukOp_SetSoundLoopCount(sound, 3);
+    sound->SetLoopCount(sound, 3);
     printf("\n");
 
     /* Set same value again - should NOT trigger update */
     printf("Setting same loop count again (should not trigger update)...\n");
-    AukOp_SetSoundLoopCount(sound, 3);
+    sound->SetLoopCount(sound, 3);
     printf("\n");
 
     /* Add envelope point - should trigger trackView update */
@@ -133,11 +136,11 @@ int main(void) {
 
     /* Unregister listeners */
     printf("Unregistering listeners...\n");
-    project->base.RemoveListener(project, projectView);
-    track->base.RemoveListener(track, trackView);
-    sound->base.RemoveListener(sound, soundView);
+    project->base.RemoveListener(&project->base, &projectView->base);
+    track->base.RemoveListener(&track->base, &trackView->base);
+    sound->base.RemoveListener(&sound->base, &soundView->base);
 
-    /* Modify after unregistering - should NOT trigger updates */
+    /* Modify after unregistering - should sNOT trigger updates */
     printf("Modifying after unregister (should not trigger updates)...\n");
     project->SetName(project, "Final Name");
     AukTrack_SetName(track, "Final Track Name");
@@ -149,16 +152,11 @@ int main(void) {
     printf("Sound updates: %d (expected: 2)\n", soundView->updateCount);
 
     /* Cleanup */
-    AukShared_Release(projectViewShared);
-    AukShared_Release(trackViewShared);
-    AukShared_Release(soundViewShared);
-    AukShared_Release(soundFile);
-
-    MockGUIView_Delete(projectView);
-    MockGUIView_Delete(trackView);
-    MockGUIView_Delete(soundView);
-
-    AukProject_Delete(project);
+    AukObjectPtr_Release(&projectView);
+    AukObjectPtr_Release(&trackView);
+    AukObjectPtr_Release(&soundView);
+    AukObjectPtr_Release((AukObjectPtr*)&soundFile);
+    AukObjectPtr_Release((AukObjectPtr*)&projectPtr);
 
     printf("\nExample completed successfully\n");
     return 0;

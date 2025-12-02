@@ -7,12 +7,18 @@
  * Manages sound file metadata and filename
  */
 
-void* AukSoundFile_New(void) {
-    AukSoundFile* soundFile = (AukSoundFile*)AllocVec(sizeof(AukSoundFile), MEMF_CLEAR);
+void AukSoundFile_New(AukSoundFilePtr* firstPtr) {
+    AukSoundFile* soundFile;
+
+    if (!firstPtr) {
+        return;
+    }
+
+    soundFile = (AukSoundFile*)AllocVec(sizeof(AukSoundFile), MEMF_CLEAR);
     if (soundFile) {
         AukSoundFile_Init(soundFile);
+        AukObjectPtr_Set((AukObjectPtr*)firstPtr, &soundFile->base);
     }
-    return soundFile;
 }
 
 void AukSoundFile_Delete(void* This) {
@@ -23,8 +29,8 @@ void AukSoundFile_Delete(void* This) {
             AukString_Free(soundFile->filename);
         }
 
-        /* Free the object itself */
-        FreeVec(soundFile);
+        /* Call base object delete (which will FreeVec) */
+        AukObject_Delete(&soundFile->base);
     }
 }
 
@@ -58,7 +64,7 @@ int AukSoundFile_SetFilename(void* This, const char* filename) {
 
     if (soundFile->filename) {
         /* Send update notification */
-        soundFile->base.SendUpdate(soundFile);
+        soundFile->base.SendUpdate(&soundFile->base,NULL);
     }
 
     return soundFile->filename != NULL;
@@ -87,7 +93,7 @@ void AukSoundFile_SetProperties(AukSoundFile* soundFile,
             soundFile->frameCount = frameCount;
 
             /* Send update notification */
-            soundFile->base.SendUpdate(soundFile);
+            soundFile->base.SendUpdate(&soundFile->base,NULL);
         }
     }
 }

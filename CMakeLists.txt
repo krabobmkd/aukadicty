@@ -39,6 +39,7 @@ endif()
 # Aukadicty source files
 set(AUKADICTY_SOURCES
     src/aukobject.c
+    src/aukmutex.c
     src/aukarray.c
     src/aukstring.c
     src/aukfixed.c
@@ -46,7 +47,6 @@ set(AUKADICTY_SOURCES
     src/auktrack.c
     src/auksound.c
     src/auksoundfile.c
-    src/aukoperations.c
     src/aukjson.c
     cjson/cJSON.c
 )
@@ -73,6 +73,7 @@ set(AUKSTREAMCACHE_SOURCES
 set(AUKADICTY_HEADERS
     include/aukadicty.h
     include/aukobject.h
+    include/aukmutex.h
     include/aukarray.h
     include/aukstring.h
     include/aukfixed.h
@@ -80,7 +81,6 @@ set(AUKADICTY_HEADERS
     include/auktrack.h
     include/auksound.h
     include/auksoundfile.h
-    include/aukoperations.h
     include/aukjson.h
     cjson/cJSON.h
 )

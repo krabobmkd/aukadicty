@@ -15,6 +15,7 @@ extern "C" {
 
 /* Forward declaration */
 typedef struct AukSoundFile AukSoundFile;
+typedef AukSoundFile* AukSoundFilePtr;
 
 /* AukSoundFile structure - inherits from AukObject */
 struct AukSoundFile {
@@ -32,7 +33,7 @@ struct AukSoundFile {
 };
 
 /* Constructor/Destructor */
-void* AukSoundFile_New(void);
+void AukSoundFile_New(AukSoundFilePtr* firstPtr);
 void AukSoundFile_Delete(void* This);
 const char* AukSoundFile_GetTypeName(void* This);
 

@@ -1,0 +1,79 @@
+#ifndef AUKARRAY_H
+#define AUKARRAY_H
+
+/*
+ * AukArray - Base class for managing arrays of AukObjectPtr pointers
+ * Provides dynamic array functionality with automatic reference counting
+ * Derived classes specify what object type they contain
+ */
+
+#include "aukobject.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* Forward declarations */
+typedef struct AukArray AukArray;
+typedef AukArray* AukArrayPtr;
+
+/* Function pointer type for creating new objects of a specific type */
+typedef void (*AukObjectNewFunc)(AukObjectPtr* firstPtr);
+
+/* AukArray structure - inherits from AukObject */
+struct AukArray {
+    AukObject base;          /* Must be first - inheritance */
+
+    /* Data members */
+    AukObjectPtr* items;     /* Array of object pointers */
+    unsigned int count;      /* Current number of items */
+    unsigned int capacity;   /* Allocated capacity */
+    AukMutex    mutex;
+
+    /* Object creation function pointer for this array type */
+    AukObjectNewFunc itemNewFunc;      /* Function to create new items */
+
+    /* GetTypeName function for the item type */
+    const char* (*GetItemTypeName)(AukObject* This);
+
+    /* Virtual methods specific to AukArray */
+    int (*Add)(void* This, AukObject* item);
+    int (*Remove)(void* This, AukObject* item);
+    int (*RemoveAt)(void* This, unsigned int index);
+    AukObject* (*Get)(void* This, unsigned int index);
+    unsigned int (*GetCount)(void* This);
+    int (*Insert)(void* This, unsigned int index, AukObject* item);
+    void (*Clear)(void* This);
+};
+
+/* Forward declaration for serializer */
+struct sISerializer;
+typedef struct sISerializer ISerializer;
+
+/* Constructor/Destructor */
+/* Parameters: firstPtr, itemNewFunc, itemGetTypeName */
+void AukArray_New(AukArrayPtr* firstPtr, AukObjectNewFunc itemNewFunc, const char* (*itemGetTypeName)(AukObject*));
+void AukArray_Delete(void* This);
+const char* AukArray_GetTypeName(void* This);
+void AukArray_Serialize(void* This, ISerializer* ser, const char* pName);
+
+/* Initialize AukArray structure */
+void AukArray_Init(AukArray* array, AukObjectNewFunc itemNewFunc, const char* (*itemGetTypeName)(AukObject*));
+
+/* Methods */
+int AukArray_Add(void* This, AukObject* item);
+int AukArray_Remove(void* This, AukObject* item);
+int AukArray_RemoveAt(void* This, unsigned int index);
+void AukArray_Get(void* This, AukObjectPtr *ptr, unsigned int index);
+unsigned int AukArray_GetCount(void* This);
+int AukArray_Insert(void* This, unsigned int index, AukObject* item);
+void AukArray_Clear(void* This);
+
+/* Helper function to grow array capacity */
+int AukArray_EnsureCapacity(AukArray* array, unsigned int minCapacity);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* AUKARRAY_H */

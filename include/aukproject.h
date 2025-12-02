@@ -16,24 +16,28 @@ extern "C" {
 
 /* Forward declarations */
 typedef struct AukProject AukProject;
+typedef AukProject* AukProjectPtr;
+
 struct sAukTrack;
 typedef struct sAukTrack AukTrack;
+typedef AukTrack* AukTrackPtr;
 
 typedef struct AukArray AukArray;
-typedef AukArray *AukArrayPtr;
+typedef AukArray* AukArrayPtr;
 
 /* Project preferences */
 typedef struct AukProjectPrefs {
     AukObject base;          /* Must be first - inheritance */
-    unsigned long sampleRate;    /* Audio mixing rate (e.g., 44100) */
-    unsigned long maxTracks;     /* Maximum number of tracks */
+    unsigned int sampleRate;    /* Audio mixing rate (e.g., 44100) */
+    unsigned int maxTracks;     /* Maximum number of tracks */
 } AukProjectPrefs;
 
-typedef struct AukProjectPrefs AukProjectPrefs;
-typedef AukProjectPrefs *AukProjectPrefsPtr;
+typedef AukProjectPrefs* AukProjectPrefsPtr;
 
 
-void AukProjectPrefs_New(AukShared *firstPtr);
+void AukProjectPrefs_New(AukProjectPrefsPtr *firstPtr);
+void AukProjectPrefs_Delete(void* This);
+const char* AukProjectPrefs_GetTypeName(void* This);
 void AukProjectPrefs_Init(AukProjectPrefs *prefs);
 
 /* Dynamic array for tracks */
@@ -50,26 +54,26 @@ struct AukProject {
     /* Data members */
     char* name;              /* Project name */
     char* path;              /* Project file path (directory) */
-    //AukProjectPrefs prefs;   /* Project preferences */
-    AukProjectPrefsPtr prefs;
-    AukArrayPtr tracks;
-//    AukTrackArray tracks;    /* Array of tracks */
+    AukProjectPrefsPtr prefs;  /* Project preferences (AukProjectPrefs) */
+    AukArrayPtr tracks;        /* Array of tracks (AukArray) */
 
     /* Virtual methods specific to AukProject */
     int (*SetName)(void* This, const char* name);
     const char* (*GetName)(void* This);
     int (*SetPath)(void* This, const char* path);
     const char* (*GetPath)(void* This);
-    int (*AddTrack)(void* This, AukTrack* track);
+    AukTrack* (*CreateTrack)(void* This);
+   // int (*AddTrack)(void* This, AukTrack* track);
     int (*RemoveTrack)(void* This, AukTrack* track);
     AukTrack* (*GetTrack)(void* This, unsigned long index);
     unsigned long (*GetTrackCount)(void* This);
+    AukFixed (*GetDuration)(void* This);
     int (*Save)(void* This, const char* filename);
     int (*Load)(void* This, const char* filename);
 };
 
 /* Constructor/Destructor */
-void AukProject_New(AukShared *firstPtr);
+void AukProject_New(AukProjectPtr *firstPtr);
 //private void AukProject_Delete(void* This);
 const char* AukProject_GetTypeName(void* This);
 
@@ -81,11 +85,12 @@ int AukProject_SetName(void* This, const char* name);
 const char* AukProject_GetName(void* This);
 int AukProject_SetPath(void* This, const char* path);
 const char* AukProject_GetPath(void* This);
-void AukProject_SetPreferences(AukProject* project, unsigned long sampleRate, unsigned long maxTracks);
-int AukProject_AddTrack(void* This, AukTrack* track);
+void AukProject_SetPreferences(AukProject* project, unsigned int sampleRate, unsigned int maxTracks);
+AukTrack* AukProject_CreateTrack(void* This);
 int AukProject_RemoveTrack(void* This, AukTrack* track);
-AukTrack* AukProject_GetTrack(void* This, unsigned long index);
-unsigned long AukProject_GetTrackCount(void* This);
+AukTrack* AukProject_GetTrack(void* This, unsigned int index);
+unsigned int AukProject_GetTrackCount(void* This);
+AukFixed AukProject_GetDuration(void* This);
 int AukProject_Save(void* This, const char* filename);
 int AukProject_Load(void* This, const char* filename);
 

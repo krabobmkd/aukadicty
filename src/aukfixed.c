@@ -6,12 +6,12 @@
  */
 
 
-long AukFixed_ToInt(AukFixed value) {
+int AukFixed_ToInt(AukFixed value) {
     /* Round to nearest integer */
-    return (long)((value + AUK_FIXED_HALF) >> AUK_FIXED_SHIFT);
+    return (int)((value + AUK_FIXED_HALF) >> AUK_FIXED_SHIFT);
 }
 
-AukFixed AukFixed_FromFraction(long numerator, long denominator) {
+AukFixed AukFixed_FromFraction(int numerator, int denominator) {
     if (denominator == 0) {
         return 0;
     }
