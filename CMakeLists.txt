@@ -49,6 +49,8 @@ set(AUKADICTY_SOURCES
     src/auksoundfile.c
     src/aukjson.c
     src/auktyperegistry.c
+    src/aukjsonserializer.c
+    src/aukiffserializer.c
     cjson/cJSON.c
 )
 
@@ -85,6 +87,8 @@ set(AUKADICTY_HEADERS
     include/aukjson.h
     include/auktyperegistry.h
     include/serializer.h
+    include/aukjsonserializer.h
+    include/aukiffserializer.h
     cjson/cJSON.h
 )
 
@@ -164,6 +168,13 @@ if(BUILD_EXAMPLES)
     add_executable(example_streamcache examples/example_streamcache.c)
     target_link_libraries(example_streamcache aukstreamcache aukadicty)
     set_target_properties(example_streamcache PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/examples
+    )
+
+    # Example: IFF serialization
+    add_executable(example_iff examples/example_iff.c)
+    target_link_libraries(example_iff aukadicty)
+    set_target_properties(example_iff PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/examples
     )
 

@@ -21,6 +21,8 @@ SRC = src/aukobject.c \
       src/auksoundfile.c \
       src/aukjson.c \
       src/auktyperegistry.c \
+      src/aukjsonserializer.c \
+      src/aukiffserializer.c \
       cjson/cJSON.c
 
 # AukStreamCache source files
@@ -68,10 +70,11 @@ examples: $(LIB) $(LIB_STREAM)
 	$(CC) $(CFLAGS) examples/example_load.c -o examples/example_load -L./lib -laukadicty
 	$(CC) $(CFLAGS) examples/example_listener.c -o examples/example_listener -L./lib -laukadicty
 	$(CC) $(CFLAGS) examples/example_streamcache.c -o examples/example_streamcache -L./lib -laukstreamcache -laukadicty
+	$(CC) $(CFLAGS) examples/example_iff.c -o examples/example_iff -L./lib -laukadicty
 	@echo "Examples built"
 
 # Clean examples
 clean-examples:
-	rm -f examples/example_basic examples/example_load examples/example_listener examples/example_streamcache
+	rm -f examples/example_basic examples/example_load examples/example_listener examples/example_streamcache examples/example_iff
 
 .PHONY: all clean rebuild examples clean-examples
