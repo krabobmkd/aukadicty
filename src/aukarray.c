@@ -42,10 +42,37 @@ const char* AukArray_GetTypeName(void* This) {
 }
 
 void AukArray_Serialize(void* This, ISerializer* ser, const char* pName) {
-    /* TODO: Implement array serialization */
-    (void)This;
-    (void)ser;
+    AukArray* array = (AukArray*)This;
+    unsigned int i;
     (void)pName;
+
+    if (!array || !ser) {
+        return;
+    }
+
+    if (IS_WRITING(ser)) {
+        /* Save array count and each object */
+        ser->t_uint(ser, "count", &array->count);
+
+        for (i = 0; i < array->count; i++) {
+            AukObjectPtr itemPtr = array->items[i];
+            ser->t_object(ser, "item", &itemPtr);
+        }
+    } else {
+        /* Load array items */
+        unsigned int count = 0;
+        ser->t_uint(ser, "count", &count);
+
+        for (i = 0; i < count; i++) {
+            AukObjectPtr itemPtr = NULL;
+            ser->t_object(ser, "item", &itemPtr);
+            if (itemPtr) {
+                array->Add(array, itemPtr);
+                /* Release our temporary reference - array now owns it */
+                AukObjectPtr_Release(&itemPtr);
+            }
+        }
+    }
 }
 
 void AukArray_Init(AukArray* array, AukObjectNewFunc itemNewFunc, const char* (*itemGetTypeName)(AukObject*)) {

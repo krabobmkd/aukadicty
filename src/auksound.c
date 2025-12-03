@@ -38,6 +38,29 @@ const char* AukSound_GetTypeName(void* This) {
     return "AukSound";
 }
 
+void AukSound_Serialize(void* This, ISerializer* ser, const char* pName) {
+    AukSound* sound = (AukSound*)This;
+    (void)pName;
+
+    if (!sound || !ser) {
+        return;
+    }
+
+    /* Serialize sound file reference */
+    ser->t_object(ser, "soundFile", (AukObjectPtr*)&sound->soundFile);
+
+    /* Serialize timing information */
+    ser->t_fixed(ser, "startTime", &sound->startTime);
+    ser->t_fixed(ser, "endTime", &sound->endTime);
+
+    /* Serialize file range */
+    ser->t_ulonglong(ser, "fileStartFrame", (unsigned long long*)&sound->fileStartFrame);
+    ser->t_ulonglong(ser, "fileEndFrame", (unsigned long long*)&sound->fileEndFrame);
+
+    /* Serialize loop count */
+    ser->t_ulonglong(ser, "loopCount", (unsigned long long*)&sound->loopCount);
+}
+
 void AukSound_SetSoundFile(AukSound* sound, AukSoundFilePtr soundFile) {
     int changed;
 
@@ -140,6 +163,7 @@ void AukSound_Init(AukSound* sound) {
         sound->base.New = AukSound_New;
         sound->base.Delete = AukSound_Delete;
         sound->base.GetTypeName = AukSound_GetTypeName;
+        sound->base.Serialize = AukSound_Serialize;
 
         /* Set AukSound specific methods */
         sound->SetTimeRange = AukSound_SetTimeRange;

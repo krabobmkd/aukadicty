@@ -60,6 +60,74 @@ const char* AukTrack_GetTypeName(void* This) {
     return "AukTrack";
 }
 
+void AukTrack_Serialize(void* This, ISerializer* ser, const char* pName) {
+    AukTrack* track = (AukTrack*)This;
+    unsigned int i;
+    (void)pName;
+
+    if (!track || !ser) {
+        return;
+    }
+
+    /* Serialize track name */
+    ser->t_string_mutable(ser, "name", &track->name);
+
+    /* Serialize sounds array - manual serialization of dynamic array */
+    if (IS_WRITING(ser)) {
+        /* Save sound count and each sound object */
+        ser->t_uint(ser, "soundCount", &track->sounds.count);
+        for (i = 0; i < track->sounds.count; i++) {
+            AukObjectPtr soundPtr = track->sounds.sounds[i];
+            ser->t_object(ser, "sound", &soundPtr);
+        }
+    } else {
+        /* Load sounds */
+        unsigned int soundCount = 0;
+        ser->t_uint(ser, "soundCount", &soundCount);
+        for (i = 0; i < soundCount; i++) {
+            AukSoundPtr soundPtr = NULL;
+            ser->t_object(ser, "sound", (AukObjectPtr*)&soundPtr);
+            if (soundPtr) {
+                track->AddSound(track, soundPtr);
+                /* Release our temporary reference - track now owns it */
+                AukObjectPtr_Release(&soundPtr);
+            }
+        }
+    }
+
+    /* Serialize envelope points */
+    if (IS_WRITING(ser)) {
+        /* Count envelope points */
+        AukEnvelopePoint* point = track->envelope;
+        unsigned int envelopeCount = 0;
+        while (point) {
+            envelopeCount++;
+            point = point->next;
+        }
+
+        ser->t_uint(ser, "envelopeCount", &envelopeCount);
+
+        /* Write each envelope point */
+        point = track->envelope;
+        while (point) {
+            ser->t_fixed(ser, "envelopeTime", &point->time);
+            ser->t_fixed(ser, "envelopeValue", &point->value);
+            point = point->next;
+        }
+    } else {
+        /* Load envelope points */
+        unsigned int envelopeCount = 0;
+        ser->t_uint(ser, "envelopeCount", &envelopeCount);
+
+        for (i = 0; i < envelopeCount; i++) {
+            AukFixed time, value;
+            ser->t_fixed(ser, "envelopeTime", &time);
+            ser->t_fixed(ser, "envelopeValue", &value);
+            track->AddEnvelopePoint(track, time, value);
+        }
+    }
+}
+
 void AukTrack_SetProject(AukTrack* track, AukProject* project) {
     if (track) {
         track->project = project;
@@ -340,6 +408,7 @@ void AukTrack_Init(AukTrack* track) {
         track->base.New = AukTrack_New;
         track->base.Delete = AukTrack_Delete;
         track->base.GetTypeName = AukTrack_GetTypeName;
+        track->base.Serialize = AukTrack_Serialize;
 
         /* Set AukTrack specific methods */
         track->CreateSound = AukTrack_CreateSound;

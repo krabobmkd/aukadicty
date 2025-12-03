@@ -45,6 +45,14 @@ const char* AukObject_GetTypeName(AukObject* This) {
     return "AukObject";
 }
 
+void AukObject_Serialize(AukObject* This, ISerializer* ser, const char* pName) {
+    /* Base class has no members to serialize */
+    /* Listeners are NOT serialized - they are runtime-only connections */
+    (void)This;
+    (void)ser;
+    (void)pName;
+}
+
 int AukObject_AddListener(AukObject* obj, AukObject* listenerObject, AukUpdateCallback callback) {
     AukListener* newListener;
 
@@ -142,6 +150,7 @@ void AukObject_Init(AukObject* obj) {
         obj->New = AukObject_New;
         obj->Delete = AukObject_Delete;
         obj->GetTypeName = AukObject_GetTypeName;
+        obj->Serialize = AukObject_Serialize;
 
         /* Listener management */
         obj->AddListener = AukObject_AddListener;

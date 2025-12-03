@@ -61,24 +61,29 @@ const char* AukProject_GetTypeName(void* This) {
 }
 
 // tell what to be load and saved
-void AukProject_Serialize(void* This,ISerializer *ser,const char *pName)
-{
+void AukProject_Serialize(void* This, ISerializer* ser, const char* pName) {
     AukProject* project = (AukProject*)This;
-    // ISerializer
-    // force writting values when
-    if(!ser->_isReading)
-    {
-        const char *version="0.1";
-        ser->t_string(ser,"version",&version);
+    (void)pName;
+
+    if (!project || !ser) {
+        return;
     }
-    ser->t_object(ser,"prefs",&project->prefs);
-    ser->t_arrayobj(ser,"tracks",&project->tracks);
 
-    // ser->t_int(ser,"sampleRate",&project->prefs.sampleRate);
-    // ser->t_int(ser,"maxTracks",&project->prefs.maxTracks);
+    /* Write version only when saving */
+    if (IS_WRITING(ser)) {
+        const char* version = "0.1";
+        ser->t_string(ser, "version", &version);
+    }
 
+    /* Serialize name and path */
+    ser->t_string_mutable(ser, "name", &project->name);
+    ser->t_string_mutable(ser, "path", &project->path);
 
+    /* Serialize preferences object */
+    ser->t_object(ser, "prefs", &project->prefs);
 
+    /* Serialize tracks array */
+    ser->t_arrayobj(ser, "tracks", &project->tracks);
 }
 
 int AukProject_SetName(void* This, const char* name) {

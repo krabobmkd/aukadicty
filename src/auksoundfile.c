@@ -39,6 +39,23 @@ const char* AukSoundFile_GetTypeName(void* This) {
     return "AukSoundFile";
 }
 
+void AukSoundFile_Serialize(void* This, ISerializer* ser, const char* pName) {
+    AukSoundFile* soundFile = (AukSoundFile*)This;
+    (void)pName;
+
+    if (!soundFile || !ser) {
+        return;
+    }
+
+    /* Serialize filename (relative path) */
+    ser->t_string_mutable(ser, "filename", &soundFile->filename);
+
+    /* Serialize audio properties */
+    ser->t_ulonglong(ser, "sampleRate", (unsigned long long*)&soundFile->sampleRate);
+    ser->t_ulonglong(ser, "channels", (unsigned long long*)&soundFile->channels);
+    ser->t_ulonglong(ser, "frameCount", (unsigned long long*)&soundFile->frameCount);
+}
+
 int AukSoundFile_SetFilename(void* This, const char* filename) {
     AukSoundFile* soundFile = (AukSoundFile*)This;
     int changed;
@@ -107,6 +124,7 @@ void AukSoundFile_Init(AukSoundFile* soundFile) {
         soundFile->base.New = AukSoundFile_New;
         soundFile->base.Delete = AukSoundFile_Delete;
         soundFile->base.GetTypeName = AukSoundFile_GetTypeName;
+        soundFile->base.Serialize = AukSoundFile_Serialize;
 
         /* Set AukSoundFile specific methods */
         soundFile->SetFilename = AukSoundFile_SetFilename;

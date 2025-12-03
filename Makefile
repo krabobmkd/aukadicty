@@ -20,6 +20,7 @@ SRC = src/aukobject.c \
       src/auksound.c \
       src/auksoundfile.c \
       src/aukjson.c \
+      src/auktyperegistry.c \
       cjson/cJSON.c
 
 # AukStreamCache source files

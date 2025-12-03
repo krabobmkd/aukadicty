@@ -21,11 +21,26 @@ typedef AukObject* AukObjectPtr;
 struct AukArray;
 typedef struct AukArray AukArray;
 
+/* TypeNameToContructor structure -
+ * reading serializers will need a table of this to be able to reconstruct objects from their type names.
+ * sTypeNameToContructor tables will be terminated with last member typename being NULL.  */
+typedef struct sTypeNameToContructor {
+    const char *typename;
+    void (*NewConstructor)(AukObjectPtr *firstPtr);
+} TypeNameToContructor;
+
 /* ISerializer structure - function pointers for each type */
 typedef struct sISerializer {
     /* Context data */
-    void* context;              /* Implementation-specific context (e.g., cJSON object) */
+    void* context;              /* Implementation-specific context (e.g., cJSON object, FILE*) */
     int _isReading;             /* 1 if deserializing (loading), 0 if serializing (saving) */
+
+    /* Type registry for reading (NULL for writing serializers) */
+    const TypeNameToContructor* typeRegistry;
+
+    /* Object nesting support - push/pop context when serializing nested objects */
+    void (*PushContext)(struct sISerializer* This, const char* name);
+    void (*PopContext)(struct sISerializer* This);
 
     /* Primitive types */
     void (*t_int)(struct sISerializer* This, const char* name, int* value);
@@ -41,12 +56,15 @@ typedef struct sISerializer {
 
     /* Object types */
     void (*t_object)(struct sISerializer* This, const char* name, AukObjectPtr* object);
-    void (*t_arrayobj)(struct sISerializer* This, const char* name, AukObjectPtr* array);
+    void (*t_arrayobj)(struct sISerializer* This, const char* name, AukArray** array);
 
     /* Array of primitives */
     void (*t_int_array)(struct sISerializer* This, const char* name, int** values, unsigned int* count);
     void (*t_longlong_array)(struct sISerializer* This, const char* name, long long** values, unsigned int* count);
     void (*t_fixed_array)(struct sISerializer* This, const char* name, AukFixed** values, unsigned int* count);
+
+    /* Cleanup */
+    void (*Destroy)(struct sISerializer* This);
 
 } ISerializer;
 

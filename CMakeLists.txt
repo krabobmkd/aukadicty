@@ -48,6 +48,7 @@ set(AUKADICTY_SOURCES
     src/auksound.c
     src/auksoundfile.c
     src/aukjson.c
+    src/auktyperegistry.c
     cjson/cJSON.c
 )
 
@@ -82,6 +83,8 @@ set(AUKADICTY_HEADERS
     include/auksound.h
     include/auksoundfile.h
     include/aukjson.h
+    include/auktyperegistry.h
+    include/serializer.h
     cjson/cJSON.h
 )
 
