@@ -283,7 +283,7 @@ char* AukJson_SerializeProject(AukProject* project) {
     cJSON* tracksArray;
     cJSON* trackObj;
     unsigned long i, count;
-    AukTrack* track;
+    AukTrack* track=NULL;
     char* jsonString;
 
     if (!project) {
@@ -314,7 +314,7 @@ char* AukJson_SerializeProject(AukProject* project) {
     if (tracksArray) {
         count = project->GetTrackCount(project);
         for (i = 0; i < count; i++) {
-            track = project->GetTrack(project, i);
+            project->GetTrack(project,&track, i);
             if (track) {
                 trackObj = AukJson_SerializeTrack(track, project);
                 if (trackObj) {
@@ -324,6 +324,7 @@ char* AukJson_SerializeProject(AukProject* project) {
         }
         cJSON_AddItemToObject(root, "tracks", tracksArray);
     }
+    AukObjectPtr_Release((AukObjectPtr*)&track);
 
     /* Convert to string */
     jsonString = cJSON_Print(root);

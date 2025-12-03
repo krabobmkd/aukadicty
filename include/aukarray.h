@@ -40,7 +40,7 @@ struct AukArray {
     int (*Add)(void* This, AukObject* item);
     int (*Remove)(void* This, AukObject* item);
     int (*RemoveAt)(void* This, unsigned int index);
-    AukObject* (*Get)(void* This, unsigned int index);
+    void (*Get)(void* This, AukObjectPtr *ptr, unsigned int index);
     unsigned int (*GetCount)(void* This);
     int (*Insert)(void* This, unsigned int index, AukObject* item);
     void (*Clear)(void* This);
@@ -64,6 +64,7 @@ void AukArray_Init(AukArray* array, AukObjectNewFunc itemNewFunc, const char* (*
 int AukArray_Add(void* This, AukObject* item);
 int AukArray_Remove(void* This, AukObject* item);
 int AukArray_RemoveAt(void* This, unsigned int index);
+/** retain indexed object to a pointer, so need a pointer inited to NULL, and a call to AukObjectPtr_Release() before pointer dies. */
 void AukArray_Get(void* This, AukObjectPtr *ptr, unsigned int index);
 unsigned int AukArray_GetCount(void* This);
 int AukArray_Insert(void* This, unsigned int index, AukObject* item);

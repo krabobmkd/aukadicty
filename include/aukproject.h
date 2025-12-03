@@ -63,9 +63,9 @@ struct AukProject {
     int (*SetPath)(void* This, const char* path);
     const char* (*GetPath)(void* This);
     AukTrack* (*CreateTrack)(void* This);
-   // int (*AddTrack)(void* This, AukTrack* track);
     int (*RemoveTrack)(void* This, AukTrack* track);
-    AukTrack* (*GetTrack)(void* This, unsigned long index);
+    /** uses aukArray->Get() with retained pointer, so need a pointer inited to NULL, and a call to AukObjectPtr_Release() before pointer dies. */
+    void (*GetTrack)(void* This,AukTrack**ptr, unsigned int index);
     unsigned long (*GetTrackCount)(void* This);
     AukFixed (*GetDuration)(void* This);
     int (*Save)(void* This, const char* filename);
@@ -88,7 +88,7 @@ const char* AukProject_GetPath(void* This);
 void AukProject_SetPreferences(AukProject* project, unsigned int sampleRate, unsigned int maxTracks);
 AukTrack* AukProject_CreateTrack(void* This);
 int AukProject_RemoveTrack(void* This, AukTrack* track);
-AukTrack* AukProject_GetTrack(void* This, unsigned int index);
+void AukProject_GetTrack(void* This,AukTrack**ptr, unsigned int index) ;
 unsigned int AukProject_GetTrackCount(void* This);
 AukFixed AukProject_GetDuration(void* This);
 int AukProject_Save(void* This, const char* filename);

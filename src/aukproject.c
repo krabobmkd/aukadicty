@@ -270,18 +270,20 @@ int AukProject_RemoveTrack(void* This, AukTrack* track) {
     return 0;
 }
 
-AukTrack* AukProject_GetTrack(void* This, unsigned int index) {
+void AukProject_GetTrack(void* This,AukTrack**ptr, unsigned int index) {
     AukProject* project = (AukProject*)This;
     AukArray* tracksArray;
     AukObject* obj;
 
+    if(!ptr) return;
+    AukObjectPtr_Release((AukObjectPtr*)ptr);
+
     if (!project || !project->tracks) {
-        return NULL;
+        return;
     }
 
     tracksArray = (AukArray*)project->tracks;
-    obj = tracksArray->Get(tracksArray, index);
-    return (AukTrack*)obj;
+    tracksArray->Get(tracksArray,ptr, index);
 }
 
 unsigned int AukProject_GetTrackCount(void* This) {
@@ -300,7 +302,7 @@ AukFixed AukProject_GetDuration(void* This) {
     AukProject* project = (AukProject*)This;
     unsigned int i, trackCount;
     unsigned int j, soundCount;
-    AukTrack* track;
+    AukTrack* track=NULL;
     AukSound* sound;
     AukFixed maxEndTime;
     AukFixed soundEndTime;
@@ -314,7 +316,7 @@ AukFixed AukProject_GetDuration(void* This) {
 
     /* Find latest end time across all tracks */
     for (i = 0; i < trackCount; i++) {
-        track = project->GetTrack(project, i);
+        project->GetTrack(project,&track, i);
         if (track) {
             soundCount = track->GetSoundCount(track);
 
@@ -329,6 +331,7 @@ AukFixed AukProject_GetDuration(void* This) {
             }
         }
     }
+    AukObjectPtr_Release((AukObjectPtr*)&track);
 
     return maxEndTime;
 }

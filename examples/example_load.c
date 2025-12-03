@@ -10,7 +10,7 @@
 int main(int argc, char** argv) {
     AukProjectPtr projectPtr = NULL;
     AukProject* project;
-    AukTrack* track;
+    AukTrack* track=NULL;
     AukSound* sound;
     unsigned long i, j;
     unsigned long trackCount, soundCount;
@@ -43,7 +43,7 @@ int main(int argc, char** argv) {
     printf("\nTracks: %lu\n", trackCount);
 
     for (i = 0; i < trackCount; i++) {
-        track = project->GetTrack(project, i);
+        project->GetTrack(project,&track, i);
         if (track) {
             printf("\nTrack %lu: %s\n", i + 1, AukTrack_GetName(track));
 
@@ -73,6 +73,6 @@ int main(int argc, char** argv) {
 
     /* Clean up */
     AukObjectPtr_Release((AukObjectPtr*)&projectPtr);
-
+    AukObjectPtr_Release((AukObjectPtr*)&track);
     return 0;
 }

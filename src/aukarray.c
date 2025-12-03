@@ -186,7 +186,7 @@ void AukArray_Get(void* This, AukObjectPtr *ptr, unsigned int index) {
     AukArray* array = (AukArray*)This;
     AukObject* o;
 
-    AukObjectPtr_Set(ptr,NULL);
+    AukObjectPtr_Release(ptr);
 
     if (!array ) {
         return;
