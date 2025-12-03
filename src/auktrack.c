@@ -1,6 +1,7 @@
 #include "auktrack.h"
 #include "auksound.h"
 #include "aukstring.h"
+#include "serializer.h"
 #include <proto/exec.h>
 #include <string.h>
 

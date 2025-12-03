@@ -1,6 +1,7 @@
 #include "aukarray.h"
 #include <proto/exec.h>
 #include <string.h>
+#include "serializer.h"
 
 /*
  * AukArray implementation

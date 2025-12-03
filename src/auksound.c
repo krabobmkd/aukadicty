@@ -1,4 +1,5 @@
 #include "auksound.h"
+#include "serializer.h"
 #include <proto/exec.h>
 
 /*
