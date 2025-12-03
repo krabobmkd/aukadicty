@@ -4,6 +4,7 @@
 #include <proto/exec.h>
 #include <proto/dos.h>
 #include <string.h>
+#include <stdio.h>
 
 /*
  * IFF Serializer Implementation
@@ -455,6 +456,10 @@ int AukIFFSerializer_Finalize(ISerializer* ser) {
 static int IFFReader_ReadChunkHeader(BPTR file, unsigned long* chunkID, unsigned long* chunkSize) {
     *chunkID = ReadBigEndianLong(file);
     *chunkSize = ReadBigEndianLong(file);
+
+     unsigned long cid = *chunkID;
+    printf("chunkID:%c%c%c%c\n",(int)(cid>>24),(int)(cid>>16),(int)(cid>>8),(int)(cid));
+    printf("chunksize:%d\n",*chunkSize);
     return 1;
 }
 
