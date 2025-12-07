@@ -28,9 +28,12 @@ char* AukJson_SerializeProject(AukProject* project) {
     }
 
     /* Serialize the project using its Serialize method */
-    if (project->base.Serialize) {
-        project->base.Serialize(project, ser, "project");
-    }
+    // if (project->base.Serialize) {
+    //     project->base.Serialize(project, ser, "project");
+    // }
+    /* Serialize the project */
+    ser->t_object(ser, "project", (AukObjectPtr*)&project);
+
 
     /* Get JSON string */
     result = AukJsonSerializer_GetString(ser);

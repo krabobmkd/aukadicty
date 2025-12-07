@@ -1,5 +1,6 @@
 #include "auktrack.h"
 #include "auksound.h"
+#include "auksoundfile.h"
 #include "aukstring.h"
 #include "serializer.h"
 #include <proto/exec.h>
@@ -67,29 +68,6 @@ void AukTrack_Serialize(void* This, ISerializer* ser, const char* pName) {
     ser->t_string_mutable(ser, "name", &track->name);
 
     ser->t_arrayobj(ser, "sounds", &track->sounds,AukSound_New,AukSound_GetTypeName);
-
-    /* Serialize sounds array - manual serialization of dynamic array */
-    // if (IS_WRITING(ser)) {
-    //     /* Save sound count and each sound object */
-    //     ser->t_uint(ser, "soundCount", &track->sounds.count);
-    //     for (i = 0; i < track->sounds.count; i++) {
-    //         AukObjectPtr soundPtr = track->sounds.sounds[i];
-    //         ser->t_object(ser, "sound", &soundPtr);
-    //     }
-    // } else {
-    //     /* Load sounds */
-    //     unsigned int soundCount = 0;
-    //     ser->t_uint(ser, "soundCount", &soundCount);
-    //     for (i = 0; i < soundCount; i++) {
-    //         AukSoundPtr soundPtr = NULL;
-    //         ser->t_object(ser, "sound", (AukObjectPtr*)&soundPtr);
-    //         if (soundPtr) {
-    //             track->AddSound(track, soundPtr);
-    //             /* Release our temporary reference - track now owns it */
-    //             AukObjectPtr_Release(&soundPtr);
-    //         }
-    //     }
-    // }
 
     /* Serialize envelope points */
     if (IS_WRITING(ser)) {
@@ -190,6 +168,7 @@ AukSound* AukTrack_CreateSound(void* This, AukSoundFilePtr soundFile, AukFixed s
         AukObjectPtr_Release(&soundPtr);
         return NULL;
     }
+    AukObjectPtr_Release(&soundPtr);
     track->base.SendUpdate(&track->base, NULL);
     /* Return raw pointer - the track owns the reference, caller doesn't */
     return sound;

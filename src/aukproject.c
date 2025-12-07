@@ -332,6 +332,7 @@ AukFixed AukProject_GetDuration(void* This) {
                     if (soundEndTime > maxEndTime) {
                         maxEndTime = soundEndTime;
                     }
+                    AukObjectPtr_Release(&sound);
                 }
             }
         }

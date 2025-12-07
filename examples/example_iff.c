@@ -56,6 +56,7 @@ void PrintProjectInfo(AukProject* project) {
                     if (sound->loopCount > 0) {
                         printf("      Loop count: %lu\n", sound->loopCount);
                     }
+                    AukObjectPtr_Release(&sound);
                 }
             }
         }
@@ -234,7 +235,7 @@ int main(void) {
     sound1->SetLoopCount(sound1, 1);
     sound2->SetFileRange(sound2, 0, 48000);  /* First second of file */
 
-    /* Add envelope points */
+    // /* Add envelope points */
     track1->AddEnvelopePoint(track1, AukFixed_FromInt(0), AukFixed_FromInt(1));
     track1->AddEnvelopePoint(track1, AukFixed_FromInt(3), AukFixed_FromFraction(1, 2));
 
@@ -242,11 +243,11 @@ int main(void) {
     track2->AddEnvelopePoint(track2, AukFixed_FromInt(4), AukFixed_FromInt(1));
     track2->AddEnvelopePoint(track2, AukFixed_FromInt(8), AukFixed_FromFraction(1, 4));
 
-    /* Release our references to sound files */
+    // /* Release our references to sound files */
     AukObjectPtr_Release((AukObjectPtr*)&soundFile1);
     AukObjectPtr_Release((AukObjectPtr*)&soundFile2);
 
-    /* Print original project info */
+    // /* Print original project info */
     PrintProjectInfo(project);
 
     /* ========== Save to IFF ========== */

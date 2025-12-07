@@ -135,10 +135,10 @@ static void untrack_allocation(void* ptr) {
 void* AllocVec(unsigned long size, unsigned long flags) {
     void* ptr;
 
-if(size==128)
-{
- printf("\n");
-}
+// if(size==19)
+// {
+//  printf("\n");
+// }
 
     if (size == 0) {
         return NULL;

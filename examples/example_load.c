@@ -67,6 +67,7 @@ int main(int argc, char** argv) {
                     printf("      End: %ld ms\n",
                            AukFixed_ToInt(AukFixed_Mul(sound->endTime, AukFixed_FromInt(1000))));
                     printf("      Loop count: %lu\n", sound->loopCount);
+                    AukObjectPtr_Release(&sound);
                 }
             }
         }

@@ -546,14 +546,6 @@ static int IFFReader_PushContext(ISerializer* This, const char* name, unsigned l
         pos += 8+chunkSize;
     }
 
-
-    /* Find OBJ chunk */
-    // if (IFFReader_ReadChunkHeader(ctx->file, &chunkID, &chunkSize)) {
-    //     if (chunkID == ID_OBJ) {
-    //         PushIFFContext(&ctx->stack, startPos, chunkID);
-    //         ctx->endPos = startPos + 8 + chunkSize;
-    //     }
-    // }
     return 0;
 }
 

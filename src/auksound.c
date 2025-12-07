@@ -1,4 +1,5 @@
 #include "auksound.h"
+#include "auksoundfile.h"
 #include "serializer.h"
 #include <proto/exec.h>
 
@@ -62,10 +63,10 @@ void AukSound_Serialize(void* This, ISerializer* ser, const char* pName) {
     ser->t_ulonglong(ser, "loopCount", (unsigned long long*)&sound->loopCount);
 }
 
-void AukSound_SetSoundFile(AukSound* sound, AukSoundFilePtr soundFile) {
+void AukSound_SetSoundFile(AukSound* sound, AukSoundFile *soundFile) {
     int changed;
 
-    if (!sound) {
+    if (!sound ) {
         return;
     }
 
@@ -74,11 +75,6 @@ void AukSound_SetSoundFile(AukSound* sound, AukSoundFilePtr soundFile) {
 
     if (!changed) {
         return; /* No change */
-    }
-
-    /* Release old reference */
-    if (sound->soundFile) {
-        AukObjectPtr_Release((AukObjectPtr*)&sound->soundFile);
     }
 
     /* Retain new reference */
