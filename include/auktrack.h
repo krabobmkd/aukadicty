@@ -9,7 +9,7 @@
 
 #include "aukobject.h"
 #include "aukfixed.h"
-
+#include "aukarray.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -31,11 +31,11 @@ struct AukEnvelopePoint {
 };
 
 /* Dynamic array for sounds */
-typedef struct AukSoundArray {
-    AukSound** sounds;      /* Array of sound pointers */
-    unsigned int count;     /* Current number of sounds */
-    unsigned int capacity;  /* Allocated capacity */
-} AukSoundArray;
+// typedef struct AukSoundArray {
+//     AukSound** sounds;      /* Array of sound pointers */
+//     unsigned int count;     /* Current number of sounds */
+//     unsigned int capacity;  /* Allocated capacity */
+// } AukSoundArray;
 
 /* AukTrack structure - inherits from AukObject */
 struct sAukTrack {
@@ -44,15 +44,14 @@ struct sAukTrack {
     /* Data members */
     AukProject* project;     /* Pointer to parent project (weak reference) */
     char* name;              /* Track name */
-    AukSoundArray sounds;    /* Array of sounds on this track */
+    AukArray *sounds;    /* Array of sounds on this track */
     AukEnvelopePoint* envelope; /* Envelope points (linked list) */
 
     /* Virtual methods specific to AukTrack */
     AukSound* (*CreateSound)(void* This, AukSoundFilePtr soundFile, AukFixed startTime, AukFixed endTime);
-    int (*AddSound)(void* This, AukSound* sound);
     int (*RemoveSound)(void* This, AukSound* sound);
     int (*MoveSoundToTrack)(void* This, AukSound* sound, AukTrack* destTrack);
-    AukSound* (*GetSound)(void* This, unsigned int index);
+    void (*GetSound)(void* This, AukSound**ptr, unsigned int index) ;
     unsigned int (*GetSoundCount)(void* This);
     int (*AddEnvelopePoint)(void* This, AukFixed time, AukFixed value);
     AukFixed (*GetEnvelopeValue)(void* This, AukFixed time);
@@ -76,7 +75,8 @@ AukSound* AukTrack_CreateSound(void* This, AukSoundFilePtr soundFile, AukFixed s
 int AukTrack_AddSound(void* This, AukSound* sound);
 int AukTrack_RemoveSound(void* This, AukSound* sound);
 int AukTrack_MoveSoundToTrack(void* This, AukSound* sound, AukTrack* destTrack);
-AukSound* AukTrack_GetSound(void* This, unsigned int index);
+void AukTrack_GetSound(void* This,AukSound**ptr, unsigned int index) ;
+
 unsigned int AukTrack_GetSoundCount(void* This);
 int AukTrack_AddEnvelopePoint(void* This, AukFixed time, AukFixed value);
 AukFixed AukTrack_GetEnvelopeValue(void* This, AukFixed time);

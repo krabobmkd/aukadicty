@@ -83,7 +83,8 @@ void AukProject_Serialize(void* This, ISerializer* ser, const char* pName) {
     ser->t_object(ser, "prefs", &project->prefs);
 
     /* Serialize tracks array */
-    ser->t_arrayobj(ser, "tracks", &project->tracks);
+    ser->t_arrayobj(ser, "tracks", &project->tracks, AukTrack_New, AukTrack_GetTypeName);
+
 }
 
 int AukProject_SetName(void* This, const char* name) {
@@ -278,7 +279,6 @@ int AukProject_RemoveTrack(void* This, AukTrack* track) {
 void AukProject_GetTrack(void* This,AukTrack**ptr, unsigned int index) {
     AukProject* project = (AukProject*)This;
     AukArray* tracksArray;
-    AukObject* obj;
 
     if(!ptr) return;
     AukObjectPtr_Release((AukObjectPtr*)ptr);
@@ -308,7 +308,6 @@ AukFixed AukProject_GetDuration(void* This) {
     unsigned int i, trackCount;
     unsigned int j, soundCount;
     AukTrack* track=NULL;
-    AukSound* sound;
     AukFixed maxEndTime;
     AukFixed soundEndTime;
 
@@ -326,7 +325,8 @@ AukFixed AukProject_GetDuration(void* This) {
             soundCount = track->GetSoundCount(track);
 
             for (j = 0; j < soundCount; j++) {
-                sound = track->GetSound(track, j);
+                AukSound* sound=NULL;
+                track->GetSound(track,&sound, j);
                 if (sound) {
                     soundEndTime = sound->endTime;
                     if (soundEndTime > maxEndTime) {
@@ -389,7 +389,10 @@ void AukProject_Init(AukProject* project) {
 
         /* Initialize tracks array using AukArray */
         project->tracks = NULL;
-        AukArray_New(&project->tracks, AukTrack_New, AukTrack_GetTypeName);
+        AukArray_New(&project->tracks);
+        // set the type managed by the array
+        if(project->tracks) AukArray_SetType( project->tracks,AukTrack_New, AukTrack_GetTypeName);
+
     }
 }
 

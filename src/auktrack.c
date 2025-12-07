@@ -34,14 +34,7 @@ void AukTrack_Delete(void* This) {
         }
 
         /* Release all sounds using reference counting */
-        if (track->sounds.sounds) {
-            for (i = 0; i < track->sounds.count; i++) {
-                if (track->sounds.sounds[i]) {
-                    AukObjectPtr_Release((AukObjectPtr*)&track->sounds.sounds[i]);
-                }
-            }
-            FreeVec(track->sounds.sounds);
-        }
+        AukObjectPtr_Release((AukObjectPtr*)&track->sounds);
 
         /* Free envelope points */
         point = track->envelope;
@@ -73,28 +66,30 @@ void AukTrack_Serialize(void* This, ISerializer* ser, const char* pName) {
     /* Serialize track name */
     ser->t_string_mutable(ser, "name", &track->name);
 
+    ser->t_arrayobj(ser, "sounds", &track->sounds,AukSound_New,AukSound_GetTypeName);
+
     /* Serialize sounds array - manual serialization of dynamic array */
-    if (IS_WRITING(ser)) {
-        /* Save sound count and each sound object */
-        ser->t_uint(ser, "soundCount", &track->sounds.count);
-        for (i = 0; i < track->sounds.count; i++) {
-            AukObjectPtr soundPtr = track->sounds.sounds[i];
-            ser->t_object(ser, "sound", &soundPtr);
-        }
-    } else {
-        /* Load sounds */
-        unsigned int soundCount = 0;
-        ser->t_uint(ser, "soundCount", &soundCount);
-        for (i = 0; i < soundCount; i++) {
-            AukSoundPtr soundPtr = NULL;
-            ser->t_object(ser, "sound", (AukObjectPtr*)&soundPtr);
-            if (soundPtr) {
-                track->AddSound(track, soundPtr);
-                /* Release our temporary reference - track now owns it */
-                AukObjectPtr_Release(&soundPtr);
-            }
-        }
-    }
+    // if (IS_WRITING(ser)) {
+    //     /* Save sound count and each sound object */
+    //     ser->t_uint(ser, "soundCount", &track->sounds.count);
+    //     for (i = 0; i < track->sounds.count; i++) {
+    //         AukObjectPtr soundPtr = track->sounds.sounds[i];
+    //         ser->t_object(ser, "sound", &soundPtr);
+    //     }
+    // } else {
+    //     /* Load sounds */
+    //     unsigned int soundCount = 0;
+    //     ser->t_uint(ser, "soundCount", &soundCount);
+    //     for (i = 0; i < soundCount; i++) {
+    //         AukSoundPtr soundPtr = NULL;
+    //         ser->t_object(ser, "sound", (AukObjectPtr*)&soundPtr);
+    //         if (soundPtr) {
+    //             track->AddSound(track, soundPtr);
+    //             /* Release our temporary reference - track now owns it */
+    //             AukObjectPtr_Release(&soundPtr);
+    //         }
+    //     }
+    // }
 
     /* Serialize envelope points */
     if (IS_WRITING(ser)) {
@@ -190,97 +185,21 @@ AukSound* AukTrack_CreateSound(void* This, AukSoundFilePtr soundFile, AukFixed s
     AukSound_SetTimeRange(sound, startTime, endTime);
 
     /* Add to track - this retains the sound */
-    if (!track->AddSound(track, sound)) {
+    if (!track->sounds->Add(track->sounds, sound)) {
         /* Failed to add - release our reference */
         AukObjectPtr_Release(&soundPtr);
         return NULL;
     }
-
+    track->base.SendUpdate(&track->base, NULL);
     /* Return raw pointer - the track owns the reference, caller doesn't */
     return sound;
 }
 
-int AukTrack_AddSound(void* This, AukSound* sound) {
-    AukTrack* track = (AukTrack*)This;
-    AukSound** newSounds;
-    unsigned int newCapacity;
-
-    if (!track || !sound) {
-        return 0;
-    }
-
-    /* Grow array if needed */
-    if (track->sounds.count >= track->sounds.capacity) {
-        newCapacity = track->sounds.capacity == 0 ? INITIAL_SOUND_CAPACITY : track->sounds.capacity * 2;
-        newSounds = (AukSound**)AllocVec(newCapacity * sizeof(AukSound*), MEMF_CLEAR);
-
-        if (!newSounds) {
-            return 0;
-        }
-
-        /* Copy existing sounds */
-        if (track->sounds.sounds) {
-            memcpy(newSounds, track->sounds.sounds, track->sounds.count * sizeof(AukSound*));
-            FreeVec(track->sounds.sounds);
-        }
-
-        track->sounds.sounds = newSounds;
-        track->sounds.capacity = newCapacity;
-    }
-
-    /* Add sound to array */
-    track->sounds.sounds[track->sounds.count] = sound;
-    track->sounds.count++;
-
-    /* Set track reference in sound */
-    AukSound_SetTrack(sound, track);
-
-    /* Send update notification */
-    track->base.SendUpdate(&track->base,NULL);
-
-    return 1;
-}
-
-int AukTrack_RemoveSound(void* This, AukSound* sound) {
-    AukTrack* track = (AukTrack*)This;
-    unsigned int i;
-
-    if (!track || !sound) {
-        return 0;
-    }
-
-    /* Find and remove sound */
-    for (i = 0; i < track->sounds.count; i++) {
-        if (track->sounds.sounds[i] == sound) {
-            /* Shift remaining sounds down */
-            if (i < track->sounds.count - 1) {
-                memcpy(&track->sounds.sounds[i],
-                       &track->sounds.sounds[i + 1],
-                       (track->sounds.count - i - 1) * sizeof(AukSound*));
-            }
-
-            track->sounds.count--;
-            AukSound_SetTrack(sound, NULL);
-
-            /* Send update notification */
-            track->base.SendUpdate(&track->base,NULL);
-
-            return 1;
-        }
-    }
-
-    return 0;
-}
 
 int AukTrack_MoveSoundToTrack(void* This, AukSound* sound, AukTrack* destTrack) {
     AukTrack* srcTrack = (AukTrack*)This;
 
     if (!srcTrack || !sound || !destTrack) {
-        return 0;
-    }
-
-    /* If sound isn't on source track, fail */
-    if (sound->track != srcTrack) {
         return 0;
     }
 
@@ -290,34 +209,64 @@ int AukTrack_MoveSoundToTrack(void* This, AukSound* sound, AukTrack* destTrack) 
     }
 
     /* Add to destination track first */
-    if (!destTrack->AddSound(destTrack, sound)) {
+    if (!destTrack->sounds->Add(&destTrack->sounds, sound)) {
         return 0;
     }
 
     /* Remove from source track */
-    if (!srcTrack->RemoveSound(srcTrack, sound)) {
+    if (!srcTrack->sounds->Remove(&srcTrack->sounds, sound)) {
         /* Failed to remove - this shouldn't happen, but try to undo */
-        destTrack->RemoveSound(destTrack, sound);
+        srcTrack->sounds->Add(&srcTrack->sounds, sound);
         return 0;
     }
+    /* Send update notification */
+    srcTrack->base.SendUpdate(&srcTrack->base, NULL);
+    destTrack->base.SendUpdate(&destTrack->base, NULL);
 
     return 1;
 }
 
-AukSound* AukTrack_GetSound(void* This, unsigned int index) {
-    AukTrack* track = (AukTrack*)This;
-
-    if (!track || index >= track->sounds.count) {
-        return NULL;
-    }
-
-    return track->sounds.sounds[index];
-}
-
 unsigned int AukTrack_GetSoundCount(void* This) {
     AukTrack* track = (AukTrack*)This;
-    return track ? track->sounds.count : 0;
+    return (track && track->sounds)? track->sounds->count : 0;
 }
+void AukTrack_GetSound(void* This,AukSound**ptr, unsigned int index) {
+    AukTrack* track = (AukTrack*)This;
+    AukArray* tracksArray;
+
+    if(!ptr) return;
+    AukObjectPtr_Release((AukObjectPtr*)ptr);
+
+    if (!track || !track->sounds) {
+        return;
+    }
+
+    tracksArray = (AukArray*)track->sounds;
+    tracksArray->Get(tracksArray,ptr, index);
+}
+int AukTrack_RemoveSound(void* This, AukSound* sound){
+    AukTrack* track = (AukTrack*)This;
+    AukArray* tracksArray;
+
+    if (!track || !sound || !track->sounds) {
+        return 0;
+    }
+
+    tracksArray = (AukArray*)track->sounds;
+
+    /* Remove track using AukArray */
+    if (tracksArray->Remove(tracksArray, &sound->base)) {
+
+        /* Send update notification */
+        track->base.SendUpdate(&track->base, NULL);
+
+        return 1;
+    }
+
+    return 0;
+}
+
+
 
 int AukTrack_AddEnvelopePoint(void* This, AukFixed time, AukFixed value) {
     AukTrack* track = (AukTrack*)This;
@@ -413,7 +362,6 @@ void AukTrack_Init(AukTrack* track) {
 
         /* Set AukTrack specific methods */
         track->CreateSound = AukTrack_CreateSound;
-        track->AddSound = AukTrack_AddSound;
         track->RemoveSound = AukTrack_RemoveSound;
         track->MoveSoundToTrack = AukTrack_MoveSoundToTrack;
         track->GetSound = AukTrack_GetSound;
@@ -424,9 +372,13 @@ void AukTrack_Init(AukTrack* track) {
         /* Initialize data members */
         track->project = NULL;
         track->name = NULL;
-        track->sounds.sounds = NULL;
-        track->sounds.count = 0;
-        track->sounds.capacity = 0;
+
+        AukArray_New(&track->sounds);
+        // set the type managed by the array
+        if(track->sounds) AukArray_SetType(track->sounds,AukSound_New, AukSound_GetTypeName);
+
         track->envelope = NULL;
+
+
     }
 }

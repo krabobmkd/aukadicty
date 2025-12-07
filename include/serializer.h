@@ -17,6 +17,8 @@ extern "C" {
 struct AukObject;
 typedef struct AukObject AukObject;
 typedef AukObject* AukObjectPtr;
+/* Function pointer type for creating new objects of a specific type */
+typedef void (*AukObjectNewFunc)(AukObjectPtr* firstPtr);
 
 struct AukArray;
 typedef struct AukArray AukArray;
@@ -39,8 +41,8 @@ typedef struct sISerializer {
     const TypeNameToContructor* typeRegistry;
 
     /* Object nesting support - push/pop context when serializing nested objects */
-    void (*PushContext)(struct sISerializer* This, const char* name);
-    void (*PopContext)(struct sISerializer* This);
+    //void (*PushContext)(struct sISerializer* This, const char* name);
+    //void (*PopContext)(struct sISerializer* This);
 
     /* Primitive types */
     void (*t_int)(struct sISerializer* This, const char* name, int* value);
@@ -56,7 +58,8 @@ typedef struct sISerializer {
 
     /* Object types */
     void (*t_object)(struct sISerializer* This, const char* name, AukObjectPtr* object);
-    void (*t_arrayobj)(struct sISerializer* This, const char* name, AukArray** array);
+    void (*t_arrayobj)(struct sISerializer* This, const char* name, AukArray** array,
+                AukObjectNewFunc itemNewFunc, const char* (*itemGetTypeName)(AukObject*));
 
     /* Array of primitives */
     void (*t_int_array)(struct sISerializer* This, const char* name, int** values, unsigned int* count);

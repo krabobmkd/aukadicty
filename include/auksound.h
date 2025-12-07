@@ -29,7 +29,6 @@ struct AukSound {
 
     /* Data members */
     AukSoundFilePtr soundFile;   /* Shared pointer to AukSoundFile */
-    AukTrack* track;             /* Pointer to parent track (weak reference) */
 
     AukFixed startTime;      /* Start time in project timeline */
     AukFixed endTime;        /* End time in project timeline */
@@ -56,7 +55,6 @@ void AukSound_Init(AukSound* sound);
 
 /* Methods */
 void AukSound_SetSoundFile(AukSound* sound, AukSoundFilePtr soundFile);
-void AukSound_SetTrack(AukSound* sound, AukTrack* track);
 void AukSound_SetTimeRange(void* This, AukFixed start, AukFixed end);
 void AukSound_SetFileRange(void* This, unsigned long startFrame, unsigned long endFrame);
 void AukSound_SetLoopCount(void* This, unsigned long count);

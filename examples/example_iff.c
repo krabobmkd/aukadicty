@@ -13,7 +13,7 @@
 void PrintProjectInfo(AukProject* project) {
     unsigned int i, j;
     AukTrack* track = NULL;
-    AukSound* sound;
+
     const char* projectName;
     unsigned int trackCount, soundCount;
     AukFixed duration;
@@ -37,7 +37,8 @@ void PrintProjectInfo(AukProject* project) {
 
             /* Print sound information */
             for (j = 0; j < soundCount; j++) {
-                sound = track->GetSound(track, j);
+                AukSound* sound=NULL;
+                track->GetSound(track,&sound, j);
                 if (sound) {
                     AukSoundFile* soundFile = sound->soundFile;
                     printf("    Sound %u:\n", j + 1);
@@ -64,7 +65,7 @@ void PrintProjectInfo(AukProject* project) {
     printf("\n");
 }
 
-int SaveProjectIFF(AukProject* project, const char* filename) {
+int SaveProjectIFF(AukProject** project, const char* filename) {
     BPTR file;
     ISerializer* ser;
 
@@ -86,9 +87,7 @@ int SaveProjectIFF(AukProject* project, const char* filename) {
     }
 
     /* Serialize the project */
-    if (project->base.Serialize) {
-        project->base.Serialize(project, ser, "project");
-    }
+    ser->t_object(ser,"project",(AukObject**)project);
 
     /* Finalize IFF (writes correct FORM size) */
     if (!AukIFFSerializer_Finalize(ser)) {
@@ -251,7 +250,7 @@ int main(void) {
     PrintProjectInfo(project);
 
     /* ========== Save to IFF ========== */
-    if (!SaveProjectIFF(project, "demo_project.aup")) {
+    if (!SaveProjectIFF(&projectPtr, "demo_project.aup")) {
         printf("Failed to save project\n");
         AukObjectPtr_Release((AukObjectPtr*)&projectPtr);
         return 1;

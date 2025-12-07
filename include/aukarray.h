@@ -17,8 +17,7 @@ extern "C" {
 typedef struct AukArray AukArray;
 typedef AukArray* AukArrayPtr;
 
-/* Function pointer type for creating new objects of a specific type */
-typedef void (*AukObjectNewFunc)(AukObjectPtr* firstPtr);
+
 
 /* AukArray structure - inherits from AukObject */
 struct AukArray {
@@ -52,13 +51,15 @@ typedef struct sISerializer ISerializer;
 
 /* Constructor/Destructor */
 /* Parameters: firstPtr, itemNewFunc, itemGetTypeName */
-void AukArray_New(AukArrayPtr* firstPtr, AukObjectNewFunc itemNewFunc, const char* (*itemGetTypeName)(AukObject*));
+void AukArray_New(AukArrayPtr* firstPtr);
+void AukArray_SetType(AukArray* array,AukObjectNewFunc itemNewFunc, const char* (*itemGetTypeName)(AukObject*));
+
 void AukArray_Delete(void* This);
 const char* AukArray_GetTypeName(void* This);
 void AukArray_Serialize(void* This, ISerializer* ser, const char* pName);
 
 /* Initialize AukArray structure */
-void AukArray_Init(AukArray* array, AukObjectNewFunc itemNewFunc, const char* (*itemGetTypeName)(AukObject*));
+void AukArray_Init(AukArray* array);
 
 /* Methods */
 int AukArray_Add(void* This, AukObject* item);

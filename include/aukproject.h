@@ -86,9 +86,11 @@ const char* AukProject_GetName(void* This);
 int AukProject_SetPath(void* This, const char* path);
 const char* AukProject_GetPath(void* This);
 void AukProject_SetPreferences(AukProject* project, unsigned int sampleRate, unsigned int maxTracks);
+
 AukTrack* AukProject_CreateTrack(void* This);
 int AukProject_RemoveTrack(void* This, AukTrack* track);
 void AukProject_GetTrack(void* This,AukTrack**ptr, unsigned int index) ;
+
 unsigned int AukProject_GetTrackCount(void* This);
 AukFixed AukProject_GetDuration(void* This);
 int AukProject_Save(void* This, const char* filename);

@@ -154,7 +154,8 @@ static void JsonWriter_t_object(ISerializer* This, const char* name, AukObjectPt
     PopContextStack(&ctx->stack, &ctx->current);
 }
 
-static void JsonWriter_t_arrayobj(ISerializer* This, const char* name, AukArray** array) {
+static void JsonWriter_t_arrayobj(ISerializer* This, const char* name, AukArray** array,
+    AukObjectNewFunc itemNewFunc, const char* (*itemGetTypeName)(AukObject*)) {
     /* Delegate to t_object since AukArray handles its own serialization */
     JsonWriter_t_object(This, name, (AukObjectPtr*)array);
 }
@@ -247,8 +248,6 @@ ISerializer* AukJsonSerializer_CreateWriter(void) {
     ser->typeRegistry = NULL;
 
     /* Set function pointers */
-    ser->PushContext = JsonWriter_PushContext;
-    ser->PopContext = JsonWriter_PopContext;
     ser->t_int = JsonWriter_t_int;
     ser->t_uint = JsonWriter_t_uint;
     ser->t_longlong = JsonWriter_t_longlong;
@@ -456,7 +455,8 @@ static void JsonReader_t_object(ISerializer* This, const char* name, AukObjectPt
     }
 }
 
-static void JsonReader_t_arrayobj(ISerializer* This, const char* name, AukArray** array) {
+static void JsonReader_t_arrayobj(ISerializer* This, const char* name, AukArray** array,
+    AukObjectNewFunc itemNewFunc, const char* (*itemGetTypeName)(AukObject*)) {
     /* Delegate to t_object since AukArray handles its own serialization */
     JsonReader_t_object(This, name, (AukObjectPtr*)array);
 }
@@ -621,8 +621,6 @@ ISerializer* AukJsonSerializer_CreateReader(const char* jsonString, const TypeNa
     ser->typeRegistry = typeRegistry;
 
     /* Set function pointers */
-    ser->PushContext = JsonReader_PushContext;
-    ser->PopContext = JsonReader_PopContext;
     ser->t_int = JsonReader_t_int;
     ser->t_uint = JsonReader_t_uint;
     ser->t_longlong = JsonReader_t_longlong;

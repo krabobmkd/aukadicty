@@ -11,7 +11,7 @@ int main(int argc, char** argv) {
     AukProjectPtr projectPtr = NULL;
     AukProject* project;
     AukTrack* track=NULL;
-    AukSound* sound;
+
     unsigned long i, j;
     unsigned long trackCount, soundCount;
     const char* filename;
@@ -51,7 +51,8 @@ int main(int argc, char** argv) {
             printf("  Sounds: %lu\n", soundCount);
 
             for (j = 0; j < soundCount; j++) {
-                sound = track->GetSound(track, j);
+                AukSound* sound=NULL;
+                track->GetSound(track,&sound, j);
                 if (sound) {
                     AukSoundFile* soundFile = sound->soundFile;
 

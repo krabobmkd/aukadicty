@@ -21,6 +21,9 @@ typedef struct AukListener AukListener;
 /* Typed pointer system - replaces generic AukShared */
 typedef AukObject* AukObjectPtr;
 
+/* Function pointer type for creating new objects of a specific type */
+typedef void (*AukObjectNewFunc)(AukObjectPtr* firstPtr);
+
 /* Update callback function type */
 /* Parameters: listenerObject, modifiedObject */
 typedef void (*AukUpdateCallback)(AukObject* listenerObject, AukObject* modifiedObject, void *message);

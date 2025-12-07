@@ -88,12 +88,6 @@ void AukSound_SetSoundFile(AukSound* sound, AukSoundFilePtr soundFile) {
     sound->base.SendUpdate(&sound->base, NULL);
 }
 
-void AukSound_SetTrack(AukSound* sound, AukTrack* track) {
-    if (sound) {
-        sound->track = track;
-    }
-}
-
 void AukSound_SetTimeRange(void* This, AukFixed start, AukFixed end) {
     AukSound* sound = (AukSound*)This;
     int changed;
@@ -174,7 +168,6 @@ void AukSound_Init(AukSound* sound) {
 
         /* Initialize data members */
         sound->soundFile = NULL;
-        sound->track = NULL;
         sound->startTime = 0;
         sound->endTime = 0;
         sound->fileStartFrame = 0;

@@ -23,32 +23,32 @@
 #define ID_BOOL 0x424F4F4C  /* 'BOOL' - boolean */
 #define ID_STR  0x53545220  /* 'STR ' - string */
 #define ID_ARRY 0x41525259  /* 'ARRY' - array */
+
+#define ID_MNME 0x4D4E4D45  /* 'MNME' - member name */
 #define ID_TYPE 0x54595045  /* 'TYPE' - type name */
 
-/* Context stack for nested chunks */
-typedef struct sIFFContextNode {
-    long chunkStartPos;         /* File position where chunk started */
-    unsigned long chunkID;      /* Chunk ID */
-    struct sIFFContextNode* next;
-} IFFContextNode;
 
 /* IFF Writer context */
 typedef struct {
     BPTR file;                  /* AmigaDOS file handle */
-    IFFContextNode* stack;      /* Stack of nested chunks */
+   // long startPos;
     int error;                  /* Error flag */
 } IFFWriterContext;
 
 /* IFF Reader context */
 typedef struct {
     BPTR file;                  /* AmigaDOS file handle */
-    IFFContextNode* stack;      /* Stack of nested chunks */
+    long startPos;                /* Start position of current chunk */
     long endPos;                /* End position of current chunk */
     int error;                  /* Error flag */
 } IFFReaderContext;
 
 /* ========== Big-Endian Helpers ========== */
+#if defined(__AMIGA__)
+#define BIGENDIAN
+#endif
 
+#ifndef BIGENDIAN
 static unsigned long SwapLong(unsigned long val) {
     return ((val & 0xFF000000) >> 24) |
            ((val & 0x00FF0000) >> 8) |
@@ -66,77 +66,87 @@ static unsigned long long SwapLongLong(unsigned long long val) {
            ((val & 0x000000000000FF00ULL) << 40) |
            ((val & 0x00000000000000FFULL) << 56);
 }
+#else
+INLINE unsigned long SwapLong(unsigned long val) {
+    return val;
+}
+INLINE unsigned long long SwapLongLong(unsigned long long val) {
+    return val;
+}
+#endif
+
 
 static void WriteBigEndianLong(BPTR file, unsigned long val) {
-    unsigned long swapped = SwapLong(val);
-    Write(file, &swapped, 4);
+    unsigned char c[4];
+    c[0]=val>>24;
+    c[1]=val>>16;
+    c[2]=val>>8;
+    c[3]=val;
+    Write(file, &c[0], 4);
 }
 
 static void WriteBigEndianLongLong(BPTR file, unsigned long long val) {
-    unsigned long long swapped = SwapLongLong(val);
-    Write(file, &swapped, 8);
+    unsigned char c[8];
+    c[0]=val>>56;
+    c[1]=val>>48;
+    c[2]=val>>40;
+    c[3]=val>>32;
+    c[4]=val>>24;
+    c[5]=val>>16;
+    c[6]=val>>8;
+    c[7]=val;
+    Write(file, &c[0], 8);
 }
 
 static unsigned long ReadBigEndianLong(BPTR file) {
-    unsigned long val;
-    if (Read(file, &val, 4) == 4) {
-        return SwapLong(val);
+    unsigned char c[4];
+    if (Read(file, &c[0], 4) == 4) {
+        return
+            (
+        (((unsigned long)c[0])<<24)|
+       (((unsigned long)c[1])<<16)|
+       (((unsigned long)c[2])<<8)|
+       ((unsigned long)c[3])
+        );
+
     }
     return 0;
 }
 
 static unsigned long long ReadBigEndianLongLong(BPTR file) {
-    unsigned long long val;
-    if (Read(file, &val, 8) == 8) {
-        return SwapLongLong(val);
+    unsigned char c[8];
+    if (Read(file, &c[0], 8) == 8) {
+        return
+            (
+        (((unsigned long long)c[0])<<56)|
+       (((unsigned long long)c[1])<<48)|
+       (((unsigned long long)c[2])<<40)|
+       (((unsigned long long)c[3])<<32)|
+       (((unsigned long long)c[4])<<24)|
+       (((unsigned long long)c[5])<<16)|
+       (((unsigned long long)c[6])<<8)|
+       ((unsigned long long)c[7])
+        );
+
     }
     return 0;
 }
 
-/* ========== Context Stack Helpers ========== */
-
-static void PushIFFContext(IFFContextNode** stack, long chunkStartPos, unsigned long chunkID) {
-    IFFContextNode* node = (IFFContextNode*)AllocVec(sizeof(IFFContextNode), MEMF_CLEAR);
-    if (node) {
-        node->chunkStartPos = chunkStartPos;
-        node->chunkID = chunkID;
-        node->next = *stack;
-        *stack = node;
-    }
-}
-
-static void PopIFFContext(IFFContextNode** stack, long* chunkStartPos, unsigned long* chunkID) {
-    IFFContextNode* node = *stack;
-    if (node) {
-        if (chunkStartPos) *chunkStartPos = node->chunkStartPos;
-        if (chunkID) *chunkID = node->chunkID;
-        *stack = node->next;
-        FreeVec(node);
-    }
-}
-
 /* ========== IFF Writer Helpers ========== */
 
-static void IFFWriter_BeginChunk(BPTR file, IFFContextNode** stack, unsigned long chunkID) {
-    long pos = Seek(file, 0, OFFSET_CURRENT);
+static void IFFWriter_BeginChunk(BPTR file, long*chunkstartpos, unsigned long chunkID) {
 
+    *chunkstartpos = Seek(file, 0, OFFSET_CURRENT);
     /* Write chunk ID and placeholder size */
     WriteBigEndianLong(file, chunkID);
+
     WriteBigEndianLong(file, 0);  /* Size placeholder */
 
-    /* Push to stack */
-    PushIFFContext(stack, pos, chunkID);
 }
 
-static void IFFWriter_EndChunk(BPTR file, IFFContextNode** stack) {
-    long chunkStartPos;
-    unsigned long chunkID;
+static void IFFWriter_EndChunk(BPTR file,long chunkStartPos) {
     long currentPos;
     unsigned long chunkSize;
-
-    if (!*stack) return;
-
-    PopIFFContext(stack, &chunkStartPos, &chunkID);
 
     /* Get current position */
     currentPos = Seek(file, 0, OFFSET_CURRENT);
@@ -151,26 +161,9 @@ static void IFFWriter_EndChunk(BPTR file, IFFContextNode** stack) {
     /* Return to end */
     Seek(file, currentPos, OFFSET_BEGINNING);
 
-    /* Write pad byte if odd size */
-    if (chunkSize & 1) {
-        unsigned char pad = 0;
-        Write(file, &pad, 1);
-    }
 }
 
 /* ========== IFF Writer Implementation ========== */
-
-static void IFFWriter_PushContext(ISerializer* This, const char* name) {
-    IFFWriterContext* ctx = (IFFWriterContext*)This->context;
-    (void)name;  /* Name stored in chunk, not used for nesting */
-
-    IFFWriter_BeginChunk(ctx->file, &ctx->stack, ID_OBJ);
-}
-
-static void IFFWriter_PopContext(ISerializer* This) {
-    IFFWriterContext* ctx = (IFFWriterContext*)This->context;
-    IFFWriter_EndChunk(ctx->file, &ctx->stack);
-}
 
 static void IFFWriter_WriteNamedValue(BPTR file, const char* name, unsigned long chunkID,
                                        const void* data, unsigned long dataSize) {
@@ -184,14 +177,26 @@ static void IFFWriter_WriteNamedValue(BPTR file, const char* name, unsigned long
     Write(file, name, nameLen + 1);  /* Include null terminator */
 
     /* Write data */
-    Write(file, data, dataSize);
+    if(dataSize>0) Write(file, data, dataSize);
 
     /* Pad if needed */
-    if ((nameLen + 1 + dataSize) & 1) {
-        unsigned char pad = 0;
-        Write(file, &pad, 1);
-    }
+    // if ((nameLen + 1 + dataSize) & 1) {
+    //     unsigned char pad = 0;
+    //     Write(file, &pad, 1);
+    // }
 }
+static void IFFWriter_WriteImNamedValue(BPTR file, unsigned long chunkID,
+                                       const void* data, unsigned long dataSize) {
+
+    /* Write chunk header */
+    WriteBigEndianLong(file, chunkID);
+    WriteBigEndianLong(file, dataSize);  /* name + null + data */
+
+    /* Write data */
+    if(dataSize>0) Write(file, data, dataSize);
+
+}
+
 
 static void IFFWriter_t_int(ISerializer* This, const char* name, int* value) {
     IFFWriterContext* ctx = (IFFWriterContext*)This->context;
@@ -246,6 +251,7 @@ static void IFFWriter_t_string_mutable(ISerializer* This, const char* name, char
 static void IFFWriter_t_object(ISerializer* This, const char* name, AukObjectPtr* object) {
     IFFWriterContext* ctx = (IFFWriterContext*)This->context;
     AukObject* obj = *object;
+    long startpos;
     const char* typeName;
 
     if (!obj) {
@@ -255,15 +261,15 @@ static void IFFWriter_t_object(ISerializer* This, const char* name, AukObjectPtr
     }
 
     /* Begin object chunk */
-    IFFWriter_BeginChunk(ctx->file, &ctx->stack, ID_OBJ);
+    IFFWriter_BeginChunk(ctx->file, &startpos, ID_OBJ);
 
-    /* Write object name */
-    IFFWriter_WriteNamedValue(ctx->file, "name", ID_STR, name, strlen(name) + 1);
+    /* Write member tags */
+    IFFWriter_WriteImNamedValue(ctx->file,ID_MNME,name, strlen(name) + 1);
 
     /* Write type name */
     typeName = obj->GetTypeName(obj);
     if (typeName) {
-        IFFWriter_WriteNamedValue(ctx->file, "__type", ID_TYPE, typeName, strlen(typeName) + 1);
+        IFFWriter_WriteImNamedValue(ctx->file, ID_TYPE, typeName, strlen(typeName) + 1);
     }
 
     /* Serialize object data */
@@ -272,10 +278,11 @@ static void IFFWriter_t_object(ISerializer* This, const char* name, AukObjectPtr
     }
 
     /* End object chunk */
-    IFFWriter_EndChunk(ctx->file, &ctx->stack);
+    IFFWriter_EndChunk(ctx->file, startpos);
 }
 
-static void IFFWriter_t_arrayobj(ISerializer* This, const char* name, AukArray** array) {
+static void IFFWriter_t_arrayobj(ISerializer* This, const char* name, AukArray** array,
+    AukObjectNewFunc itemNewFunc, const char* (*itemGetTypeName)(AukObject*)) {
     IFFWriter_t_object(This, name, (AukObjectPtr*)array);
 }
 
@@ -364,13 +371,6 @@ static void IFFWriter_Destroy(ISerializer* This) {
     IFFWriterContext* ctx = (IFFWriterContext*)This->context;
 
     if (ctx) {
-        /* Clean up stack */
-        while (ctx->stack) {
-            long dummy1;
-            unsigned long dummy2;
-            PopIFFContext(&ctx->stack, &dummy1, &dummy2);
-        }
-
         /* Note: file is not closed here - caller owns it */
         FreeVec(ctx);
     }
@@ -391,7 +391,6 @@ ISerializer* AukIFFSerializer_CreateWriter(BPTR file) {
     }
 
     ctx->file = file;
-    ctx->stack = NULL;
     ctx->error = 0;
 
     /* Write FORM header */
@@ -405,8 +404,6 @@ ISerializer* AukIFFSerializer_CreateWriter(BPTR file) {
     ser->typeRegistry = NULL;
 
     /* Set function pointers */
-    ser->PushContext = IFFWriter_PushContext;
-    ser->PopContext = IFFWriter_PopContext;
     ser->t_int = IFFWriter_t_int;
     ser->t_uint = IFFWriter_t_uint;
     ser->t_longlong = IFFWriter_t_longlong;
@@ -459,37 +456,33 @@ static int IFFReader_ReadChunkHeader(BPTR file, unsigned long* chunkID, unsigned
 
      unsigned long cid = *chunkID;
     printf("chunkID:%c%c%c%c\n",(int)(cid>>24),(int)(cid>>16),(int)(cid>>8),(int)(cid));
-    printf("chunksize:%d\n",*chunkSize);
+    printf("chunksize:%d\n",(int)*chunkSize);
     return 1;
 }
-
-static int IFFReader_FindChunk(BPTR file, const char* name, unsigned long expectedID,
+// this ones only manage simpleton members that bcan be managed by copy.
+static int IFFReader_FindChunk(IFFReaderContext* ctx, const char* name, unsigned long expectedID,
                                 unsigned long* outSize, void* outData, unsigned long maxDataSize) {
     unsigned long chunkID, chunkSize;
-    char chunkName[256];
+    char chunkName[64];
     unsigned long nameLen;
-    long chunkEnd;
+    long pos = ctx->startPos;
 
-    while (1) {
-        long startPos = Seek(file, 0, OFFSET_CURRENT);
+    while (pos<ctx->endPos) {
+        Seek(ctx->file, pos, OFFSET_BEGINNING);
 
-        if (!IFFReader_ReadChunkHeader(file, &chunkID, &chunkSize)) {
-            return 0;
-        }
-
-        chunkEnd = startPos + 8 + chunkSize;
-        if (chunkSize & 1) chunkEnd++;  /* Account for pad byte */
+        chunkID = ReadBigEndianLong(ctx->file);
+        chunkSize = ReadBigEndianLong(ctx->file);
 
         if (chunkID != expectedID) {
             /* Skip this chunk */
-            Seek(file, chunkEnd, OFFSET_BEGINNING);
+            pos += 8+chunkSize;
             continue;
         }
 
         /* Read chunk name */
         nameLen = 0;
-        while (nameLen < chunkSize && nameLen < 255) {
-            if (Read(file, &chunkName[nameLen], 1) != 1) break;
+        while (nameLen < chunkSize && nameLen < 63) {
+            if (Read(ctx->file, &chunkName[nameLen], 1) != 1) break;
             if (chunkName[nameLen] == 0) break;
             nameLen++;
         }
@@ -499,53 +492,69 @@ static int IFFReader_FindChunk(BPTR file, const char* name, unsigned long expect
             /* Found it - read data */
             unsigned long dataSize = chunkSize - nameLen - 1;
             if (outData && dataSize <= maxDataSize) {
-                Read(file, outData, dataSize);
+                Read(ctx->file, outData, dataSize);
             }
             if (outSize) *outSize = dataSize;
 
             /* Skip to next chunk */
-            Seek(file, chunkEnd, OFFSET_BEGINNING);
+            //Seek(file, pos + 8+chunkSize, OFFSET_BEGINNING);
             return 1;
         }
 
         /* Not the right name, skip */
-        Seek(file, chunkEnd, OFFSET_BEGINNING);
+        //Seek(file, chunkEnd, OFFSET_BEGINNING);
+        pos += 8+chunkSize;
     }
 
     return 0;
 }
 
-static void IFFReader_PushContext(ISerializer* This, const char* name) {
+
+
+static int IFFReader_PushContext(ISerializer* This, const char* name, unsigned long expectedID) {
     IFFReaderContext* ctx = (IFFReaderContext*)This->context;
     unsigned long chunkID, chunkSize;
-    long startPos;
+    long pos=ctx->startPos;
 
-    (void)name;
+    while(pos<ctx->endPos)
+    {
+        Seek(ctx->file, pos, OFFSET_BEGINNING);
+        chunkID = ReadBigEndianLong(ctx->file);
+        chunkSize = ReadBigEndianLong(ctx->file);
+        if(chunkID == expectedID)
+        {
+            // just get immediate member name
+            long mnamechunkID = ReadBigEndianLong(ctx->file);
+            long mnamechunkSize = ReadBigEndianLong(ctx->file);
+            if(mnamechunkID == ID_MNME)
+            {
+                char mname[64];
+                long cpsize = mnamechunkSize;
+                if(cpsize>64) cpsize=64;
+                Read(ctx->file, &mname[0], cpsize);
+                mname[63]=0;
+                // we sure are on the right object.
+                if(AukString_Compare(mname,name)==0)
+                {
+                    ctx->startPos = pos + 8 ;
+                    ctx->endPos = pos + 8 + chunkSize;
+                    return 1;
+                }
+            }
 
-    startPos = Seek(ctx->file, 0, OFFSET_CURRENT);
+        }
+        pos += 8+chunkSize;
+    }
+
 
     /* Find OBJ chunk */
-    if (IFFReader_ReadChunkHeader(ctx->file, &chunkID, &chunkSize)) {
-        if (chunkID == ID_OBJ) {
-            PushIFFContext(&ctx->stack, startPos, chunkID);
-            ctx->endPos = startPos + 8 + chunkSize;
-        }
-    }
-}
-
-static void IFFReader_PopContext(ISerializer* This) {
-    IFFReaderContext* ctx = (IFFReaderContext*)This->context;
-    long chunkStartPos;
-    unsigned long chunkID;
-
-    if (ctx->stack) {
-        PopIFFContext(&ctx->stack, &chunkStartPos, &chunkID);
-
-        /* Seek to end of chunk */
-        if (ctx->endPos > 0) {
-            Seek(ctx->file, ctx->endPos, OFFSET_BEGINNING);
-        }
-    }
+    // if (IFFReader_ReadChunkHeader(ctx->file, &chunkID, &chunkSize)) {
+    //     if (chunkID == ID_OBJ) {
+    //         PushIFFContext(&ctx->stack, startPos, chunkID);
+    //         ctx->endPos = startPos + 8 + chunkSize;
+    //     }
+    // }
+    return 0;
 }
 
 static void IFFReader_t_int(ISerializer* This, const char* name, int* value) {
@@ -553,7 +562,7 @@ static void IFFReader_t_int(ISerializer* This, const char* name, int* value) {
     unsigned long val;
     unsigned long size;
 
-    if (IFFReader_FindChunk(ctx->file, name, ID_INT, &size, &val, 4)) {
+    if (IFFReader_FindChunk(ctx, name, ID_INT, &size, &val, 4)) {
         *value = (int)SwapLong(val);
     }
 }
@@ -563,7 +572,7 @@ static void IFFReader_t_uint(ISerializer* This, const char* name, unsigned int* 
     unsigned long val;
     unsigned long size;
 
-    if (IFFReader_FindChunk(ctx->file, name, ID_UINT, &size, &val, 4)) {
+    if (IFFReader_FindChunk(ctx, name, ID_UINT, &size, &val, 4)) {
         *value = SwapLong(val);
     }
 }
@@ -573,7 +582,7 @@ static void IFFReader_t_longlong(ISerializer* This, const char* name, long long*
     unsigned long long val;
     unsigned long size;
 
-    if (IFFReader_FindChunk(ctx->file, name, ID_I64, &size, &val, 8)) {
+    if (IFFReader_FindChunk(ctx, name, ID_I64, &size, &val, 8)) {
         *value = (long long)SwapLongLong(val);
     }
 }
@@ -583,7 +592,7 @@ static void IFFReader_t_ulonglong(ISerializer* This, const char* name, unsigned 
     unsigned long long val;
     unsigned long size;
 
-    if (IFFReader_FindChunk(ctx->file, name, ID_U64, &size, &val, 8)) {
+    if (IFFReader_FindChunk(ctx, name, ID_U64, &size, &val, 8)) {
         *value = SwapLongLong(val);
     }
 }
@@ -593,7 +602,7 @@ static void IFFReader_t_fixed(ISerializer* This, const char* name, AukFixed* val
     unsigned long long val;
     unsigned long size;
 
-    if (IFFReader_FindChunk(ctx->file, name, ID_FIX, &size, &val, 8)) {
+    if (IFFReader_FindChunk(ctx, name, ID_FIX, &size, &val, 8)) {
         *value = (AukFixed)SwapLongLong(val);
     }
 }
@@ -603,7 +612,7 @@ static void IFFReader_t_bool(ISerializer* This, const char* name, int* value) {
     unsigned long val;
     unsigned long size;
 
-    if (IFFReader_FindChunk(ctx->file, name, ID_BOOL, &size, &val, 4)) {
+    if (IFFReader_FindChunk(ctx, name, ID_BOOL, &size, &val, 4)) {
         *value = (int)SwapLong(val);
     }
 }
@@ -626,7 +635,7 @@ static void IFFReader_t_string_mutable(ISerializer* This, const char* name, char
         *value = NULL;
     }
 
-    if (IFFReader_FindChunk(ctx->file, name, ID_STR, &size, buffer, sizeof(buffer) - 1)) {
+    if (IFFReader_FindChunk(ctx, name, ID_STR, &size, buffer, sizeof(buffer) - 1)) {
         buffer[size] = 0;
         *value = AukString_Duplicate(buffer);
     }
@@ -634,39 +643,59 @@ static void IFFReader_t_string_mutable(ISerializer* This, const char* name, char
 
 static void IFFReader_t_object(ISerializer* This, const char* name, AukObjectPtr* object) {
     IFFReaderContext* ctx = (IFFReaderContext*)This->context;
-    char typeName[256];
-    unsigned long size;
+    char typeName[64];
     const TypeNameToContructor* reg;
     AukObject* newObj;
-    long objStart;
+    long prevStart,prevEnd;
+    int res;
 
     /* Release existing */
     if (*object) {
         AukObjectPtr_Release(object);
     }
+    typeName[0]=0;
 
     /* Save position */
-    objStart = Seek(ctx->file, 0, OFFSET_CURRENT);
+    prevStart = ctx->startPos;
+    prevEnd = ctx->endPos;
 
     /* Read type name from object */
-    IFFReader_PushContext(This, name);
+    res = IFFReader_PushContext(This, name,ID_OBJ);
+    if(!res) return;
 
-    if (!IFFReader_FindChunk(ctx->file, "__type", ID_TYPE, &size, typeName, sizeof(typeName) - 1)) {
-        IFFReader_PopContext(This);
-        return;
+
+    // 2 first should be mname and type
+    // ctx->endPos
+    // inside ID_OBJ, 2 first should be ID_MNME and ID_TYPE.
+    {
+        long cur = ctx->startPos;
+        long done=0;
+        while( cur < ctx->endPos && done <1)
+        {
+            long chunkID = ReadBigEndianLong(ctx->file);
+            long chunkSize = ReadBigEndianLong(ctx->file);
+            if(chunkID == ID_TYPE)
+            {
+                long cpsize = chunkSize;
+                if(cpsize>64) cpsize=64;
+                Read(ctx->file, &typeName[0], cpsize);
+                typeName[63]=0;
+                done++;
+            }
+            cur += 8+ chunkSize;
+            Seek(ctx->file, cur, OFFSET_BEGINNING);
+        }
+        if(done<1)
+        {
+            //IFFReader_PopContext(This);
+            ctx->startPos = prevStart;
+            ctx->endPos = prevEnd;
+            return;
+        }
     }
-    typeName[size] = 0;
-
-    /* Reset to object start */
-    Seek(ctx->file, objStart, OFFSET_BEGINNING);
-    IFFReader_PushContext(This, name);
 
     /* Find constructor */
-    if (!This->typeRegistry) {
-        IFFReader_PopContext(This);
-        return;
-    }
-
+    if (This->typeRegistry)
     for (reg = This->typeRegistry; reg->typename != NULL; reg++) {
         if (AukString_Compare(reg->typename, typeName) == 0) {
             /* Create object */
@@ -676,17 +705,23 @@ static void IFFReader_t_object(ISerializer* This, const char* name, AukObjectPtr
             if (newObj && newObj->Serialize) {
                 newObj->Serialize(newObj, This, name);
             }
-
-            IFFReader_PopContext(This);
-            return;
         }
     }
-
-    IFFReader_PopContext(This);
+    //pop
+    ctx->startPos = prevStart;
+    ctx->endPos = prevEnd;
 }
 
-static void IFFReader_t_arrayobj(ISerializer* This, const char* name, AukArray** array) {
-    IFFReader_t_object(This, name, (AukObjectPtr*)array);
+static void IFFReader_t_arrayobj(ISerializer* This, const char* name, AukArray** parray,
+    AukObjectNewFunc itemNewFunc, const char* (*itemGetTypeName)(AukObject*)) {
+
+
+    IFFReader_t_object(This, name, (AukObjectPtr*)parray);
+    AukArray *array = *parray;
+    if(array)
+    {
+        AukArray_SetType(array,itemNewFunc, itemGetTypeName);
+    }
 }
 
 static void IFFReader_t_int_array(ISerializer* This, const char* name, int** values, unsigned int* count) {
@@ -821,13 +856,6 @@ static void IFFReader_Destroy(ISerializer* This) {
     IFFReaderContext* ctx = (IFFReaderContext*)This->context;
 
     if (ctx) {
-        /* Clean up stack */
-        while (ctx->stack) {
-            long dummy1;
-            unsigned long dummy2;
-            PopIFFContext(&ctx->stack, &dummy1, &dummy2);
-        }
-
         FreeVec(ctx);
     }
 
@@ -848,9 +876,7 @@ ISerializer* AukIFFSerializer_CreateReader(BPTR file, const TypeNameToContructor
     }
 
     ctx->file = file;
-    ctx->stack = NULL;
     ctx->error = 0;
-    ctx->endPos = 0;
 
     /* Read and validate FORM header */
     formID = ReadBigEndianLong(file);
@@ -863,14 +889,17 @@ ISerializer* AukIFFSerializer_CreateReader(BPTR file, const TypeNameToContructor
         return NULL;
     }
 
+    ctx->startPos = 12;
+    ctx->endPos = 12+formSize;
+
     /* Initialize serializer */
     ser->context = ctx;
     ser->_isReading = 1;
     ser->typeRegistry = typeRegistry;
 
     /* Set function pointers */
-    ser->PushContext = IFFReader_PushContext;
-    ser->PopContext = IFFReader_PopContext;
+    // ser->PushContext = IFFReader_PushContext;
+    // ser->PopContext = IFFReader_PopContext;
     ser->t_int = IFFReader_t_int;
     ser->t_uint = IFFReader_t_uint;
     ser->t_longlong = IFFReader_t_longlong;
