@@ -124,7 +124,7 @@ int main(void) {
 
     /* Add envelope point - should trigger trackView update */
     printf("Adding envelope point to track...\n");
-    track->AddEnvelopePoint(track, AukFixed_FromInt(0), AukFixed_FromInt(1));
+    track->CreateEnvelopePoint(track, AukFixed_FromInt(0), AukFixed_FromInt(1));
     printf("\n");
 
     /* Summary */

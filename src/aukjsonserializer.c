@@ -20,6 +20,11 @@ typedef struct {
     cJSON* root;               /* Root JSON object */
     ContextStackNode* stack;   /* Stack of cJSON contexts for nesting */
     cJSON* current;            /* Current context (top of stack) */
+
+    /* Remember list for tracking serialized objects */
+    AukObject** rememberList;  /* Dynamic array of object pointers */
+    unsigned int rememberCount; /* Number of objects in remember list */
+    unsigned int rememberCapacity; /* Allocated capacity */
 } JsonWriterContext;
 
 /* JSON Reader context */
@@ -27,6 +32,11 @@ typedef struct {
     cJSON* root;               /* Root JSON object */
     ContextStackNode* stack;   /* Stack of cJSON contexts for nesting */
     cJSON* current;            /* Current context (top of stack) */
+
+    /* Remember list for tracking deserialized objects */
+    AukObject** rememberList;  /* Dynamic array of object pointers */
+    unsigned int rememberCount; /* Number of objects in remember list */
+    unsigned int rememberCapacity; /* Allocated capacity */
 } JsonReaderContext;
 
 /* ========== Helper Functions ========== */
@@ -51,6 +61,42 @@ static void PopContextStack(ContextStackNode** stack, cJSON** current) {
 }
 
 /* ========== JSON Writer Implementation ========== */
+
+/* Find object in remember list, return index or -1 if not found */
+static int JsonWriter_FindInRememberList(JsonWriterContext* ctx, AukObject* obj) {
+    unsigned int i;
+    for (i = 0; i < ctx->rememberCount; i++) {
+        if (ctx->rememberList[i] == obj) {
+            return (int)i;
+        }
+    }
+    return -1;
+}
+
+/* Add object to remember list, return index */
+static int JsonWriter_AddToRememberList(JsonWriterContext* ctx, AukObject* obj) {
+    /* Grow array if needed */
+    if (ctx->rememberCount >= ctx->rememberCapacity) {
+        unsigned int newCapacity = ctx->rememberCapacity == 0 ? 16 : ctx->rememberCapacity * 2;
+        AukObject** newList = (AukObject**)AllocVec(newCapacity * sizeof(AukObject*), MEMF_CLEAR);
+        if (!newList) {
+            return -1;
+        }
+
+        /* Copy existing entries */
+        if (ctx->rememberList) {
+            memcpy(newList, ctx->rememberList, ctx->rememberCount * sizeof(AukObject*));
+            FreeVec(ctx->rememberList);
+        }
+
+        ctx->rememberList = newList;
+        ctx->rememberCapacity = newCapacity;
+    }
+
+    /* Add object to list */
+    ctx->rememberList[ctx->rememberCount] = obj;
+    return (int)(ctx->rememberCount++);
+}
 
 static void JsonWriter_PushContext(ISerializer* This, const char* name) {
     JsonWriterContext* ctx = (JsonWriterContext*)This->context;
@@ -123,11 +169,28 @@ static void JsonWriter_t_object(ISerializer* This, const char* name, AukObjectPt
     AukObject* obj = *object;
     cJSON* objNode;
     const char* typeName;
+    int objIndex;
 
     if (!obj) {
         cJSON_AddNullToObject(ctx->current, name);
         return;
     }
+
+    /* Check if object was already serialized */
+    objIndex = JsonWriter_FindInRememberList(ctx, obj);
+    if (objIndex >= 0) {
+        /* Object already serialized - write reference object */
+        objNode = cJSON_CreateObject();
+        if (!objNode) return;
+
+        cJSON_AddStringToObject(objNode, "__ref", "reference");
+        cJSON_AddNumberToObjectInt(objNode, "__index", objIndex);
+        cJSON_AddItemToObject(ctx->current, name, objNode);
+        return;
+    }
+
+    /* First time seeing this object - add to remember list */
+    JsonWriter_AddToRememberList(ctx, obj);
 
     /* Create object node */
     objNode = cJSON_CreateObject();
@@ -208,6 +271,11 @@ static void JsonWriter_Destroy(ISerializer* This) {
             PopContextStack(&ctx->stack, &ctx->current);
         }
 
+        /* Free remember list */
+        if (ctx->rememberList) {
+            FreeVec(ctx->rememberList);
+        }
+
         /* Delete root (this deletes entire tree) */
         if (ctx->root) {
             cJSON_Delete(ctx->root);
@@ -241,6 +309,9 @@ ISerializer* AukJsonSerializer_CreateWriter(void) {
 
     ctx->current = ctx->root;
     ctx->stack = NULL;
+    ctx->rememberList = NULL;
+    ctx->rememberCount = 0;
+    ctx->rememberCapacity = 0;
 
     /* Initialize serializer */
     ser->context = ctx;
@@ -304,6 +375,39 @@ cJSON* AukJsonSerializer_GetRoot(ISerializer* ser) {
 }
 
 /* ========== JSON Reader Implementation ========== */
+
+/* Add object to remember list, return index */
+static int JsonReader_AddToRememberList(JsonReaderContext* ctx, AukObject* obj) {
+    /* Grow array if needed */
+    if (ctx->rememberCount >= ctx->rememberCapacity) {
+        unsigned int newCapacity = ctx->rememberCapacity == 0 ? 16 : ctx->rememberCapacity * 2;
+        AukObject** newList = (AukObject**)AllocVec(newCapacity * sizeof(AukObject*), MEMF_CLEAR);
+        if (!newList) {
+            return -1;
+        }
+
+        /* Copy existing entries */
+        if (ctx->rememberList) {
+            memcpy(newList, ctx->rememberList, ctx->rememberCount * sizeof(AukObject*));
+            FreeVec(ctx->rememberList);
+        }
+
+        ctx->rememberList = newList;
+        ctx->rememberCapacity = newCapacity;
+    }
+
+    /* Add object to list */
+    ctx->rememberList[ctx->rememberCount] = obj;
+    return (int)(ctx->rememberCount++);
+}
+
+/* Get object from remember list by index */
+static AukObject* JsonReader_GetFromRememberList(JsonReaderContext* ctx, unsigned int index) {
+    if (index >= ctx->rememberCount) {
+        return NULL;
+    }
+    return ctx->rememberList[index];
+}
 
 static void JsonReader_PushContext(ISerializer* This, const char* name) {
     JsonReaderContext* ctx = (JsonReaderContext*)This->context;
@@ -404,6 +508,8 @@ static void JsonReader_t_object(ISerializer* This, const char* name, AukObjectPt
     JsonReaderContext* ctx = (JsonReaderContext*)This->context;
     cJSON* objNode = cJSON_GetObjectItem(ctx->current, name);
     cJSON* typeItem;
+    cJSON* refItem;
+    cJSON* indexItem;
     const char* typeName;
     const TypeNameToContructor* reg;
     AukObject* newObj;
@@ -419,6 +525,23 @@ static void JsonReader_t_object(ISerializer* This, const char* name, AukObjectPt
     }
 
     if (!cJSON_IsObject(objNode)) {
+        return;
+    }
+
+    /* Check if this is a reference */
+    refItem = cJSON_GetObjectItem(objNode, "__ref");
+    if (refItem && cJSON_IsString(refItem)) {
+        /* This is a reference - get the index */
+        indexItem = cJSON_GetObjectItem(objNode, "__index");
+        if (indexItem && cJSON_IsNumber(indexItem)) {
+            unsigned int refIndex = (unsigned int)indexItem->valueint;
+            AukObject* refObj = JsonReader_GetFromRememberList(ctx, refIndex);
+
+            if (refObj) {
+                /* Retain reference to existing object */
+                AukObjectPtr_Set(object, refObj);
+            }
+        }
         return;
     }
 
@@ -441,6 +564,9 @@ static void JsonReader_t_object(ISerializer* This, const char* name, AukObjectPt
             newObj = *object;
 
             if (newObj) {
+                /* Add to remember list before serializing (for potential circular refs) */
+                JsonReader_AddToRememberList(ctx, newObj);
+
                 /* Push context and deserialize */
                 PushContextStack(&ctx->stack, &ctx->current, objNode);
 
@@ -581,6 +707,11 @@ static void JsonReader_Destroy(ISerializer* This) {
             PopContextStack(&ctx->stack, &ctx->current);
         }
 
+        /* Free remember list (objects are managed by reference counting) */
+        if (ctx->rememberList) {
+            FreeVec(ctx->rememberList);
+        }
+
         /* Delete root (this deletes entire tree) */
         if (ctx->root) {
             cJSON_Delete(ctx->root);
@@ -614,6 +745,9 @@ ISerializer* AukJsonSerializer_CreateReader(const char* jsonString, const TypeNa
 
     ctx->current = ctx->root;
     ctx->stack = NULL;
+    ctx->rememberList = NULL;
+    ctx->rememberCount = 0;
+    ctx->rememberCapacity = 0;
 
     /* Initialize serializer */
     ser->context = ctx;

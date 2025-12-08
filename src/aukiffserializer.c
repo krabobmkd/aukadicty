@@ -15,6 +15,7 @@
 #define ID_FORM 0x464F524D  /* 'FORM' */
 #define ID_AUPJ 0x4155504A  /* 'AUPJ' - Aukadicty Project */
 #define ID_OBJ  0x4F424A20  /* 'OBJ ' - Object */
+#define ID_REF  0x52454620  /* 'REF ' - Object reference (to previously serialized object) */
 #define ID_INT  0x494E5420  /* 'INT ' - int */
 #define ID_UINT 0x55494E54  /* 'UINT' - unsigned int */
 #define ID_I64  0x49363420  /* 'I64 ' - long long */
@@ -31,16 +32,25 @@
 /* IFF Writer context */
 typedef struct {
     BPTR file;                  /* AmigaDOS file handle */
-   // long startPos;
     int error;                  /* Error flag */
+
+    /* Remember list for tracking serialized objects */
+    AukObject** rememberList;   /* Dynamic array of object pointers */
+    unsigned int rememberCount; /* Number of objects in remember list */
+    unsigned int rememberCapacity; /* Allocated capacity */
 } IFFWriterContext;
 
 /* IFF Reader context */
 typedef struct {
     BPTR file;                  /* AmigaDOS file handle */
-    long startPos;                /* Start position of current chunk */
+    long startPos;              /* Start position of current chunk */
     long endPos;                /* End position of current chunk */
     int error;                  /* Error flag */
+
+    /* Remember list for tracking deserialized objects */
+    AukObject** rememberList;   /* Dynamic array of object pointers */
+    unsigned int rememberCount; /* Number of objects in remember list */
+    unsigned int rememberCapacity; /* Allocated capacity */
 } IFFReaderContext;
 
 /* ========== Big-Endian Helpers ========== */
@@ -133,6 +143,43 @@ static unsigned long long ReadBigEndianLongLong(BPTR file) {
 }
 
 /* ========== IFF Writer Helpers ========== */
+
+/* Find object in remember list, return index or -1 if not found */
+static int IFFWriter_FindInRememberList(IFFWriterContext* ctx, AukObject* obj) {
+    unsigned int i;
+    for (i = 0; i < ctx->rememberCount; i++) {
+        if (ctx->rememberList[i] == obj) {
+            return (int)i;
+        }
+    }
+    return -1;
+}
+
+/* Add object to remember list, return index */
+static int IFFWriter_AddToRememberList(IFFWriterContext* ctx, AukObject* obj) {
+    /* Grow array if needed */
+    if (ctx->rememberCount >= ctx->rememberCapacity) {
+        unsigned int newCapacity = ctx->rememberCapacity == 0 ? 16 : ctx->rememberCapacity * 2;
+        AukObject** newList = (AukObject**)AllocVec(newCapacity * sizeof(AukObject*), MEMF_CLEAR);
+        if (!newList) {
+            ctx->error = 1;
+            return -1;
+        }
+
+        /* Copy existing entries */
+        if (ctx->rememberList) {
+            memcpy(newList, ctx->rememberList, ctx->rememberCount * sizeof(AukObject*));
+            FreeVec(ctx->rememberList);
+        }
+
+        ctx->rememberList = newList;
+        ctx->rememberCapacity = newCapacity;
+    }
+
+    /* Add object to list */
+    ctx->rememberList[ctx->rememberCount] = obj;
+    return (int)(ctx->rememberCount++);
+}
 
 static void IFFWriter_BeginChunk(BPTR file, long*chunkstartpos, unsigned long chunkID) {
 
@@ -253,6 +300,7 @@ static void IFFWriter_t_object(ISerializer* This, const char* name, AukObjectPtr
     AukObject* obj = *object;
     long startpos;
     const char* typeName;
+    int objIndex;
 
     if (!obj) {
         /* Write null object marker */
@@ -260,11 +308,33 @@ static void IFFWriter_t_object(ISerializer* This, const char* name, AukObjectPtr
         return;
     }
 
+    /* Check if object was already serialized */
+    objIndex = IFFWriter_FindInRememberList(ctx, obj);
+    if (objIndex >= 0) {
+        /* Object already serialized - write reference chunk */
+        unsigned long indexBigEndian = SwapLong((unsigned long)objIndex);
+        long refStartPos;
+
+        IFFWriter_BeginChunk(ctx->file, &refStartPos, ID_REF);
+
+        /* Write member name */
+        IFFWriter_WriteImNamedValue(ctx->file, ID_MNME, name, strlen(name) + 1);
+
+        /* Write index */
+        IFFWriter_WriteImNamedValue(ctx->file, ID_UINT, &indexBigEndian, 4);
+
+        IFFWriter_EndChunk(ctx->file, refStartPos);
+        return;
+    }
+
+    /* First time seeing this object - add to remember list */
+    IFFWriter_AddToRememberList(ctx, obj);
+
     /* Begin object chunk */
     IFFWriter_BeginChunk(ctx->file, &startpos, ID_OBJ);
 
     /* Write member tags */
-    IFFWriter_WriteImNamedValue(ctx->file,ID_MNME,name, strlen(name) + 1);
+    IFFWriter_WriteImNamedValue(ctx->file, ID_MNME, name, strlen(name) + 1);
 
     /* Write type name */
     typeName = obj->GetTypeName(obj);
@@ -371,6 +441,11 @@ static void IFFWriter_Destroy(ISerializer* This) {
     IFFWriterContext* ctx = (IFFWriterContext*)This->context;
 
     if (ctx) {
+        /* Free remember list */
+        if (ctx->rememberList) {
+            FreeVec(ctx->rememberList);
+        }
+
         /* Note: file is not closed here - caller owns it */
         FreeVec(ctx);
     }
@@ -392,6 +467,9 @@ ISerializer* AukIFFSerializer_CreateWriter(BPTR file) {
 
     ctx->file = file;
     ctx->error = 0;
+    ctx->rememberList = NULL;
+    ctx->rememberCount = 0;
+    ctx->rememberCapacity = 0;
 
     /* Write FORM header */
     WriteBigEndianLong(file, ID_FORM);
@@ -449,6 +527,40 @@ int AukIFFSerializer_Finalize(ISerializer* ser) {
 }
 
 /* ========== IFF Reader Implementation ========== */
+
+/* Add object to remember list, return index */
+static int IFFReader_AddToRememberList(IFFReaderContext* ctx, AukObject* obj) {
+    /* Grow array if needed */
+    if (ctx->rememberCount >= ctx->rememberCapacity) {
+        unsigned int newCapacity = ctx->rememberCapacity == 0 ? 16 : ctx->rememberCapacity * 2;
+        AukObject** newList = (AukObject**)AllocVec(newCapacity * sizeof(AukObject*), MEMF_CLEAR);
+        if (!newList) {
+            ctx->error = 1;
+            return -1;
+        }
+
+        /* Copy existing entries */
+        if (ctx->rememberList) {
+            memcpy(newList, ctx->rememberList, ctx->rememberCount * sizeof(AukObject*));
+            FreeVec(ctx->rememberList);
+        }
+
+        ctx->rememberList = newList;
+        ctx->rememberCapacity = newCapacity;
+    }
+
+    /* Add object to list */
+    ctx->rememberList[ctx->rememberCount] = obj;
+    return (int)(ctx->rememberCount++);
+}
+
+/* Get object from remember list by index */
+static AukObject* IFFReader_GetFromRememberList(IFFReaderContext* ctx, unsigned int index) {
+    if (index >= ctx->rememberCount) {
+        return NULL;
+    }
+    return ctx->rememberList[index];
+}
 
 static int IFFReader_ReadChunkHeader(BPTR file, unsigned long* chunkID, unsigned long* chunkSize) {
     *chunkID = ReadBigEndianLong(file);
@@ -521,7 +633,9 @@ static int IFFReader_PushContext(ISerializer* This, const char* name, unsigned l
         Seek(ctx->file, pos, OFFSET_BEGINNING);
         chunkID = ReadBigEndianLong(ctx->file);
         chunkSize = ReadBigEndianLong(ctx->file);
-        if(chunkID == expectedID)
+
+        /* Handle both OBJ and REF chunks */
+        if(chunkID == expectedID || chunkID == ID_OBJ || chunkID == ID_REF)
         {
             // just get immediate member name
             long mnamechunkID = ReadBigEndianLong(ctx->file);
@@ -640,6 +754,8 @@ static void IFFReader_t_object(ISerializer* This, const char* name, AukObjectPtr
     AukObject* newObj;
     long prevStart,prevEnd;
     int res;
+    long pos;
+    unsigned long chunkID, chunkSize;
 
     /* Release existing */
     if (*object) {
@@ -651,21 +767,68 @@ static void IFFReader_t_object(ISerializer* This, const char* name, AukObjectPtr
     prevStart = ctx->startPos;
     prevEnd = ctx->endPos;
 
+    /* First, determine if this is an OBJ or REF chunk by scanning */
+    pos = ctx->startPos;
+    while (pos < ctx->endPos) {
+        Seek(ctx->file, pos, OFFSET_BEGINNING);
+        chunkID = ReadBigEndianLong(ctx->file);
+        chunkSize = ReadBigEndianLong(ctx->file);
+
+        if (chunkID == ID_REF || chunkID == ID_OBJ) {
+            /* Check if member name matches */
+            long mnamechunkID = ReadBigEndianLong(ctx->file);
+            long mnamechunkSize = ReadBigEndianLong(ctx->file);
+            if (mnamechunkID == ID_MNME) {
+                char mname[64];
+                long cpsize = mnamechunkSize;
+                if (cpsize > 64) cpsize = 64;
+                Read(ctx->file, &mname[0], cpsize);
+                mname[63] = 0;
+
+                if (AukString_Compare(mname, name) == 0) {
+                    /* Found matching name - handle based on chunk type */
+                    if (chunkID == ID_REF) {
+                        /* This is a reference - read the index */
+                        unsigned long refIndex;
+                        AukObject* refObj;
+                        long refChunkID = ReadBigEndianLong(ctx->file);
+                        long refChunkSize = ReadBigEndianLong(ctx->file);
+
+                        if (refChunkID == ID_UINT && refChunkSize == 4) {
+                            refIndex = SwapLong(ReadBigEndianLong(ctx->file));
+                            refObj = IFFReader_GetFromRememberList(ctx, refIndex);
+
+                            if (refObj) {
+                                /* Retain reference to existing object */
+                                AukObjectPtr_Set(object, refObj);
+                            }
+                        }
+
+                        ctx->startPos = prevStart;
+                        ctx->endPos = prevEnd;
+                        return;
+                    }
+                    /* Otherwise, continue with normal OBJ handling below */
+                    break;
+                }
+            }
+        }
+
+        pos += 8 + chunkSize;
+    }
+
     /* Read type name from object */
-    res = IFFReader_PushContext(This, name,ID_OBJ);
+    res = IFFReader_PushContext(This, name, ID_OBJ);
     if(!res) return;
 
-
-    // 2 first should be mname and type
-    // ctx->endPos
-    // inside ID_OBJ, 2 first should be ID_MNME and ID_TYPE.
+    /* Inside ID_OBJ, 2 first should be ID_MNME and ID_TYPE */
     {
         long cur = ctx->startPos;
         long done=0;
         while( cur < ctx->endPos && done <1)
         {
-            long chunkID = ReadBigEndianLong(ctx->file);
-            long chunkSize = ReadBigEndianLong(ctx->file);
+            chunkID = ReadBigEndianLong(ctx->file);
+            chunkSize = ReadBigEndianLong(ctx->file);
             if(chunkID == ID_TYPE)
             {
                 long cpsize = chunkSize;
@@ -679,7 +842,6 @@ static void IFFReader_t_object(ISerializer* This, const char* name, AukObjectPtr
         }
         if(done<1)
         {
-            //IFFReader_PopContext(This);
             ctx->startPos = prevStart;
             ctx->endPos = prevEnd;
             return;
@@ -694,12 +856,18 @@ static void IFFReader_t_object(ISerializer* This, const char* name, AukObjectPtr
             reg->NewConstructor(object);
             newObj = *object;
 
+            /* Add to remember list before serializing (for potential circular refs) */
+            if (newObj) {
+                IFFReader_AddToRememberList(ctx, newObj);
+            }
+
             if (newObj && newObj->Serialize) {
                 newObj->Serialize(newObj, This, name);
             }
         }
     }
-    //pop
+
+    /* Restore context */
     ctx->startPos = prevStart;
     ctx->endPos = prevEnd;
 }
@@ -848,6 +1016,11 @@ static void IFFReader_Destroy(ISerializer* This) {
     IFFReaderContext* ctx = (IFFReaderContext*)This->context;
 
     if (ctx) {
+        /* Free remember list (objects are managed by reference counting) */
+        if (ctx->rememberList) {
+            FreeVec(ctx->rememberList);
+        }
+
         FreeVec(ctx);
     }
 
@@ -869,6 +1042,9 @@ ISerializer* AukIFFSerializer_CreateReader(BPTR file, const TypeNameToContructor
 
     ctx->file = file;
     ctx->error = 0;
+    ctx->rememberList = NULL;
+    ctx->rememberCount = 0;
+    ctx->rememberCapacity = 0;
 
     /* Read and validate FORM header */
     formID = ReadBigEndianLong(file);

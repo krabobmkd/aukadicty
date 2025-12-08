@@ -1,6 +1,7 @@
 #include "auktrack.h"
 #include "auksound.h"
 #include "auksoundfile.h"
+#include "aukenvelopepoint.h"
 #include "aukstring.h"
 #include "serializer.h"
 #include <proto/exec.h>
@@ -24,9 +25,6 @@ void AukTrack_New(AukTrackPtr *firstPtr) {
 
 void AukTrack_Delete(void* This) {
     AukTrack* track = (AukTrack*)This;
-    AukEnvelopePoint* point;
-    AukEnvelopePoint* nextPoint;
-    unsigned int i;
 
     if (track) {
         /* Free name */
@@ -37,13 +35,8 @@ void AukTrack_Delete(void* This) {
         /* Release all sounds using reference counting */
         AukObjectPtr_Release((AukObjectPtr*)&track->sounds);
 
-        /* Free envelope points */
-        point = track->envelope;
-        while (point) {
-            nextPoint = point->next;
-            FreeVec(point);
-            point = nextPoint;
-        }
+        /* Release all envelope points using reference counting */
+        AukObjectPtr_Release((AukObjectPtr*)&track->envelopePoints);
 
         /* Call base object delete */
         AukObject_Delete(This);
@@ -57,7 +50,6 @@ const char* AukTrack_GetTypeName(void* This) {
 
 void AukTrack_Serialize(void* This, ISerializer* ser, const char* pName) {
     AukTrack* track = (AukTrack*)This;
-    unsigned int i;
     (void)pName;
 
     if (!track || !ser) {
@@ -67,39 +59,11 @@ void AukTrack_Serialize(void* This, ISerializer* ser, const char* pName) {
     /* Serialize track name */
     ser->t_string_mutable(ser, "name", &track->name);
 
-    ser->t_arrayobj(ser, "sounds", &track->sounds,AukSound_New,AukSound_GetTypeName);
+    /* Serialize sounds array */
+    ser->t_arrayobj(ser, "sounds", &track->sounds, AukSound_New, AukSound_GetTypeName);
 
-    /* Serialize envelope points */
-    if (IS_WRITING(ser)) {
-        /* Count envelope points */
-        AukEnvelopePoint* point = track->envelope;
-        unsigned int envelopeCount = 0;
-        while (point) {
-            envelopeCount++;
-            point = point->next;
-        }
-
-        ser->t_uint(ser, "envelopeCount", &envelopeCount);
-
-        /* Write each envelope point */
-        point = track->envelope;
-        while (point) {
-            ser->t_fixed(ser, "envelopeTime", &point->time);
-            ser->t_fixed(ser, "envelopeValue", &point->value);
-            point = point->next;
-        }
-    } else {
-        /* Load envelope points */
-        unsigned int envelopeCount = 0;
-        ser->t_uint(ser, "envelopeCount", &envelopeCount);
-
-        for (i = 0; i < envelopeCount; i++) {
-            AukFixed time, value;
-            ser->t_fixed(ser, "envelopeTime", &time);
-            ser->t_fixed(ser, "envelopeValue", &value);
-            track->AddEnvelopePoint(track, time, value);
-        }
-    }
+    /* Serialize envelope points array */
+    ser->t_arrayobj(ser, "envelopePoints", &track->envelopePoints, AukEnvelopePoint_New, AukEnvelopePoint_GetTypeName);
 }
 
 void AukTrack_SetProject(AukTrack* track, AukProject* project) {
@@ -247,85 +211,145 @@ int AukTrack_RemoveSound(void* This, AukSound* sound){
 
 
 
-int AukTrack_AddEnvelopePoint(void* This, AukFixed time, AukFixed value) {
+AukEnvelopePoint* AukTrack_CreateEnvelopePoint(void* This, AukFixed time, AukFixed value) {
     AukTrack* track = (AukTrack*)This;
-    AukEnvelopePoint* newPoint;
-    AukEnvelopePoint* current;
-    AukEnvelopePoint* prev;
+    AukEnvelopePointPtr pointPtr = NULL;
+    AukEnvelopePoint* point;
+    unsigned int i;
+    unsigned int insertIndex = 0;
 
-    if (!track) {
-        return 0;
+    if (!track || !track->envelopePoints) {
+        return NULL;
     }
 
-    /* Allocate new point */
-    newPoint = (AukEnvelopePoint*)AllocVec(sizeof(AukEnvelopePoint), MEMF_CLEAR);
-    if (!newPoint) {
-        return 0;
+    /* Create new envelope point */
+    AukEnvelopePoint_New(&pointPtr);
+    point = (AukEnvelopePoint*)pointPtr;
+    if (!point) {
+        return NULL;
     }
 
-    newPoint->time = time;
-    newPoint->value = value;
-    newPoint->next = NULL;
+    /* Set properties */
+    AukEnvelopePoint_SetTime(point, time);
+    AukEnvelopePoint_SetValue(point, value);
 
-    /* Insert in sorted order by time */
-    if (!track->envelope || time < track->envelope->time) {
-        /* Insert at beginning */
-        newPoint->next = track->envelope;
-        track->envelope = newPoint;
-    } else {
-        /* Find insertion point */
-        prev = track->envelope;
-        current = track->envelope->next;
+    /* Find insertion position to keep sorted by time */
+    for (i = 0; i < track->envelopePoints->count; i++) {
+        AukEnvelopePointPtr existingPtr = NULL;
+        AukEnvelopePoint* existing;
 
-        while (current && current->time < time) {
-            prev = current;
-            current = current->next;
+        track->envelopePoints->Get(track->envelopePoints, &existingPtr, i);
+        existing = (AukEnvelopePoint*)existingPtr;
+
+        if (existing && existing->time > time) {
+            AukObjectPtr_Release(&existingPtr);
+            break;
         }
 
-        /* Insert after prev */
-        newPoint->next = current;
-        prev->next = newPoint;
+        AukObjectPtr_Release(&existingPtr);
+        insertIndex = i + 1;
     }
 
-    /* Send update notification */
-    track->base.SendUpdate(&track->base,NULL);
+    /* Insert at the found position */
+    if (!track->envelopePoints->Insert(track->envelopePoints, insertIndex, &point->base)) {
+        /* Failed to add - release our reference */
+        AukObjectPtr_Release(&pointPtr);
+        return NULL;
+    }
 
-    return 1;
+    AukObjectPtr_Release(&pointPtr);
+    track->base.SendUpdate(&track->base, NULL);
+
+    /* Return raw pointer - the track owns the reference, caller doesn't */
+    return point;
+}
+
+int AukTrack_RemoveEnvelopePoint(void* This, AukEnvelopePoint* point) {
+    AukTrack* track = (AukTrack*)This;
+
+    if (!track || !point || !track->envelopePoints) {
+        return 0;
+    }
+
+    /* Remove point using AukArray */
+    if (track->envelopePoints->Remove(track->envelopePoints, &point->base)) {
+        /* Send update notification */
+        track->base.SendUpdate(&track->base, NULL);
+        return 1;
+    }
+
+    return 0;
+}
+
+void AukTrack_GetEnvelopePoint(void* This, AukEnvelopePoint** ptr, unsigned int index) {
+    AukTrack* track = (AukTrack*)This;
+
+    if (!ptr) return;
+    AukObjectPtr_Release((AukObjectPtr*)ptr);
+
+    if (!track || !track->envelopePoints) {
+        return;
+    }
+
+    track->envelopePoints->Get(track->envelopePoints, (AukObjectPtr*)ptr, index);
+}
+
+unsigned int AukTrack_GetEnvelopePointCount(void* This) {
+    AukTrack* track = (AukTrack*)This;
+    return (track && track->envelopePoints) ? track->envelopePoints->count : 0;
 }
 
 AukFixed AukTrack_GetEnvelopeValue(void* This, AukFixed time) {
     AukTrack* track = (AukTrack*)This;
+    AukEnvelopePointPtr p0Ptr = NULL;
+    AukEnvelopePointPtr p1Ptr = NULL;
     AukEnvelopePoint* p0;
     AukEnvelopePoint* p1;
+    AukFixed result;
     AukFixed t;
+    unsigned int i;
 
-    if (!track || !track->envelope) {
+    if (!track || !track->envelopePoints || track->envelopePoints->count == 0) {
         return AUK_FIXED_ONE; /* Default to full volume */
     }
 
-    /* Find surrounding points */
-    p0 = track->envelope;
-    p1 = p0->next;
+    /* Get first point */
+    track->envelopePoints->Get(track->envelopePoints, &p0Ptr, 0);
+    p0 = (AukEnvelopePoint*)p0Ptr;
 
     /* Before first point */
     if (time < p0->time) {
-        return p0->value;
+        result = p0->value;
+        AukObjectPtr_Release(&p0Ptr);
+        return result;
     }
 
     /* Find interval containing time */
-    while (p1) {
+    for (i = 0; i < track->envelopePoints->count - 1; i++) {
+        AukObjectPtr_Release(&p0Ptr);
+        track->envelopePoints->Get(track->envelopePoints, &p0Ptr, i);
+        track->envelopePoints->Get(track->envelopePoints, &p1Ptr, i + 1);
+
+        p0 = (AukEnvelopePoint*)p0Ptr;
+        p1 = (AukEnvelopePoint*)p1Ptr;
+
         if (time >= p0->time && time <= p1->time) {
             /* Linear interpolation between p0 and p1 */
             t = AukFixed_Div(AukFixed_Sub(time, p0->time),
                             AukFixed_Sub(p1->time, p0->time));
-            return AukFixed_Lerp(p0->value, p1->value, t);
+            result = AukFixed_Lerp(p0->value, p1->value, t);
+            AukObjectPtr_Release(&p0Ptr);
+            AukObjectPtr_Release(&p1Ptr);
+            return result;
         }
-        p0 = p1;
-        p1 = p1->next;
+
+        AukObjectPtr_Release(&p1Ptr);
     }
 
-    /* After last point */
-    return p0->value;
+    /* After last point - p0 is still the last point from the loop */
+    result = p0->value;
+    AukObjectPtr_Release(&p0Ptr);
+    return result;
 }
 
 void AukTrack_Init(AukTrack* track) {
@@ -345,19 +369,28 @@ void AukTrack_Init(AukTrack* track) {
         track->MoveSoundToTrack = AukTrack_MoveSoundToTrack;
         track->GetSound = AukTrack_GetSound;
         track->GetSoundCount = AukTrack_GetSoundCount;
-        track->AddEnvelopePoint = AukTrack_AddEnvelopePoint;
+
+        /* Set envelope management methods */
+        track->CreateEnvelopePoint = AukTrack_CreateEnvelopePoint;
+        track->RemoveEnvelopePoint = AukTrack_RemoveEnvelopePoint;
+        track->GetEnvelopePoint = AukTrack_GetEnvelopePoint;
+        track->GetEnvelopePointCount = AukTrack_GetEnvelopePointCount;
         track->GetEnvelopeValue = AukTrack_GetEnvelopeValue;
 
         /* Initialize data members */
         track->project = NULL;
         track->name = NULL;
 
+        /* Initialize sounds array */
         AukArray_New(&track->sounds);
-        // set the type managed by the array
-        if(track->sounds) AukArray_SetType(track->sounds,AukSound_New, AukSound_GetTypeName);
+        if (track->sounds) {
+            AukArray_SetType(track->sounds, AukSound_New, AukSound_GetTypeName);
+        }
 
-        track->envelope = NULL;
-
-
+        /* Initialize envelope points array */
+        AukArray_New(&track->envelopePoints);
+        if (track->envelopePoints) {
+            AukArray_SetType(track->envelopePoints, AukEnvelopePoint_New, AukEnvelopePoint_GetTypeName);
+        }
     }
 }

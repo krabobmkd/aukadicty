@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(Aukadicty C)
+project(AukProject C)
 
 # Set C standard
 set(CMAKE_C_STANDARD 99)
@@ -11,7 +11,7 @@ set(CMAKE_C_FLAGS_DEBUG "-g -O0")
 set(CMAKE_C_FLAGS_RELEASE "-O2")
 
 # Detect platform and set AmigaStack for non-Amiga builds
-if(NOT CMAKE_SYSTEM_NAME MATCHES "Amiga")
+if(NOT AMIGA)
     set(USE_AMIGA_STACK ON)
     message(STATUS "Using AmigaStack compatibility layer for ${CMAKE_SYSTEM_NAME}")
 else()
@@ -22,17 +22,17 @@ endif()
 # Include directories
 if(USE_AMIGA_STACK)
     include_directories(
-        ${CMAKE_SOURCE_DIR}/include
-        ${CMAKE_SOURCE_DIR}/AmigaStack/include
-        ${CMAKE_SOURCE_DIR}/cjson
-        ${CMAKE_SOURCE_DIR}/aukstreamcache/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/AmigaStack/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/cjson
+        ${CMAKE_CURRENT_SOURCE_DIR}/aukstreamcache/include
     )
 else()
     include_directories(
-        ${CMAKE_SOURCE_DIR}/include
-        ${CMAKE_SOURCE_DIR}/os-include
-        ${CMAKE_SOURCE_DIR}/cjson
-        ${CMAKE_SOURCE_DIR}/aukstreamcache/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/os-include
+        ${CMAKE_CURRENT_SOURCE_DIR}/cjson
+        ${CMAKE_CURRENT_SOURCE_DIR}/aukstreamcache/include
     )
 endif()
 
@@ -47,6 +47,7 @@ set(AUKADICTY_SOURCES
     src/auktrack.c
     src/auksound.c
     src/auksoundfile.c
+    src/aukenvelopepoint.c
     src/aukjson.c
     src/auktyperegistry.c
     src/aukjsonserializer.c
@@ -84,6 +85,7 @@ set(AUKADICTY_HEADERS
     include/auktrack.h
     include/auksound.h
     include/auksoundfile.h
+    include/aukenvelopepoint.h
     include/aukjson.h
     include/auktyperegistry.h
     include/serializer.h
@@ -101,11 +103,11 @@ set(AUKSTREAMCACHE_HEADERS
 
 # Create aukadicty static library
 if(USE_AMIGA_STACK)
-    add_library(aukadicty STATIC ${AUKADICTY_SOURCES} ${AMIGASTACK_SOURCES})
+    add_library(aukproject STATIC ${AUKADICTY_SOURCES} ${AMIGASTACK_SOURCES})
 else()
-    add_library(aukadicty STATIC ${AUKADICTY_SOURCES})
+    add_library(aukproject STATIC ${AUKADICTY_SOURCES})
 endif()
-set_target_properties(aukadicty PROPERTIES
+set_target_properties(aukproject PROPERTIES
     ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
 )
 
@@ -115,7 +117,7 @@ if(USE_AMIGA_STACK)
 else()
     add_library(aukstreamcache STATIC ${AUKSTREAMCACHE_SOURCES})
 endif()
-target_link_libraries(aukstreamcache aukadicty)
+target_link_libraries(aukstreamcache aukproject)
 set_target_properties(aukstreamcache PROPERTIES
     ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
 )
@@ -127,7 +129,7 @@ if(USE_AMIGA_STACK AND UNIX AND NOT APPLE)
 endif()
 
 # Install targets
-install(TARGETS aukadicty aukstreamcache
+install(TARGETS aukproject aukstreamcache
     ARCHIVE DESTINATION lib
 )
 
@@ -145,35 +147,35 @@ option(BUILD_EXAMPLES "Build example programs" ON)
 if(BUILD_EXAMPLES)
     # Example: Basic usage
     add_executable(example_basic examples/example_basic.c)
-    target_link_libraries(example_basic aukadicty)
+    target_link_libraries(example_basic aukproject)
     set_target_properties(example_basic PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/examples
     )
 
     # Example: Load project
     add_executable(example_load examples/example_load.c)
-    target_link_libraries(example_load aukadicty)
+    target_link_libraries(example_load aukproject)
     set_target_properties(example_load PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/examples
     )
 
     # Example: Listener pattern
     add_executable(example_listener examples/example_listener.c)
-    target_link_libraries(example_listener aukadicty)
+    target_link_libraries(example_listener aukproject)
     set_target_properties(example_listener PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/examples
     )
 
     # Example: Stream cache
     add_executable(example_streamcache examples/example_streamcache.c)
-    target_link_libraries(example_streamcache aukstreamcache aukadicty)
+    target_link_libraries(example_streamcache aukstreamcache aukproject)
     set_target_properties(example_streamcache PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/examples
     )
 
     # Example: IFF serialization
     add_executable(example_iff examples/example_iff.c)
-    target_link_libraries(example_iff aukadicty)
+    target_link_libraries(example_iff aukproject)
     set_target_properties(example_iff PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/examples
     )

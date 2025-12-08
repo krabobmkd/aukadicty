@@ -12,6 +12,7 @@ LIB_STREAM = lib/libaukstreamcache.a
 
 # Aukadicty source files
 SRC = src/aukobject.c \
+      src/aukmutex.c \
       src/aukarray.c \
       src/aukstring.c \
       src/aukfixed.c \
@@ -19,6 +20,7 @@ SRC = src/aukobject.c \
       src/auktrack.c \
       src/auksound.c \
       src/auksoundfile.c \
+      src/aukenvelopepoint.c \
       src/aukjson.c \
       src/auktyperegistry.c \
       src/aukjsonserializer.c \
