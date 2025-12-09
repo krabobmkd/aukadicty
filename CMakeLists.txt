@@ -47,7 +47,7 @@ set(AUKADICTY_SOURCES
     src/auktrack.c
     src/auksound.c
     src/auksoundfile.c
-    src/aukenvelopepoint.c
+    src/aukscalararray.c
     src/aukjson.c
     src/auktyperegistry.c
     src/aukjsonserializer.c
@@ -85,7 +85,7 @@ set(AUKADICTY_HEADERS
     include/auktrack.h
     include/auksound.h
     include/auksoundfile.h
-    include/aukenvelopepoint.h
+    include/aukscalararray.h
     include/aukjson.h
     include/auktyperegistry.h
     include/serializer.h

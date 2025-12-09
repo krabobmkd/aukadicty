@@ -10,6 +10,7 @@
 #include "aukobject.h"
 #include "aukfixed.h"
 #include "aukarray.h"
+#include "aukscalararray.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -18,7 +19,6 @@ extern "C" {
 typedef struct sAukTrack AukTrack;
 typedef struct AukSound AukSound;
 typedef struct AukProject AukProject;
-typedef struct AukEnvelopePoint AukEnvelopePoint;
 
 typedef struct AukSoundFile AukSoundFile;
 typedef AukSoundFile* AukSoundFilePtr;
@@ -38,7 +38,10 @@ struct sAukTrack {
     AukProject* project;     /* Pointer to parent project (weak reference) */
     char* name;              /* Track name */
     AukArray *sounds;        /* Array of sounds on this track */
-    AukArray *envelopePoints; /* Array of envelope points */
+
+    /* Envelope data - parallel arrays for efficient storage */
+    AukScalarArray *envelopeTime;  /* Time points (8-byte AukFixed) */
+    AukScalarArray *envelopeValue; /* Volume values (2-byte fixed point, 0x0100 = 1.0) */
 
     /* Virtual methods specific to AukTrack */
     AukSound* (*CreateSound)(void* This, AukSoundFilePtr soundFile, AukFixed startTime, AukFixed endTime);
@@ -47,10 +50,10 @@ struct sAukTrack {
     void (*GetSound)(void* This, AukSound**ptr, unsigned int index);
     unsigned int (*GetSoundCount)(void* This);
 
-    /* Envelope management methods - matching sound management pattern */
-    AukEnvelopePoint* (*CreateEnvelopePoint)(void* This, AukFixed time, AukFixed value);
-    int (*RemoveEnvelopePoint)(void* This, AukEnvelopePoint* point);
-    void (*GetEnvelopePoint)(void* This, AukEnvelopePoint** ptr, unsigned int index);
+    /* Envelope management methods */
+    int (*AddEnvelopePoint)(void* This, AukFixed time, unsigned short value);
+    int (*RemoveEnvelopePointAt)(void* This, unsigned int index);
+    int (*GetEnvelopePointAt)(void* This, unsigned int index, AukFixed* time, unsigned short* value);
     unsigned int (*GetEnvelopePointCount)(void* This);
     AukFixed (*GetEnvelopeValue)(void* This, AukFixed time);
 };
@@ -79,9 +82,9 @@ void AukTrack_GetSound(void* This, AukSound** ptr, unsigned int index);
 unsigned int AukTrack_GetSoundCount(void* This);
 
 /* Envelope management */
-AukEnvelopePoint* AukTrack_CreateEnvelopePoint(void* This, AukFixed time, AukFixed value);
-int AukTrack_RemoveEnvelopePoint(void* This, AukEnvelopePoint* point);
-void AukTrack_GetEnvelopePoint(void* This, AukEnvelopePoint** ptr, unsigned int index);
+int AukTrack_AddEnvelopePoint(void* This, AukFixed time, unsigned short value);
+int AukTrack_RemoveEnvelopePointAt(void* This, unsigned int index);
+int AukTrack_GetEnvelopePointAt(void* This, unsigned int index, AukFixed* time, unsigned short* value);
 unsigned int AukTrack_GetEnvelopePointCount(void* This);
 AukFixed AukTrack_GetEnvelopeValue(void* This, AukFixed time);
 

@@ -235,13 +235,13 @@ int main(void) {
     sound1->SetLoopCount(sound1, 1);
     sound2->SetFileRange(sound2, 0, 48000);  /* First second of file */
 
-    // /* Add envelope points */
-    track1->CreateEnvelopePoint(track1, AukFixed_FromInt(0), AukFixed_FromInt(1));
-    track1->CreateEnvelopePoint(track1, AukFixed_FromInt(3), AukFixed_FromFraction(1, 2));
+    /* Add envelope points */
+    track1->AddEnvelopePoint(track1, AukFixed_FromInt(0), 0x0100);  /* 1.0 volume */
+    track1->AddEnvelopePoint(track1, AukFixed_FromInt(3), 0x0080);  /* 0.5 volume */
 
-    track2->CreateEnvelopePoint(track2, AukFixed_FromInt(0), AukFixed_FromFraction(3, 4));
-    track2->CreateEnvelopePoint(track2, AukFixed_FromInt(4), AukFixed_FromInt(1));
-    track2->CreateEnvelopePoint(track2, AukFixed_FromInt(8), AukFixed_FromFraction(1, 4));
+    track2->AddEnvelopePoint(track2, AukFixed_FromInt(0), 0x00C0);  /* 0.75 volume */
+    track2->AddEnvelopePoint(track2, AukFixed_FromInt(4), 0x0100);  /* 1.0 volume */
+    track2->AddEnvelopePoint(track2, AukFixed_FromInt(8), 0x0040);  /* 0.25 volume */
 
     // /* Release our references to sound files */
     AukObjectPtr_Release((AukObjectPtr*)&soundFile1);

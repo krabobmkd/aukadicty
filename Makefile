@@ -20,7 +20,7 @@ SRC = src/aukobject.c \
       src/auktrack.c \
       src/auksound.c \
       src/auksoundfile.c \
-      src/aukenvelopepoint.c \
+      src/aukscalararray.c \
       src/aukjson.c \
       src/auktyperegistry.c \
       src/aukjsonserializer.c \

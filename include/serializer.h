@@ -23,6 +23,9 @@ typedef void (*AukObjectNewFunc)(AukObjectPtr* firstPtr);
 struct AukArray;
 typedef struct AukArray AukArray;
 
+struct AukScalarArray;
+typedef struct AukScalarArray AukScalarArray;
+
 /* TypeNameToContructor structure -
  * reading serializers will need a table of this to be able to reconstruct objects from their type names.
  * sTypeNameToContructor tables will be terminated with last member typename being NULL.  */
@@ -65,6 +68,9 @@ typedef struct sISerializer {
     void (*t_int_array)(struct sISerializer* This, const char* name, int** values, unsigned int* count);
     void (*t_longlong_array)(struct sISerializer* This, const char* name, long long** values, unsigned int* count);
     void (*t_fixed_array)(struct sISerializer* This, const char* name, AukFixed** values, unsigned int* count);
+
+    /* Scalar array - efficient multidimensional arrays */
+    void (*t_scalararray)(struct sISerializer* This, const char* name, AukScalarArray** array);
 
     /* Cleanup */
     void (*Destroy)(struct sISerializer* This);

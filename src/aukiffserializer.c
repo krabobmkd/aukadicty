@@ -1,6 +1,7 @@
 #include "aukiffserializer.h"
 #include "aukstring.h"
 #include "aukobject.h"
+#include "aukscalararray.h"
 #include <proto/exec.h>
 #include <proto/dos.h>
 #include <string.h>
@@ -24,6 +25,7 @@
 #define ID_BOOL 0x424F4F4C  /* 'BOOL' - boolean */
 #define ID_STR  0x53545220  /* 'STR ' - string */
 #define ID_ARRY 0x41525259  /* 'ARRY' - array */
+#define ID_SARR 0x53415252  /* 'SARR' - scalar array */
 
 #define ID_MNME 0x4D4E4D45  /* 'MNME' - member name */
 #define ID_TYPE 0x54595045  /* 'TYPE' - type name */
@@ -437,6 +439,76 @@ static void IFFWriter_t_fixed_array(ISerializer* This, const char* name, AukFixe
     }
 }
 
+static void IFFWriter_t_scalararray(ISerializer* This, const char* name, AukScalarArray** array) {
+    IFFWriterContext* ctx = (IFFWriterContext*)This->context;
+    AukScalarArray* arr = *array;
+    unsigned long nameLen;
+    unsigned long dataSize;
+    unsigned int scalarSize;
+    unsigned int i;
+    short j;
+
+    if (!arr) {
+        /* Write null marker */
+        IFFWriter_WriteNamedValue(ctx->file, name, ID_SARR, NULL, 0);
+        return;
+    }
+
+    nameLen = strlen(name);
+    scalarSize = AukScalarArray_GetScalarSize(arr->scalarType);
+    dataSize = arr->totalElements * scalarSize;
+
+    /* Write chunk: name + scalarType(1) + ndim(2) + shape[ndim]*4 + data */
+    WriteBigEndianLong(ctx->file, ID_SARR);
+    WriteBigEndianLong(ctx->file, nameLen + 1 + 1 + 2 + (arr->ndim * 4) + dataSize);
+
+    /* Write name */
+    Write(ctx->file, name, nameLen + 1);
+
+    /* Write scalar type */
+    Write(ctx->file, &arr->scalarType, 1);
+
+    /* Write ndim (big-endian short) */
+    {
+        unsigned char ndimBytes[2];
+        ndimBytes[0] = (arr->ndim >> 8) & 0xFF;
+        ndimBytes[1] = arr->ndim & 0xFF;
+        Write(ctx->file, ndimBytes, 2);
+    }
+
+    /* Write shape (big-endian uints) */
+    for (j = 0; j < arr->ndim; j++) {
+        WriteBigEndianLong(ctx->file, arr->shape[j]);
+    }
+
+    /* Write data based on scalar size */
+    if (scalarSize == 1) {
+        /* Char: write directly */
+        Write(ctx->file, arr->data, dataSize);
+    } else if (scalarSize == 2) {
+        /* Short: swap endianness */
+        short* data = (short*)arr->data;
+        for (i = 0; i < arr->totalElements; i++) {
+            unsigned char bytes[2];
+            bytes[0] = (data[i] >> 8) & 0xFF;
+            bytes[1] = data[i] & 0xFF;
+            Write(ctx->file, bytes, 2);
+        }
+    } else if (scalarSize == 4) {
+        /* Int: swap endianness */
+        int* data = (int*)arr->data;
+        for (i = 0; i < arr->totalElements; i++) {
+            WriteBigEndianLong(ctx->file, (unsigned long)data[i]);
+        }
+    } else if (scalarSize == 8) {
+        /* Long long: swap endianness */
+        long long* data = (long long*)arr->data;
+        for (i = 0; i < arr->totalElements; i++) {
+            WriteBigEndianLongLong(ctx->file, (unsigned long long)data[i]);
+        }
+    }
+}
+
 static void IFFWriter_Destroy(ISerializer* This) {
     IFFWriterContext* ctx = (IFFWriterContext*)This->context;
 
@@ -495,6 +567,7 @@ ISerializer* AukIFFSerializer_CreateWriter(BPTR file) {
     ser->t_int_array = IFFWriter_t_int_array;
     ser->t_longlong_array = IFFWriter_t_longlong_array;
     ser->t_fixed_array = IFFWriter_t_fixed_array;
+    ser->t_scalararray = IFFWriter_t_scalararray;
     ser->Destroy = IFFWriter_Destroy;
 
     return ser;
@@ -567,8 +640,8 @@ static int IFFReader_ReadChunkHeader(BPTR file, unsigned long* chunkID, unsigned
     *chunkSize = ReadBigEndianLong(file);
 
      unsigned long cid = *chunkID;
-    printf("chunkID:%c%c%c%c\n",(int)(cid>>24),(int)(cid>>16),(int)(cid>>8),(int)(cid));
-    printf("chunksize:%d\n",(int)*chunkSize);
+//    printf("chunkID:%c%c%c%c\n",(int)(cid>>24),(int)(cid>>16),(int)(cid>>8),(int)(cid));
+//    printf("chunksize:%d\n",(int)*chunkSize);
     return 1;
 }
 // this ones only manage simpleton members that bcan be managed by copy.
@@ -1012,6 +1085,104 @@ static void IFFReader_t_fixed_array(ISerializer* This, const char* name, AukFixe
     *count = arrayCount;
 }
 
+static void IFFReader_t_scalararray(ISerializer* This, const char* name, AukScalarArray** array) {
+    IFFReaderContext* ctx = (IFFReaderContext*)This->context;
+    unsigned long chunkID, chunkSize;
+    char chunkName[256];
+    unsigned long nameLen;
+    AukScalarType scalarType;
+    short ndim;
+    unsigned int* shape = NULL;
+    AukScalarArray* newArray = NULL;
+    unsigned int scalarSize;
+    unsigned int i;
+    short j;
+
+    /* Delete existing array */
+    if (*array) {
+        AukScalarArray_Delete(*array);
+        *array = NULL;
+    }
+
+    if (!IFFReader_ReadChunkHeader(ctx->file, &chunkID, &chunkSize) || chunkID != ID_SARR) {
+        return;
+    }
+
+    /* Read name */
+    nameLen = 0;
+    while (nameLen < 255) {
+        if (Read(ctx->file, &chunkName[nameLen], 1) != 1) return;
+        if (chunkName[nameLen] == 0) break;
+        nameLen++;
+    }
+    chunkName[nameLen] = 0;
+
+    if (AukString_Compare(chunkName, name) != 0) return;
+
+    /* Check for null array */
+    if (chunkSize == nameLen + 1) {
+        *array = NULL;
+        return;
+    }
+
+    /* Read scalar type */
+    if (Read(ctx->file, &scalarType, 1) != 1) return;
+
+    /* Read ndim (big-endian short) */
+    {
+        unsigned char ndimBytes[2];
+        if (Read(ctx->file, ndimBytes, 2) != 2) return;
+        ndim = (short)((ndimBytes[0] << 8) | ndimBytes[1]);
+    }
+
+    if (ndim <= 0) return;
+
+    /* Read shape */
+    shape = (unsigned int*)AllocVec(ndim * sizeof(unsigned int), MEMF_CLEAR);
+    if (!shape) return;
+
+    for (j = 0; j < ndim; j++) {
+        shape[j] = ReadBigEndianLong(ctx->file);
+    }
+
+    /* Create scalar array */
+    newArray = AukScalarArray_New(scalarType, ndim, shape);
+    FreeVec(shape);
+
+    if (!newArray) return;
+
+    /* Read data based on scalar size */
+    scalarSize = AukScalarArray_GetScalarSize(scalarType);
+
+    if (scalarSize == 1) {
+        /* Char: read directly */
+        Read(ctx->file, newArray->data, newArray->totalElements);
+    } else if (scalarSize == 2) {
+        /* Short: read with endian swap */
+        short* data = (short*)newArray->data;
+        for (i = 0; i < newArray->totalElements; i++) {
+            unsigned char bytes[2];
+            if (Read(ctx->file, bytes, 2) == 2) {
+                data[i] = (short)((bytes[0] << 8) | bytes[1]);
+            }
+        }
+    } else if (scalarSize == 4) {
+        /* Int: read with endian swap */
+        int* data = (int*)newArray->data;
+        for (i = 0; i < newArray->totalElements; i++) {
+            data[i] = (int)ReadBigEndianLong(ctx->file);
+        }
+    } else if (scalarSize == 8) {
+        /* Long long: read with endian swap */
+        long long* data = (long long*)newArray->data;
+        for (i = 0; i < newArray->totalElements; i++) {
+            data[i] = (long long)ReadBigEndianLongLong(ctx->file);
+        }
+    }
+
+    *array = newArray;
+}
+
 static void IFFReader_Destroy(ISerializer* This) {
     IFFReaderContext* ctx = (IFFReaderContext*)This->context;
 
@@ -1081,6 +1252,7 @@ ISerializer* AukIFFSerializer_CreateReader(BPTR file, const TypeNameToContructor
     ser->t_int_array = IFFReader_t_int_array;
     ser->t_longlong_array = IFFReader_t_longlong_array;
     ser->t_fixed_array = IFFReader_t_fixed_array;
+    ser->t_scalararray = IFFReader_t_scalararray;
     ser->Destroy = IFFReader_Destroy;
 
     return ser;

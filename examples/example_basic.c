@@ -77,12 +77,12 @@ int main(void) {
     sound1->SetLoopCount(sound1, 2);  /* Loop twice */
 
     /* Add envelope points to track1 */
-    track1->CreateEnvelopePoint(track1,
-                                AukFixed_FromDouble(-0.25),
-                                AukFixed_FromInt(1));  /* Full volume at start */
-    track1->CreateEnvelopePoint(track1,
-                                AukFixed_FromInt(5),
-                                AukFixed_FromFraction(1, 2));  /* Half volume at 5 seconds */
+    track1->AddEnvelopePoint(track1,
+                             AukFixed_FromDouble(-0.25),
+                             0x0100);  /* Full volume at start (0x0100 = 1.0) */
+    track1->AddEnvelopePoint(track1,
+                             AukFixed_FromInt(5),
+                             0x0080);  /* Half volume at 5 seconds (0x0080 = 0.5) */
 
     /* Get project duration */
     duration = project->GetDuration(project);

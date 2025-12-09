@@ -1,6 +1,7 @@
 #include "aukjsonserializer.h"
 #include "aukstring.h"
 #include "aukobject.h"
+#include "aukscalararray.h"
 #include <proto/exec.h>
 #include <string.h>
 
@@ -262,6 +263,73 @@ static void JsonWriter_t_fixed_array(ISerializer* This, const char* name, AukFix
     }
 }
 
+static void JsonWriter_t_scalararray(ISerializer* This, const char* name, AukScalarArray** array) {
+    JsonWriterContext* ctx = (JsonWriterContext*)This->context;
+    AukScalarArray* arr = *array;
+    cJSON* sarrObj;
+    cJSON* shapeArray;
+    cJSON* dataArray;
+    unsigned int scalarSize;
+    unsigned int i;
+    short j;
+
+    if (!arr) {
+        cJSON_AddNullToObject(ctx->current, name);
+        return;
+    }
+
+    /* Create object with metadata and data */
+    sarrObj = cJSON_CreateObject();
+    if (!sarrObj) return;
+
+    /* Add scalar type */
+    cJSON_AddNumberToObjectInt(sarrObj, "scalarType", (int)arr->scalarType);
+
+    /* Add ndim */
+    cJSON_AddNumberToObjectInt(sarrObj, "ndim", arr->ndim);
+
+    /* Add shape */
+    shapeArray = cJSON_CreateArray();
+    if (shapeArray) {
+        for (j = 0; j < arr->ndim; j++) {
+            cJSON_AddItemToArray(shapeArray, cJSON_CreateNumberInt((int)arr->shape[j]));
+        }
+        cJSON_AddItemToObject(sarrObj, "shape", shapeArray);
+    }
+
+    /* Add data as flat array */
+    dataArray = cJSON_CreateArray();
+    if (dataArray) {
+        scalarSize = AukScalarArray_GetScalarSize(arr->scalarType);
+
+        if (scalarSize == 1) {
+            char* data = (char*)arr->data;
+            for (i = 0; i < arr->totalElements; i++) {
+                cJSON_AddItemToArray(dataArray, cJSON_CreateNumberInt((int)data[i]));
+            }
+        } else if (scalarSize == 2) {
+            short* data = (short*)arr->data;
+            for (i = 0; i < arr->totalElements; i++) {
+                cJSON_AddItemToArray(dataArray, cJSON_CreateNumberInt((int)data[i]));
+            }
+        } else if (scalarSize == 4) {
+            int* data = (int*)arr->data;
+            for (i = 0; i < arr->totalElements; i++) {
+                cJSON_AddItemToArray(dataArray, cJSON_CreateNumberInt(data[i]));
+            }
+        } else if (scalarSize == 8) {
+            long long* data = (long long*)arr->data;
+            for (i = 0; i < arr->totalElements; i++) {
+                cJSON_AddItemToArray(dataArray, cJSON_CreateNumberInt((int)data[i]));
+            }
+        }
+
+        cJSON_AddItemToObject(sarrObj, "data", dataArray);
+    }
+
+    cJSON_AddItemToObject(ctx->current, name, sarrObj);
+}
+
 static void JsonWriter_Destroy(ISerializer* This) {
     JsonWriterContext* ctx = (JsonWriterContext*)This->context;
 
@@ -332,6 +400,7 @@ ISerializer* AukJsonSerializer_CreateWriter(void) {
     ser->t_int_array = JsonWriter_t_int_array;
     ser->t_longlong_array = JsonWriter_t_longlong_array;
     ser->t_fixed_array = JsonWriter_t_fixed_array;
+    ser->t_scalararray = JsonWriter_t_scalararray;
     ser->Destroy = JsonWriter_Destroy;
 
     return ser;
@@ -698,6 +767,107 @@ static void JsonReader_t_fixed_array(ISerializer* This, const char* name, AukFix
     *count = i;
 }
 
+static void JsonReader_t_scalararray(ISerializer* This, const char* name, AukScalarArray** array) {
+    JsonReaderContext* ctx = (JsonReaderContext*)This->context;
+    cJSON* sarrObj = cJSON_GetObjectItem(ctx->current, name);
+    cJSON* scalarTypeItem;
+    cJSON* ndimItem;
+    cJSON* shapeArray;
+    cJSON* dataArray;
+    cJSON* item;
+    AukScalarType scalarType;
+    short ndim;
+    unsigned int* shape = NULL;
+    AukScalarArray* newArray = NULL;
+    unsigned int scalarSize;
+    unsigned int i;
+    short j;
+    int arraySize;
+
+    /* Delete existing array */
+    if (*array) {
+        AukScalarArray_Delete(*array);
+        *array = NULL;
+    }
+
+    if (!sarrObj || cJSON_IsNull(sarrObj)) {
+        *array = NULL;
+        return;
+    }
+
+    if (!cJSON_IsObject(sarrObj)) {
+        return;
+    }
+
+    /* Read scalar type */
+    scalarTypeItem = cJSON_GetObjectItem(sarrObj, "scalarType");
+    if (!scalarTypeItem || !cJSON_IsNumber(scalarTypeItem)) {
+        return;
+    }
+    scalarType = (AukScalarType)scalarTypeItem->valueint;
+
+    /* Read ndim */
+    ndimItem = cJSON_GetObjectItem(sarrObj, "ndim");
+    if (!ndimItem || !cJSON_IsNumber(ndimItem)) {
+        return;
+    }
+    ndim = (short)ndimItem->valueint;
+
+    if (ndim <= 0) return;
+
+    /* Read shape */
+    shapeArray = cJSON_GetObjectItem(sarrObj, "shape");
+    if (!shapeArray || !cJSON_IsArray(shapeArray)) {
+        return;
+    }
+
+    arraySize = cJSON_GetArraySize(shapeArray);
+    if (arraySize != ndim) return;
+
+    shape = (unsigned int*)AllocVec(ndim * sizeof(unsigned int), MEMF_CLEAR);
+    if (!shape) return;
+
+    j = 0;
+    cJSON_ArrayForEach(item, shapeArray) {
+        if (cJSON_IsNumber(item) && j < ndim) {
+            shape[j++] = (unsigned int)item->valueint;
+        }
+    }
+
+    /* Create scalar array */
+    newArray = AukScalarArray_New(scalarType, ndim, shape);
+    FreeVec(shape);
+
+    if (!newArray) return;
+
+    /* Read data */
+    dataArray = cJSON_GetObjectItem(sarrObj, "data");
+    if (!dataArray || !cJSON_IsArray(dataArray)) {
+        AukScalarArray_Delete(newArray);
+        return;
+    }
+
+    scalarSize = AukScalarArray_GetScalarSize(scalarType);
+
+    i = 0;
+    cJSON_ArrayForEach(item, dataArray) {
+        if (cJSON_IsNumber(item) && i < newArray->totalElements) {
+            if (scalarSize == 1) {
+                ((char*)newArray->data)[i] = (char)item->valueint;
+            } else if (scalarSize == 2) {
+                ((short*)newArray->data)[i] = (short)item->valueint;
+            } else if (scalarSize == 4) {
+                ((int*)newArray->data)[i] = item->valueint;
+            } else if (scalarSize == 8) {
+                ((long long*)newArray->data)[i] = (long long)item->valueint;
+            }
+            i++;
+        }
+    }
+
+    *array = newArray;
+}
+
 static void JsonReader_Destroy(ISerializer* This) {
     JsonReaderContext* ctx = (JsonReaderContext*)This->context;
 
@@ -768,6 +938,7 @@ ISerializer* AukJsonSerializer_CreateReader(const char* jsonString, const TypeNa
     ser->t_int_array = JsonReader_t_int_array;
     ser->t_longlong_array = JsonReader_t_longlong_array;
     ser->t_fixed_array = JsonReader_t_fixed_array;
+    ser->t_scalararray = JsonReader_t_scalararray;
     ser->Destroy = JsonReader_Destroy;
 
     return ser;

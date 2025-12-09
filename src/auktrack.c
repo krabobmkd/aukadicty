@@ -1,8 +1,8 @@
 #include "auktrack.h"
 #include "auksound.h"
 #include "auksoundfile.h"
-#include "aukenvelopepoint.h"
 #include "aukstring.h"
+#include "aukscalararray.h"
 #include "serializer.h"
 #include <proto/exec.h>
 #include <string.h>
@@ -35,8 +35,13 @@ void AukTrack_Delete(void* This) {
         /* Release all sounds using reference counting */
         AukObjectPtr_Release((AukObjectPtr*)&track->sounds);
 
-        /* Release all envelope points using reference counting */
-        AukObjectPtr_Release((AukObjectPtr*)&track->envelopePoints);
+        /* Delete envelope scalar arrays */
+        if (track->envelopeTime) {
+            AukScalarArray_Delete(track->envelopeTime);
+        }
+        if (track->envelopeValue) {
+            AukScalarArray_Delete(track->envelopeValue);
+        }
 
         /* Call base object delete */
         AukObject_Delete(This);
@@ -62,8 +67,9 @@ void AukTrack_Serialize(void* This, ISerializer* ser, const char* pName) {
     /* Serialize sounds array */
     ser->t_arrayobj(ser, "sounds", &track->sounds, AukSound_New, AukSound_GetTypeName);
 
-    /* Serialize envelope points array */
-    ser->t_arrayobj(ser, "envelopePoints", &track->envelopePoints, AukEnvelopePoint_New, AukEnvelopePoint_GetTypeName);
+    /* Serialize envelope scalar arrays */
+    ser->t_scalararray(ser, "envelopeTime", &track->envelopeTime);
+    ser->t_scalararray(ser, "envelopeValue", &track->envelopeValue);
 }
 
 void AukTrack_SetProject(AukTrack* track, AukProject* project) {
@@ -211,145 +217,247 @@ int AukTrack_RemoveSound(void* This, AukSound* sound){
 
 
 
-AukEnvelopePoint* AukTrack_CreateEnvelopePoint(void* This, AukFixed time, AukFixed value) {
+int AukTrack_AddEnvelopePoint(void* This, AukFixed time, unsigned short value) {
     AukTrack* track = (AukTrack*)This;
-    AukEnvelopePointPtr pointPtr = NULL;
-    AukEnvelopePoint* point;
-    unsigned int i;
+    unsigned int currentCount;
+    unsigned int newCount;
     unsigned int insertIndex = 0;
+    unsigned int i;
+    unsigned int shape[1];
+    AukScalarArray* newTimeArray;
+    AukScalarArray* newValueArray;
+    long long* timeData;
+    short* valueData;
 
-    if (!track || !track->envelopePoints) {
-        return NULL;
-    }
-
-    /* Create new envelope point */
-    AukEnvelopePoint_New(&pointPtr);
-    point = (AukEnvelopePoint*)pointPtr;
-    if (!point) {
-        return NULL;
-    }
-
-    /* Set properties */
-    AukEnvelopePoint_SetTime(point, time);
-    AukEnvelopePoint_SetValue(point, value);
-
-    /* Find insertion position to keep sorted by time */
-    for (i = 0; i < track->envelopePoints->count; i++) {
-        AukEnvelopePointPtr existingPtr = NULL;
-        AukEnvelopePoint* existing;
-
-        track->envelopePoints->Get(track->envelopePoints, &existingPtr, i);
-        existing = (AukEnvelopePoint*)existingPtr;
-
-        if (existing && existing->time > time) {
-            AukObjectPtr_Release(&existingPtr);
-            break;
-        }
-
-        AukObjectPtr_Release(&existingPtr);
-        insertIndex = i + 1;
-    }
-
-    /* Insert at the found position */
-    if (!track->envelopePoints->Insert(track->envelopePoints, insertIndex, &point->base)) {
-        /* Failed to add - release our reference */
-        AukObjectPtr_Release(&pointPtr);
-        return NULL;
-    }
-
-    AukObjectPtr_Release(&pointPtr);
-    track->base.SendUpdate(&track->base, NULL);
-
-    /* Return raw pointer - the track owns the reference, caller doesn't */
-    return point;
-}
-
-int AukTrack_RemoveEnvelopePoint(void* This, AukEnvelopePoint* point) {
-    AukTrack* track = (AukTrack*)This;
-
-    if (!track || !point || !track->envelopePoints) {
+    if (!track) {
         return 0;
     }
 
-    /* Remove point using AukArray */
-    if (track->envelopePoints->Remove(track->envelopePoints, &point->base)) {
-        /* Send update notification */
+    /* Get current count */
+    currentCount = track->envelopeTime ? track->envelopeTime->totalElements : 0;
+    newCount = currentCount + 1;
+
+    /* Find insertion position to keep sorted by time */
+    if (track->envelopeTime) {
+        timeData = (long long*)track->envelopeTime->data;
+        for (i = 0; i < currentCount; i++) {
+            if (timeData[i] > time) {
+                break;
+            }
+            insertIndex = i + 1;
+        }
+    }
+
+    /* Create new arrays with increased size */
+    shape[0] = newCount;
+    newTimeArray = AukScalarArray_New(AUK_SCALAR_LONGLONG, 1, shape);
+    newValueArray = AukScalarArray_New(AUK_SCALAR_SHORT, 1, shape);
+
+    if (!newTimeArray || !newValueArray) {
+        if (newTimeArray) AukScalarArray_Delete(newTimeArray);
+        if (newValueArray) AukScalarArray_Delete(newValueArray);
+        return 0;
+    }
+
+    /* Copy existing data and insert new point */
+    timeData = (long long*)newTimeArray->data;
+    valueData = (short*)newValueArray->data;
+
+    if (track->envelopeTime && track->envelopeValue) {
+        long long* oldTimeData = (long long*)track->envelopeTime->data;
+        short* oldValueData = (short*)track->envelopeValue->data;
+
+        /* Copy elements before insertion point */
+        for (i = 0; i < insertIndex; i++) {
+            timeData[i] = oldTimeData[i];
+            valueData[i] = oldValueData[i];
+        }
+
+        /* Insert new point */
+        timeData[insertIndex] = time;
+        valueData[insertIndex] = (short)value;
+
+        /* Copy elements after insertion point */
+        for (i = insertIndex; i < currentCount; i++) {
+            timeData[i + 1] = oldTimeData[i];
+            valueData[i + 1] = oldValueData[i];
+        }
+    } else {
+        /* First point */
+        timeData[0] = time;
+        valueData[0] = (short)value;
+    }
+
+    /* Replace old arrays */
+    if (track->envelopeTime) {
+        AukScalarArray_Delete(track->envelopeTime);
+    }
+    if (track->envelopeValue) {
+        AukScalarArray_Delete(track->envelopeValue);
+    }
+
+    track->envelopeTime = newTimeArray;
+    track->envelopeValue = newValueArray;
+
+    track->base.SendUpdate(&track->base, NULL);
+    return 1;
+}
+
+int AukTrack_RemoveEnvelopePointAt(void* This, unsigned int index) {
+    AukTrack* track = (AukTrack*)This;
+    unsigned int currentCount;
+    unsigned int newCount;
+    unsigned int i;
+    unsigned int shape[1];
+    AukScalarArray* newTimeArray;
+    AukScalarArray* newValueArray;
+    long long* timeData;
+    short* valueData;
+    long long* oldTimeData;
+    short* oldValueData;
+
+    if (!track || !track->envelopeTime || !track->envelopeValue) {
+        return 0;
+    }
+
+    currentCount = track->envelopeTime->totalElements;
+
+    if (index >= currentCount) {
+        return 0;
+    }
+
+    newCount = currentCount - 1;
+
+    /* If removing last point, just delete arrays */
+    if (newCount == 0) {
+        AukScalarArray_Delete(track->envelopeTime);
+        AukScalarArray_Delete(track->envelopeValue);
+        track->envelopeTime = NULL;
+        track->envelopeValue = NULL;
         track->base.SendUpdate(&track->base, NULL);
         return 1;
     }
 
-    return 0;
-}
+    /* Create new arrays with decreased size */
+    shape[0] = newCount;
+    newTimeArray = AukScalarArray_New(AUK_SCALAR_LONGLONG, 1, shape);
+    newValueArray = AukScalarArray_New(AUK_SCALAR_SHORT, 1, shape);
 
-void AukTrack_GetEnvelopePoint(void* This, AukEnvelopePoint** ptr, unsigned int index) {
-    AukTrack* track = (AukTrack*)This;
-
-    if (!ptr) return;
-    AukObjectPtr_Release((AukObjectPtr*)ptr);
-
-    if (!track || !track->envelopePoints) {
-        return;
+    if (!newTimeArray || !newValueArray) {
+        if (newTimeArray) AukScalarArray_Delete(newTimeArray);
+        if (newValueArray) AukScalarArray_Delete(newValueArray);
+        return 0;
     }
 
-    track->envelopePoints->Get(track->envelopePoints, (AukObjectPtr*)ptr, index);
+    /* Copy data, skipping the removed index */
+    timeData = (long long*)newTimeArray->data;
+    valueData = (short*)newValueArray->data;
+    oldTimeData = (long long*)track->envelopeTime->data;
+    oldValueData = (short*)track->envelopeValue->data;
+
+    for (i = 0; i < index; i++) {
+        timeData[i] = oldTimeData[i];
+        valueData[i] = oldValueData[i];
+    }
+
+    for (i = index + 1; i < currentCount; i++) {
+        timeData[i - 1] = oldTimeData[i];
+        valueData[i - 1] = oldValueData[i];
+    }
+
+    /* Replace old arrays */
+    AukScalarArray_Delete(track->envelopeTime);
+    AukScalarArray_Delete(track->envelopeValue);
+
+    track->envelopeTime = newTimeArray;
+    track->envelopeValue = newValueArray;
+
+    track->base.SendUpdate(&track->base, NULL);
+    return 1;
+}
+
+int AukTrack_GetEnvelopePointAt(void* This, unsigned int index, AukFixed* time, unsigned short* value) {
+    AukTrack* track = (AukTrack*)This;
+    long long* timeData;
+    short* valueData;
+
+    if (!track || !track->envelopeTime || !track->envelopeValue) {
+        return 0;
+    }
+
+    if (index >= track->envelopeTime->totalElements) {
+        return 0;
+    }
+
+    timeData = (long long*)track->envelopeTime->data;
+    valueData = (short*)track->envelopeValue->data;
+
+    if (time) {
+        *time = (AukFixed)timeData[index];
+    }
+
+    if (value) {
+        *value = (unsigned short)valueData[index];
+    }
+
+    return 1;
 }
 
 unsigned int AukTrack_GetEnvelopePointCount(void* This) {
     AukTrack* track = (AukTrack*)This;
-    return (track && track->envelopePoints) ? track->envelopePoints->count : 0;
+    return (track && track->envelopeTime) ? track->envelopeTime->totalElements : 0;
 }
 
 AukFixed AukTrack_GetEnvelopeValue(void* This, AukFixed time) {
     AukTrack* track = (AukTrack*)This;
-    AukEnvelopePointPtr p0Ptr = NULL;
-    AukEnvelopePointPtr p1Ptr = NULL;
-    AukEnvelopePoint* p0;
-    AukEnvelopePoint* p1;
-    AukFixed result;
-    AukFixed t;
+    long long* timeData;
+    short* valueData;
+    unsigned int count;
     unsigned int i;
+    AukFixed t0, t1, v0, v1;
+    AukFixed t, result;
 
-    if (!track || !track->envelopePoints || track->envelopePoints->count == 0) {
+    if (!track || !track->envelopeTime || !track->envelopeValue) {
         return AUK_FIXED_ONE; /* Default to full volume */
     }
 
-    /* Get first point */
-    track->envelopePoints->Get(track->envelopePoints, &p0Ptr, 0);
-    p0 = (AukEnvelopePoint*)p0Ptr;
+    count = track->envelopeTime->totalElements;
+    if (count == 0) {
+        return AUK_FIXED_ONE;
+    }
+
+    timeData = (long long*)track->envelopeTime->data;
+    valueData = (short*)track->envelopeValue->data;
 
     /* Before first point */
-    if (time < p0->time) {
-        result = p0->value;
-        AukObjectPtr_Release(&p0Ptr);
-        return result;
+    if (time < timeData[0]) {
+        /* Convert from 8-bit fixed point (0x0100 = 1.0) to AukFixed */
+        return ((AukFixed)valueData[0]) << 24; /* 0x0100 << 24 = AUK_FIXED_ONE */
+    }
+
+    /* After last point */
+    if (time >= timeData[count - 1]) {
+        return ((AukFixed)valueData[count - 1]) << 24;
     }
 
     /* Find interval containing time */
-    for (i = 0; i < track->envelopePoints->count - 1; i++) {
-        AukObjectPtr_Release(&p0Ptr);
-        track->envelopePoints->Get(track->envelopePoints, &p0Ptr, i);
-        track->envelopePoints->Get(track->envelopePoints, &p1Ptr, i + 1);
+    for (i = 0; i < count - 1; i++) {
+        t0 = (AukFixed)timeData[i];
+        t1 = (AukFixed)timeData[i + 1];
 
-        p0 = (AukEnvelopePoint*)p0Ptr;
-        p1 = (AukEnvelopePoint*)p1Ptr;
+        if (time >= t0 && time <= t1) {
+            /* Linear interpolation between points */
+            v0 = ((AukFixed)valueData[i]) << 24;
+            v1 = ((AukFixed)valueData[i + 1]) << 24;
 
-        if (time >= p0->time && time <= p1->time) {
-            /* Linear interpolation between p0 and p1 */
-            t = AukFixed_Div(AukFixed_Sub(time, p0->time),
-                            AukFixed_Sub(p1->time, p0->time));
-            result = AukFixed_Lerp(p0->value, p1->value, t);
-            AukObjectPtr_Release(&p0Ptr);
-            AukObjectPtr_Release(&p1Ptr);
+            t = AukFixed_Div(AukFixed_Sub(time, t0), AukFixed_Sub(t1, t0));
+            result = AukFixed_Lerp(v0, v1, t);
             return result;
         }
-
-        AukObjectPtr_Release(&p1Ptr);
     }
 
-    /* After last point - p0 is still the last point from the loop */
-    result = p0->value;
-    AukObjectPtr_Release(&p0Ptr);
-    return result;
+    /* Shouldn't reach here, but return last point value */
+    return ((AukFixed)valueData[count - 1]) << 24;
 }
 
 void AukTrack_Init(AukTrack* track) {
@@ -371,9 +479,9 @@ void AukTrack_Init(AukTrack* track) {
         track->GetSoundCount = AukTrack_GetSoundCount;
 
         /* Set envelope management methods */
-        track->CreateEnvelopePoint = AukTrack_CreateEnvelopePoint;
-        track->RemoveEnvelopePoint = AukTrack_RemoveEnvelopePoint;
-        track->GetEnvelopePoint = AukTrack_GetEnvelopePoint;
+        track->AddEnvelopePoint = AukTrack_AddEnvelopePoint;
+        track->RemoveEnvelopePointAt = AukTrack_RemoveEnvelopePointAt;
+        track->GetEnvelopePointAt = AukTrack_GetEnvelopePointAt;
         track->GetEnvelopePointCount = AukTrack_GetEnvelopePointCount;
         track->GetEnvelopeValue = AukTrack_GetEnvelopeValue;
 
@@ -387,10 +495,8 @@ void AukTrack_Init(AukTrack* track) {
             AukArray_SetType(track->sounds, AukSound_New, AukSound_GetTypeName);
         }
 
-        /* Initialize envelope points array */
-        AukArray_New(&track->envelopePoints);
-        if (track->envelopePoints) {
-            AukArray_SetType(track->envelopePoints, AukEnvelopePoint_New, AukEnvelopePoint_GetTypeName);
-        }
+        /* Initialize envelope scalar arrays (start empty) */
+        track->envelopeTime = NULL;
+        track->envelopeValue = NULL;
     }
 }
