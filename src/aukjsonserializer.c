@@ -99,23 +99,23 @@ static int JsonWriter_AddToRememberList(JsonWriterContext* ctx, AukObject* obj) 
     return (int)(ctx->rememberCount++);
 }
 
-static void JsonWriter_PushContext(ISerializer* This, const char* name) {
-    JsonWriterContext* ctx = (JsonWriterContext*)This->context;
-    cJSON* newObj = cJSON_CreateObject();
+//static void JsonWriter_PushContext(ISerializer* This, const char* name) {
+//    JsonWriterContext* ctx = (JsonWriterContext*)This->context;
+//    cJSON* newObj = cJSON_CreateObject();
 
-    if (newObj) {
-        /* Add the new object to current context */
-        cJSON_AddItemToObject(ctx->current, name, newObj);
+//    if (newObj) {
+//        /* Add the new object to current context */
+//        cJSON_AddItemToObject(ctx->current, name, newObj);
 
-        /* Push current to stack and make newObj current */
-        PushContextStack(&ctx->stack, &ctx->current, newObj);
-    }
-}
+//        /* Push current to stack and make newObj current */
+//        PushContextStack(&ctx->stack, &ctx->current, newObj);
+//    }
+//}
 
-static void JsonWriter_PopContext(ISerializer* This) {
-    JsonWriterContext* ctx = (JsonWriterContext*)This->context;
-    PopContextStack(&ctx->stack, &ctx->current);
-}
+//static void JsonWriter_PopContext(ISerializer* This) {
+//    JsonWriterContext* ctx = (JsonWriterContext*)This->context;
+//    PopContextStack(&ctx->stack, &ctx->current);
+//}
 
 static void JsonWriter_t_int(ISerializer* This, const char* name, int* value) {
     JsonWriterContext* ctx = (JsonWriterContext*)This->context;
@@ -222,45 +222,6 @@ static void JsonWriter_t_arrayobj(ISerializer* This, const char* name, AukArray*
     AukObjectNewFunc itemNewFunc, const char* (*itemGetTypeName)(AukObject*)) {
     /* Delegate to t_object since AukArray handles its own serialization */
     JsonWriter_t_object(This, name, (AukObjectPtr*)array);
-}
-
-static void JsonWriter_t_int_array(ISerializer* This, const char* name, int** values, unsigned int* count) {
-    JsonWriterContext* ctx = (JsonWriterContext*)This->context;
-    cJSON* array = cJSON_CreateArray();
-    unsigned int i;
-
-    if (array && *values) {
-        for (i = 0; i < *count; i++) {
-            cJSON_AddItemToArray(array, cJSON_CreateNumberInt((*values)[i]));
-        }
-        cJSON_AddItemToObject(ctx->current, name, array);
-    }
-}
-
-static void JsonWriter_t_longlong_array(ISerializer* This, const char* name, long long** values, unsigned int* count) {
-    JsonWriterContext* ctx = (JsonWriterContext*)This->context;
-    cJSON* array = cJSON_CreateArray();
-    unsigned int i;
-
-    if (array && *values) {
-        for (i = 0; i < *count; i++) {
-            cJSON_AddItemToArray(array, cJSON_CreateNumberInt((int)(*values)[i]));
-        }
-        cJSON_AddItemToObject(ctx->current, name, array);
-    }
-}
-
-static void JsonWriter_t_fixed_array(ISerializer* This, const char* name, AukFixed** values, unsigned int* count) {
-    JsonWriterContext* ctx = (JsonWriterContext*)This->context;
-    cJSON* array = cJSON_CreateArray();
-    unsigned int i;
-
-    if (array && *values) {
-        for (i = 0; i < *count; i++) {
-            cJSON_AddItemToArray(array, cJSON_CreateNumberFixed((*values)[i]));
-        }
-        cJSON_AddItemToObject(ctx->current, name, array);
-    }
 }
 
 static void JsonWriter_t_scalararray(ISerializer* This, const char* name, AukScalarArray** array) {
@@ -397,9 +358,6 @@ ISerializer* AukJsonSerializer_CreateWriter(void) {
     ser->t_string_mutable = JsonWriter_t_string_mutable;
     ser->t_object = JsonWriter_t_object;
     ser->t_arrayobj = JsonWriter_t_arrayobj;
-    ser->t_int_array = JsonWriter_t_int_array;
-    ser->t_longlong_array = JsonWriter_t_longlong_array;
-    ser->t_fixed_array = JsonWriter_t_fixed_array;
     ser->t_scalararray = JsonWriter_t_scalararray;
     ser->Destroy = JsonWriter_Destroy;
 
@@ -656,117 +614,6 @@ static void JsonReader_t_arrayobj(ISerializer* This, const char* name, AukArray*
     JsonReader_t_object(This, name, (AukObjectPtr*)array);
 }
 
-static void JsonReader_t_int_array(ISerializer* This, const char* name, int** values, unsigned int* count) {
-    JsonReaderContext* ctx = (JsonReaderContext*)This->context;
-    cJSON* arrayNode = cJSON_GetObjectItem(ctx->current, name);
-    cJSON* item;
-    unsigned int i;
-    int arraySize;
-
-    /* Free existing array */
-    if (*values) {
-        FreeVec(*values);
-        *values = NULL;
-    }
-    *count = 0;
-
-    if (!arrayNode || !cJSON_IsArray(arrayNode)) {
-        return;
-    }
-
-    arraySize = cJSON_GetArraySize(arrayNode);
-    if (arraySize <= 0) {
-        return;
-    }
-
-    *values = (int*)AllocVec(arraySize * sizeof(int), MEMF_CLEAR);
-    if (!*values) {
-        return;
-    }
-
-    i = 0;
-    cJSON_ArrayForEach(item, arrayNode) {
-        if (cJSON_IsNumber(item) && i < (unsigned int)arraySize) {
-            (*values)[i++] = item->valueint;
-        }
-    }
-    *count = i;
-}
-
-static void JsonReader_t_longlong_array(ISerializer* This, const char* name, long long** values, unsigned int* count) {
-    JsonReaderContext* ctx = (JsonReaderContext*)This->context;
-    cJSON* arrayNode = cJSON_GetObjectItem(ctx->current, name);
-    cJSON* item;
-    unsigned int i;
-    int arraySize;
-
-    /* Free existing array */
-    if (*values) {
-        FreeVec(*values);
-        *values = NULL;
-    }
-    *count = 0;
-
-    if (!arrayNode || !cJSON_IsArray(arrayNode)) {
-        return;
-    }
-
-    arraySize = cJSON_GetArraySize(arrayNode);
-    if (arraySize <= 0) {
-        return;
-    }
-
-    *values = (long long*)AllocVec(arraySize * sizeof(long long), MEMF_CLEAR);
-    if (!*values) {
-        return;
-    }
-
-    i = 0;
-    cJSON_ArrayForEach(item, arrayNode) {
-        if (cJSON_IsNumber(item) && i < (unsigned int)arraySize) {
-            (*values)[i++] = (long long)item->valueint;
-        }
-    }
-    *count = i;
-}
-
-static void JsonReader_t_fixed_array(ISerializer* This, const char* name, AukFixed** values, unsigned int* count) {
-    JsonReaderContext* ctx = (JsonReaderContext*)This->context;
-    cJSON* arrayNode = cJSON_GetObjectItem(ctx->current, name);
-    cJSON* item;
-    unsigned int i;
-    int arraySize;
-
-    /* Free existing array */
-    if (*values) {
-        FreeVec(*values);
-        *values = NULL;
-    }
-    *count = 0;
-
-    if (!arrayNode || !cJSON_IsArray(arrayNode)) {
-        return;
-    }
-
-    arraySize = cJSON_GetArraySize(arrayNode);
-    if (arraySize <= 0) {
-        return;
-    }
-
-    *values = (AukFixed*)AllocVec(arraySize * sizeof(AukFixed), MEMF_CLEAR);
-    if (!*values) {
-        return;
-    }
-
-    i = 0;
-    cJSON_ArrayForEach(item, arrayNode) {
-        if (i < (unsigned int)arraySize) {
-            (*values)[i++] = cJSON_GetNumberFixed(item);
-        }
-    }
-    *count = i;
-}
-
 static void JsonReader_t_scalararray(ISerializer* This, const char* name, AukScalarArray** array) {
     JsonReaderContext* ctx = (JsonReaderContext*)This->context;
     cJSON* sarrObj = cJSON_GetObjectItem(ctx->current, name);
@@ -935,9 +782,6 @@ ISerializer* AukJsonSerializer_CreateReader(const char* jsonString, const TypeNa
     ser->t_string_mutable = JsonReader_t_string_mutable;
     ser->t_object = JsonReader_t_object;
     ser->t_arrayobj = JsonReader_t_arrayobj;
-    ser->t_int_array = JsonReader_t_int_array;
-    ser->t_longlong_array = JsonReader_t_longlong_array;
-    ser->t_fixed_array = JsonReader_t_fixed_array;
     ser->t_scalararray = JsonReader_t_scalararray;
     ser->Destroy = JsonReader_Destroy;
 

@@ -19,6 +19,7 @@ extern "C" {
 
 /* Data model objects */
 #include "aukproject.h"
+#include "aukaproject.h"
 #include "auktrack.h"
 #include "auksound.h"
 #include "auksoundfile.h"

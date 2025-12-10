@@ -143,6 +143,9 @@ int LoadProjectIFF(AukProjectPtr* projectPtr, const char* filename) {
         return 0;
     }
 
+    /* Set project context on all loaded objects */
+    AukProject_SetProjectContext(*projectPtr);
+
     printf("Project loaded successfully!\n");
     return 1;
 }

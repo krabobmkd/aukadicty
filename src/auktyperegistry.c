@@ -5,6 +5,7 @@
 
 #include "auktyperegistry.h"
 #include "aukproject.h"
+#include "aukaproject.h"
 #include "auktrack.h"
 #include "auksound.h"
 #include "auksoundfile.h"
@@ -14,6 +15,7 @@
  * Last entry must have typename = NULL to terminate the table */
 static const TypeNameToContructor g_projectTypeRegistry[] = {
     { "AukProject", (void (*)(AukObjectPtr*))AukProject_New },
+    { "AukAProject", (void (*)(AukObjectPtr*))AukAProject_New },
     { "AukProjectPrefs", (void (*)(AukObjectPtr*))AukProjectPrefs_New },
     { "AukTrack", (void (*)(AukObjectPtr*))AukTrack_New },
     { "AukSound", (void (*)(AukObjectPtr*))AukSound_New },

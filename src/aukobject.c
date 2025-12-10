@@ -159,6 +159,9 @@ void AukObject_Init(AukObject* obj) {
 
         /* Initialize listener list */
         obj->listeners = NULL;
+
+        /* Initialize project context */
+        obj->_project = NULL;
     }
 }
 

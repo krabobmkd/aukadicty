@@ -9,8 +9,8 @@
 #include <stdio.h>
 
 int main(void) {
-    AukProjectPtr projectPtr = NULL;
-    AukProject* project;
+    AukAProjectPtr projectPtr = NULL;
+    AukAProject* project;
     AukTrack* track1;
     AukTrack* track2;
     AukSoundFilePtr soundFile1 = NULL;
@@ -19,7 +19,7 @@ int main(void) {
     AukFixed duration;
 
     /* Create a new project */
-    AukProject_New(&projectPtr);
+    AukAProject_New(&projectPtr);
     project = projectPtr;
     if (!project) {
         printf("Failed to create project\n");
@@ -27,9 +27,9 @@ int main(void) {
     }
 
     /* Set project properties */
-    project->SetName(project, "My First Project");
-    project->SetPath(project, "Work:");
-    AukProject_SetPreferences(project, 44100, 16);
+    project->base.SetName(&project->base, "My First Project");
+    project->base.SetPath(&project->base, "Work:");
+    AukAProject_SetPreferences(project, 44100, 16);
 
     /* Create tracks in the project */
     track1 = project->CreateTrack(project);

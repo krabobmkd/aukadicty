@@ -75,6 +75,12 @@ void AukTrack_Serialize(void* This, ISerializer* ser, const char* pName) {
 void AukTrack_SetProject(AukTrack* track, AukProject* project) {
     if (track) {
         track->project = project;
+        track->base._project = project;
+
+        /* Also set project on the sounds array */
+        if (track->sounds) {
+            track->sounds->base._project = project;
+        }
     }
 }
 
@@ -127,6 +133,9 @@ AukSound* AukTrack_CreateSound(void* This, AukSoundFilePtr soundFile, AukFixed s
     if (!sound) {
         return NULL;
     }
+
+    /* Set project context */
+    sound->base._project = track->project;
 
     /* Set properties */
     AukSound_SetSoundFile(sound, soundFile);

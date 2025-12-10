@@ -358,87 +358,6 @@ static void IFFWriter_t_arrayobj(ISerializer* This, const char* name, AukArray**
     IFFWriter_t_object(This, name, (AukObjectPtr*)array);
 }
 
-static void IFFWriter_t_int_array(ISerializer* This, const char* name, int** values, unsigned int* count) {
-    IFFWriterContext* ctx = (IFFWriterContext*)This->context;
-    unsigned long nameLen = strlen(name);
-    unsigned long dataSize = *count * 4;
-    unsigned int i;
-
-    if (!*values || *count == 0) return;
-
-    /* Write chunk header */
-    WriteBigEndianLong(ctx->file, ID_ARRY);
-    WriteBigEndianLong(ctx->file, nameLen + 1 + 4 + 4 + dataSize);  /* name + null + type + count + data */
-
-    /* Write name */
-    Write(ctx->file, name, nameLen + 1);
-
-    /* Write type (INT) and count */
-    WriteBigEndianLong(ctx->file, ID_INT);
-    WriteBigEndianLong(ctx->file, *count);
-
-    /* Write values */
-    for (i = 0; i < *count; i++) {
-        WriteBigEndianLong(ctx->file, (unsigned long)(*values)[i]);
-    }
-
-    /* Pad if needed */
-    if ((nameLen + 1 + 4 + 4 + dataSize) & 1) {
-        unsigned char pad = 0;
-        Write(ctx->file, &pad, 1);
-    }
-}
-
-static void IFFWriter_t_longlong_array(ISerializer* This, const char* name, long long** values, unsigned int* count) {
-    IFFWriterContext* ctx = (IFFWriterContext*)This->context;
-    unsigned long nameLen = strlen(name);
-    unsigned long dataSize = *count * 8;
-    unsigned int i;
-
-    if (!*values || *count == 0) return;
-
-    WriteBigEndianLong(ctx->file, ID_ARRY);
-    WriteBigEndianLong(ctx->file, nameLen + 1 + 4 + 4 + dataSize);
-
-    Write(ctx->file, name, nameLen + 1);
-    WriteBigEndianLong(ctx->file, ID_I64);
-    WriteBigEndianLong(ctx->file, *count);
-
-    for (i = 0; i < *count; i++) {
-        WriteBigEndianLongLong(ctx->file, (unsigned long long)(*values)[i]);
-    }
-
-    if ((nameLen + 1 + 4 + 4 + dataSize) & 1) {
-        unsigned char pad = 0;
-        Write(ctx->file, &pad, 1);
-    }
-}
-
-static void IFFWriter_t_fixed_array(ISerializer* This, const char* name, AukFixed** values, unsigned int* count) {
-    IFFWriterContext* ctx = (IFFWriterContext*)This->context;
-    unsigned long nameLen = strlen(name);
-    unsigned long dataSize = *count * 8;
-    unsigned int i;
-
-    if (!*values || *count == 0) return;
-
-    WriteBigEndianLong(ctx->file, ID_ARRY);
-    WriteBigEndianLong(ctx->file, nameLen + 1 + 4 + 4 + dataSize);
-
-    Write(ctx->file, name, nameLen + 1);
-    WriteBigEndianLong(ctx->file, ID_FIX);
-    WriteBigEndianLong(ctx->file, *count);
-
-    for (i = 0; i < *count; i++) {
-        WriteBigEndianLongLong(ctx->file, (unsigned long long)(*values)[i]);
-    }
-
-    if ((nameLen + 1 + 4 + 4 + dataSize) & 1) {
-        unsigned char pad = 0;
-        Write(ctx->file, &pad, 1);
-    }
-}
-
 static void IFFWriter_t_scalararray(ISerializer* This, const char* name, AukScalarArray** array) {
     IFFWriterContext* ctx = (IFFWriterContext*)This->context;
     AukScalarArray* arr = *array;
@@ -564,9 +483,6 @@ ISerializer* AukIFFSerializer_CreateWriter(BPTR file) {
     ser->t_string_mutable = IFFWriter_t_string_mutable;
     ser->t_object = IFFWriter_t_object;
     ser->t_arrayobj = IFFWriter_t_arrayobj;
-    ser->t_int_array = IFFWriter_t_int_array;
-    ser->t_longlong_array = IFFWriter_t_longlong_array;
-    ser->t_fixed_array = IFFWriter_t_fixed_array;
     ser->t_scalararray = IFFWriter_t_scalararray;
     ser->Destroy = IFFWriter_Destroy;
 
@@ -957,134 +873,6 @@ static void IFFReader_t_arrayobj(ISerializer* This, const char* name, AukArray**
     }
 }
 
-static void IFFReader_t_int_array(ISerializer* This, const char* name, int** values, unsigned int* count) {
-    IFFReaderContext* ctx = (IFFReaderContext*)This->context;
-    unsigned long chunkID, chunkSize;
-    char chunkName[256];
-    unsigned long nameLen, arrayType, arrayCount;
-    unsigned int i;
-
-    /* Free existing */
-    if (*values) {
-        FreeVec(*values);
-        *values = NULL;
-    }
-    *count = 0;
-
-    /* Find ARRY chunk */
-    if (!IFFReader_ReadChunkHeader(ctx->file, &chunkID, &chunkSize) || chunkID != ID_ARRY) {
-        return;
-    }
-
-    /* Read name */
-    nameLen = 0;
-    while (nameLen < 255) {
-        if (Read(ctx->file, &chunkName[nameLen], 1) != 1) return;
-        if (chunkName[nameLen] == 0) break;
-        nameLen++;
-    }
-    chunkName[nameLen] = 0;
-
-    if (AukString_Compare(chunkName, name) != 0) return;
-
-    /* Read type and count */
-    arrayType = ReadBigEndianLong(ctx->file);
-    arrayCount = ReadBigEndianLong(ctx->file);
-
-    if (arrayType != ID_INT || arrayCount == 0) return;
-
-    /* Allocate and read */
-    *values = (int*)AllocVec(arrayCount * sizeof(int), MEMF_CLEAR);
-    if (!*values) return;
-
-    for (i = 0; i < arrayCount; i++) {
-        (*values)[i] = (int)ReadBigEndianLong(ctx->file);
-    }
-    *count = arrayCount;
-}
-
-static void IFFReader_t_longlong_array(ISerializer* This, const char* name, long long** values, unsigned int* count) {
-    IFFReaderContext* ctx = (IFFReaderContext*)This->context;
-    unsigned long chunkID, chunkSize;
-    char chunkName[256];
-    unsigned long nameLen, arrayType, arrayCount;
-    unsigned int i;
-
-    if (*values) {
-        FreeVec(*values);
-        *values = NULL;
-    }
-    *count = 0;
-
-    if (!IFFReader_ReadChunkHeader(ctx->file, &chunkID, &chunkSize) || chunkID != ID_ARRY) {
-        return;
-    }
-
-    nameLen = 0;
-    while (nameLen < 255) {
-        if (Read(ctx->file, &chunkName[nameLen], 1) != 1) return;
-        if (chunkName[nameLen] == 0) break;
-        nameLen++;
-    }
-    chunkName[nameLen] = 0;
-
-    if (AukString_Compare(chunkName, name) != 0) return;
-
-    arrayType = ReadBigEndianLong(ctx->file);
-    arrayCount = ReadBigEndianLong(ctx->file);
-
-    if (arrayType != ID_I64 || arrayCount == 0) return;
-
-    *values = (long long*)AllocVec(arrayCount * sizeof(long long), MEMF_CLEAR);
-    if (!*values) return;
-
-    for (i = 0; i < arrayCount; i++) {
-        (*values)[i] = (long long)ReadBigEndianLongLong(ctx->file);
-    }
-    *count = arrayCount;
-}
-
-static void IFFReader_t_fixed_array(ISerializer* This, const char* name, AukFixed** values, unsigned int* count) {
-    IFFReaderContext* ctx = (IFFReaderContext*)This->context;
-    unsigned long chunkID, chunkSize;
-    char chunkName[256];
-    unsigned long nameLen, arrayType, arrayCount;
-    unsigned int i;
-
-    if (*values) {
-        FreeVec(*values);
-        *values = NULL;
-    }
-    *count = 0;
-
-    if (!IFFReader_ReadChunkHeader(ctx->file, &chunkID, &chunkSize) || chunkID != ID_ARRY) {
-        return;
-    }
-
-    nameLen = 0;
-    while (nameLen < 255) {
-        if (Read(ctx->file, &chunkName[nameLen], 1) != 1) return;
-        if (chunkName[nameLen] == 0) break;
-        nameLen++;
-    }
-    chunkName[nameLen] = 0;
-
-    if (AukString_Compare(chunkName, name) != 0) return;
-
-    arrayType = ReadBigEndianLong(ctx->file);
-    arrayCount = ReadBigEndianLong(ctx->file);
-
-    if (arrayType != ID_FIX || arrayCount == 0) return;
-
-    *values = (AukFixed*)AllocVec(arrayCount * sizeof(AukFixed), MEMF_CLEAR);
-    if (!*values) return;
-
-    for (i = 0; i < arrayCount; i++) {
-        (*values)[i] = (AukFixed)ReadBigEndianLongLong(ctx->file);
-    }
-    *count = arrayCount;
-}
-
 static void IFFReader_t_scalararray(ISerializer* This, const char* name, AukScalarArray** array) {
     IFFReaderContext* ctx = (IFFReaderContext*)This->context;
     unsigned long chunkID, chunkSize;
@@ -1249,9 +1037,6 @@ ISerializer* AukIFFSerializer_CreateReader(BPTR file, const TypeNameToContructor
     ser->t_string_mutable = IFFReader_t_string_mutable;
     ser->t_object = IFFReader_t_object;
     ser->t_arrayobj = IFFReader_t_arrayobj;
-    ser->t_int_array = IFFReader_t_int_array;
-    ser->t_longlong_array = IFFReader_t_longlong_array;
-    ser->t_fixed_array = IFFReader_t_fixed_array;
     ser->t_scalararray = IFFReader_t_scalararray;
     ser->Destroy = IFFReader_Destroy;
 

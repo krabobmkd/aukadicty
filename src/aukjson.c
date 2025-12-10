@@ -159,5 +159,8 @@ void AukJson_LoadProject(AukProjectPtr* projectPtr, const char* filename) {
                 FreeVec(path);
             }
         }
+
+        /* Set project context on all loaded objects */
+        AukProject_SetProjectContext(project);
     }
 }

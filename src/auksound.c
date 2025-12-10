@@ -80,6 +80,11 @@ void AukSound_SetSoundFile(AukSound* sound, AukSoundFile *soundFile) {
     /* Retain new reference */
     AukObjectPtr_Set((AukObjectPtr*)&sound->soundFile, (AukObject*)soundFile);
 
+    /* Set project context on soundFile if sound has project context */
+    if (soundFile && sound->base._project) {
+        soundFile->base._project = sound->base._project;
+    }
+
     /* Send update notification */
     sound->base.SendUpdate(&sound->base, NULL);
 }

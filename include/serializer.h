@@ -43,10 +43,6 @@ typedef struct sISerializer {
     /* Type registry for reading (NULL for writing serializers) */
     const TypeNameToContructor* typeRegistry;
 
-    /* Object nesting support - push/pop context when serializing nested objects */
-    //void (*PushContext)(struct sISerializer* This, const char* name);
-    //void (*PopContext)(struct sISerializer* This);
-
     /* Primitive types */
     void (*t_int)(struct sISerializer* This, const char* name, int* value);
     void (*t_uint)(struct sISerializer* This, const char* name, unsigned int* value);
@@ -63,11 +59,6 @@ typedef struct sISerializer {
     void (*t_object)(struct sISerializer* This, const char* name, AukObjectPtr* object);
     void (*t_arrayobj)(struct sISerializer* This, const char* name, AukArray** array,
                 AukObjectNewFunc itemNewFunc, const char* (*itemGetTypeName)(AukObject*));
-
-    /* Array of primitives */
-    void (*t_int_array)(struct sISerializer* This, const char* name, int** values, unsigned int* count);
-    void (*t_longlong_array)(struct sISerializer* This, const char* name, long long** values, unsigned int* count);
-    void (*t_fixed_array)(struct sISerializer* This, const char* name, AukFixed** values, unsigned int* count);
 
     /* Scalar array - efficient multidimensional arrays */
     void (*t_scalararray)(struct sISerializer* This, const char* name, AukScalarArray** array);

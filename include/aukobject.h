@@ -17,6 +17,7 @@ extern "C" {
 /* Forward declarations */
 typedef struct AukObject AukObject;
 typedef struct AukListener AukListener;
+typedef struct AukProject AukProject;
 
 /* Typed pointer system - replaces generic AukShared */
 typedef AukObject* AukObjectPtr;
@@ -55,6 +56,9 @@ struct AukObject {
     AukListener* listeners;
     AukMutex    listeners_mutex;
     unsigned int refcount;
+
+    /* Project context - weak reference (optional, can be NULL) */
+    AukProject* _project;
 };
 
 /* Helper macros for calling virtual methods */

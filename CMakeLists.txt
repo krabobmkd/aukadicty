@@ -44,6 +44,7 @@ set(AUKADICTY_SOURCES
     src/aukstring.c
     src/aukfixed.c
     src/aukproject.c
+    src/aukaproject.c
     src/auktrack.c
     src/auksound.c
     src/auksoundfile.c
@@ -82,6 +83,7 @@ set(AUKADICTY_HEADERS
     include/aukstring.h
     include/aukfixed.h
     include/aukproject.h
+    include/aukaproject.h
     include/auktrack.h
     include/auksound.h
     include/auksoundfile.h
