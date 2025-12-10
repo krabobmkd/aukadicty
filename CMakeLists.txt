@@ -126,7 +126,7 @@ set_target_properties(aukstreamcache PROPERTIES
 
 # Add pthread library for POSIX systems
 if(USE_AMIGA_STACK AND UNIX AND NOT APPLE)
-    target_link_libraries(aukadicty pthread)
+#    target_link_libraries(aukadicty pthread)
     target_link_libraries(aukstreamcache pthread)
 endif()
 
@@ -149,21 +149,21 @@ option(BUILD_EXAMPLES "Build example programs" ON)
 if(BUILD_EXAMPLES)
     # Example: Basic usage
     add_executable(example_basic examples/example_basic.c)
-    target_link_libraries(example_basic aukproject)
+    target_link_libraries(example_basic aukproject pthread)
     set_target_properties(example_basic PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/examples
     )
 
     # Example: Load project
     add_executable(example_load examples/example_load.c)
-    target_link_libraries(example_load aukproject)
+    target_link_libraries(example_load aukproject pthread)
     set_target_properties(example_load PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/examples
     )
 
     # Example: Listener pattern
     add_executable(example_listener examples/example_listener.c)
-    target_link_libraries(example_listener aukproject)
+    target_link_libraries(example_listener aukproject pthread)
     set_target_properties(example_listener PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/examples
     )
@@ -177,7 +177,7 @@ if(BUILD_EXAMPLES)
 
     # Example: IFF serialization
     add_executable(example_iff examples/example_iff.c)
-    target_link_libraries(example_iff aukproject)
+    target_link_libraries(example_iff aukproject pthread)
     set_target_properties(example_iff PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/examples
     )

@@ -89,14 +89,14 @@ int main(void) {
     printf("Project duration: %ld seconds\n", AukFixed_ToInt(duration));
 
     /* Save project to JSON file */
-    if (project->Save(project, "my_project.auk")) {
+    if (project->base.Save(project, "my_project.auk")) {
         printf("Project saved successfully\n");
     } else {
         printf("Failed to save project\n");
     }
 
     /* Display project info */
-    printf("Project: %s\n", project->GetName(project));
+    printf("Project: %s\n", project->base.GetName(project));
     printf("Tracks: %lu\n", project->GetTrackCount(project));
     printf("Track 1: %s, Sounds: %lu\n",
            AukTrack_GetName(track1),

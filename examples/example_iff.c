@@ -5,12 +5,13 @@
 
 #include <stdio.h>
 #include "aukadicty.h"
+
 #include "aukiffserializer.h"
 #include "auktyperegistry.h"
 #include "aukfixed.h"
 #include <proto/dos.h>
 
-void PrintProjectInfo(AukProject* project) {
+void PrintProjectInfo(AukAProject* project) {
     unsigned int i, j;
     AukTrack* track = NULL;
 
@@ -18,7 +19,7 @@ void PrintProjectInfo(AukProject* project) {
     unsigned int trackCount, soundCount;
     AukFixed duration;
 
-    projectName = project->GetName(project);
+    projectName = project->base.GetName(project);
     trackCount = project->GetTrackCount(project);
     duration = project->GetDuration(project);
 
@@ -151,8 +152,8 @@ int LoadProjectIFF(AukProjectPtr* projectPtr, const char* filename) {
 }
 
 int main(void) {
-    AukProjectPtr projectPtr = NULL;
-    AukProject* project;
+    AukAProjectPtr projectPtr = NULL;
+    AukAProject* project;
     AukTrack* track1;
     AukTrack* track2;
     AukSoundFilePtr soundFile1 = NULL;
@@ -160,15 +161,15 @@ int main(void) {
     AukSound* sound1;
     AukSound* sound2;
     AukSound* sound3;
-    AukProjectPtr loadedProjectPtr = NULL;
-    AukProject* loadedProject;
+    AukAProjectPtr loadedProjectPtr = NULL;
+    AukAProject* loadedProject;
 
     printf("=== IFF Binary Serialization Example ===\n\n");
 
     /* ========== Create Project ========== */
     printf("Creating project...\n");
 
-    AukProject_New(&projectPtr);
+    AukAProject_New(&projectPtr);
     project = projectPtr;
     if (!project) {
         printf("Failed to create project\n");
@@ -176,9 +177,9 @@ int main(void) {
     }
 
     /* Set project properties */
-    project->SetName(project, "IFF Demo Project");
-    project->SetPath(project, "Work:");
-    AukProject_SetPreferences(project, 48000, 32);
+    project->base.SetName(project, "IFF Demo Project");
+    project->base.SetPath(project, "Work:");
+    AukAProject_SetPreferences(project, 48000, 32);
 
     /* Create tracks */
     track1 = project->CreateTrack(project);
@@ -281,7 +282,7 @@ int main(void) {
     /* ========== Verify Data Integrity ========== */
     printf("=== Verifying Data Integrity ===\n");
 
-    if (AukString_Compare(loadedProject->GetName(loadedProject), "IFF Demo Project") == 0) {
+    if (AukString_Compare(loadedProject->base.GetName(loadedProject), "IFF Demo Project") == 0) {
         printf("✓ Project name matches\n");
     } else {
         printf("✗ Project name mismatch\n");

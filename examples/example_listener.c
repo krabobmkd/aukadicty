@@ -53,8 +53,8 @@ void MockGUIView_Delete(MockGUIView* view) {
 }
 
 int main(void) {
-    AukProjectPtr projectPtr = NULL;
-    AukProject* project= NULL;
+    AukAProjectPtr projectPtr = NULL;
+    AukAProject* project= NULL;
     AukTrack* track= NULL;
     AukSound* sound= NULL;
     AukSoundFilePtr soundFile = NULL;
@@ -68,10 +68,10 @@ int main(void) {
     printf("=== Listener Pattern Example ===\n\n");
 
     /* Create project and GUI views */
-    AukProject_New(&projectPtr);
+    AukAProject_New(&projectPtr);
     project = projectPtr;
-    project->SetName(project, "Test Project");
-    project->SetPath(project, "Work:");
+    project->base.SetName(project, "Test Project");
+    project->base.SetPath(project, "Work:");
     track = project->CreateTrack(project);
     AukTrack_SetName(track, "Track 1");
     /* Create GUI view objects (would be actual GUI widgets in real app) */
@@ -81,12 +81,12 @@ int main(void) {
 
     /* Register listeners */
     printf("Registering listeners...\n\n");
-    project->base.AddListener(project, &projectView->base, MockGUIView_OnUpdate);
+    project->base.base.AddListener(project, &projectView->base, MockGUIView_OnUpdate);
     track->base.AddListener(track, &trackView->base, MockGUIView_OnUpdate);
 
     /* Modify project - should trigger projectView update */
     printf("Setting project name...\n");
-    project->SetName(project, "Updated Project");
+    project->base.SetName(project, "Updated Project");
     printf("\n");
 
     /* Modify track - should trigger trackView update */
@@ -136,13 +136,13 @@ int main(void) {
 
     /* Unregister listeners */
     printf("Unregistering listeners...\n");
-    project->base.RemoveListener(&project->base, &projectView->base);
+    project->base.base.RemoveListener(&project->base.base, &projectView->base);
     track->base.RemoveListener(&track->base, &trackView->base);
     sound->base.RemoveListener(&sound->base, &soundView->base);
 
     /* Modify after unregistering - should sNOT trigger updates */
     printf("Modifying after unregister (should not trigger updates)...\n");
-    project->SetName(project, "Final Name");
+    project->base.SetName(project, "Final Name");
     AukTrack_SetName(track, "Final Track Name");
     printf("\n");
 

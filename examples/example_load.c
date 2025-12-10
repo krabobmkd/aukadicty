@@ -8,8 +8,8 @@
 #include <stdio.h>
 
 int main(int argc, char** argv) {
-    AukProjectPtr projectPtr = NULL;
-    AukProject* project;
+    AukAProjectPtr projectPtr = NULL;
+    AukAProject* project;
     AukTrack* track=NULL;
 
     unsigned long i, j;
@@ -34,7 +34,7 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    printf("Loaded project: %s\n", project->GetName(project));
+    printf("Loaded project: %s\n", project->base.GetName(project));
     printf("Sample rate: %lu Hz\n", ((AukProjectPrefs*)project->prefs)->sampleRate);
     printf("Max tracks: %lu\n", ((AukProjectPrefs*)project->prefs)->maxTracks);
 
