@@ -7,6 +7,10 @@
 #include <proto/exec.h>
 #include <string.h>
 
+#ifdef Remove
+#undef Remove
+#endif
+
 /*
  * AukTrack implementation
  * Manages a track with sounds and envelope

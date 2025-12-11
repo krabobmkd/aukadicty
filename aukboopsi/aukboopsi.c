@@ -42,8 +42,13 @@
 #include <proto/texteditor.h>
 #include <gadgets/texteditor.h>
 
+#include <proto/virtual.h>
+#include <gadgets/virtual.h>
+
 #include <proto/requester.h>
 #include <classes/requester.h>
+
+
 
 #include <proto/asl.h>
 #include <libraries/asl.h>
@@ -75,6 +80,8 @@ struct Library *LayoutBase=NULL;
 struct Library *BitMapBase=NULL;
 struct Library *ButtonBase=NULL;
 struct Library *LabelBase=NULL;
+struct Library *VirtualBase=NULL;
+
 struct Library *CheckBoxBase=NULL;
 struct Library *StringBase=NULL;
 struct Library *TextFieldBase=NULL;
@@ -139,20 +146,14 @@ struct App
          //   Object *titlelabel;
             Object* btAbout;
         Object *horizontallayoutB;
-        Object *layoutBList;
-            // form constants
-            Object *projectNameString;
-            Object *projectDescription;
-        Object *layoutBForm;
-
-        Object* btGenerate;
+            Object *HeaderZone;
+            Object *TrackVertLZone;
+            Object *TrackVirtZone;
 
             // status bar
         Object *horizontallayoutC;
-        Object *bottombarlayout;
+            Object *bottombarlayout;
             Object* statusbarlabel;
-
-    Object **TemplateButtonsList;
 
      Object *reportReq;
 
@@ -249,7 +250,7 @@ int main(int argc, char **argv)
 
     // - - - - open libraries...
 
-    if ( ! (IntuitionBase = (struct IntuitionBase*)OpenLibrary("intuition.library",33)))
+    if ( ! (IntuitionBase = (struct IntuitionBase*)OpenLibrary("intuition.library",39)))
         cleanexit("Can't open intuition.library");
 
     if ( ! (GfxBase = (struct GfxBase *)OpenLibrary("graphics.library",39)))
@@ -269,32 +270,35 @@ int main(int argc, char **argv)
     // note: DOSBase is opened by C startup.
 
     // - - - - open boopsi classes...
-
-    if ( ! (WindowBase = OpenLibrary("window.class",44)))
+    int mingadgetversion=45; // OS3.9, needed for virtual.
+    if ( ! (WindowBase = OpenLibrary("window.class",mingadgetversion)))
         cleanexit("Can't open window.class");
 
-    if ( ! (LayoutBase = OpenLibrary("gadgets/layout.gadget",44)))
+    if ( ! (LayoutBase = OpenLibrary("gadgets/layout.gadget",mingadgetversion)))
         cleanexit("Can't open layout.gadget");
 
-    if ( ! (BitMapBase = OpenLibrary("images/bitmap.image",44)))
+    if ( ! (BitMapBase = OpenLibrary("images/bitmap.image",mingadgetversion)))
         cleanexit("Can't open bitmap.image");
 
-    if ( ! (ButtonBase = OpenLibrary("gadgets/button.gadget",44)))
+    if ( ! (ButtonBase = OpenLibrary("gadgets/button.gadget",mingadgetversion)))
         cleanexit("Can't open button.gadget");
 
-    if ( ! (LabelBase = OpenLibrary("images/label.image",44)))
+    if ( ! (LabelBase = OpenLibrary("images/label.image",mingadgetversion)))
         cleanexit("Can't open label.image");
 
-   if ( ! (CheckBoxBase = OpenLibrary("gadgets/checkbox.gadget",44)))
+    if ( ! (VirtualBase = OpenLibrary("gadgets/virtual.gadget",mingadgetversion)))
+        cleanexit("Can't open virtual.gadget");
+
+   if ( ! (CheckBoxBase = OpenLibrary("gadgets/checkbox.gadget",mingadgetversion)))
        cleanexit("Can't open checkbox.gadget");
 
-    if ( ! (StringBase = OpenLibrary("gadgets/string.gadget",44)))
+    if ( ! (StringBase = OpenLibrary("gadgets/string.gadget",mingadgetversion)))
         cleanexit("Can't open string.gadget");
 
-    if ( ! (TextFieldBase = OpenLibrary("gadgets/texteditor.gadget",44)))
+    if ( ! (TextFieldBase = OpenLibrary("gadgets/texteditor.gadget",mingadgetversion)))
         cleanexit("Can't open texteditor.gadget");
 
-    if ( ! (RequesterBase = OpenLibrary("requester.class",44)))
+    if ( ! (RequesterBase = OpenLibrary("requester.class",mingadgetversion)))
         cleanexit("Can't open requester.class");
 
     if(!initAppModel())  cleanexit("Can't create app");
@@ -333,24 +337,24 @@ int main(int argc, char **argv)
                         //IA_Font, &helvetica15bu,
                         //LABEL_SoftStyle, FSF_BOLD | FSF_ITALIC,
                         LABEL_Justification, LABEL_CENTRE,
-                        LABEL_Text,(ULONG)" 0.2 beta",
+                        LABEL_Text,(ULONG)"0.01",
                     TAG_END);
 
-        app->btAbout = NewObject( BUTTON_GetClass(),NULL,
-                                    GA_Text, "About...",
-                                    GA_ID,GAD_BUTTON_ABOUT,
-                                    GA_RelVerify, TRUE,
-                         //           GA_Disabled,TRUE,
-                        // BUTTON_BevelStyle,BVS_NONE,
-                        // BUTTON_Transparent, TRUE,
-                                TAG_END);
+        // app->btAbout = NewObject( BUTTON_GetClass(),NULL,
+        //                             GA_Text, "About...",
+        //                             GA_ID,GAD_BUTTON_ABOUT,
+        //                             GA_RelVerify, TRUE,
+        //                  //           GA_Disabled,TRUE,
+        //                 // BUTTON_BevelStyle,BVS_NONE,
+        //                 // BUTTON_Transparent, TRUE,
+        //                         TAG_END);
 
         app->horizontallayoutA =
              (Object *)NewObject( LAYOUT_GetClass(), NULL,
                     LAYOUT_Orientation, LAYOUT_ORIENT_HORIZ,
                     LAYOUT_EvenSize, TRUE,
                     LAYOUT_HorizAlignment, LALIGN_CENTER,
-                    LAYOUT_BevelStyle, BVS_GROUP,
+                    LAYOUT_BevelStyle, /*BVS_GROUP*/BVS_NONE,
                     //CHILD_WeightedWidth,0,
                      //CHILD_MaxWidth,dtbmLogo.width+2,
                     LAYOUT_AddImage, label1,
@@ -358,10 +362,10 @@ int main(int argc, char **argv)
                     //LAYOUT_AddImage, filler,
                     // CHILD_WeightedWidth,1,
                     CHILD_MaxWidth,2560,
-                    LAYOUT_AddChild, app->btAbout,
+                   // LAYOUT_AddChild, app->btAbout,
                     // CHILD_WeightedWidth,0,
-                     CHILD_MinWidth,32,
-                     CHILD_MaxWidth,32,
+                   //  CHILD_MinWidth,32,
+                   //  CHILD_MaxWidth,32,
                     TAG_DONE);
     }
 
@@ -369,177 +373,88 @@ int main(int argc, char **argv)
 //        app->layoutBList = populateTemplateList();
 //    }
     {
-        // Object* label1 = (Object *)NewObject( LABEL_GetClass(), NULL,
-        //                 LABEL_DrawInfo, app->drawInfo,
-        //                 //IA_Font, &helvetica15bu,
-        //                 //LABEL_SoftStyle, FSF_BOLD | FSF_ITALIC,
-        //                 LABEL_Justification, LABEL_CENTRE,
-        //                 LABEL_Text,(ULONG)"Form",
-        //             TAG_END);
+        app->HeaderZone = NewObject( BUTTON_GetClass(),NULL,
+                                    GA_Text, "test bt1",
+                                    GA_RelVerify, TRUE,
+                                    CHILD_MaxWidth,120,
+                                   CHILD_MaxHeight,6000,
+                                TAG_END);
 
-                    // LAYOUT_AddChild
-        // in this layout, all should have a CHILD_Label
-        Object *subform;
-        {
 
-        app->projectNameString = NewObject( STRING_GetClass(), NULL,
-                        GA_RelVerify, TRUE,
-                        STRINGA_MaxChars, 26,
-                        STRINGA_TextVal, "ProjectName",
-                    TAG_END);
-                    // CHILD_Label
-          Object *label_ProjectNameString = NewObject( LABEL_GetClass(), NULL,
-                        LABEL_Text, "Set Project Name",
-                            TAG_END);
+        Object *gadtrack1 = NewObject( BUTTON_GetClass(),NULL,
+                                    GA_Text, "test track1",
+                                    GA_RelVerify, TRUE,
+                                 // CHILD_MinWidth,6000,
+                                 //   CHILD_MinHeight,6000,
+                                 //    CHILD_MaxWidth,6000,
+                                 //   CHILD_MaxHeight,6000,
+                                TAG_END);
+        Object *gadtrack2 = NewObject( BUTTON_GetClass(),NULL,
+                                    GA_Text, "test track2",
+                                    GA_RelVerify, TRUE,
+                                 // CHILD_MinWidth,6000,
+                                 //   CHILD_MinHeight,6000,
+                                 //    CHILD_MaxWidth,6000,
+                                 //   CHILD_MaxHeight,6000,
+                                TAG_END);
+        Object *gadtrack3 = NewObject( BUTTON_GetClass(),NULL,
+                                    GA_Text, "test track3",
+                                    GA_RelVerify, TRUE,
+                                 // CHILD_MinWidth,6000,
+                                 //   CHILD_MinHeight,6000,
+                                 //    CHILD_MaxWidth,6000,
+                                 //   CHILD_MaxHeight,6000,
+                                TAG_END);
+        app->TrackVertLZone = (Object *)NewObject( LAYOUT_GetClass(), NULL,
+            GA_DrawInfo, app->drawInfo,
+            LAYOUT_DeferLayout, TRUE, // Layout refreshes done on task's context (by thewindow class)
+            LAYOUT_SpaceOuter, FALSE,
+            LAYOUT_SpaceInner, FALSE,
+            LAYOUT_BottomSpacing, 0,
+            LAYOUT_TopSpacing,0,
+            LAYOUT_LeftSpacing,0,
+            LAYOUT_RightSpacing,0,
+            LAYOUT_InnerSpacing,0,
+            LAYOUT_Orientation, LAYOUT_ORIENT_VERT,
+            LAYOUT_BevelStyle, BVS_NONE,
+            LAYOUT_AddChild, gadtrack1,
+                CHILD_MinWidth,1280*4,
+                CHILD_MinHeight,120,
+                CHILD_WeightedHeight,1,
+            LAYOUT_AddChild, gadtrack2,
+                CHILD_MinHeight,120,
+                CHILD_WeightedHeight,1,
+            LAYOUT_AddChild, gadtrack3,
+                CHILD_MinHeight,120,
+                CHILD_WeightedHeight,1,
+            TAG_END);
 
-            subform = (Object *)NewObject( LAYOUT_GetClass(), NULL,
-                    LAYOUT_Orientation, LAYOUT_ORIENT_VERT,
-                    LAYOUT_EvenSize, FALSE,
-                    LAYOUT_HorizAlignment, LALIGN_RIGHT,
-                    LAYOUT_BevelStyle, BVS_NONE,
 
-                    LAYOUT_AddChild, app->projectNameString,
-                    CHILD_Label, label_ProjectNameString,
-                    CHILD_WeightedHeight,0,
-
-                    // LAYOUT_AddChild,formspacer,
-                    // CHILD_WeightedHeight,1,
-
-                    TAG_DONE);
-
-        }
-
-        app->projectDescription = NewObject( TEXTEDITOR_GetClass(), NULL,
-                        GA_TEXTEDITOR_Contents,(ULONG)"...",
-                        GA_TEXTEDITOR_ReadOnly, TRUE,
-                        //        LAYOUT_BevelStyle, BVS_NONE,
-                    TAG_END);
-
-    // Object* formspacer = NewObject( BUTTON_GetClass(),NULL,
-    //             //GA_DrawInfo,(ULONG) app->drawInfo,
-    //             BUTTON_BevelStyle,BVS_NONE,
-    //             BUTTON_Transparent, TRUE,
-    //             GA_ReadOnly, TRUE,
-    //             BUTTON_Justification, BCJ_CENTER,
-    //             GA_Text,(ULONG)" ",
-    //             TAG_END);
-
-        app->layoutBForm =
-             (Object *)NewObject( LAYOUT_GetClass(), NULL,
-                    LAYOUT_Orientation, LAYOUT_ORIENT_VERT,
-                    LAYOUT_EvenSize, FALSE,
-                    LAYOUT_HorizAlignment, LALIGN_RIGHT,
-                    LAYOUT_BevelStyle, BVS_GROUP,
-
-                    LAYOUT_TopSpacing,2,
-                    LAYOUT_LeftSpacing,2,
-                    LAYOUT_RightSpacing,2,
-                    LAYOUT_BottomSpacing,2,
-
-                  //  CHILD_ScaleHeight,1, //%
-                   // CHILD_MaxHeight,app->fontHeight,
-                   // LAYOUT_SpaceInner, FALSE,
-     //               LAYOUT_AddImage, label1,
-                   // CHILD_WeightedHeight,0,
-
-                    LAYOUT_AddChild, subform,
-                    CHILD_WeightedHeight,0,
-
-                    LAYOUT_AddChild,app->projectDescription,
-                    CHILD_WeightedHeight,1,
-
-                    // LAYOUT_AddChild,formspacer,
-                    // CHILD_WeightedHeight,1,
-
-                    TAG_DONE);
+        app->TrackVirtZone = NewObject( VIRTUAL_GetClass(),NULL,
+                                   //  GA_Text, "test bt2",
+                                   //  GA_RelVerify, TRUE,
+                                   //  CHILD_MaxWidth,6000,
+                                   // CHILD_MaxHeight,6000,
+                                   VIRTUALA_Contents,app->TrackVertLZone,
+                                   // VIRTUALA_TotalX,4000,
+                                   // VIRTUALA_TotalY,800,
+                                TAG_END);
 
         app->horizontallayoutB =
              (Object *)NewObject( LAYOUT_GetClass(), NULL,
                     LAYOUT_Orientation, LAYOUT_ORIENT_HORIZ,
                     LAYOUT_EvenSize, TRUE,
                     LAYOUT_HorizAlignment, LALIGN_RIGHT,
-                  //  CHILD_ScaleHeight,1, //%
-                   // CHILD_MaxHeight,app->fontHeight,
-                   // LAYOUT_SpaceInner, FALSE,
-                   // LAYOUT_AddImage, label1,
-                   LAYOUT_AddChild,  app->layoutBList,
+                    LAYOUT_InnerSpacing,0,
+
+                   LAYOUT_AddChild,  app->HeaderZone,
                 CHILD_WeightedWidth,0,
-                    LAYOUT_AddChild, app->layoutBForm,
+                    LAYOUT_AddChild, app->TrackVirtZone,
+                CHILD_MinHeight,60,
                 CHILD_WeightedWidth,1,
                   //  GA_Height,app->fontHeight,
                     TAG_DONE);
     }
-
-    {
-
-                    Object* cbsasc =  (Object *)NewObject( CHECKBOX_GetClass(), NULL,
-                        GA_DrawInfo,(ULONG) app->drawInfo,
-                        GA_Text,(ULONG)"SASC6.5 smakefile (1996,C90)",
-                        CHECKBOX_Checked,TRUE,
-                     GA_ID,GAD_CB_SASC,
-                     ICA_TARGET, (ULONG)AppInstance,     // app model will receive notifications.
-                    TAG_END);
-
-
-                    Object* cbgcc =  (Object *)NewObject( CHECKBOX_GetClass(), NULL,
-                        GA_DrawInfo,(ULONG) app->drawInfo,
-                        GA_Text,(ULONG)"GCC2.9x makefile (1999,C98)",
-                        CHECKBOX_Checked,TRUE,
-                     GA_ID,GAD_CB_MAKEFILE,
-                     ICA_TARGET, (ULONG)AppInstance,     // app model will receive notifications.
-                    TAG_END);
-
-                    Object* cbcmake =  (Object *)NewObject( CHECKBOX_GetClass(), NULL,
-                        GA_DrawInfo,(ULONG) app->drawInfo,
-                        GA_Text,(ULONG)"GCC6.5 CMakeList.txt (2011,C11)",
-                        CHECKBOX_Checked,TRUE,
-                     GA_ID,GAD_CB_CMAKELIST,
-                     ICA_TARGET, (ULONG)AppInstance,     // app model will receive notifications.
-                    TAG_END);
-
-
-        Object *targetcblayout =     (Object *)NewObject( LAYOUT_GetClass(), NULL,
-                    LAYOUT_Orientation, LAYOUT_ORIENT_VERT,
-                    LAYOUT_EvenSize, TRUE,
-                    LAYOUT_HorizAlignment, LALIGN_RIGHT,
-                   LAYOUT_AddChild, cbsasc,
-                   LAYOUT_AddChild, cbgcc,
-                   LAYOUT_AddChild, cbcmake,
-                    TAG_DONE);
-
-        app->btGenerate = NewObject( BUTTON_GetClass(),NULL,
-                                    GA_Text, "Generate Project",
-                                    GA_ID,GAD_BUTTON_GENERATE,
-                                    GA_RelVerify, TRUE,
-                                    GA_Disabled,TRUE,
-                        // BUTTON_BevelStyle,BVS_NONE,
-                        // BUTTON_Transparent, TRUE,
-                                TAG_END);
-
-        app->horizontallayoutC =
-             (Object *)NewObject( LAYOUT_GetClass(), NULL,
-                    LAYOUT_Orientation, LAYOUT_ORIENT_HORIZ,
-                    LAYOUT_EvenSize, TRUE,
-                    LAYOUT_HorizAlignment, LALIGN_RIGHT,
-                    LAYOUT_BevelStyle, BVS_GROUP,
-                  //  CHILD_ScaleHeight,1, //%
-                   // CHILD_MaxHeight,app->fontHeight,
-                   // LAYOUT_SpaceInner, FALSE,
-//                   LAYOUT_AddChild, ospacer,
-//                CHILD_WeightedWidth,1,
-
-                     LAYOUT_AddChild, targetcblayout,
-                 CHILD_WeightedWidth,3,
-
-                    LAYOUT_AddChild, app->btGenerate,
-                 CHILD_WeightedWidth,0,
-                  //  LAYOUT_AddChild, app->labelValues,
-                   // LAYOUT_AddChild, app->disablecheckbox,
-                  //  GA_Height,app->fontHeight,
-                    TAG_DONE);
-    }
-
-
 
     {
         app->statusbarlabel = (Object *)NewObject( BUTTON_GetClass(),NULL,
@@ -550,14 +465,6 @@ int main(int argc, char **argv)
                         BUTTON_Justification, BCJ_CENTER,
                         GA_Text,(ULONG)"...",
                     TAG_END);
-
-//         (Object *)NewObject( LABEL_GetClass(), NULL,
-//                        LABEL_DrawInfo, app->drawInfo,
-//                        //IA_Font, &helvetica15bu,
-//                        //LABEL_SoftStyle, FSF_BOLD | FSF_ITALIC,
-//                        LABEL_Justification, LABEL_CENTRE,
-//                        LABEL_Text,(ULONG)"Values:",
-//                    TAG_END);
 
 
         app->bottombarlayout =
@@ -585,17 +492,16 @@ int main(int argc, char **argv)
             LAYOUT_DeferLayout, TRUE, // Layout refreshes done on task's context (by thewindow class)
             LAYOUT_SpaceOuter, TRUE,
             LAYOUT_BottomSpacing, 2,
-            LAYOUT_TopSpacing,4,
-            LAYOUT_LeftSpacing,2,
-            LAYOUT_RightSpacing,2,
+            LAYOUT_TopSpacing,0,
+            LAYOUT_LeftSpacing,0,
+            LAYOUT_RightSpacing,0,
+            LAYOUT_InnerSpacing,0,
          //   LAYOUT_HorizAlignment, LALIGN_RIGHT,
             LAYOUT_Orientation, LAYOUT_ORIENT_VERT,
             LAYOUT_AddChild, app->horizontallayoutA,
                 CHILD_WeightedHeight,0,
             LAYOUT_AddChild, app->horizontallayoutB,
                 CHILD_WeightedHeight,4,
-            LAYOUT_AddChild, app->horizontallayoutC,
-                CHILD_WeightedHeight,0,
             LAYOUT_AddChild, app->bottombarlayout,
                 CHILD_WeightedHeight,0,
             TAG_END);
@@ -623,11 +529,11 @@ int main(int argc, char **argv)
         WA_CustomScreen, (ULONG) app->lockedscreen,
         WA_IDCMP, IDCMP_CLOSEWINDOW | IDCMP_RAWKEY ,
         WA_Flags, WFLG_DRAGBAR | WFLG_DEPTHGADGET | WFLG_CLOSEGADGET | WFLG_SIZEGADGET | WFLG_ACTIVATE | WFLG_SMART_REFRESH,
-        WA_Title,(ULONG) "Boopsi Wizard",
+        WA_Title,(ULONG) "Aukadicty",
         WINDOW_ParentGroup,(ULONG) app->mainvlayout,
         WINDOW_IconifyGadget, TRUE,
   //re      WINDOW_Icon,(ULONG) GetDiskObject("PROGDIR:ReAction"),
-        WINDOW_IconTitle,(ULONG)  "Boopsi Wizard",
+        WINDOW_IconTitle,(ULONG)  "Aukadicty",
         WINDOW_AppPort, (ULONG)app->app_port,
     TAG_END);
     if(!app->window_obj) cleanexit("can't create window");
@@ -747,7 +653,7 @@ void exitclose(void)
 {
     if(app)
     {
-        if(app->TemplateButtonsList) FreeVec(app->TemplateButtonsList);
+
         /* Disposing of the window object will also close the
          * window if it is already opened and it will dispose of
          * all objects attached to it.
@@ -785,6 +691,7 @@ void exitclose(void)
     if(TextFieldBase) CloseLibrary(TextFieldBase);
     if(StringBase) CloseLibrary(StringBase);
     if(CheckBoxBase) CloseLibrary(CheckBoxBase);
+    if(VirtualBase) CloseLibrary(VirtualBase);
     if(LabelBase) CloseLibrary(LabelBase);
     if(ButtonBase) CloseLibrary(ButtonBase);
     if(BitMapBase) CloseLibrary(BitMapBase);
@@ -808,11 +715,11 @@ void updateUIToStates()
 {
     if(!app) return;
 // GA_Disabled
-    ULONG generateBtDisabled = (CurrentTemplate<0);
+//    ULONG generateBtDisabled = (CurrentTemplate<0);
 
-   SetGadgetAttrs((struct Gadget *) app->btGenerate,app->win,NULL,
-       GA_DISABLED,generateBtDisabled,
-       TAG_END);
+   // SetGadgetAttrs((struct Gadget *) app->btGenerate,app->win,NULL,
+   //     GA_DISABLED,generateBtDisabled,
+   //     TAG_END);
 }
 
 void openAboutReq()

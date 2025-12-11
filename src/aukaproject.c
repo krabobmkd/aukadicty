@@ -9,6 +9,10 @@
 #include <string.h>
 #include "serializer.h"
 
+#ifdef Remove
+#undef Remove
+#endif
+
 /*
  * AukAProject implementation
  * Audio project concrete implementation
