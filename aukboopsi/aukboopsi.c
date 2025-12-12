@@ -53,8 +53,10 @@
 #include <proto/asl.h>
 #include <libraries/asl.h>
 
-#include "compilers.h"
+#include "class_track.h"
 
+#include "compilers.h"
+#include "bdbprintf.h"
 INLINE struct Window *boopsi_OpenWindow(Object *owin) {
     return  (struct Window *)DoMethod(owin, WM_OPEN, NULL);
 }
@@ -301,6 +303,11 @@ int main(int argc, char **argv)
     if ( ! (RequesterBase = OpenLibrary("requester.class",mingadgetversion)))
         cleanexit("Can't open requester.class");
 
+
+#ifdef TRACK_STATICLINK
+    if(TrackStaticInit())  cleanexit("Can't init private Track gadget");
+#endif
+
     if(!initAppModel())  cleanexit("Can't create app");
 
 
@@ -381,14 +388,17 @@ int main(int argc, char **argv)
                                 TAG_END);
 
 
-        Object *gadtrack1 = NewObject( BUTTON_GetClass(),NULL,
+        Object *gadtrack1 = NewObject( TRACK_GetClass(),NULL,
+                TAG_END);
+
+           /* NewObject( BUTTON_GetClass(),NULL,
                                     GA_Text, "test track1",
                                     GA_RelVerify, TRUE,
                                  // CHILD_MinWidth,6000,
                                  //   CHILD_MinHeight,6000,
                                  //    CHILD_MaxWidth,6000,
                                  //   CHILD_MaxHeight,6000,
-                                TAG_END);
+                                TAG_END);*/
         Object *gadtrack2 = NewObject( BUTTON_GetClass(),NULL,
                                     GA_Text, "test track2",
                                     GA_RelVerify, TRUE,
@@ -417,13 +427,15 @@ int main(int argc, char **argv)
             LAYOUT_InnerSpacing,0,
             LAYOUT_Orientation, LAYOUT_ORIENT_VERT,
             LAYOUT_BevelStyle, BVS_NONE,
+            LAYOUT_AddChild, gadtrack2,
+                CHILD_MinWidth,1280*4,
+                CHILD_MinHeight,120,
+                CHILD_WeightedHeight,1,
             LAYOUT_AddChild, gadtrack1,
                 CHILD_MinWidth,1280*4,
                 CHILD_MinHeight,120,
                 CHILD_WeightedHeight,1,
-            LAYOUT_AddChild, gadtrack2,
-                CHILD_MinHeight,120,
-                CHILD_WeightedHeight,1,
+
             LAYOUT_AddChild, gadtrack3,
                 CHILD_MinHeight,120,
                 CHILD_WeightedHeight,1,
@@ -565,7 +577,7 @@ int main(int argc, char **argv)
             ULONG result;
 
             Wait(signal | (1L << app->app_port->mp_SigBit));
-
+           flushbdbprint();
             /* CA_HandleInput() returns the gadget ID of a clicked
              * gadget, or one of several pre-defined values.  For
              * this demo, we're only actually interested in a
@@ -573,6 +585,7 @@ int main(int argc, char **argv)
              */
             while ((result = DoMethod(app->window_obj, WM_HANDLEINPUT, /*code*/NULL)) != WMHI_LASTMSG)
             {
+            flushbdbprint();
             // printf("result:%08x\n",(int)result);
                 switch(result & WMHI_CLASSMASK)
                 {
@@ -629,6 +642,8 @@ int main(int argc, char **argv)
             } // end while messages
         } // end while app loop
     } // loop paragraph end
+
+           flushbdbprint();
 
     // all close done in exitclose().
     return 0;
@@ -687,6 +702,11 @@ void exitclose(void)
     }
 
     closeAppModel(); // thi is meant to close app implicitely, If i'm correct...
+
+#ifdef TRACK_STATICLINK
+    TrackStaticClose();
+#endif
+
     if(RequesterBase) CloseLibrary(RequesterBase);
     if(TextFieldBase) CloseLibrary(TextFieldBase);
     if(StringBase) CloseLibrary(StringBase);

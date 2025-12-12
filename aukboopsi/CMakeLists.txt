@@ -16,6 +16,7 @@ add_subdirectory(../ AukProject)
 # Include directories
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/../include
+    ${CMAKE_CURRENT_SOURCE_DIR}/TrackGadget
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
@@ -23,16 +24,22 @@ include_directories(
 # AukApp source files
 set(AUKBOOPSI_SOURCES
     aukboopsi.c
-)
 
+    bdbprintf.c
+    bdbprintf.h
 
-# Aukadicty header files
-set(AUKBOOPSI_HEADERS
-
+    # track gadget (private)
+    TrackGadget/class_track_attribs.c
+    TrackGadget/class_track_dispatch.c
+    TrackGadget/class_track_lib.c
+    TrackGadget/class_track_render.c
+    TrackGadget/class_track_handleinput.c
+    TrackGadget/class_track_private.h
+    TrackGadget/class_track.h
 )
 
 # Create app
-add_executable(aukadicty  ${AUKBOOPSI_SOURCES} ${AUKBOOPSI_HEADERS})
+add_executable(aukadicty  ${AUKBOOPSI_SOURCES} )
 
 # Install targets
 install(TARGETS aukadicty
@@ -40,6 +47,8 @@ install(TARGETS aukadicty
 )
 
 target_link_libraries(aukadicty aukproject)
+target_compile_definitions(aukadicty PRIVATE TRACK_STATICLINK=1 USE_DEBUG_BDBPRINT=1)
+
 
 # Optional: Build examples
 option(BUILD_EXAMPLES "Build example programs" ON)
