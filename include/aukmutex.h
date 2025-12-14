@@ -9,7 +9,7 @@
 extern "C" {
 #endif
 #include "compilers.h"
-
+#include <proto/graphics.h>
 typedef struct AukMutex AukMutex;
 
 /* Base object vtable - all objects must implement these */

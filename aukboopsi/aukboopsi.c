@@ -64,6 +64,8 @@ INLINE struct Window *boopsi_OpenWindow(Object *owin) {
 
 typedef ULONG (*REHOOKFUNC)();
 
+struct Task	*myTask=NULL;
+
 static const char *pVersion="$VER: 0.1";
 
 // DOSBase is already opened by C startup...
@@ -248,6 +250,7 @@ void closeAppModel(void)
 
 int main(int argc, char **argv)
 {
+    myTask = FindTask(NULL);
     atexit(&exitclose);
 
     // - - - - open libraries...
@@ -389,6 +392,7 @@ int main(int argc, char **argv)
 
 
         Object *gadtrack1 = NewObject( TRACK_GetClass(),NULL,
+                 GA_RelVerify, TRUE,
                 TAG_END);
 
            /* NewObject( BUTTON_GetClass(),NULL,
@@ -416,23 +420,23 @@ int main(int argc, char **argv)
                                  //   CHILD_MaxHeight,6000,
                                 TAG_END);
         app->TrackVertLZone = (Object *)NewObject( LAYOUT_GetClass(), NULL,
-            GA_DrawInfo, app->drawInfo,
-            LAYOUT_DeferLayout, TRUE, // Layout refreshes done on task's context (by thewindow class)
-            LAYOUT_SpaceOuter, FALSE,
-            LAYOUT_SpaceInner, FALSE,
-            LAYOUT_BottomSpacing, 0,
-            LAYOUT_TopSpacing,0,
-            LAYOUT_LeftSpacing,0,
-            LAYOUT_RightSpacing,0,
-            LAYOUT_InnerSpacing,0,
-            LAYOUT_Orientation, LAYOUT_ORIENT_VERT,
-            LAYOUT_BevelStyle, BVS_NONE,
+            //GA_DrawInfo, app->drawInfo,
+            //LAYOUT_DeferLayout, TRUE, // Layout refreshes done on task's context (by thewindow class)
+            // LAYOUT_SpaceOuter, FALSE,
+            // LAYOUT_SpaceInner, FALSE,
+            // LAYOUT_BottomSpacing, 0,
+            // LAYOUT_TopSpacing,0,
+            // LAYOUT_LeftSpacing,0,
+            // LAYOUT_RightSpacing,0,
+            // LAYOUT_InnerSpacing,0,
+             LAYOUT_Orientation, LAYOUT_ORIENT_VERT,
+            // LAYOUT_BevelStyle, BVS_NONE,
             LAYOUT_AddChild, gadtrack2,
-                CHILD_MinWidth,1280*4,
+                CHILD_MinWidth,800,
                 CHILD_MinHeight,120,
                 CHILD_WeightedHeight,1,
             LAYOUT_AddChild, gadtrack1,
-                CHILD_MinWidth,1280*4,
+                CHILD_MinWidth,800,
                 CHILD_MinHeight,120,
                 CHILD_WeightedHeight,1,
 
@@ -576,7 +580,7 @@ int main(int argc, char **argv)
         {
             ULONG result;
 
-            Wait(signal | (1L << app->app_port->mp_SigBit));
+            Wait(signal | (1L << app->app_port->mp_SigBit) | SIGBREAKF_CTRL_F);
            flushbdbprint();
             /* CA_HandleInput() returns the gadget ID of a clicked
              * gadget, or one of several pre-defined values.  For

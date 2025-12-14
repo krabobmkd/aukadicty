@@ -19,7 +19,7 @@ extern "C" {
 #include <graphics/regions.h>
 
 // enable or not some parts of code...
-#define USE_REGION_CLIPPING 1
+//#define USE_REGION_CLIPPING 1
 #define USE_BEVEL_FRAME 1
 
 /**

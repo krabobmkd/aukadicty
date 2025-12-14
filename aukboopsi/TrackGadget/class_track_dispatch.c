@@ -24,6 +24,8 @@
     #include <images/bevel.h>
 #endif
 
+#include "bdbprintf.h"
+
 /** WATCH OUT ! boopsi docs says:
 *  "the rkmmodelclass dispatcher must be able to run on Intuition's context,
 *  which puts some limitations on what the dispatcher is permitted to do:
@@ -38,6 +40,10 @@ ULONG ASM SAVEDS Track_Dispatcher(
   Track *gdata;
   ULONG retval=0;
   gdata=INST_DATA(C, Gad);
+
+static int yy=0;
+//  bdbprintf("Track_Dispatcher:%d mid:%08x\n",yy,M->MethodID);
+ yy++;
 
   switch(M->MethodID)
   {
@@ -112,10 +118,12 @@ ULONG ASM SAVEDS Track_Dispatcher(
       break;
 
     case GM_HITTEST:
+     bdbprintf("GM_HITTEST\n");
       retval = GMR_GADGETHIT;
       break;
 
     case GM_GOACTIVE:
+ bdbprintf("GM_GOACTIVE\n");
       Gad->Flags |= GFLG_SELECTED;
       retval=Track_HandleInput(C,Gad,(struct gpInput *)M);
 //      gad_Render(C,Gad,(APTR)M,GREDRAW_UPDATE);
@@ -123,6 +131,7 @@ ULONG ASM SAVEDS Track_Dispatcher(
       break;
 
     case GM_GOINACTIVE:
+ bdbprintf("GM_GOINACTIVE\n");
       Gad->Flags &= ~GFLG_SELECTED;
       Track_Render(C,Gad,(APTR)M,GREDRAW_UPDATE);
       break;

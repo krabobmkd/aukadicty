@@ -19,6 +19,18 @@
 
 #include <utility/tagitem.h>
 
+
+/* Most of the calls to boopsi methods are not done from the App's context,
+ * but from a specific intuition context, and because of that we can't use DOS calls
+ * like dos/Printf() , and also stdlib printf().
+ * So we may print debug informations with a special buffer,and function bdbprintf(),
+ * hen flushbdbprint() in main process will print for real to standard output.
+ * remove word USE_DEBUG_BDBPRINT to desactivate all bdbprintf()/flushbdbprint() calls.
+ * Template projects that links boopsi classes statically use USE_DEBUG_BDBPRINT by default.
+ * Template projects that uses boopsi classes with LoadLibrary() do not.
+ */
+#include "bdbprintf.h"
+
 // ULONG Track_DoNotify(struct IClass *C, struct Gadget *Gad, Msg M, ULONG Flags, Tag Tags, ...);
 ULONG Track_NotifyCoords(Class *C, struct Gadget *Gad, struct GadgetInfo	*GInfo)
 {
@@ -52,11 +64,13 @@ ULONG Track_HandleInput(Class *C, struct Gadget *Gad, struct gpInput *Input)
   struct InputEvent *ie;
 
   gdata=INST_DATA(C, Gad);
-  retval = GMR_MEACTIVE;
+  //retval = GMR_MEACTIVE;
   ie = Input->gpi_IEvent;
 
 //  if(gdata->Disabled)
 //    return(GMR_NOREUSE);
+
+   // bdbprintf("trackinputs:%08x\n",(int)ie->ie_Class);
 
   switch(ie->ie_Class)
   {    case IECLASS_RAWKEY:
@@ -186,11 +200,14 @@ ULONG Track_HandleInput(Class *C, struct Gadget *Gad, struct gpInput *Input)
 
         }
 */
+   // bdbprintf("IECLASS_RAWMOUSE:\n");
+
     // still in IECLASS_RAWMOUSE
         switch(ie->ie_Code)
          {
 
           case SELECTUP:
+ bdbprintf("SELECTUP: %d %d\n",(int)(Input->gpi_Mouse).X,(int)(Input->gpi_Mouse).Y);
              gdata->_MouseMode=0;
 /*
 
@@ -280,6 +297,7 @@ ULONG Track_HandleInput(Class *C, struct Gadget *Gad, struct gpInput *Input)
             break;
 
           case SELECTDOWN:
+    bdbprintf("SELECTDOWN: %d %d\n",(int)(Input->gpi_Mouse).X,(int)(Input->gpi_Mouse).Y);
             // actually receive all clics on the whole WB !!
              if ( (((Input->gpi_Mouse).X < 0) ||
                  ((Input->gpi_Mouse).X >= Gad->Width) ||

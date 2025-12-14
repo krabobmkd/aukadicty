@@ -9,6 +9,7 @@
 #include <stdarg.h>
 #include <string.h>
 #include <proto/dos.h>
+#include <proto/exec.h>
 
 #define BDB_BUFFER_SIZE 4096
 
@@ -18,6 +19,9 @@ static char bdb_buffer[BDB_BUFFER_SIZE];
 // (compiler will not map it to a register.)
 static volatile int bdb_position = 0;
 
+
+
+extern struct Task	*myTask;
 /*
  * bdbprintf - Printf to debug buffer
  *
@@ -54,6 +58,8 @@ int bdbprintf(const char *format, ...)
     if (written > 0) {
         bdb_position += written;
     }
+
+    if(myTask) Signal(myTask,SIGBREAKF_CTRL_F);
 
     return written;
 }

@@ -122,6 +122,8 @@ ULONG Track_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout)
     width = Gad->Width;
     height = Gad->Height;
 
+ bdbprintf("layout: t:%d l:%d w:%d h:%d\n",topedge,leftedge,width,height);
+
 #ifdef USE_BEVEL_FRAME
     if(gdata->Bevel)
     {   // all other attribs that doesnt change are set at NewObject()
@@ -144,25 +146,25 @@ ULONG Track_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout)
     /* Figure out the size/position of the gadget rectangle, taking relative
      * positioning into account.
      */
-    if (gi) // not proven usefull...
-    {
+    // if (gi) // not proven usefull...
+    // {
 
-    bdbprintf(" has layout: l:%d t:%d w:%d h:%d\n",(int) gi->gi_Domain.Left,(int) gi->gi_Domain.Top,(int) gi->gi_Domain.Width,(int) gi->gi_Domain.Height);
-        if (Gad->Flags & GFLG_RELRIGHT)
-            leftedge   += gi->gi_Domain.Width - 1;
+    // //bdbprintf(" has layout: l:%d t:%d w:%d h:%d\n",(int) gi->gi_Domain.Left,(int) gi->gi_Domain.Top,(int) gi->gi_Domain.Width,(int) gi->gi_Domain.Height);
+    //     if (Gad->Flags & GFLG_RELRIGHT)
+    //         leftedge   += gi->gi_Domain.Width - 1;
 
-        if (Gad->Flags & GFLG_RELBOTTOM)
-            topedge    += gi->gi_Domain.Height - 1;
+    //     if (Gad->Flags & GFLG_RELBOTTOM)
+    //         topedge    += gi->gi_Domain.Height - 1;
 
-        if (Gad->Flags & GFLG_RELWIDTH)
-            width  += gi->gi_Domain.Width;
+    //     if (Gad->Flags & GFLG_RELWIDTH)
+    //         width  += gi->gi_Domain.Width;
 
-        if (Gad->Flags & GFLG_RELHEIGHT)
-            height += gi->gi_Domain.Height;
-    } else
-    {
-        bdbprintf(" no layout info\n");
-    }
+    //     if (Gad->Flags & GFLG_RELHEIGHT)
+    //         height += gi->gi_Domain.Height;
+    // } else
+    // {
+    //     bdbprintf(" no layout info\n");
+    // }
 
     gdata->_framerec.MinX = leftedge;
     gdata->_framerec.MinY = topedge;
@@ -170,12 +172,7 @@ ULONG Track_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout)
     gdata->_framerec.MaxY = topedge  + height -1;
 
 
-#ifdef USE_REGION_CLIPPING
 
-        ClearRegion(gdata->_clipRegion);
-        OrRectRegion(gdata->_clipRegion, &gdata->_framerec);
-
-#endif
 
   return(1);
 }
@@ -226,6 +223,12 @@ ULONG Track_Render(Class *C, struct Gadget *Gad, struct gpRender *Render, ULONG 
     #endif
 
     #ifdef USE_REGION_CLIPPING
+
+
+        ClearRegion(gdata->_clipRegion);
+        OrRectRegion(gdata->_clipRegion, &gdata->_framerec);
+
+
         oldClipRegion = InstallClipRegion( rp->Layer, gdata->_clipRegion);
     #endif
 
