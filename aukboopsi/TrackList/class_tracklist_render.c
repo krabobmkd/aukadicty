@@ -2,7 +2,6 @@
 #include <proto/exec.h>
 #include <proto/intuition.h>
 #include <proto/graphics.h>
-#include <proto/dos.h>
 #include <proto/layers.h>
 
 #ifdef __SASC
@@ -18,14 +17,13 @@
 #include <intuition/gadgetclass.h>
 #include <utility/tagitem.h>
 
-#include "class_track.h"
-#include "class_track_private.h"
+#include "class_tracklist.h"
+#include "class_tracklist_private.h"
 
 #ifdef USE_BEVEL_FRAME
     #include <proto/bevel.h>
     #include <images/bevel.h>
 #endif
-
 
 /* Most of the calls to boopsi methods are not done from the App's context,
  * but from a specific intuition context, and because of that we can't use DOS calls
@@ -52,15 +50,12 @@
 //    struct TagItem	*gpd_Attrs;	/* Additional attributes */
 //};
 
-
-
-
-ULONG Track_Domain(Class *C, struct Gadget *Gad, struct gpDomain *D)
+ULONG TrackList_Domain(Class *C, struct Gadget *Gad, struct gpDomain *D)
 {
-  Track *gdata=0;
+  TrackList *gdata=0;
 
   if(Gad) gdata=INST_DATA(C, Gad);
-// Printf("Track_Domain data:%lx\n",(int)gdata);
+// Printf("TrackList_Domain data:%lx\n",(int)gdata);
 
   D->gpd_Domain.Left=0;
   D->gpd_Domain.Top=0;
@@ -108,25 +103,17 @@ ULONG Track_Domain(Class *C, struct Gadget *Gad, struct gpDomain *D)
  * The gadget knows its final coordinates,
  * So we may have to resize what's inside our gadget.
  */
-ULONG Track_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout)
+ULONG TrackList_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout)
 {
-  Track *gdata;
+  TrackList *gdata;
   LONG topedge,leftedge,width,height;
-    struct GadgetInfo *gi;
-    int retval;
-
-    retval=DoSuperMethodA(C,(Object *)Gad,(Msg)layout);
-   // if(!retval) return retval;
 
     gdata=INST_DATA(C, Gad);
-    gi = (layout)?layout->gpl_GInfo:NULL;
 
     topedge = Gad->TopEdge;
     leftedge = Gad->LeftEdge;
     width = Gad->Width;
     height = Gad->Height;
-
- bdbprintf("layout: t:%d l:%d w:%d h:%d\n",topedge,leftedge,width,height);
 
 #ifdef USE_BEVEL_FRAME
     if(gdata->Bevel)
@@ -147,50 +134,32 @@ ULONG Track_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout)
         GetAttr(BEVEL_InnerHeight,  gdata->Bevel,(ULONG *) &height);
     }
 #endif
-    /* Figure out the size/position of the gadget rectangle, taking relative
-     * positioning into account.
-     */
-    // if (gi) // not proven usefull...
-    // {
-
-    // //bdbprintf(" has layout: l:%d t:%d w:%d h:%d\n",(int) gi->gi_Domain.Left,(int) gi->gi_Domain.Top,(int) gi->gi_Domain.Width,(int) gi->gi_Domain.Height);
-    //     if (Gad->Flags & GFLG_RELRIGHT)
-    //         leftedge   += gi->gi_Domain.Width - 1;
-
-    //     if (Gad->Flags & GFLG_RELBOTTOM)
-    //         topedge    += gi->gi_Domain.Height - 1;
-
-    //     if (Gad->Flags & GFLG_RELWIDTH)
-    //         width  += gi->gi_Domain.Width;
-
-    //     if (Gad->Flags & GFLG_RELHEIGHT)
-    //         height += gi->gi_Domain.Height;
-    // } else
-    // {
-    //     bdbprintf(" no layout info\n");
-    // }
-
     gdata->_framerec.MinX = leftedge;
     gdata->_framerec.MinY = topedge;
     gdata->_framerec.MaxX = leftedge + width  -1;
     gdata->_framerec.MaxY = topedge  + height -1;
 
+#ifdef USE_REGION_CLIPPING
 
+        ClearRegion(gdata->_clipRegion);
+        OrRectRegion(gdata->_clipRegion, &gdata->_framerec);
 
+#endif
 
-  return(retval);
+  return(1);
 }
 
 
 /* draw yourself, in the appropriate state */
-ULONG Track_Render(Class *C, struct Gadget *Gad, struct gpRender *Render, ULONG update)
+ULONG TrackList_Render(Class *C, struct Gadget *Gad, struct gpRender *Render, ULONG update)
 {
-  Track *gdata;
+  TrackList *gdata;
   struct RastPort *rp; 
   ULONG retval=1;
 
   gdata=INST_DATA(C, Gad);
 
+  // also sent from GM_GOINACTIVE (4).
   if(Render->MethodID==GM_RENDER)
   {
     rp=Render->gpr_RPort;
@@ -207,6 +176,8 @@ ULONG Track_Render(Class *C, struct Gadget *Gad, struct gpRender *Render, ULONG 
     int penbg=1,penb=2,penc=3;
     struct Region *oldClipRegion;
 
+    bdbprintf(" **** TrackList_Render trace MethodID:%08lx Layer flags:%04lx\n",(int)Render->MethodID,(int)rp->Layer->Flags);
+
 	// note from an OS3 official developer: we got to do manage the following:
 	if( ( rp->Layer->Flags & LAYERUPDATING ) != 0L )
 	{
@@ -218,6 +189,7 @@ ULONG Track_Render(Class *C, struct Gadget *Gad, struct gpRender *Render, ULONG 
 
 	}
 
+
     if(Gad->Flags & GFLG_DISABLED) // if disabled, draw background with another color.
     {
         penbg = 0;
@@ -227,12 +199,6 @@ ULONG Track_Render(Class *C, struct Gadget *Gad, struct gpRender *Render, ULONG 
     #endif
 
     #ifdef USE_REGION_CLIPPING
-
-
-        ClearRegion(gdata->_clipRegion);
-        OrRectRegion(gdata->_clipRegion, &gdata->_framerec);
-
-
         oldClipRegion = InstallClipRegion( rp->Layer, gdata->_clipRegion);
     #endif
 
@@ -253,12 +219,12 @@ ULONG Track_Render(Class *C, struct Gadget *Gad, struct gpRender *Render, ULONG 
             SetAPen(rp,penc);
             DrawEllipse(rp,xc,yc,width>>2,height>>2);
         }
-
-    if(bLayerUpdating)
-    {
-        BeginUpdate(rp->Layer);
-    }
-
+		
+		if(bLayerUpdating) 
+		{
+			BeginUpdate(rp->Layer);
+		}
+		
     #ifdef USE_REGION_CLIPPING
         InstallClipRegion( rp->Layer,oldClipRegion); // important to pass NULL if oldClipRegion is NULL.
     #endif

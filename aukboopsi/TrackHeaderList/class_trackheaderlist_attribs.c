@@ -15,17 +15,27 @@
 #include <intuition/classusr.h>
 #include <intuition/gadgetclass.h>
 
-#include "class_track.h"
-#include "class_track_private.h"
+#include "class_trackheaderlist.h"
+#include "class_trackheaderlist_private.h"
 
 #include <utility/tagitem.h>
 
+/* Most of the calls to boopsi methods are not done from the App's context,
+ * but from a specific intuition context, and because of that we can't use DOS calls
+ * like dos/Printf() , and also stdlib printf().
+ * So we may print debug informations with a special buffer,and function bdbprintf(),
+ * hen flushbdbprint() in main process will print for real to standard output.
+ * remove word USE_DEBUG_BDBPRINT to desactivate all bdbprintf()/flushbdbprint() calls.
+ * Template projects that links boopsi classes statically use USE_DEBUG_BDBPRINT by default.
+ * Template projects that uses boopsi classes with LoadLibrary() do not.
+ */
+#include "bdbprintf.h"
 
-ULONG Track_GetAttr(Class *C, struct Gadget *Gad, struct opGet *Get)
+ULONG TrackHeaderList_GetAttr(Class *C, struct Gadget *Gad, struct opGet *Get)
 {
   ULONG retval=1;
   int   DoSuperCall=0;
-  Track *gdata;
+  TrackHeaderList *gdata;
   ULONG *data;
 
   gdata=INST_DATA(C, Gad);
@@ -34,10 +44,10 @@ ULONG Track_GetAttr(Class *C, struct Gadget *Gad, struct opGet *Get)
 
   switch(Get->opg_AttrID)
   {
-    case TRACK_CenterX:
+    case TRACKHEADERLIST_CenterX:
         *data = (LONG)gdata->_circleCenterX;
     break;
-    case TRACK_CenterY:
+    case TRACKHEADERLIST_CenterY:
         *data = (LONG)gdata->_circleCenterY;
     break;
     // super class gadget things. would manage attribs selected/hightlighted, ...
@@ -50,12 +60,11 @@ ULONG Track_GetAttr(Class *C, struct Gadget *Gad, struct opGet *Get)
   return(retval);
 }
 
-
-ULONG Track_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
+ULONG TrackHeaderList_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
 {
   struct TagItem *tag;
   ULONG data; // for SetAttribs, retval means if anything needed redraw.
-  Track *gdata;
+  TrackHeaderList *gdata;
   ULONG redraw=0, update=0, notifCoords=0;
 
   gdata=INST_DATA(C, Gad);
@@ -71,7 +80,7 @@ ULONG Track_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
 
     switch(tag->ti_Tag)
     {
-     case TRACK_CenterX:
+     case TRACKHEADERLIST_CenterX:
         if((UWORD)data != gdata->_circleCenterX )
         {
             gdata->_circleCenterX = (UWORD)data ;
@@ -79,7 +88,7 @@ ULONG Track_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
             notifCoords = 1;
         }
         break;
-     case TRACK_CenterY:
+     case TRACKHEADERLIST_CenterY:
         if((UWORD)data != gdata->_circleCenterY )
         {
             gdata->_circleCenterY = (UWORD)data ;
@@ -139,7 +148,7 @@ ULONG Track_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
 
     if(notifCoords)
     {
-        Track_NotifyCoords(C,Gad,Set->ops_GInfo);
+        TrackHeaderList_NotifyCoords(C,Gad,Set->ops_GInfo);
     }
   }
 

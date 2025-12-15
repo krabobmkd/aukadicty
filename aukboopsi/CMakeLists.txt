@@ -36,6 +36,40 @@ set(AUKBOOPSI_SOURCES
     TrackGadget/class_track_handleinput.c
     TrackGadget/class_track_private.h
     TrackGadget/class_track.h
+
+    TrackList/class_tracklist_attribs.c
+    TrackList/class_tracklist_dispatch.c
+    TrackList/class_tracklist_lib.c
+    TrackList/class_tracklist_render.c
+    TrackList/class_tracklist_handleinput.c
+    TrackList/class_tracklist_private.h
+    TrackList/class_tracklist.h
+
+    TimeRule/class_timerule_attribs.c
+    TimeRule/class_timerule_dispatch.c
+    TimeRule/class_timerule_lib.c
+    TimeRule/class_timerule_render.c
+    TimeRule/class_timerule_handleinput.c
+    TimeRule/class_timerule_private.h
+    TimeRule/class_timerule.h
+
+    TrackHeader/class_trackheader_attribs.c
+    TrackHeader/class_trackheader_dispatch.c
+    TrackHeader/class_trackheader_lib.c
+    TrackHeader/class_trackheader_render.c
+    TrackHeader/class_trackheader_handleinput.c
+    TrackHeader/class_trackheader_private.h
+    TrackHeader/class_trackheader.h
+
+    TrackHeaderList/class_trackheaderlist_attribs.c
+    TrackHeaderList/class_trackheaderlist_dispatch.c
+    TrackHeaderList/class_trackheaderlist_lib.c
+    TrackHeaderList/class_trackheaderlist_render.c
+    TrackHeaderList/class_trackheaderlist_handleinput.c
+    TrackHeaderList/class_trackheaderlist_private.h
+    TrackHeaderList/class_trackheaderlist.h
+
+
 )
 
 # Create app
@@ -47,7 +81,13 @@ install(TARGETS aukadicty
 )
 
 target_link_libraries(aukadicty aukproject)
-target_compile_definitions(aukadicty PRIVATE TRACK_STATICLINK=1 USE_DEBUG_BDBPRINT=1)
+target_compile_definitions(aukadicty PRIVATE
+			TRACK_STATICLINK=1
+			TRACKHEADER_STATICLINK=1
+			TIMERULE_STATICLINK=1
+			TRACKLIST_STATICLINK=1
+			TRACKHEADERLIST_STATICLINK=1
+			USE_DEBUG_BDBPRINT=1)
 
 
 # Optional: Build examples

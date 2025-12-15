@@ -1,8 +1,8 @@
-#ifndef _CLASS_TRACKPRIVATE_H_
-#define _CLASS_TRACKPRIVATE_H_
+#ifndef _CLASS_TRACKHEADERPRIVATE_H_
+#define _CLASS_TRACKHEADERPRIVATE_H_
 
 #include "compilers.h"
-#include "class_track.h"
+#include "class_trackheader.h"
 
 // not much sense because c++ static runtime are hard to link.
 #ifdef __cplusplus
@@ -19,7 +19,7 @@ extern "C" {
 #include <graphics/regions.h>
 
 // enable or not some parts of code...
-//#define USE_REGION_CLIPPING 1
+#define USE_REGION_CLIPPING 1
 
 /**
 *  this is the internal private gadget struct that own the data of the object instances.
@@ -29,7 +29,7 @@ extern "C" {
 * (These are just concatenated structs in a system private way.)
 * DEVTODO: make this class evolve to retain the data needed to draw and interact with your gadget.
 */
-typedef struct ITrack {
+typedef struct ITrackHeader {
     // let's say we have coordinates of the center of the circle
     UWORD _circleCenterX,_circleCenterY;
 
@@ -46,14 +46,14 @@ typedef struct ITrack {
     struct Region *_clipRegion;
 #endif
 
-} Track;
+} TrackHeader;
 
-ULONG Track_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set);
-ULONG Track_GetAttr(Class *C, struct Gadget *Gad, struct opGet *Get);
-ULONG Track_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout);
-ULONG Track_Render(Class *C, struct Gadget *Gad, struct gpRender *Render, ULONG update);
-ULONG Track_HandleInput(Class *C, struct Gadget *Gad, struct gpInput *Input);
-ULONG Track_Domain(Class *C, struct Gadget *Gad, struct gpDomain *D);
+ULONG TrackHeader_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set);
+ULONG TrackHeader_GetAttr(Class *C, struct Gadget *Gad, struct opGet *Get);
+ULONG TrackHeader_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout);
+ULONG TrackHeader_Render(Class *C, struct Gadget *Gad, struct gpRender *Render, ULONG update);
+ULONG TrackHeader_HandleInput(Class *C, struct Gadget *Gad, struct gpInput *Input);
+ULONG TrackHeader_Domain(Class *C, struct Gadget *Gad, struct gpDomain *D);
 
 // - - - - -- -
 
@@ -80,7 +80,7 @@ typedef union MsgUnion
 * It may be better to just notify what change and have many notify functions per theme.
 * Some examples use only one Notify which send all attribs.
 */
-ULONG Track_NotifyCoords(Class *C, struct Gadget *Gad, struct GadgetInfo	*GInfo);
+ULONG TrackHeader_NotifyCoords(Class *C, struct Gadget *Gad, struct GadgetInfo	*GInfo);
 
 /** this is the struct that is the extended struct Library
  * That is created with OpenLibrary().
