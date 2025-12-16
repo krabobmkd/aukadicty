@@ -24,6 +24,8 @@ include_directories(
 # AukApp source files
 set(AUKBOOPSI_SOURCES
     aukboopsi.c
+    tracklayout.c
+    tracklayout.h
 
     bdbprintf.c
     bdbprintf.h
