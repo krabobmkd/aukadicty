@@ -30,8 +30,8 @@ struct AukSound {
     /* Data members */
     AukSoundFile *soundFile;   /* Shared pointer to AukSoundFile */
 
-    AukFixed startTime;      /* Start time in project timeline */
-    AukFixed endTime;        /* End time in project timeline */
+    AukFixed startTime;      /* Start time in project timeline (inclusive) */
+    AukFixed endTime;        /* End time in project timeline (exclusive - first value NOT in sound) */
 
     unsigned long fileStartFrame; /* Start frame in source file */
     unsigned long fileEndFrame;   /* End frame in source file (0 = use all) */

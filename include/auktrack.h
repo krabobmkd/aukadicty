@@ -77,6 +77,7 @@ const char* AukTrack_GetName(AukTrack* track);
 AukSound* AukTrack_CreateSound(void* This, AukSoundFilePtr soundFile, AukFixed startTime, AukFixed endTime);
 int AukTrack_AddSound(void* This, AukSound* sound);
 int AukTrack_RemoveSound(void* This, AukSound* sound);
+int AukTrack_MoveSound(void* This, AukSound* sound, AukFixed newStartTime);
 int AukTrack_MoveSoundToTrack(void* This, AukSound* sound, AukTrack* destTrack);
 void AukTrack_GetSound(void* This, AukSound** ptr, unsigned int index);
 unsigned int AukTrack_GetSoundCount(void* This);
