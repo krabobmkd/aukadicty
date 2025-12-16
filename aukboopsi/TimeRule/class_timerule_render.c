@@ -60,15 +60,22 @@ ULONG TimeRule_Domain(Class *C, struct Gadget *Gad, struct gpDomain *D)
   D->gpd_Domain.Left=0;
   D->gpd_Domain.Top=0;
 
+if(gdata)
+{
+bdbprintf("TimeRule_Domain %d\n",(int)gdata->_defaultHeight);
+} else
+{
+bdbprintf("TimeRule_Domain -\n");
+}
   switch(D->gpd_Which)
   {
     case GDOMAIN_NOMINAL:
-     // if(gdata)
-     // {
-     //   D->gpd_Domain.Width =gdata->_minimalWidth;
-     //   D->gpd_Domain.Height=gdata->_minimalHeight;
-     // }
-     // else
+     if(gdata)
+     {
+       D->gpd_Domain.Width =100;
+       D->gpd_Domain.Height=gdata->_defaultHeight;
+     }
+     else
       {
         D->gpd_Domain.Width=100;
         D->gpd_Domain.Height=12;
@@ -77,20 +84,20 @@ ULONG TimeRule_Domain(Class *C, struct Gadget *Gad, struct gpDomain *D)
 
     case GDOMAIN_MAXIMUM:
       D->gpd_Domain.Width=16000;
-      D->gpd_Domain.Height=gdata->_minimalHeight;
+      D->gpd_Domain.Height=gdata->_defaultHeight;
       break;
 
     case GDOMAIN_MINIMUM:
     default:
      if(gdata)
      {
-       D->gpd_Domain.Width =gdata->_minimalWidth; // sqrt(gdata->Pens) * 8 + 8;
-       D->gpd_Domain.Height=gdata->_minimalHeight; // sqrt(gdata->Pens) * 8 + 8;
+       D->gpd_Domain.Width =64; // sqrt(gdata->Pens) * 8 + 8;
+       D->gpd_Domain.Height=gdata->_defaultHeight; // sqrt(gdata->Pens) * 8 + 8;
      }
      else
       {
         D->gpd_Domain.Width=  50;
-        D->gpd_Domain.Height= 12    ;
+        D->gpd_Domain.Height= 12;
       }
       break;
 
@@ -173,7 +180,7 @@ ULONG TimeRule_Render(Class *C, struct Gadget *Gad, struct gpRender *Render, ULO
   if(rp)
   {
 	int bLayerUpdating=FALSE;
-    int penbg=1,penb=2,penc=3;
+    int penbg=2,penb=2,penc=3;
     struct Region *oldClipRegion;
 
     bdbprintf(" **** TimeRule_Render trace MethodID:%08lx Layer flags:%04lx\n",(int)Render->MethodID,(int)rp->Layer->Flags);

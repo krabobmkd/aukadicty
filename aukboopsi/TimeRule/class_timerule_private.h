@@ -38,7 +38,7 @@ typedef struct ITimeRule {
     ULONG _EditMode;
 
     // would have minimal size here.
-    UWORD _minimalWidth,_minimalHeight;
+    //UWORD _minimalWidth,_minimalHeight;
 
 
     struct Rectangle _framerec;
