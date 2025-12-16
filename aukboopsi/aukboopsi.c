@@ -620,9 +620,6 @@ int main(int argc, char **argv)
        cleanexit("Can't open scroller.gadget");
 
 
-#ifdef TRACK_STATICLINK
-    if(TrackStaticInit())  cleanexit("Can't init private Track gadget");
-#endif
 
     if(!initAppModel())  cleanexit("Can't create app");
 

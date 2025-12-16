@@ -7,10 +7,13 @@
 #include <proto/exec.h>
 #include <string.h>
 
+// resolve some amiga os include collisions
 #ifdef Remove
 #undef Remove
 #endif
-
+#ifdef Insert
+#undef Insert
+#endif
 /*
  * AukTrack implementation
  * Manages a track with sounds and envelope

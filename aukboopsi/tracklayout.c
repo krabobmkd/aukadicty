@@ -29,9 +29,22 @@
 #include <proto/layout.h>
 #include <gadgets/layout.h>
 
+#include "TimeRule/class_timerule.h"
+#include "TrackGadget/class_track.h"
+#include "TrackHeader/class_trackheader.h"
+#include "TrackHeaderList/class_trackheaderlist.h"
+#include "TrackList/class_tracklist.h"
+
+void cleanexit(const char *pmessage);
+
 void CreateTrackLayout(TrackLayoutManager *pm,struct DrawInfo *drawInfo, int headerwidth)
 {
 
+    if(TimeRuleStaticInit()) cleanexit("boopsi init1");
+    if(TrackStaticInit()) cleanexit("boopsi init2");
+    if(TrackHeaderStaticInit()) cleanexit("boopsi init3");
+    if(TrackHeaderListStaticInit()) cleanexit("boopsi init4");
+    if(TrackListStaticInit()) cleanexit("boopsi init5");
     // - - - - - A
 //        Object* spacer1 = (Object *)NewObject( LABEL_GetClass(), NULL,
 //                        LABEL_DrawInfo,drawInfo,
