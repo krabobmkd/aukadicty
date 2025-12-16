@@ -41,9 +41,9 @@ ULONG ASM SAVEDS Track_Dispatcher(
   ULONG retval=0;
   gdata=INST_DATA(C, Gad);
 
-static int yy=0;
+//static int yy=0;
 //  bdbprintf("Track_Dispatcher:%d mid:%08x\n",yy,M->MethodID);
- yy++;
+// yy++;
 
   switch(M->MethodID)
   {

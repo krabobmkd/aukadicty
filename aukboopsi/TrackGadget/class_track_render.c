@@ -81,8 +81,8 @@ ULONG Track_Domain(Class *C, struct Gadget *Gad, struct gpDomain *D)
       break;
 
     case GDOMAIN_MAXIMUM:
-      D->gpd_Domain.Width=16000;
-      D->gpd_Domain.Height=16000;
+      D->gpd_Domain.Width=4000;
+      D->gpd_Domain.Height=4000;
       break;
 
     case GDOMAIN_MINIMUM:
@@ -197,6 +197,16 @@ ULONG Track_Render(Class *C, struct Gadget *Gad, struct gpRender *Render, ULONG 
     rp = ObtainGIRPort(Render->gpr_GInfo);
   }
 
+// struct GadgetInfo	*gpr_GInfo
+// struct IBox			gi_Domain;
+    // debug...
+    if(Render->gpr_GInfo)
+    {
+        struct IBox	 ib =Render->gpr_GInfo->gi_Domain;
+        bdbprintf(" render domain IBox l:%d t:%d w:%d h:%d\n",(int)ib.Left,(int)ib.Top,(int)ib.Width,(int)ib.Height);
+    }
+
+
   if(rp)
   {
 	int bLayerUpdating=FALSE;
@@ -223,11 +233,10 @@ ULONG Track_Render(Class *C, struct Gadget *Gad, struct gpRender *Render, ULONG 
     #endif
 
     #ifdef USE_REGION_CLIPPING
-
-
+struct Layer
         ClearRegion(gdata->_clipRegion);
+        // if(rp->Layer->ClipRegion) OrRegionRegion(gdata->_clipRegion, rp->Layer->ClipRegion);  not sure
         OrRectRegion(gdata->_clipRegion, &gdata->_framerec);
-
 
         oldClipRegion = InstallClipRegion( rp->Layer, gdata->_clipRegion);
     #endif
