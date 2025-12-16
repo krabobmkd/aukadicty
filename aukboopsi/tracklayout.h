@@ -16,7 +16,9 @@ typedef struct TrackLayoutManager
     Object *mainVl;
 }TrackLayoutManager;
 
-void CreateTrackLayout(TrackLayoutManager *pm,struct DrawInfo *drawInfo, int headerwidth);
+void CreateTrackLayout(TrackLayoutManager *pm,struct DrawInfo *drawInfo,
+                int headerwidth,
+                int fontheight);
 
 
 #endif

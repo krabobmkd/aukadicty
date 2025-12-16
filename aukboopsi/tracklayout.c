@@ -37,7 +37,7 @@
 
 void cleanexit(const char *pmessage);
 
-void CreateTrackLayout(TrackLayoutManager *pm,struct DrawInfo *drawInfo, int headerwidth)
+void CreateTrackLayout(TrackLayoutManager *pm,struct DrawInfo *drawInfo, int headerwidth, int fontheight)
 {
 
     if(TimeRuleStaticInit()) cleanexit("boopsi init1");
@@ -53,6 +53,7 @@ void CreateTrackLayout(TrackLayoutManager *pm,struct DrawInfo *drawInfo, int hea
 
 
         pm->timerule = (Object *)NewObject( TIMERULE_GetClass(), NULL,
+                                TIMERULE_DefHeight,(fontheight*3)/2,
                                 TAG_END);
 //        Object* spacer2 = (Object *)NewObject( LABEL_GetClass(), NULL,
 //                        LABEL_DrawInfo,drawInfo,
@@ -152,6 +153,7 @@ void CreateTrackLayout(TrackLayoutManager *pm,struct DrawInfo *drawInfo, int hea
 
                     LAYOUT_AddChild,pm->timerule /*pm->subAHl*/,
                 CHILD_WeightedHeight,0,
+                CHILD_MaxHeight,(fontheight*3)/2,
                     LAYOUT_AddChild, pm->subBHl,
                 CHILD_WeightedHeight,1,
                     LAYOUT_AddChild, pm->scrollerH,

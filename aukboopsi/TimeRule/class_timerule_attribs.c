@@ -44,12 +44,10 @@ ULONG TimeRule_GetAttr(Class *C, struct Gadget *Gad, struct opGet *Get)
 
   switch(Get->opg_AttrID)
   {
-    case TIMERULE_CenterX:
-        *data = (LONG)gdata->_circleCenterX;
+    case TIMERULE_DefHeight:
+        *data = (LONG)gdata->_defaultHeight;
     break;
-    case TIMERULE_CenterY:
-        *data = (LONG)gdata->_circleCenterY;
-    break;
+
     // super class gadget things. would manage attribs selected/hightlighted, ...
     default:
         DoSuperCall = 1;
@@ -81,23 +79,15 @@ ULONG TimeRule_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
 
     switch(tag->ti_Tag)
     {
-     case TIMERULE_CenterX:
-        if((UWORD)data != gdata->_circleCenterX )
+     case TIMERULE_DefHeight:
+        if((UWORD)data != gdata->_defaultHeight )
         {
-            gdata->_circleCenterX = (UWORD)data ;
+            gdata->_defaultHeight = (UWORD)data ;
             redraw=1;
             notifCoords = 1;
         }
         break;
-     case TIMERULE_CenterY:
-        if((UWORD)data != gdata->_circleCenterY )
-        {
-            gdata->_circleCenterY = (UWORD)data ;
 
-            redraw=1;
-            notifCoords = 1;
-        }
-        break;
      // - - - actually we have to manage super class attribs:
      // with GA_XXX and struct Gadget members...
      // is there  a way to super call this ? DoSuperMethodA() deosn't seems to manage these attribs.
@@ -149,7 +139,7 @@ ULONG TimeRule_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
 
     if(notifCoords)
     {
-        TimeRule_NotifyCoords(C,Gad,Set->ops_GInfo);
+        //TimeRule_NotifyCoords(C,Gad,Set->ops_GInfo);
     }
   }
 

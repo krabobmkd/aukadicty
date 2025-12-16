@@ -55,7 +55,8 @@
 #include <proto/asl.h>
 #include <libraries/asl.h>
 
-#include "class_track.h"
+//#include "class_track.h"
+#include "tracklayout.h"
 
 #include "compilers.h"
 #include "bdbprintf.h"
@@ -152,10 +153,12 @@ struct App
         Object *horizontallayoutA;
          //   Object *titlelabel;
             Object* btAbout;
-        Object *horizontallayoutB;
-            Object *HeaderZone;
-            Object *TrackVertLZone;
-            Object *TrackVirtZone;
+        // Object *horizontallayoutB;
+        //     Object *HeaderZone;
+        //     Object *TrackVertLZone;
+        //     Object *TrackVirtZone;
+        TrackLayoutManager trackslayout;
+
 
             // status bar
         Object *horizontallayoutC;
@@ -248,314 +251,6 @@ void closeAppModel(void)
 }
 
 
-typedef struct ButINST
-{
-    LONG midX, midY; /* Coordinates of middle of gadget */
-} ButINST;
-
-ULONG RenderRKMBut(Class *cl, struct Gadget *g, struct gpRender *msg)
-{
-    struct ButINST *inst = (ButINST *)INST_DATA(cl, (Object *)g);
-    struct RastPort *rp;
-    ULONG retval = TRUE;
-    UWORD *pens = msg->gpr_GInfo->gi_DrInfo->dri_Pens;
-
-    if (msg->MethodID == GM_RENDER)   /* If msg is truly a GM_RENDER message (not a gpInput that */
-        /* looks like a gpRender), use the rastport within it...   */
-        rp = msg->gpr_RPort;
-    else                              /* ...Otherwise, get a rastport using ObtainGIRPort().     */
-        rp = ObtainGIRPort(msg->gpr_GInfo);
-
-    if (rp)
-    {
-        UWORD back, shine, shadow, w, h, x, y;
-
-        if (g->Flags & GFLG_SELECTED) /* If the gadget is selected, reverse the meanings of the  */
-        {                             /* pens.                                                   */
-            back   = pens[FILLPEN];
-            shine  = pens[SHADOWPEN];
-            shadow = pens[SHINEPEN];
-        }
-        else
-        {
-            back   = pens[BACKGROUNDPEN];
-            shine  = pens[SHINEPEN];
-            shadow = pens[SHADOWPEN];
-        }
-        SetDrMd(rp, JAM1);
-
-        SetAPen(rp, back);          /* Erase the old gadget.       */
-        RectFill(rp, g->LeftEdge,
-            g->TopEdge,
-            g->LeftEdge + g->Width,
-            g->TopEdge + g->Height);
-
-        SetAPen(rp, shadow);     /* Draw shadow edge.            */
-        Move(rp, g->LeftEdge + 1, g->TopEdge + g->Height);
-        Draw(rp, g->LeftEdge + g->Width, g->TopEdge + g->Height);
-        Draw(rp, g->LeftEdge + g->Width, g->TopEdge + 1);
-
-        w = g->Width / 4;       /* Draw Arrows - Sorry, no frills imagery */
-        h = g->Height / 2;
-        x = g->LeftEdge + (w/2);
-        y = g->TopEdge + (h/2);
-
-        Move(rp, x, inst->midY);
-        Draw(rp, x + w, y);
-        Draw(rp, x + w, y + (g->Height) - h);
-        Draw(rp, x, inst->midY);
-
-        x = g->LeftEdge + (w/2) + g->Width / 2;
-
-        Move(rp, x + w, inst->midY);
-        Draw(rp, x, y);
-        Draw(rp, x, y  + (g->Height) - h);
-        Draw(rp, x + w, inst->midY);
-
-        SetAPen(rp, shine);    /* Draw shine edge.           */
-        Move(rp, g->LeftEdge, g->TopEdge + g->Height - 1);
-        Draw(rp, g->LeftEdge, g->TopEdge);
-        Draw(rp, g->LeftEdge + g->Width - 1, g->TopEdge);
-
-        if (msg->MethodID != GM_RENDER) /* If we allocated a rastport, give it back.             */
-            ReleaseGIRPort(rp);
-    }
-    else retval = FALSE;
-    return(retval);
-}
-
-ULONG RKMBut_Domain(Class *C, struct Gadget *Gad, struct gpDomain *D)
-{
-//  Track *gdata=0;
-
- // if(Gad) gdata=INST_DATA(C, Gad);
-// Printf("Track_Domain data:%lx\n",(int)gdata);
-
-  D->gpd_Domain.Left=0;
-  D->gpd_Domain.Top=0;
-
-  switch(D->gpd_Which)
-  {
-    case GDOMAIN_NOMINAL:
-     // if(gdata)
-     // {
-     //   D->gpd_Domain.Width =gdata->_minimalWidth;
-     //   D->gpd_Domain.Height=gdata->_minimalHeight;
-     // }
-     // else
-      {
-        D->gpd_Domain.Width=100;
-        D->gpd_Domain.Height=50;
-      }
-      break;
-
-    case GDOMAIN_MAXIMUM:
-      D->gpd_Domain.Width=4000;
-      D->gpd_Domain.Height=4000;
-      break;
-
-    case GDOMAIN_MINIMUM:
-    default:
-//     if(gdata)
-//     {
-//       D->gpd_Domain.Width =gdata->_minimalWidth; // sqrt(gdata->Pens) * 8 + 8;
-//       D->gpd_Domain.Height=gdata->_minimalHeight; // sqrt(gdata->Pens) * 8 + 8;
-//     }
-//     else
-      {
-        D->gpd_Domain.Width=  50;
-        D->gpd_Domain.Height= 50;
-      }
-      break;
-
-  }
-  return(1);
-}
-ULONG ASM SAVEDS dispatchRKMButGad(
-                    REG(a0,struct IClass *cl),
-                    REG(a2,struct Gadget *o),
-                    REG(a1,union MsgUnion *msg))
-//ULONG dispatchRKMButGad(Class *cl, Object *o, Msg msg)
-{
-    struct ButINST *inst;
-    ULONG retval = FALSE;
-    Object *object;
-
-    switch (msg->MethodID)
-    {
-    case OM_NEW:       /* First, pass up to superclass */
-        if (object = (Object *)DoSuperMethod(cl, o, msg))
-        {
-            struct Gadget *g = (struct Gadget *)object;
-
-            /* Initial local instance data */
-            inst = (ButINST *)INST_DATA(cl, object);
-            inst->midX   = g->LeftEdge + ( (g->Width) / 2);
-            inst->midY   = g->TopEdge + ( (g->Height) / 2);
-
-            retval = (ULONG)object;
-        }
-        break;
-    case GM_HITTEST:
-        /* Since this is a rectangular gadget this  */
-        /* method always returns GMR_GADGETHIT.     */
-        retval = GMR_GADGETHIT;
-        break;
-    case GM_GOACTIVE:
-        inst = (ButINST*)INST_DATA(cl, o);
-
-        /* Only become active if the GM_GOACTIVE   */
-        /* was triggered by direct user input.     */
-        if (((struct gpInput *)msg)->gpi_IEvent)
-        {
-            /* This gadget is now active, change    */
-            /* visual state to selected and render. */
-            ((struct Gadget *)o)->Flags |= GFLG_SELECTED;
-            RenderRKMBut(cl, (struct Gadget *)o, (struct gpRender *)msg);
-            retval = GMR_MEACTIVE;
-        }
-        else            /* The GM_GOACTIVE was not         */
-            /* triggered by direct user input. */
-            retval = GMR_NOREUSE;
-        break;
-    case GM_RENDER:
-        retval = RenderRKMBut(cl, (struct Gadget *)o, (struct gpRender *)msg);
-        break;
-    case GM_HANDLEINPUT:   /* While it is active, this gadget sends its superclass an        */
-        /* OM_NOTIFY pulse for every IECLASS_TIMER event that goes by     */
-        /* (about one every 10th of a second).  Any object that is        */
-        /* connected to this gadget will get A LOT of OM_UPDATE messages. */
-    {
-        struct Gadget *g = (struct Gadget *)o;
-        struct gpInput *gpi = (struct gpInput *)msg;
-        struct InputEvent *ie = gpi->gpi_IEvent;
-
-        inst = (ButINST*)INST_DATA(cl, o);
-
-        retval = GMR_MEACTIVE;
-
-        if (ie->ie_Class == IECLASS_RAWMOUSE)
-        {
-            switch (ie->ie_Code)
-            {
-            case SELECTUP: /* The user let go of the gadget so return GMR_NOREUSE    */
-                /* to deactivate and to tell Intuition not to reuse       */
-                /* this Input Event as we have already processed it.      */
-
-                /*If the user let go of the gadget while the mouse was    */
-                /*over it, mask GMR_VERIFY into the return value so       */
-                /*Intuition will send a Release Verify (GADGETUP).        */
-                if ( ((gpi->gpi_Mouse).X < g->LeftEdge) ||
-                    ((gpi->gpi_Mouse).X > g->LeftEdge + g->Width) ||
-                    ((gpi->gpi_Mouse).Y < g->TopEdge) ||
-                    ((gpi->gpi_Mouse).Y > g->TopEdge + g->Height) )
-                    retval = GMR_NOREUSE | GMR_VERIFY;
-                else
-                    retval = GMR_NOREUSE;
-
-                /* Since the gadget is going inactive, send a final   */
-                /* notification to the ICA_TARGET.                    */
-               // NotifyPulse(cl , o, 0L, inst->midX, (struct gpInput *)msg);
-               bdbprintf("RKMBut up !\n");
-
-
-                break;
-            case MENUDOWN: /* The user hit the menu button. Go inactive and let      */
-                /* Intuition reuse the menu button event so Intuition can */
-                /* pop up the menu bar.                                   */
-                retval = GMR_REUSE;
-
-                /* Since the gadget is going inactive, send a final   */
-                /* notification to the ICA_TARGET.                    */
-               // NotifyPulse(cl , o, 0L, inst->midX, (struct gpInput *)msg);
-                break;
-            default:
-                retval = GMR_MEACTIVE;
-            }
-
-        }
-        else if (ie->ie_Class == IECLASS_TIMER)
-        {
-            /* If the gadget gets a timer event, it sends an interim OM_NOTIFY */
-            //NotifyPulse(cl, o, OPUF_INTERIM, inst->midX, gpi); /*     to its superclass. */
-        }
-    }
-        break;
-
-    case GM_GOINACTIVE:           /* Intuition said to go inactive.  Clear the GFLG_SELECTED */
-        /* bit and render using unselected imagery.                */
-        ((struct Gadget *)o)->Flags &= ~GFLG_SELECTED;
-        RenderRKMBut(cl, (struct Gadget *)o, (struct gpRender *)msg);
-        break;
-    case OM_SET:/* Although this class doesn't have settable attributes, this gadget class   */
-        /* does have scaleable imagery, so it needs to find out when its size and/or */
-        /* position has changed so it can erase itself, THEN scale, and rerender.    */
-//        if ( FindTagItem(GA_Width,  ((struct opSet *)msg)->ops_AttrList) ||
-//            FindTagItem(GA_Height, ((struct opSet *)msg)->ops_AttrList) ||
-//            FindTagItem(GA_Top,    ((struct opSet *)msg)->ops_AttrList) ||
-//            FindTagItem(GA_Left,   ((struct opSet *)msg)->ops_AttrList) )
-//        {
-//            struct RastPort *rp;
-//            struct Gadget *g = (struct Gadget *)o;
-
-//            WORD x,y,w,h;
-
-//            x = g->LeftEdge;
-//            y = g->TopEdge;
-//            w = g->Width;
-//            h = g->Height;
-
-//            inst = (ButINST *)INST_DATA(cl, o);
-
-//            retval = DoSuperMethod(cl, o, msg);
-
-//            /* Get pointer to RastPort for gadget. */
-//            if (rp = ObtainGIRPort( ((struct opSet *)msg)->ops_GInfo) )
-//            {
-//                UWORD *pens = ((struct opSet *)msg)->ops_GInfo->gi_DrInfo->dri_Pens;
-
-//                SetAPen(rp, pens[BACKGROUNDPEN]);
-//                SetDrMd(rp, JAM1);                            /* Erase the old gadget.       */
-//                RectFill(rp, x, y, x+w, y+h);
-
-//                inst->midX = g->LeftEdge + ( (g->Width) / 2); /* Recalculate where the       */
-//                inst->midY = g->TopEdge + ( (g->Height) / 2); /* center of the gadget is.    */
-
-//                /* Rerender the gadget.        */
-//                IDoMethod(o, GM_RENDER, ((struct opSet *)msg)->ops_GInfo, rp, GREDRAW_REDRAW);
-//                ReleaseGIRPort(rp);
-//            }
-//        }
-//        else
-            retval = DoSuperMethod(cl, o, msg);
-        break;
-       case GM_DOMAIN:
-           retval = RKMBut_Domain(cl, o, msg);
-       break;
-    default:          /* rkmmodelclass does not recognize the methodID, let the superclass's */
-        /* dispatcher take a look at it.                                       */
-        retval = DoSuperMethod(cl, o, msg);
-        break;
-    }
-    return(retval);
-}
-
-Class *initRKMButGadClass(void)
-{
-    Class *cl = NULL;
-   // extern ULONG HookEntry();     /* defined in amiga.lib */
-
-    if ( cl =  MakeClass( NULL,
-        "gadgetclass", NULL,
-        sizeof ( struct ButINST ),
-        0 ))
-    {
-        /* initialize the cl_Dispatcher Hook    */
-        cl->cl_Dispatcher.h_Entry = (HOOKFUNC)dispatchRKMButGad;
-    }
-    return ( cl );
-}
-Class *RKMButClass=NULL;
 //  - - - -- - - - -  end of App modelclass management.
 
 int main(int argc, char **argv)
@@ -619,12 +314,7 @@ int main(int argc, char **argv)
    if ( ! (ScrollerBase = OpenLibrary("gadgets/scroller.gadget",mingadgetversion)))
        cleanexit("Can't open scroller.gadget");
 
-
-
     if(!initAppModel())  cleanexit("Can't create app");
-
-    RKMButClass = initRKMButGadClass();
-    if(!RKMButClass)  cleanexit("Can't create RKMButClass");
 
     // = = = = = now that needed classes are loaded
     // = = = = = creates the instances...
@@ -691,119 +381,8 @@ int main(int argc, char **argv)
                     TAG_DONE);
     }
 
-//    {
-//        app->layoutBList = populateTemplateList();
-//    }
-    {
-        app->HeaderZone = NewObject( BUTTON_GetClass(),NULL,
-                                    GA_Text, "test bt1",
-                                    GA_RelVerify, TRUE,
-                                    CHILD_MaxWidth,120,
-                                   CHILD_MaxHeight,6000,
-                                TAG_END);
 
-
-        Object *gadtrack1 = NewObject(RKMButClass,NULL,
-              //   GA_RelVerify, TRUE,
-                TAG_END);
-// TRACK_GetClass()
-// RKMButClass
-
-//        Object *trackHlayout = (Object *)NewObject( LAYOUT_GetClass(), NULL,
-//            //GA_DrawInfo, app->drawInfo,
-//            //LAYOUT_DeferLayout, TRUE, // Layout refreshes done on task's context (by thewindow class)
-//            // LAYOUT_SpaceOuter, FALSE,
-//            // LAYOUT_SpaceInner, FALSE,
-//            // LAYOUT_BottomSpacing, 0,
-//            // LAYOUT_TopSpacing,0,
-//            // LAYOUT_LeftSpacing,0,
-//            // LAYOUT_RightSpacing,0,
-//            // LAYOUT_InnerSpacing,0,
-//             LAYOUT_Orientation, LAYOUT_HORIZONTAL,
-//            // LAYOUT_BevelStyle, BVS_NONE,
-//            LAYOUT_AddChild, gadtrack1,
-//                CHILD_MinWidth,800,
-//                CHILD_MinHeight,120,
-//                CHILD_WeightedHeight,1,
-//            TAG_END);
-
-
-           /* NewObject( BUTTON_GetClass(),NULL,
-                                    GA_Text, "test track1",
-                                    GA_RelVerify, TRUE,
-                                 // CHILD_MinWidth,6000,
-                                 //   CHILD_MinHeight,6000,
-                                 //    CHILD_MaxWidth,6000,
-                                 //   CHILD_MaxHeight,6000,
-                                TAG_END);*/
-        Object *gadtrack2 = NewObject( BUTTON_GetClass(),NULL,
-                                    GA_Text, "test track2",
-                                    GA_RelVerify, TRUE,
-                                 // CHILD_MinWidth,6000,
-                                 //   CHILD_MinHeight,6000,
-                                 //    CHILD_MaxWidth,6000,
-                                 //   CHILD_MaxHeight,6000,
-                                TAG_END);
-        Object *gadtrack3 = NewObject( BUTTON_GetClass(),NULL,
-                                    GA_Text, "test track3",
-                                    GA_RelVerify, TRUE,
-                                 // CHILD_MinWidth,6000,
-                                 //   CHILD_MinHeight,6000,
-                                 //    CHILD_MaxWidth,6000,
-                                 //   CHILD_MaxHeight,6000,
-                                TAG_END);
-        app->TrackVertLZone = (Object *)NewObject( LAYOUT_GetClass(), NULL,
-            //GA_DrawInfo, app->drawInfo,
-            //LAYOUT_DeferLayout, TRUE, // Layout refreshes done on task's context (by thewindow class)
-            // LAYOUT_SpaceOuter, FALSE,
-            // LAYOUT_SpaceInner, FALSE,
-            // LAYOUT_BottomSpacing, 0,
-            // LAYOUT_TopSpacing,0,
-            // LAYOUT_LeftSpacing,0,
-            // LAYOUT_RightSpacing,0,
-            // LAYOUT_InnerSpacing,0,
-             LAYOUT_Orientation, LAYOUT_ORIENT_VERT,
-            // LAYOUT_BevelStyle, BVS_NONE,
-            LAYOUT_AddChild, gadtrack2,
-                CHILD_MinWidth,800,
-                CHILD_MinHeight,120,
-                CHILD_WeightedHeight,1,
-            LAYOUT_AddChild, gadtrack1,
-                CHILD_MinWidth,800,
-                CHILD_MinHeight,120,
-                CHILD_WeightedHeight,1,
-
-            LAYOUT_AddChild, gadtrack3,
-                CHILD_MinHeight,120,
-                CHILD_WeightedHeight,1,
-            TAG_END);
-
-
-        app->TrackVirtZone = NewObject( VIRTUAL_GetClass(),NULL,
-                                   //  GA_Text, "test bt2",
-                                   //  GA_RelVerify, TRUE,
-                                   //  CHILD_MaxWidth,6000,
-                                   // CHILD_MaxHeight,6000,
-                                   VIRTUALA_Contents,app->TrackVertLZone,
-                                   // VIRTUALA_TotalX,4000,
-                                   // VIRTUALA_TotalY,800,
-                                TAG_END);
-
-        app->horizontallayoutB =
-             (Object *)NewObject( LAYOUT_GetClass(), NULL,
-                    LAYOUT_Orientation, LAYOUT_ORIENT_HORIZ,
-                    LAYOUT_EvenSize, TRUE,
-                    LAYOUT_HorizAlignment, LALIGN_RIGHT,
-                    LAYOUT_InnerSpacing,0,
-
-                   LAYOUT_AddChild,  app->HeaderZone,
-                CHILD_WeightedWidth,0,
-                    LAYOUT_AddChild, app->TrackVirtZone,
-                CHILD_MinHeight,60,
-                CHILD_WeightedWidth,1,
-                  //  GA_Height,app->fontHeight,
-                    TAG_DONE);
-    }
+    CreateTrackLayout(&app->trackslayout,app->drawInfo, 64,app->fontHeight);
 
     {
         app->statusbarlabel = (Object *)NewObject( BUTTON_GetClass(),NULL,
@@ -849,7 +428,7 @@ int main(int argc, char **argv)
             LAYOUT_Orientation, LAYOUT_ORIENT_VERT,
             LAYOUT_AddChild, app->horizontallayoutA,
                 CHILD_WeightedHeight,0,
-            LAYOUT_AddChild, app->horizontallayoutB,
+            LAYOUT_AddChild, app->trackslayout.mainVl,
                 CHILD_WeightedHeight,4,
             LAYOUT_AddChild, app->bottombarlayout,
                 CHILD_WeightedHeight,0,
@@ -1046,9 +625,6 @@ void exitclose(void)
 #ifdef TRACK_STATICLINK
     TrackStaticClose();
 #endif
-
-    if(RKMButClass)
-        FreeClass(RKMButClass);
 
     if(ScrollerBase) CloseLibrary(ScrollerBase);
     if(RequesterBase) CloseLibrary(RequesterBase);

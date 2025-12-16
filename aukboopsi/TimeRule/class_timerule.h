@@ -61,9 +61,9 @@
 #define TIMERULE_Dummy			(TAG_USER+0x04110000)
 
 // abstract coordinate from 0 to 65535 , whatever width is.
-#define	TIMERULE_CenterX		(TIMERULE_Dummy+1)
+#define	TIMERULE_DefHeight		(TIMERULE_Dummy+1)
 // abstract coordinate from 0 to 65535, whatever height is.
-#define	TIMERULE_CenterY		(TIMERULE_Dummy+2)
+//#define	TIMERULE_CenterY		(TIMERULE_Dummy+2)
 
 /** DEVTODO: adds attributes definitions here and
  * manage them in class_timerule_attribs.c

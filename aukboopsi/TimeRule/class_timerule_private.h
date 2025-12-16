@@ -30,8 +30,8 @@ extern "C" {
 * DEVTODO: make this class evolve to retain the data needed to draw and interact with your gadget.
 */
 typedef struct ITimeRule {
-    // let's say we have coordinates of the center of the circle
-    UWORD _circleCenterX,_circleCenterY;
+    // let's say we have
+    UWORD _defaultHeight;
 
     // DEVTODO: we could manage the mouse interaction current state....
     ULONG _MouseMode;

@@ -59,8 +59,8 @@ ULONG ASM SAVEDS TimeRule_Dispatcher(
       {
         gdata=INST_DATA(C, Gad);
         // DEVTODO: here you write the default values for your objects.
-        gdata->_circleCenterX = 32767;
-        gdata->_circleCenterY = 32767;
+        gdata->_defaultHeight = 12;
+
 
         gdata->_minimalWidth = 64;
         gdata->_minimalHeight = 64;

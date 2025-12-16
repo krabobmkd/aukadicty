@@ -71,13 +71,13 @@ ULONG TimeRule_Domain(Class *C, struct Gadget *Gad, struct gpDomain *D)
      // else
       {
         D->gpd_Domain.Width=100;
-        D->gpd_Domain.Height=50;
+        D->gpd_Domain.Height=12;
       }
       break;
 
     case GDOMAIN_MAXIMUM:
       D->gpd_Domain.Width=16000;
-      D->gpd_Domain.Height=16000;
+      D->gpd_Domain.Height=gdata->_minimalHeight;
       break;
 
     case GDOMAIN_MINIMUM:
@@ -90,7 +90,7 @@ ULONG TimeRule_Domain(Class *C, struct Gadget *Gad, struct gpDomain *D)
      else
       {
         D->gpd_Domain.Width=  50;
-        D->gpd_Domain.Height= 50;
+        D->gpd_Domain.Height= 12    ;
       }
       break;
 
@@ -208,17 +208,17 @@ ULONG TimeRule_Render(Class *C, struct Gadget *Gad, struct gpRender *Render, ULO
                   gdata->_framerec.MinY,
                   gdata->_framerec.MaxX,
                   gdata->_framerec.MaxY) ;
-        {
-            UWORD width = gdata->_framerec.MaxX - gdata->_framerec.MinX;
-            UWORD height = gdata->_framerec.MaxY - gdata->_framerec.MinY;
+        // {
+        //     UWORD width = gdata->_framerec.MaxX - gdata->_framerec.MinX;
+        //     UWORD height = gdata->_framerec.MaxY - gdata->_framerec.MinY;
 
-            UWORD xc = gdata->_framerec.MinX + ((width*gdata->_circleCenterX)>>16);
-            UWORD yc = gdata->_framerec.MinY + ((height*gdata->_circleCenterY)>>16);
-            SetAPen(rp,penb);
-            DrawEllipse(rp,xc,yc,width>>1,height>>1);
-            SetAPen(rp,penc);
-            DrawEllipse(rp,xc,yc,width>>2,height>>2);
-        }
+        //     UWORD xc = gdata->_framerec.MinX + ((width*gdata->_circleCenterX)>>16);
+        //     UWORD yc = gdata->_framerec.MinY + ((height*gdata->_circleCenterY)>>16);
+        //     SetAPen(rp,penb);
+        //     DrawEllipse(rp,xc,yc,width>>1,height>>1);
+        //     SetAPen(rp,penc);
+        //     DrawEllipse(rp,xc,yc,width>>2,height>>2);
+        // }
 		
 		if(bLayerUpdating) 
 		{
