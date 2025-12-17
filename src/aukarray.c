@@ -168,7 +168,11 @@ int AukArray_Add(void* This, AukObject* item) {
     aukMutex_unlock(&array->mutex);
 
     /* Send update notification */
-    array->base.SendUpdate(&array->base, NULL);
+    {
+        AukMessage msg;
+        msg.type = AUK_MSG_MODIFY;
+        array->base.SendUpdate(&array->base, &msg);
+    }
 
     return 1;
 }
@@ -215,7 +219,11 @@ int AukArray_RemoveAt(void* This, unsigned int index) {
     aukMutex_unlock(&array->mutex);
 
     /* Send update notification */
-    array->base.SendUpdate(&array->base, NULL);
+    {
+        AukMessage msg;
+        msg.type = AUK_MSG_MODIFY;
+        array->base.SendUpdate(&array->base, &msg);
+    }
 
     return 1;
 }
@@ -302,5 +310,9 @@ void AukArray_Clear(void* This) {
     array->count = 0;
     aukMutex_unlock(&array->mutex);
     /* Send update notification */
-    array->base.SendUpdate(&array->base, NULL);
+    {
+        AukMessage msg;
+        msg.type = AUK_MSG_MODIFY;
+        array->base.SendUpdate(&array->base, &msg);
+    }
 }

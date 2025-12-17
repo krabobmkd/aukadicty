@@ -71,6 +71,25 @@ void AukAProject_GetTrack(void* This, AukTrack**ptr, unsigned int index);
 unsigned int AukAProject_GetTrackCount(void* This);
 AukFixed AukAProject_GetDuration(void* This);
 
+
+
+/* Message type enumeration that are AukAProject specific  */
+typedef enum {
+    AUK_MSG_TRACKADDED = AUKPROJECT_MSG_STARTLOAD,
+    AUK_MSG_TRACKMODIFIED_TIMECHANGE,
+    AUK_MSG_TRACKMODIFIED_SOUNDADDED,
+    AUK_MSG_TRACKMODIFIED_SOUNDREMOVED,
+    AUK_MSG_TRACKREMOVED,
+} AukAProjectMessageType;
+
+typedef struct AukMessage_AProject {
+    ULONG type;                /* Discriminator - always access this first */
+    int     _track_id;
+    AukTrack    *_track;    /* weak reference of object currently modified */
+    AukFixed    _timeStart; /* for AUK_MSG_TRACKMODIFIED_TIMECHANGE */
+} AukMessage_AProject;
+
+
 #ifdef __cplusplus
 }
 #endif

@@ -164,15 +164,15 @@ Class *TRACK_GetClass()
 // just use this one once when static link
 int TrackStaticInit()
 { 
-   if(!Track_OpenLibs_Dependencies()) return 1;
+   if(!Track_OpenLibs_Dependencies()) return 0;
     if(TrackClassPtr=MakeClass(NULL,TrackSuperClassID,0,sizeof(Track),0))
     {
       TrackClassPtr->cl_Dispatcher.h_Entry=(REHOOKFUNC)Track_Dispatcher;
      // do not AddClass() when static, no need to publish, TrackClassPtr will be enough.
       /* Success */
-      return(0);
+      return(1);
     }
-    return 1;
+    return 0;
 }
 
 void TrackStaticClose()

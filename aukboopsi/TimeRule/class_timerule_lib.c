@@ -176,15 +176,15 @@ struct IClass   *TIMERULE_GetClass()
 // just use this one once when static link
 int TimeRuleStaticInit()
 { 
-   if(!TimeRule_OpenLibs_Dependencies()) return 1;
+   if(!TimeRule_OpenLibs_Dependencies()) return 0;
     if(TimeRuleClassPtr=MakeClass(NULL,TimeRuleSuperClassID,0,sizeof(TimeRule),0))
     {
       TimeRuleClassPtr->cl_Dispatcher.h_Entry=(REHOOKFUNC)TimeRule_Dispatcher;
      // do not AddClass() when static, no need to publish, TimeRuleClassPtr will be enough.
       /* Success */
-      return(0);
+      return(1);
     }
-    return 1;
+    return 0;
 }
 
 void TimeRuleStaticClose()

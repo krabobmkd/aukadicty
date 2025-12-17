@@ -22,6 +22,11 @@ void AukObject_Delete(AukObject* obj) {
     AukListener* nextListener;
 
     if (obj) {
+
+         AukMessage m;
+         m.type = AUK_MSG_WILL_DELETE;
+         AukObject_SendUpdate(obj,&m);
+
         /* Free all listeners */
         listener = obj->listeners;
         while (listener) {
@@ -53,7 +58,7 @@ void AukObject_Serialize(AukObject* This, ISerializer* ser, const char* pName) {
     (void)pName;
 }
 
-int AukObject_AddListener(AukObject* obj, AukObject* listenerObject, AukUpdateCallback callback) {
+int AukObject_AddListener(AukObject* obj, AukObject* listenerObject, void* userData, AukUpdateCallback callback) {
     AukListener* newListener;
 
     if (!obj || !listenerObject || !callback) {
@@ -82,6 +87,7 @@ int AukObject_AddListener(AukObject* obj, AukObject* listenerObject, AukUpdateCa
 
     /* Retain reference to listener object */
     AukObjectPtr_Set(&newListener->listenerObject,listenerObject);
+    newListener->userData = userData;
     newListener->callback = callback;
     newListener->next = obj->listeners;
 
@@ -124,7 +130,7 @@ int AukObject_RemoveListener(AukObject* obj, AukObject* listenerObject) {
     return 0;
 }
 
-void AukObject_SendUpdate(AukObject* obj,void *message) {
+void AukObject_SendUpdate(AukObject* obj, AukMessage* message) {
     AukListener* current;
     AukObject* listenerPtr;
 
@@ -138,7 +144,7 @@ void AukObject_SendUpdate(AukObject* obj,void *message) {
     while (current) {
         listenerPtr = AukObjectPtr_GetObject(&current->listenerObject);
         if (listenerPtr && current->callback) {
-            current->callback(listenerPtr, obj,message);
+            current->callback(listenerPtr, obj, current->userData, message);
         }
         current = current->next;
     }

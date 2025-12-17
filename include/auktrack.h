@@ -35,7 +35,6 @@ struct sAukTrack {
     AukObject base;          /* Must be first - inheritance */
 
     /* Data members */
-    AukProject* project;     /* Pointer to parent project (weak reference) */
     char* name;              /* Track name */
     AukArray *sounds;        /* Array of sounds on this track */
 

@@ -86,7 +86,11 @@ void AukSound_SetSoundFile(AukSound* sound, AukSoundFile *soundFile) {
     }
 
     /* Send update notification */
-    sound->base.SendUpdate(&sound->base, NULL);
+    {
+        AukMessage msg;
+        msg.type = AUK_MSG_MODIFY;
+        sound->base.SendUpdate(&sound->base, &msg);
+    }
 }
 
 void AukSound_SetTimeRange(void* This, AukFixed start, AukFixed end) {
@@ -102,7 +106,11 @@ void AukSound_SetTimeRange(void* This, AukFixed start, AukFixed end) {
             sound->endTime = end;
 
             /* Send update notification */
-            sound->base.SendUpdate(&sound->base,NULL);
+            {
+                AukMessage msg;
+                msg.type = AUK_MSG_MODIFY;
+                sound->base.SendUpdate(&sound->base, &msg);
+            }
         }
     }
 }
@@ -120,7 +128,11 @@ void AukSound_SetFileRange(void* This, unsigned long startFrame, unsigned long e
             sound->fileEndFrame = endFrame;
 
             /* Send update notification */
-            sound->base.SendUpdate(&sound->base,NULL);
+            {
+                AukMessage msg;
+                msg.type = AUK_MSG_MODIFY;
+                sound->base.SendUpdate(&sound->base, &msg);
+            }
         }
     }
 }
@@ -137,7 +149,11 @@ void AukSound_SetLoopCount(void* This, unsigned long count) {
             sound->loopCount = count;
 
             /* Send update notification */
-            sound->base.SendUpdate(&sound->base,NULL);
+            {
+                AukMessage msg;
+                msg.type = AUK_MSG_MODIFY;
+                sound->base.SendUpdate(&sound->base, &msg);
+            }
         }
     }
 }

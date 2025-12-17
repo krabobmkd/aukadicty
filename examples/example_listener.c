@@ -16,15 +16,33 @@ typedef struct sMockGUIView {
 } MockGUIView;
 
 /* Update callback for GUI view */
-void MockGUIView_OnUpdate(void* listenerObject, void* modifiedObject) {
+void MockGUIView_OnUpdate(AukObject* listenerObject, AukObject* senderObject, void* userData, AukMessage* message) {
     MockGUIView* view = (MockGUIView*)listenerObject;
-    AukObject* obj = (AukObject*)modifiedObject;
+    const char* messageTypeStr = "UNKNOWN";
 
-    if (view && obj) {
+    (void)userData; /* Unused in this example */
+
+    if (view && senderObject && message) {
         view->updateCount++;
-        printf("[%s] Received update from %s (update #%d)\n",
+
+        /* Decode message type */
+        switch (message->type) {
+            case AUK_MSG_MODIFY:
+                messageTypeStr = "MODIFY";
+                break;
+            case AUK_MSG_WILL_DELETE:
+                messageTypeStr = "WILL_DELETE";
+                break;
+            case AUK_MSG_NONE:
+            default:
+                messageTypeStr = "NONE";
+                break;
+        }
+
+        printf("[%s] Received %s message from %s (update #%d)\n",
                view->viewName,
-               obj->GetTypeName(obj),
+               messageTypeStr,
+               senderObject->GetTypeName(senderObject),
                view->updateCount);
     }
 }
@@ -81,8 +99,8 @@ int main(void) {
 
     /* Register listeners */
     printf("Registering listeners...\n\n");
-    project->base.base.AddListener(project, &projectView->base, MockGUIView_OnUpdate);
-    track->base.AddListener(track, &trackView->base, MockGUIView_OnUpdate);
+    project->base.base.AddListener(&project->base.base, &projectView->base, NULL, MockGUIView_OnUpdate);
+    track->base.AddListener(&track->base, &trackView->base, NULL, MockGUIView_OnUpdate);
 
     /* Modify project - should trigger projectView update */
     printf("Setting project name...\n");
@@ -104,7 +122,7 @@ int main(void) {
                                AukFixed_FromInt(5));
 
     /* Register listener on sound */
-    sound->base.AddListener(sound, &soundView->base, MockGUIView_OnUpdate);
+    sound->base.AddListener(&sound->base, &soundView->base, NULL, MockGUIView_OnUpdate);
     printf("\n");
 
     /* Modify sound - should trigger soundView update */
@@ -136,9 +154,9 @@ int main(void) {
 
     /* Unregister listeners */
     printf("Unregistering listeners...\n");
-    project->base.base.RemoveListener(&project->base.base, &projectView->base);
-    track->base.RemoveListener(&track->base, &trackView->base);
-    sound->base.RemoveListener(&sound->base, &soundView->base);
+//    project->base.base.RemoveListener(&project->base.base, &projectView->base);
+//    track->base.RemoveListener(&track->base, &trackView->base);
+//    sound->base.RemoveListener(&sound->base, &soundView->base);
 
     /* Modify after unregistering - should sNOT trigger updates */
     printf("Modifying after unregister (should not trigger updates)...\n");

@@ -94,7 +94,11 @@ void AukAProject_SetPreferences(AukAProject* project, unsigned int sampleRate, u
         prefs->maxTracks = maxTracks;
 
         /* Send update notification */
-        project->base.base.SendUpdate(&project->base.base, NULL);
+        {
+            AukMessage msg;
+            msg.type = AUK_MSG_MODIFY;
+            project->base.base.SendUpdate(&project->base.base, &msg);
+        }
     }
 }
 
@@ -118,6 +122,7 @@ static int AukAProject_AddTrack(void* This, AukTrack* track) {
     }
 
     /* Add track to array using AukArray */
+
     if (!tracksArray->Add(tracksArray, &track->base)) {
         return 0;
     }
@@ -126,7 +131,14 @@ static int AukAProject_AddTrack(void* This, AukTrack* track) {
     AukTrack_SetProject(track, (AukProject*)project);
 
     /* Send update notification */
-    project->base.base.SendUpdate(&project->base.base, NULL);
+    {
+        AukMessage_AProject msg;
+        msg.type = AUK_MSG_TRACKADDED;
+        msg._track = track;
+        msg._track_id = tracksArray->GetCount(tracksArray) -1;
+        msg._timeStart = 0;
+        project->base.base.SendUpdate(&project->base.base,(AukMessage*) &msg);
+    }
 
     return 1;
 }
@@ -175,10 +187,16 @@ int AukAProject_RemoveTrack(void* This, AukTrack* track) {
 
     /* Remove track using AukArray */
     if (tracksArray->Remove(tracksArray, &track->base)) {
-        AukTrack_SetProject(track, NULL);
 
         /* Send update notification */
-        project->base.base.SendUpdate(&project->base.base, NULL);
+        {
+            AukMessage_AProject msg;
+            msg.type = AUK_MSG_TRACKREMOVED;
+            msg._track = track;
+            msg._track_id =0 ; // tracksArray->GetCount(tracksArray) -1;
+            msg._timeStart = 0;
+            project->base.base.SendUpdate(&project->base.base,(AukMessage*) &msg);
+        }
 
         return 1;
     }

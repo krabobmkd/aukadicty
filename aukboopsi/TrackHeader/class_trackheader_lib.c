@@ -176,15 +176,15 @@ struct IClass   *TRACKHEADER_GetClass()
 // just use this one once when static link
 int TrackHeaderStaticInit()
 { 
-   if(!TrackHeader_OpenLibs_Dependencies()) return 1;
+   if(!TrackHeader_OpenLibs_Dependencies()) return 0;
     if(TrackHeaderClassPtr=MakeClass(NULL,TrackHeaderSuperClassID,0,sizeof(TrackHeader),0))
     {
       TrackHeaderClassPtr->cl_Dispatcher.h_Entry=(REHOOKFUNC)TrackHeader_Dispatcher;
      // do not AddClass() when static, no need to publish, TrackHeaderClassPtr will be enough.
       /* Success */
-      return(0);
+      return(1);
     }
-    return 1;
+    return 0;
 }
 
 void TrackHeaderStaticClose()

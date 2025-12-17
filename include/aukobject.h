@@ -25,13 +25,38 @@ typedef AukObject* AukObjectPtr;
 /* Function pointer type for creating new objects of a specific type */
 typedef void (*AukObjectNewFunc)(AukObjectPtr* firstPtr);
 
+/* Message type enumeration */
+typedef enum {
+    AUK_MSG_NONE = 0,           /* Should not be used */
+    AUK_MSG_MODIFY = 1,         /* Object was modified */
+    AUK_MSG_WILL_DELETE = 2,     /* Object is about to be deleted */
+    AUK_MSG_NEXTMESSAGE = 3     /* to be extended, per class */
+} AukMessageType;
+
+/* Message structures for different event types */
+typedef struct {
+    ULONG type;        /* Must be AUK_MSG_MODIFY */
+} AukModifyMessage;
+
+typedef struct {
+    ULONG type;        /* Must be AUK_MSG_WILL_DELETE */
+} AukWillDeleteMessage;
+
+/* Union of all message types */
+typedef union {
+    ULONG type;                /* Discriminator - always access this first */
+    AukModifyMessage modify;            /* Type = AUK_MSG_MODIFY */
+    AukWillDeleteMessage willDelete;    /* Type = AUK_MSG_WILL_DELETE */
+} AukMessage;
+
 /* Update callback function type */
-/* Parameters: listenerObject, modifiedObject */
-typedef void (*AukUpdateCallback)(AukObject* listenerObject, AukObject* modifiedObject, void *message);
+/* Parameters: listenerObject, senderObject, userData, message */
+typedef void (*AukUpdateCallback)(AukObject* listenerObject, AukObject* senderObject, void* userData, AukMessage* message);
 
 /* Listener node in linked list */
 struct AukListener {
     AukObjectPtr listenerObject;    /* Shared pointer to listener object */
+    void* userData;                 /* User-provided context data */
     AukUpdateCallback callback;     /* Update notification callback */
     AukListener* next;              /* Next listener in list */
 };
@@ -48,9 +73,9 @@ struct AukObject {
     void (*Serialize)(AukObject* This,ISerializer *ser,const char *pName); /* both load/save */
 
     /* Listener management - inherited by all objects */
-    int (*AddListener)(AukObject* This, AukObject* listenerObject, AukUpdateCallback callback);
+    int (*AddListener)(AukObject* This, AukObject* listenerObject, void* userData, AukUpdateCallback callback);
     int (*RemoveListener)(AukObject* This, AukObject* listenerObject);
-    void (*SendUpdate)(AukObject* This,void *message);        /* Notify all listeners of change */
+    void (*SendUpdate)(AukObject* This, AukMessage* message);        /* Notify all listeners of change */
 
     /* Listener list - managed by base object */
     AukListener* listeners;
@@ -75,9 +100,9 @@ void AukObject_Delete(AukObject* This);
 
 
 /* Listener management functions */
-int AukObject_AddListener(AukObject* This, AukObject* listenerObject, AukUpdateCallback callback);
+int AukObject_AddListener(AukObject* This, AukObject* listenerObject, void* userData, AukUpdateCallback callback);
 int AukObject_RemoveListener(AukObject* This, AukObject* listenerObject);
-void AukObject_SendUpdate(AukObject* This, void *message);
+void AukObject_SendUpdate(AukObject* This, AukMessage* message);
 
 /* Initialize base object vtable */
 void AukObject_Init(AukObject* obj);

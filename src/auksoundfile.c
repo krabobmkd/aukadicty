@@ -82,7 +82,11 @@ int AukSoundFile_SetFilename(void* This, const char* filename) {
 
     if (soundFile->filename) {
         /* Send update notification */
-        soundFile->base.SendUpdate(&soundFile->base,NULL);
+        {
+            AukMessage msg;
+            msg.type = AUK_MSG_MODIFY;
+            soundFile->base.SendUpdate(&soundFile->base, &msg);
+        }
     }
 
     return soundFile->filename != NULL;
@@ -111,7 +115,11 @@ void AukSoundFile_SetProperties(AukSoundFile* soundFile,
             soundFile->frameCount = frameCount;
 
             /* Send update notification */
-            soundFile->base.SendUpdate(&soundFile->base,NULL);
+            {
+                AukMessage msg;
+                msg.type = AUK_MSG_MODIFY;
+                soundFile->base.SendUpdate(&soundFile->base, &msg);
+            }
         }
     }
 }

@@ -586,6 +586,7 @@ void exitclose(void)
 
     if(app)
     {
+        CloseTrackLayout(&app->trackslayout);
 
         /* Disposing of the window object will also close the
          * window if it is already opened and it will dispose of

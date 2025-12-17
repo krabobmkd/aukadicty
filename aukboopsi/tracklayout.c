@@ -35,52 +35,25 @@
 #include "TrackHeaderList/class_trackheaderlist.h"
 #include "TrackList/class_tracklist.h"
 
+#include <aukobject.h>
+// audio tracks project
+#include <aukaproject.h>
+#include <auktrack.h>
 void cleanexit(const char *pmessage);
 
 void CreateTrackLayout(TrackLayoutManager *pm,struct DrawInfo *drawInfo, int headerwidth, int fontheight)
 {
-
-    if(TimeRuleStaticInit()) cleanexit("boopsi init1");
-    if(TrackStaticInit()) cleanexit("boopsi init2");
-    if(TrackHeaderStaticInit()) cleanexit("boopsi init3");
-    if(TrackHeaderListStaticInit()) cleanexit("boopsi init4");
-    if(TrackListStaticInit()) cleanexit("boopsi init5");
+    // init private boopsi gadget & layout classes.
+    if(!TimeRuleStaticInit()) cleanexit("TimeRule failed");
+    if(!TrackStaticInit()) cleanexit("TrackLayout init failed");
+    if(!TrackHeaderStaticInit()) cleanexit("TrackLayout init failed");
+    if(!TrackHeaderListStaticInit()) cleanexit("TrackLayout init failed");
+    if(!TrackListStaticInit()) cleanexit("TrackLayout init failed");
     // - - - - - A
-//        Object* spacer1 = (Object *)NewObject( LABEL_GetClass(), NULL,
-//                        LABEL_DrawInfo,drawInfo,
-//                        LABEL_Text,(ULONG)" ",
-//                    TAG_END);
 
-
-        pm->timerule = (Object *)NewObject( TIMERULE_GetClass(), NULL,
-                                TIMERULE_DefHeight,(fontheight*3)/2,
-                                TAG_END);
-//        Object* spacer2 = (Object *)NewObject( LABEL_GetClass(), NULL,
-//                        LABEL_DrawInfo,drawInfo,
-//                        LABEL_Text,(ULONG)" ",
-//                    TAG_END);
-
-//   pm->subAHl = (Object *)NewObject( LAYOUT_GetClass(), NULL,
-//                    LAYOUT_Orientation, LAYOUT_ORIENT_HORIZ,
-//                    LAYOUT_BevelStyle, /*BVS_GROUP*/BVS_NONE,
-
-//             LAYOUT_SpaceOuter, FALSE,
-//             LAYOUT_SpaceInner, FALSE,
-//             LAYOUT_BottomSpacing, 0,
-//             LAYOUT_TopSpacing,0,
-//             LAYOUT_LeftSpacing,0,
-//             LAYOUT_RightSpacing,0,
-//             LAYOUT_InnerSpacing,0,
-
-//                    LAYOUT_AddChild, spacer1,
-//                CHILD_WeightedWidth,0,
-//                CHILD_MinWidth,headerwidth,
-//                    LAYOUT_AddChild, pm->timerule,
-//                CHILD_WeightedWidth,1,
-//                    LAYOUT_AddChild,spacer2,
-//                CHILD_WeightedWidth,0,
-//                    TAG_DONE);
-
+    pm->timerule = (Object *)NewObject( TIMERULE_GetClass(), NULL,
+                            TIMERULE_DefHeight,(fontheight*3)/2,
+                            TAG_END);
 
 
     // - - - - - B
@@ -159,15 +132,81 @@ void CreateTrackLayout(TrackLayoutManager *pm,struct DrawInfo *drawInfo, int hea
                     LAYOUT_AddChild, pm->scrollerH,
                 CHILD_WeightedHeight,0,
                     TAG_DONE);
-/*
-        Object *subAHl;
-            Object *timerule;
-        Object *subBHl;
-            Object *trackHeaderList;
-            Object *trackList;
-            Object *scrollerV;
-        Object *scrollerH;
 
-    Object *mainVl;
-*/
+    // this object is the updateListener
+    AukObject_New(&pm->updateListener);
+
+
+}
+
+static void AukUpdate_Track(AukObject* listenerObject, AukObject* modifiedObject,void *userData, AukMessage *message)
+{
+    TrackLayoutManager *pm = (TrackLayoutManager *)userData;
+    AukTrack *tracklist = (AukTrack*)modifiedObject;
+    if(!pm) return;
+
+}
+
+static void AukUpdate_TrackList(AukObject* listenerObject, AukObject* modifiedObject,void *userData, AukMessage *message)
+{
+    AukAProject *tracklist = (AukAProject*)modifiedObject;
+    TrackLayoutManager *pm = (TrackLayoutManager *)userData;
+    if(!pm || !tracklist || !message) return;
+    switch(message->type)
+    {
+        case AUK_MSG_TRACKADDED:
+        {
+            AukMessage_AProject *m = (AukMessage_AProject *)message;
+            AukTrack *track = m->_track;
+            if(track)  AukObject_AddListener(track,
+                  pm->updateListener, // AukObject* listenerObject,
+                  (void*)pm, // userData
+                  &AukUpdate_Track //AukUpdateCallback callback
+                  );
+            //TODO update GUI, add ui track
+        }
+        break;
+        case AUK_MSG_TRACKREMOVED:
+        {
+            AukMessage_AProject *m = (AukMessage_AProject *)message;
+            AukTrack *track = m->_track;
+            if(track)  AukObject_RemoveListener(track,
+                  pm->updateListener, // AukObject* listenerObject,
+                  (void*)pm, // userData
+                  &AukUpdate_Track //AukUpdateCallback callback
+                  );
+            //TODO update GUI, remove ui track
+        }
+        // removelistener
+        break;
+        default:
+        break;
+    }
+
+}
+
+
+
+
+
+void TrackLayout_setProject(TrackLayoutManager *pm,AukObject *project)
+{
+    // listen project modification
+    AukObject_AddListener(project,
+                  pm->updateListener, // AukObject* listenerObject,
+                  (void*)pm, // userData
+                  &AukUpdate_TrackList //AukUpdateCallback callback
+                  );
+    // retain project
+    AukObjectPtr_Set(&pm->project,project);
+
+}
+
+// public close
+void CloseTrackLayout(TrackLayoutManager *pm)
+{
+    if(!pm) return;
+    AukObjectPtr_Release(&pm->project);
+    AukObjectPtr_Release(&pm->updateListener);
+
 }

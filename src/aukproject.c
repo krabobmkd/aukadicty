@@ -65,7 +65,11 @@ int AukProject_SetName(void* This, const char* name) {
 
     if (project->name) {
         /* Send update notification */
-        project->base.SendUpdate(&project->base, NULL);
+        {
+            AukMessage msg;
+            msg.type = AUK_MSG_MODIFY;
+            project->base.SendUpdate(&project->base, &msg);
+        }
     }
 
     return project->name != NULL;
@@ -101,7 +105,11 @@ int AukProject_SetPath(void* This, const char* path) {
 
     if (project->path) {
         /* Send update notification */
-        project->base.SendUpdate(&project->base, NULL);
+        {
+            AukMessage msg;
+            msg.type = AUK_MSG_MODIFY;
+            project->base.SendUpdate(&project->base, &msg);
+        }
     }
 
     return project->path != NULL;

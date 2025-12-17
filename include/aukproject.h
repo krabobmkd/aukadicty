@@ -54,6 +54,12 @@ int AukProject_Load(void* This, const char* filename);
 /* Helper to set project context on all objects after deserialization */
 void AukProject_SetProjectContext(AukProject* project);
 
+typedef enum {
+    AUKPROJECT_MSG_STARTLOAD = AUK_MSG_NEXTMESSAGE,
+    AUKPROJECT_MSG_ENDLOAD,
+    AUKPROJECT_MSG_NEXTMESSAGE,
+} AukProjectMessageType;
+
 #ifdef __cplusplus
 }
 #endif
