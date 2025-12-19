@@ -147,8 +147,25 @@ void CreateTrackLayout(TrackLayoutManager *pm,struct DrawInfo *drawInfo, int hea
 static void AukUpdate_Track(AukObject* listenerObject, AukObject* modifiedObject,void *userData, AukMessage *message)
 {
     TrackLayoutManager *pm = (TrackLayoutManager *)userData;
-    AukTrack *tracklist = (AukTrack*)modifiedObject;
-    if(!pm) return;
+    AukTrack *track = (AukTrack*)modifiedObject;
+    if(!pm || !track) return;
+    switch(message->type)
+    {
+        case AUK_MSG_TRACKMODIFIED_TIMECHANGE:
+        {
+
+            //TODO update GUI, add ui track
+        }
+        break;
+        case AUK_MSG_TRACKMODIFIED_SOUNDADDED:
+        {
+
+        }
+
+        break;
+        default:
+        break;
+    }
 
 }
 
@@ -180,7 +197,6 @@ static void AukUpdate_TrackList(AukObject* listenerObject, AukObject* modifiedOb
                   );
             //TODO update GUI, remove ui track
         }
-        // removelistener
         break;
         default:
         break;
@@ -192,16 +208,19 @@ static void AukUpdate_TrackList(AukObject* listenerObject, AukObject* modifiedOb
 
 
 
-void TrackLayout_setProject(TrackLayoutManager *pm,AukObject *project)
+void TrackLayout_setProject(TrackLayoutManager *pm,AukAProject *project)
 {
     // listen project modification
-    AukObject_AddListener(project,
+    AukObject_AddListener(&project->base.base,
                   pm->updateListener, // AukObject* listenerObject,
                   (void*)pm, // userData
                   &AukUpdate_TrackList //AukUpdateCallback callback
                   );
     // retain project
-    AukObjectPtr_Set(&pm->project,project);
+    AukObjectPtr_Set(&pm->project,&project->base.base);
+
+    // link data to UI
+    TrackList_setTrackList(pm->trackList ,project );
 
 }
 

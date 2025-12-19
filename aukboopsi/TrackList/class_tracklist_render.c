@@ -384,4 +384,22 @@ ULONG TrackList_Render(Class *C, struct Gadget *Gad, struct gpRender *Render, UL
 
 //}
 
+// set main project - tracklist NULL means clean everything, back to empty state.
+void TrackList_setTrackList(Class *C, struct Gadget *Gad,aukAProject *tracklist)
+{
 
+}
+
+// events
+void TrackList_addTrack(Class *C, struct Gadget *Gad,AukTrack *track)
+{
+
+}
+void TrackList_removeTrack(Class *C, struct Gadget *Gad,AukTrack *track)
+{
+
+}
+void TrackList_trackModified(Class *C, struct Gadget *Gad,AukTrack *track)
+{
+
+}

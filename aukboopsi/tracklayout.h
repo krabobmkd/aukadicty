@@ -28,10 +28,13 @@ typedef struct TrackLayoutManager
 void CreateTrackLayout(TrackLayoutManager *pm,struct DrawInfo *drawInfo,
                 int headerwidth,
                 int fontheight);
+
+typedef struct AukAProject AukAProject;
+typedef struct sAukTrack AukTrack;
 /**
     if project NULL, will release.
 */
-void TrackLayout_setProject(TrackLayoutManager *pm,AukObject *project);
+void TrackLayout_setProject(TrackLayoutManager *pm,AukAProject *project);
 
 void CloseTrackLayout(TrackLayoutManager *pm);
 

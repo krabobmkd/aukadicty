@@ -58,12 +58,45 @@
  */
 // different classes may not use same base.
 //DEVTODO: have another offset for your new class to not collide super class ones and optimize...
-#define TRACKLIST_Dummy			(TAG_USER+0x04110000)
+#define TRACKLIST_Dummy			(TAG_USER+0x04120000)
 
-// abstract coordinate from 0 to 65535 , whatever width is.
-#define	TRACKLIST_CenterX		(TRACKLIST_Dummy+1)
-// abstract coordinate from 0 to 65535, whatever height is.
-#define	TRACKLIST_CenterY		(TRACKLIST_Dummy+2)
+//
+#define	TRACKLIST_TRACKMINHEIGHT		(TRACKLIST_Dummy+1)
+//
+#define	TRACKLIST_TRACK		(TRACKLIST_Dummy+2)
+//
+//#define	TRACKLIST_		(TRACKLIST_Dummy+)
+////
+//#define	TRACKLIST_		(TRACKLIST_Dummy+)
+////
+//#define	TRACKLIST_		(TRACKLIST_Dummy+)
+////
+//#define	TRACKLIST_		(TRACKLIST_Dummy+)
+////
+//#define	TRACKLIST_		(TRACKLIST_Dummy+)
+////
+//#define	TRACKLIST_		(TRACKLIST_Dummy+)
+
+
+// GM_METHODS
+//
+#define TRACKLIST_GMDummy			(TRACKLIST_Dummy+0x100)
+/*
+#define GM_TRACKLIST_ADDTRACK (TRACKLIST_GMDummy+1)
+#define GM_TRACKLIST_REMOVETRACK (TRACKLIST_GMDummy+2)
+*/
+// private class, so keep methids open for dev:
+
+typedef struct AukAProject AukAProject;
+typedef struct sAukTrack AukTrack;
+
+// set main project - tracklist NULL means clean everything, back to empty state.
+void TrackList_setTrackList(Class *C, struct Gadget *Gad,aukAProject *tracklist);
+
+// events
+void TrackList_addTrack(Class *C, struct Gadget *Gad,AukTrack *track);
+void TrackList_removeTrack(Class *C, struct Gadget *Gad,AukTrack *track);
+void TrackList_trackModified(Class *C, struct Gadget *Gad,AukTrack *track);
 
 /** DEVTODO: adds attributes definitions here and
  * manage them in class_tracklist_attribs.c
