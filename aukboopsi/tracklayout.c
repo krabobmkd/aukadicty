@@ -39,6 +39,11 @@
 // audio tracks project
 #include <aukaproject.h>
 #include <auktrack.h>
+
+#ifdef Remove
+#undef Remove
+#endif
+
 void cleanexit(const char *pmessage);
 
 void CreateTrackLayout(TrackLayoutManager *pm,struct DrawInfo *drawInfo, int headerwidth, int fontheight)
@@ -171,9 +176,7 @@ static void AukUpdate_TrackList(AukObject* listenerObject, AukObject* modifiedOb
             AukMessage_AProject *m = (AukMessage_AProject *)message;
             AukTrack *track = m->_track;
             if(track)  AukObject_RemoveListener(track,
-                  pm->updateListener, // AukObject* listenerObject,
-                  (void*)pm, // userData
-                  &AukUpdate_Track //AukUpdateCallback callback
+                        pm->updateListener // AukObject* listenerObject,
                   );
             //TODO update GUI, remove ui track
         }
