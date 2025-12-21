@@ -12,8 +12,8 @@
 #include <intuition/classusr.h>
 #include <intuition/gadgetclass.h>
 
-#include "class_tracklist.h"
-#include "class_tracklist_private.h"
+#include "class_tracklistareaui.h"
+#include "class_tracklistareaui_private.h"
 
 #ifdef USE_BEVEL_FRAME
     #include <proto/bevel.h>
@@ -43,12 +43,12 @@
 *  it can't use dos.library, it can't wait on application signals or message ports
 * and it can't call any Intuition functions which might wait on Intuition."
 */
-ULONG ASM SAVEDS TrackList_Dispatcher(
+ULONG ASM SAVEDS TrackListAreaUi_Dispatcher(
                     REG(a0,struct IClass *C),
                     REG(a2,struct Gadget *Gad),
                     REG(a1,union MsgUnion *M))
 {
-  TrackList *gdata;
+  TrackListAreaUi *gdata;
   ULONG retval=0;
   gdata=INST_DATA(C, Gad);
 
@@ -58,9 +58,6 @@ ULONG ASM SAVEDS TrackList_Dispatcher(
       if(Gad=(struct Gadget *)DoSuperMethodA(C,(Object *)Gad,(Msg)M))
       {
         gdata=INST_DATA(C, Gad);
-        // DEVTODO: here you write the default values for your objects.
-        gdata->_circleCenterX = 32767;
-        gdata->_circleCenterY = 32767;
 
         gdata->_minimalWidth = 64;
         gdata->_minimalHeight = 64;
@@ -70,9 +67,6 @@ ULONG ASM SAVEDS TrackList_Dispatcher(
         // default to false
         SetSuperAttrs(C,(Object *)Gad, GA_TabCycle,TRUE,TAG_DONE);
 
-#ifdef USE_REGION_CLIPPING
-    gdata->_clipRegion = NewRegion();
-#endif
 #ifdef USE_BEVEL_FRAME
 #ifdef __VBCC__
           gdata->Bevel= vbNewObject(BEVEL_GetClass(),NULL,
@@ -115,20 +109,20 @@ ULONG ASM SAVEDS TrackList_Dispatcher(
     case OM_SET:
        // Printf("OM_SET: GadgetID:%ld gad:%lx\n",(int)Gad->GadgetID,(int)Gad);
       retval=DoSuperMethodA(C,(Object *)Gad,(Msg)M);
-      TrackList_SetAttrs(C,Gad,(struct opSet *)M);
+      TrackListAreaUi_SetAttrs(C,Gad,(struct opSet *)M);
      break;
 
     case OM_GET:
-      TrackList_GetAttr(C,Gad,(struct opGet *)M);
+      TrackListAreaUi_GetAttr(C,Gad,(struct opGet *)M);
      break;
 
     case OM_DISPOSE:
     #ifdef USE_BEVEL_FRAME
         if(gdata->Bevel) DisposeObject(gdata->Bevel);
     #endif
-    #ifdef USE_REGION_CLIPPING
-        if(gdata->_clipRegion) DisposeRegion(gdata->_clipRegion);
-    #endif
+
+        AukObjectPtr_Release( &gdata->_project);
+
       retval=DoSuperMethodA(C,(Object *)Gad,(Msg)M);
       break;
 
@@ -138,30 +132,30 @@ ULONG ASM SAVEDS TrackList_Dispatcher(
 
     case GM_GOACTIVE:
       Gad->Flags |= GFLG_SELECTED;
-      retval=TrackList_HandleInput(C,Gad,(struct gpInput *)M);
+      retval=TrackListAreaUi_HandleInput(C,Gad,(struct gpInput *)M);
 //      gad_Render(C,Gad,(APTR)M,GREDRAW_UPDATE);
 //      retval=GMR_MEACTIVE;
       break;
 
     case GM_GOINACTIVE:
       Gad->Flags &= ~GFLG_SELECTED;
-      TrackList_Render(C,Gad,(APTR)M,GREDRAW_UPDATE);
+      TrackListAreaUi_Render(C,Gad,(APTR)M,GREDRAW_UPDATE);
       break;
 
     case GM_LAYOUT:
-      retval= TrackList_Layout(C,Gad,(struct gpLayout *)M);
+      retval= TrackListAreaUi_Layout(C,Gad,(struct gpLayout *)M);
       break;
 
     case GM_RENDER:
-      retval=TrackList_Render(C,Gad,(struct gpRender *)M,0);
+      retval=TrackListAreaUi_Render(C,Gad,(struct gpRender *)M,0);
       break;
 
     case GM_HANDLEINPUT:
-      retval=TrackList_HandleInput(C,Gad,(struct gpInput *)M);
+      retval=TrackListAreaUi_HandleInput(C,Gad,(struct gpInput *)M);
       break;
 
     case GM_DOMAIN:
-      TrackList_Domain(C, Gad, (APTR)M);
+      TrackListAreaUi_Domain(C, Gad, (APTR)M);
       retval=1;
 
     break;

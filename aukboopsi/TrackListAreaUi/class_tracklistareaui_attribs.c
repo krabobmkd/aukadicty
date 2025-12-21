@@ -15,8 +15,8 @@
 #include <intuition/classusr.h>
 #include <intuition/gadgetclass.h>
 
-#include "class_tracklist.h"
-#include "class_tracklist_private.h"
+#include "class_tracklistareaui.h"
+#include "class_tracklistareaui_private.h"
 
 #include <utility/tagitem.h>
 
@@ -31,11 +31,11 @@
  */
 #include "bdbprintf.h"
 
-ULONG TrackList_GetAttr(Class *C, struct Gadget *Gad, struct opGet *Get)
+ULONG TrackListAreaUi_GetAttr(Class *C, struct Gadget *Gad, struct opGet *Get)
 {
   ULONG retval=1;
   int   DoSuperCall=0;
-  TrackList *gdata;
+  TrackListAreaUi *gdata;
   ULONG *data;
 
   gdata=INST_DATA(C, Gad);
@@ -44,12 +44,7 @@ ULONG TrackList_GetAttr(Class *C, struct Gadget *Gad, struct opGet *Get)
 
   switch(Get->opg_AttrID)
   {
-    case TRACKLIST_CenterX:
-        *data = (LONG)gdata->_circleCenterX;
-    break;
-    case TRACKLIST_CenterY:
-        *data = (LONG)gdata->_circleCenterY;
-    break;
+    // todo if any
     // super class gadget things. would manage attribs selected/hightlighted, ...
     default:
         DoSuperCall = 1;
@@ -61,11 +56,11 @@ ULONG TrackList_GetAttr(Class *C, struct Gadget *Gad, struct opGet *Get)
 }
 
 
-ULONG TrackList_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
+ULONG TrackListAreaUi_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
 {
   struct TagItem *tag;
   ULONG data; // for SetAttribs, retval means if anything needed redraw.
-  TrackList *gdata;
+  TrackListAreaUi *gdata;
   ULONG redraw=0, update=0, notifCoords=0;
 
   gdata=INST_DATA(C, Gad);
@@ -81,23 +76,7 @@ ULONG TrackList_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
 
     switch(tag->ti_Tag)
     {
-     case TRACKLIST_CenterX:
-        if((UWORD)data != gdata->_circleCenterX )
-        {
-            gdata->_circleCenterX = (UWORD)data ;
-            redraw=1;
-            notifCoords = 1;
-        }
-        break;
-     case TRACKLIST_CenterY:
-        if((UWORD)data != gdata->_circleCenterY )
-        {
-            gdata->_circleCenterY = (UWORD)data ;
 
-            redraw=1;
-            notifCoords = 1;
-        }
-        break;
      // - - - actually we have to manage super class attribs:
      // with GA_XXX and struct Gadget members...
      // is there  a way to super call this ? DoSuperMethodA() deosn't seems to manage these attribs.
@@ -147,10 +126,6 @@ ULONG TrackList_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
         ReleaseGIRPort(rp);
     }
 
-    if(notifCoords)
-    {
-        TrackList_NotifyCoords(C,Gad,Set->ops_GInfo);
-    }
   }
 
   return(redraw| update);

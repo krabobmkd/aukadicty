@@ -91,12 +91,14 @@ typedef struct AukAProject AukAProject;
 typedef struct sAukTrack AukTrack;
 
 // set main project - tracklist NULL means clean everything, back to empty state.
-void TrackList_setTrackList(Class *C, struct Gadget *Gad,aukAProject *tracklist);
-
+void TrackListAreaUi_setTrackList(struct Gadget *Gad,AukAProject *tracklist);
 // events
-void TrackList_addTrack(Class *C, struct Gadget *Gad,AukTrack *track);
-void TrackList_removeTrack(Class *C, struct Gadget *Gad,AukTrack *track);
-void TrackList_trackModified(Class *C, struct Gadget *Gad,AukTrack *track);
+void TrackListAreaUi_addTrack( struct Gadget *Gad,AukTrack *track);
+void TrackListAreaUi_removeTrack( struct Gadget *Gad,AukTrack *track);
+void TrackListAreaUi_trackModified( struct Gadget *Gad,AukTrack *track);
+
+
+
 
 /** DEVTODO: adds attributes definitions here and
  * manage them in class_tracklist_attribs.c

@@ -24,8 +24,8 @@ include_directories(
 # AukApp source files
 set(AUKBOOPSI_SOURCES
     aukboopsi.c
-    tracklayout.c
-    tracklayout.h
+    TrackListUi.c
+    TrackListUi.h
 
     bdbprintf.c
     bdbprintf.h
@@ -39,13 +39,13 @@ set(AUKBOOPSI_SOURCES
     TrackGadget/class_track_private.h
     TrackGadget/class_track.h
 
-    TrackList/class_tracklist_attribs.c
-    TrackList/class_tracklist_dispatch.c
-    TrackList/class_tracklist_lib.c
-    TrackList/class_tracklist_render.c
-    TrackList/class_tracklist_handleinput.c
-    TrackList/class_tracklist_private.h
-    TrackList/class_tracklist.h
+    TrackListAreaUi/class_tracklistareaui_attribs.c
+    TrackListAreaUi/class_tracklistareaui_dispatch.c
+    TrackListAreaUi/class_tracklistareaui_lib.c
+    TrackListAreaUi/class_tracklistareaui_render.c
+    TrackListAreaUi/class_tracklistareaui_handleinput.c
+    TrackListAreaUi/class_tracklistareaui_private.h
+    TrackListAreaUi/class_tracklistareaui.h
 
     TimeRule/class_timerule_attribs.c
     TimeRule/class_timerule_dispatch.c

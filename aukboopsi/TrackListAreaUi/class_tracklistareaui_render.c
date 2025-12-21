@@ -17,8 +17,8 @@
 #include <intuition/gadgetclass.h>
 #include <utility/tagitem.h>
 
-#include "class_trackheaderlist.h"
-#include "class_trackheaderlist_private.h"
+#include "class_tracklistareaui.h"
+#include "class_tracklistareaui_private.h"
 
 #ifdef USE_BEVEL_FRAME
     #include <proto/bevel.h>
@@ -50,12 +50,12 @@
 //    struct TagItem	*gpd_Attrs;	/* Additional attributes */
 //};
 
-ULONG TrackHeaderList_Domain(Class *C, struct Gadget *Gad, struct gpDomain *D)
+ULONG TrackListAreaUi_Domain(Class *C, struct Gadget *Gad, struct gpDomain *D)
 {
-  TrackHeaderList *gdata=0;
+  TrackListAreaUi *gdata=0;
 
   if(Gad) gdata=INST_DATA(C, Gad);
-// Printf("TrackHeaderList_Domain data:%lx\n",(int)gdata);
+// Printf("TrackListAreaUi_Domain data:%lx\n",(int)gdata);
 
   D->gpd_Domain.Left=0;
   D->gpd_Domain.Top=0;
@@ -103,9 +103,9 @@ ULONG TrackHeaderList_Domain(Class *C, struct Gadget *Gad, struct gpDomain *D)
  * The gadget knows its final coordinates,
  * So we may have to resize what's inside our gadget.
  */
-ULONG TrackHeaderList_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout)
+ULONG TrackListAreaUi_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout)
 {
-  TrackHeaderList *gdata;
+  TrackListAreaUi *gdata;
   LONG topedge,leftedge,width,height;
 
     gdata=INST_DATA(C, Gad);
@@ -139,21 +139,14 @@ ULONG TrackHeaderList_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layo
     gdata->_framerec.MaxX = leftedge + width  -1;
     gdata->_framerec.MaxY = topedge  + height -1;
 
-#ifdef USE_REGION_CLIPPING
-
-        ClearRegion(gdata->_clipRegion);
-        OrRectRegion(gdata->_clipRegion, &gdata->_framerec);
-
-#endif
-
   return(1);
 }
 
 
 /* draw yourself, in the appropriate state */
-ULONG TrackHeaderList_Render(Class *C, struct Gadget *Gad, struct gpRender *Render, ULONG update)
+ULONG TrackListAreaUi_Render(Class *C, struct Gadget *Gad, struct gpRender *Render, ULONG update)
 {
-  TrackHeaderList *gdata;
+  TrackListAreaUi *gdata;
   struct RastPort *rp; 
   ULONG retval=1;
 
@@ -172,67 +165,58 @@ ULONG TrackHeaderList_Render(Class *C, struct Gadget *Gad, struct gpRender *Rend
 
   if(rp)
   {
-	int bLayerUpdating=FALSE;
-    int penbg=1,penb=2,penc=3;
-    struct Region *oldClipRegion;
+    // vertical drawing management:
+    // todo: recursively draw tracks on their projected rectangle
 
-    bdbprintf(" **** TrackHeaderList_Render trace MethodID:%08lx Layer flags:%04lx\n",(int)Render->MethodID,(int)rp->Layer->Flags);
-
-	// note from an OS3 official developer: we got to do manage the following:
-	if( ( rp->Layer->Flags & LAYERUPDATING ) != 0L )
-	{
-		bLayerUpdating = TRUE;
-		EndUpdate(rp->Layer, FALSE);
-		//bdbprintf(" ****Render->MethodID:%08lx LAYERUPDATING\n",(int)Render->MethodID);
-	} else
-	{
-
-	}
-
-
-    if(Gad->Flags & GFLG_DISABLED) // if disabled, draw background with another color.
-    {
-        penbg = 0;
-    }
-    #ifdef USE_BEVEL_FRAME
-        if(gdata->Bevel) DrawImage(rp,gdata->Bevel,0,0);
-    #endif
-
-    #ifdef USE_REGION_CLIPPING
-        oldClipRegion = InstallClipRegion( rp->Layer, gdata->_clipRegion);
-    #endif
-
-      SetDrMd(rp,JAM1);
-      SetAPen(rp,penbg);
-      RectFill(rp,gdata->_framerec.MinX,
-                  gdata->_framerec.MinY,
-                  gdata->_framerec.MaxX,
-                  gdata->_framerec.MaxY) ;
-        {
-            UWORD width = gdata->_framerec.MaxX - gdata->_framerec.MinX;
-            UWORD height = gdata->_framerec.MaxY - gdata->_framerec.MinY;
-
-            UWORD xc = gdata->_framerec.MinX + ((width*gdata->_circleCenterX)>>16);
-            UWORD yc = gdata->_framerec.MinY + ((height*gdata->_circleCenterY)>>16);
-            SetAPen(rp,penb);
-            DrawEllipse(rp,xc,yc,width>>1,height>>1);
-            SetAPen(rp,penc);
-            DrawEllipse(rp,xc,yc,width>>2,height>>2);
-        }
-		
-		if(bLayerUpdating) 
-		{
-			BeginUpdate(rp->Layer);
-		}
-		
-    #ifdef USE_REGION_CLIPPING
-        InstallClipRegion( rp->Layer,oldClipRegion); // important to pass NULL if oldClipRegion is NULL.
-    #endif
-
-    if (Render->MethodID != GM_RENDER)
-      ReleaseGIRPort(rp);
+    // then draw eventually clear a rectangle of the empty scrool Area.
   }
   return(retval);
 }
 
+extern struct IClass   *TrackListClassPtr;
 
+
+/** private,
+* manage synchronisation of tracks
+* alloc/free/realloc Tracks, when needed and recursively
+* implicitely ask for sounds ...
+*/
+static void TrackListAreaUi_updateTrackListUiToData(struct Gadget *Gad)
+{
+    TrackListAreaUi *gdata;
+    if(!TrackListClassPtr || !Gad) return;
+    gdata=INST_DATA(TrackListClassPtr, Gad);
+
+
+
+
+}
+
+
+// set main project - TrackListAreaUi NULL means clean everything, back to empty state.
+void TrackListAreaUi_setTrackList(struct Gadget *Gad,AukAProject *tracklist)
+{
+    TrackListAreaUi *gdata;
+
+    if(!TrackListClassPtr || !Gad) return;
+
+    gdata=INST_DATA(TrackListClassPtr, Gad);
+
+    AukObjectPtr_Set(&gdata->_project,tracklist);
+
+    TrackListAreaUi_updateTrackListUiToData(Gad);
+}
+
+// events
+void TrackListAreaUi_addTrack( struct Gadget *Gad,AukTrack *track)
+{
+
+}
+void TrackListAreaUi_removeTrack(struct Gadget *Gad,AukTrack *track)
+{
+
+}
+void TrackListAreaUi_trackModified(struct Gadget *Gad,AukTrack *track)
+{
+
+}

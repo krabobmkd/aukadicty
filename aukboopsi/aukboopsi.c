@@ -56,7 +56,7 @@
 #include <libraries/asl.h>
 
 //#include "class_track.h"
-#include "tracklayout.h"
+#include "TrackListUi.h"
 
 #include "compilers.h"
 #include "bdbprintf.h"
@@ -157,7 +157,7 @@ struct App
         //     Object *HeaderZone;
         //     Object *TrackVertLZone;
         //     Object *TrackVirtZone;
-        TrackLayoutManager trackslayout;
+        TrackListUi trackslayout;
 
 
             // status bar
@@ -382,7 +382,7 @@ int main(int argc, char **argv)
     }
 
 
-    CreateTrackLayout(&app->trackslayout,app->drawInfo, 64,app->fontHeight);
+    CreateTrackListUi(&app->trackslayout,app->drawInfo, 64,app->fontHeight);
 
     {
         app->statusbarlabel = (Object *)NewObject( BUTTON_GetClass(),NULL,
@@ -586,7 +586,7 @@ void exitclose(void)
 
     if(app)
     {
-        CloseTrackLayout(&app->trackslayout);
+        CloseTrackListUi(&app->trackslayout);
 
         /* Disposing of the window object will also close the
          * window if it is already opened and it will dispose of

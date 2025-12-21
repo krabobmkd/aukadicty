@@ -9,6 +9,10 @@
 extern "C" {
 #endif
 #include "compilers.h"
+#ifdef AMIGA
+#include <proto/exec.h>
+#include <proto/graphics.h>
+#endif
 /* #include <proto/graphics.h> */  /* Temporarily commented - not in AmigaStack */
 typedef struct AukMutex AukMutex;
 

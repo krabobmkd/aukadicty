@@ -2,7 +2,7 @@
 #define _CLASS_TRACKLISTPRIVATE_H_
 
 #include "compilers.h"
-#include "class_tracklist.h"
+#include "class_tracklistareaui.h"
 
 // not much sense because c++ static runtime are hard to link.
 #ifdef __cplusplus
@@ -18,42 +18,50 @@ extern "C" {
 #include <graphics/gfx.h>
 #include <graphics/regions.h>
 
+#include "aukaproject.h"
+
 // enable or not some parts of code...
 #define USE_REGION_CLIPPING 1
 
 /**
-*  this is the internal private gadget struct that own the data of the object instances.
+*
 * an important principle of boopsi is that structure for the class is hidden to the consumers.
-* the consumers will only see the public header, and will do setAtribs()/GetAttribs()/Domethod().
-* Also: for the same Gadget, superclass members are in struct Gadget * passed to functions.
-* (These are just concatenated structs in a system private way.)
-* DEVTODO: make this class evolve to retain the data needed to draw and interact with your gadget.
+*  - yes, but as TrackListAreaUi is an internal class, we use the private methods in the main for the moment.
+*  We use TrackListAreaUi as a layout boopsi gadget, that allocates/place/free automatically boopsi Track gadgets,
+*  to mirror the data tracks, and we layout them like if we were a vertical scroll area.
+*  then boopsi Track gadgets acts as layouts placnig
+*  boopsi objects Tracks, itself acting
+*
+*  in charge of allocating, layouting and  boopsi class
 */
-typedef struct ITrackList {
-    // let's say we have coordinates of the center of the circle
-    UWORD _circleCenterX,_circleCenterY;
+typedef struct TrackListAreaUi {
 
     // DEVTODO: we could manage the mouse interaction current state....
-    ULONG _MouseMode;
-    ULONG _EditMode;
+    // ULONG _MouseMode;
+    // ULONG _EditMode;
 
     // would have minimal size here.
     UWORD _minimalWidth,_minimalHeight;
 
-
+    // get pixel rectangle iof the gadget at layout
     struct Rectangle _framerec;
-#ifdef USE_REGION_CLIPPING
-    struct Region *_clipRegion;
-#endif
 
-} TrackList;
+    // The document data which own the track list as AukArray ->tracks
+    AukAProjectPtr _project;
 
-ULONG TrackList_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set);
-ULONG TrackList_GetAttr(Class *C, struct Gadget *Gad, struct opGet *Get);
-ULONG TrackList_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout);
-ULONG TrackList_Render(Class *C, struct Gadget *Gad, struct gpRender *Render, ULONG update);
-ULONG TrackList_HandleInput(Class *C, struct Gadget *Gad, struct gpInput *Input);
-ULONG TrackList_Domain(Class *C, struct Gadget *Gad, struct gpDomain *D);
+    // The array of TrackList as BOOPSI gadgets
+
+
+
+
+} TrackListAreaUi;
+
+ULONG TrackListAreaUi_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set);
+ULONG TrackListAreaUi_GetAttr(Class *C, struct Gadget *Gad, struct opGet *Get);
+ULONG TrackListAreaUi_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout);
+ULONG TrackListAreaUi_Render(Class *C, struct Gadget *Gad, struct gpRender *Render, ULONG update);
+ULONG TrackListAreaUi_HandleInput(Class *C, struct Gadget *Gad, struct gpInput *Input);
+ULONG TrackListAreaUi_Domain(Class *C, struct Gadget *Gad, struct gpDomain *D);
 
 // - - - - -- -
 
@@ -80,7 +88,7 @@ typedef union MsgUnion
 * It may be better to just notify what change and have many notify functions per theme.
 * Some examples use only one Notify which send all attribs.
 */
-ULONG TrackList_NotifyCoords(Class *C, struct Gadget *Gad, struct GadgetInfo	*GInfo);
+ULONG TrackListAreaUi_NotifyCoords(Class *C, struct Gadget *Gad, struct GadgetInfo	*GInfo);
 
 /** this is the struct that is the extended struct Library
  * That is created with OpenLibrary().

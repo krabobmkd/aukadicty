@@ -15,7 +15,8 @@
 #include <intuition/classes.h>
 #include <intuition/classusr.h>
 
-#include "class_tracklist_private.h"
+#include "class_tracklistareaui.h"
+#include "class_tracklistareaui_private.h"
 
 #ifdef USE_BEVEL_FRAME
     #include <proto/bevel.h>
@@ -113,7 +114,7 @@ void TrackList_CloseLibs_Dependencies(void)
 }
 //==========================================================================================
 // does not need to be exact, we just want the function pointer:
-ULONG ASM SAVEDS TrackList_Dispatcher(
+ULONG ASM SAVEDS TrackListAreaUi_Dispatcher(
                     REG(a0,struct IClass *C),
                     REG(a2,struct Gadget *Gad),
                     REG(a1,union MsgUnion *M));
@@ -177,9 +178,9 @@ struct IClass   *TRACKLIST_GetClass()
 int TrackListStaticInit()
 { 
    if(!TrackList_OpenLibs_Dependencies()) return 0;
-    if(TrackListClassPtr=MakeClass(NULL,TrackListSuperClassID,0,sizeof(TrackList),0))
+    if(TrackListClassPtr=MakeClass(NULL,TrackListSuperClassID,0,sizeof(TrackListAreaUi),0))
     {
-      TrackListClassPtr->cl_Dispatcher.h_Entry=(REHOOKFUNC)TrackList_Dispatcher;
+      TrackListClassPtr->cl_Dispatcher.h_Entry=(REHOOKFUNC)TrackListAreaUi_Dispatcher;
      // do not AddClass() when static, no need to publish, TrackListClassPtr will be enough.
       /* Success */
       return(1);

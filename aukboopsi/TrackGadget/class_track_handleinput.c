@@ -374,18 +374,3 @@ ULONG Track_HandleInput(Class *C, struct Gadget *Gad, struct gpInput *Input)
 
   return(retval);
 }
-
-/*
-ULONG pr_Mix(ULONG A,ULONG B, float Percent)
-{
-  float a,b,diff;
-
-  a=A;
-  b=B;
-
-  diff=b-a;
-
-  a+=diff*Percent;
-
-  return((ULONG) (a));
-}*/
