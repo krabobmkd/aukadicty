@@ -47,6 +47,22 @@ const char* AukAProject_GetTypeName(void* This) {
     return "AukAProject";
 }
 
+static void reattributeTrackIndex(AukArray* tracksArray)
+{
+    int nbtracks;
+    int i;
+
+    aukMutex_lock(&tracksArray->mutex);
+        nbtracks = tracksArray->count;
+        for(i=0;i<nbtracks;i++)
+        {
+           AukTrack *track = (AukTrack *)tracksArray->items[i];
+           if(track) track->trackIndex = i;
+        }
+    aukMutex_unlock(&tracksArray->mutex);
+}
+
+
 void AukAProject_Serialize(void* This, ISerializer* ser, const char* pName) {
     AukAProject* project = (AukAProject*)This;
     (void)pName;
@@ -70,6 +86,11 @@ void AukAProject_Serialize(void* This, ISerializer* ser, const char* pName) {
 
     /* Serialize tracks array */
     ser->t_arrayobj(ser, "tracks", &project->tracks, AukTrack_New, AukTrack_GetTypeName);
+
+    if(IS_READING(ser) && project->tracks)
+    {
+        reattributeTrackIndex((AukArray*) project->tracks);
+    }
 }
 
 void AukAProject_SetPreferences(AukAProject* project, unsigned int sampleRate, unsigned int maxTracks) {
@@ -104,7 +125,7 @@ void AukAProject_SetPreferences(AukAProject* project, unsigned int sampleRate, u
 
 static int AukAProject_AddTrack(void* This, AukTrack* track) {
     AukAProject* project = (AukAProject*)This;
-
+    int nbtracks;
     if (!project || !track) {
         return 0;
     }
@@ -117,9 +138,13 @@ static int AukAProject_AddTrack(void* This, AukTrack* track) {
     AukProjectPrefs* prefs = (AukProjectPrefs*)project->prefs;
     AukArray* tracksArray = (AukArray*)project->tracks;
 
-    if (prefs && tracksArray->GetCount(tracksArray) >= prefs->maxTracks) {
+    nbtracks = tracksArray->GetCount(tracksArray);
+
+    if (prefs && nbtracks >= prefs->maxTracks) {
         return 0; /* Maximum tracks reached */
     }
+
+    track->trackIndex = nbtracks;
 
     /* Add track to array using AukArray */
 
@@ -187,6 +212,8 @@ int AukAProject_RemoveTrack(void* This, AukTrack* track) {
 
     /* Remove track using AukArray */
     if (tracksArray->Remove(tracksArray, &track->base)) {
+
+        reattributeTrackIndex(tracksArray);
 
         /* Send update notification */
         {

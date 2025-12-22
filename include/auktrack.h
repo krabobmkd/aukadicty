@@ -38,6 +38,9 @@ struct sAukTrack {
     char* name;              /* Track name */
     AukArray *sounds;        /* Array of sounds on this track */
 
+    /* index index in project track list tracks. */
+    int trackIndex;
+
     /* Envelope data - parallel arrays for efficient storage */
     AukScalarArray *envelopeTime;  /* Time points (8-byte AukFixed) */
     AukScalarArray *envelopeValue; /* Volume values (2-byte fixed point, 0x0100 = 1.0) */
