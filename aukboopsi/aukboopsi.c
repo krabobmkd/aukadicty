@@ -55,8 +55,7 @@
 #include <proto/asl.h>
 #include <libraries/asl.h>
 
-//#include "class_track.h"
-#include "TrackListUi.h"
+#include "TrackListView.h"
 
 #include "compilers.h"
 #include "bdbprintf.h"
@@ -157,7 +156,7 @@ struct App
         //     Object *HeaderZone;
         //     Object *TrackVertLZone;
         //     Object *TrackVirtZone;
-        TrackListUi trackslayout;
+        TrackListView trackslayout;
 
 
             // status bar
@@ -382,7 +381,7 @@ int main(int argc, char **argv)
     }
 
 
-    CreateTrackListUi(&app->trackslayout,app->drawInfo, 64,app->fontHeight);
+    CreateTrackListView(&app->trackslayout,app->drawInfo, 64,app->fontHeight);
 
     {
         app->statusbarlabel = (Object *)NewObject( BUTTON_GetClass(),NULL,
@@ -586,7 +585,7 @@ void exitclose(void)
 
     if(app)
     {
-        CloseTrackListUi(&app->trackslayout);
+        CloseTrackListView(&app->trackslayout);
 
         /* Disposing of the window object will also close the
          * window if it is already opened and it will dispose of
@@ -622,10 +621,7 @@ void exitclose(void)
 
     closeAppModel(); // thi is meant to close app implicitely, If i'm correct...
 
-
-#ifdef TRACK_STATICLINK
-    TrackStaticClose();
-#endif
+    CloseTrackListView_StaticClasses();
 
     if(ScrollerBase) CloseLibrary(ScrollerBase);
     if(RequesterBase) CloseLibrary(RequesterBase);

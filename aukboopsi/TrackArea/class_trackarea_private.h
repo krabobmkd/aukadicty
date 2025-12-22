@@ -1,10 +1,10 @@
-#ifndef _CLASS_TRACKHEADERLISTPRIVATE_H_
-#define _CLASS_TRACKHEADERLISTPRIVATE_H_
+#ifndef _CLASS_TRACKAREAPRIVATE_H_
+#define _CLASS_TRACKAREAPRIVATE_H_
 
 #include "compilers.h"
-#include "class_trackheaderlist.h"
+#include "class_trackarea.h"
 
-// not much sense because c++ static runtime are hard to link.
+/* not much sense because c++ static runtime are hard to link. */
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -18,26 +18,26 @@ extern "C" {
 #include <graphics/gfx.h>
 #include <graphics/regions.h>
 
-// enable or not some parts of code...
-#define USE_REGION_CLIPPING 1
+/* enable or not some parts of code... */
+/*#define USE_REGION_CLIPPING 1*/
 
 /**
 *  this is the internal private gadget struct that own the data of the object instances.
-* an important principle of boopsi is that structure for the class is hidden to the consumers.
-* the consumers will only see the public header, and will do setAtribs()/GetAttribs()/Domethod().
+* an important principle of BOOPSI is that structure for the class is hidden to the consumers.
+* the consumers will only see the public header, and will do SetAttribs()/GetAttribs()/DoMethod().
 * Also: for the same Gadget, superclass members are in struct Gadget * passed to functions.
 * (These are just concatenated structs in a system private way.)
 * DEVTODO: make this class evolve to retain the data needed to draw and interact with your gadget.
 */
-typedef struct ITrackHeaderList {
-    // let's say we have coordinates of the center of the circle
+typedef struct ITrackArea {
+    /* let's say we have coordinates of the center of the circle */
     UWORD _circleCenterX,_circleCenterY;
 
-    // DEVTODO: we could manage the mouse interaction current state....
+    /* DEVTODO: we could manage the mouse interaction current state.... */
     ULONG _MouseMode;
     ULONG _EditMode;
 
-    // would have minimal size here.
+    /* would have minimal size here. */
     UWORD _minimalWidth,_minimalHeight;
 
 
@@ -46,16 +46,16 @@ typedef struct ITrackHeaderList {
     struct Region *_clipRegion;
 #endif
 
-} TrackHeaderList;
+} TrackArea;
 
-ULONG TrackHeaderList_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set);
-ULONG TrackHeaderList_GetAttr(Class *C, struct Gadget *Gad, struct opGet *Get);
-ULONG TrackHeaderList_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout);
-ULONG TrackHeaderList_Render(Class *C, struct Gadget *Gad, struct gpRender *Render, ULONG update);
-ULONG TrackHeaderList_HandleInput(Class *C, struct Gadget *Gad, struct gpInput *Input);
-ULONG TrackHeaderList_Domain(Class *C, struct Gadget *Gad, struct gpDomain *D);
+ULONG TrackArea_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set);
+ULONG TrackArea_GetAttr(Class *C, struct Gadget *Gad, struct opGet *Get);
+ULONG TrackArea_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout);
+ULONG TrackArea_Render(Class *C, struct Gadget *Gad, struct gpRender *Render, ULONG update);
+ULONG TrackArea_HandleInput(Class *C, struct Gadget *Gad, struct gpInput *Input);
+ULONG TrackArea_Domain(Class *C, struct Gadget *Gad, struct gpDomain *D);
 
-// - - - - -- -
+/* - - - - -- - */
 
 /** for dispatcher, very wise use of union.
  *  each  struct also starts with MethodID.
@@ -64,7 +64,7 @@ ULONG TrackHeaderList_Domain(Class *C, struct Gadget *Gad, struct gpDomain *D);
 typedef union MsgUnion
 {
   ULONG  MethodID;
-  // from classusr.h or gadgetclass.h, all starts with MethodID.
+  /* from classusr.h or gadgetclass.h, all starts with MethodID. */
   struct opSet        opSet;
   struct opUpdate     opUpdate;
   struct opGet        opGet;
@@ -76,17 +76,17 @@ typedef union MsgUnion
 } *Msgs;
 
 /**
-* This is to publish ou data when they change.
+* This is to publish our data when they change.
 * It may be better to just notify what change and have many notify functions per theme.
 * Some examples use only one Notify which send all attribs.
 */
-ULONG TrackHeaderList_NotifyCoords(Class *C, struct Gadget *Gad, struct GadgetInfo	*GInfo);
+ULONG TrackArea_NotifyCoords(Class *C, struct Gadget *Gad, struct GadgetInfo	*GInfo);
 
 /** this is the struct that is the extended struct Library
  * That is created with OpenLibrary().
  * But as it just manages a BOOPSI class there are just the open/close functions.
  * which themselves only manages registering the class with MakeClass()/AddClass()
- * versioning, and closing itself. This is *not* the boopsi class definition which is up there.
+ * versioning, and closing itself. This is *not* the BOOPSI class definition which is up there.
  * So it doesnt have to evolve, and can keep same name for each projects.
  * That said, layout.gadget has tool methods like any library.
  * must be mirrored to equivalent in classinit.s
@@ -95,10 +95,10 @@ struct ExtClassLib
 {
     struct ClassLibrary cb_ClassLibrary;
 
-    APTR  cb_SysBase; // this is passed as LibInit
-    APTR  cb_SegList; // this is passed at OpenLib and needed at expunge.
-    // note: old libraries examples adds bases for graphics/intuition/utility after this
-    // but C compiler will only search then in globals...
+    APTR  cb_SysBase; /* this is passed as LibInit */
+    APTR  cb_SegList; /* this is passed at OpenLib and needed at expunge. */
+    /* note: old libraries examples adds bases for graphics/intuition/utility after this */
+    /* but C compiler will only search then in globals... */
 };
 
 #ifdef __cplusplus

@@ -16,7 +16,7 @@ add_subdirectory(../ AukProject)
 # Include directories
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/../include
-    ${CMAKE_CURRENT_SOURCE_DIR}/TrackGadget
+    ${CMAKE_CURRENT_SOURCE_DIR}/TrackArea
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
@@ -24,20 +24,32 @@ include_directories(
 # AukApp source files
 set(AUKBOOPSI_SOURCES
     aukboopsi.c
-#    TrackListUi.c
-#    TrackListUi.h
+    TrackListView.c
+    TrackListView.h
 
     bdbprintf.c
     bdbprintf.h
 
-    # track gadget (private)
-    TrackGadget/class_track_attribs.c
-    TrackGadget/class_track_dispatch.c
-    TrackGadget/class_track_lib.c
-    TrackGadget/class_track_render.c
-    TrackGadget/class_track_handleinput.c
-    TrackGadget/class_track_private.h
-    TrackGadget/class_track.h
+    offscreenbm.c
+    offscreenbm.h
+
+    # infinite scroll base class (private)
+    InfiniteScroll/class_infinitescroll_attribs.c
+    InfiniteScroll/class_infinitescroll_dispatch.c
+    InfiniteScroll/class_infinitescroll_lib.c
+    InfiniteScroll/class_infinitescroll_render.c
+    InfiniteScroll/class_infinitescroll_handleinput.c
+    InfiniteScroll/class_infinitescroll_private.h
+    InfiniteScroll/class_infinitescroll.h
+
+    # track area gadget (private)
+    TrackArea/class_trackarea_attribs.c
+    TrackArea/class_trackarea_dispatch.c
+    TrackArea/class_trackarea_lib.c
+    TrackArea/class_trackarea_render.c
+    TrackArea/class_trackarea_handleinput.c
+    TrackArea/class_trackarea_private.h
+    TrackArea/class_trackarea.h
 
     TrackListAreaUi/class_tracklistareaui_attribs.c
     TrackListAreaUi/class_tracklistareaui_dispatch.c
@@ -63,15 +75,6 @@ set(AUKBOOPSI_SOURCES
     TrackHeader/class_trackheader_private.h
     TrackHeader/class_trackheader.h
 
-    TrackHeaderList/class_trackheaderlist_attribs.c
-    TrackHeaderList/class_trackheaderlist_dispatch.c
-    TrackHeaderList/class_trackheaderlist_lib.c
-    TrackHeaderList/class_trackheaderlist_render.c
-    TrackHeaderList/class_trackheaderlist_handleinput.c
-    TrackHeaderList/class_trackheaderlist_private.h
-    TrackHeaderList/class_trackheaderlist.h
-
-
 )
 
 # Create app
@@ -84,11 +87,11 @@ install(TARGETS aukadicty
 
 target_link_libraries(aukadicty aukproject)
 target_compile_definitions(aukadicty PRIVATE
-			TRACK_STATICLINK=1
+			TRACKAREA_STATICLINK=1
 			TRACKHEADER_STATICLINK=1
 			TIMERULE_STATICLINK=1
 			TRACKLIST_STATICLINK=1
-			TRACKHEADERLIST_STATICLINK=1
+			INFINITESCROLL_STATICLINK=1
 			USE_DEBUG_BDBPRINT=1)
 
 

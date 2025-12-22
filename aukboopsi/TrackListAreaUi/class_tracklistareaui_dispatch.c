@@ -62,9 +62,17 @@ ULONG ASM SAVEDS TrackListAreaUi_Dispatcher(
         gdata->_minimalWidth = 64;
         gdata->_minimalHeight = 64;
 
-        // set gadget (super class) attributes for this instance like this:
-        // (BOOL) Indicate whether gadget is part of TAB/SHIFT-TAB cycle.
-        // default to false
+        /* Initialize gadget arrays */
+        gdata->_trackHeaders = NULL;
+        gdata->_trackAreas = NULL;
+        gdata->_trackCount = 0;
+        gdata->_headerWidth = 100;  /* default header width */
+        gdata->_trackHeight = 40;   /* default track height */
+        gdata->_scrollTop = 0;
+
+        /* set gadget (super class) attributes for this instance like this: */
+        /* (BOOL) Indicate whether gadget is part of TAB/SHIFT-TAB cycle. */
+        /* default to false */
         SetSuperAttrs(C,(Object *)Gad, GA_TabCycle,TRUE,TAG_DONE);
 
 #ifdef USE_BEVEL_FRAME
@@ -120,6 +128,9 @@ ULONG ASM SAVEDS TrackListAreaUi_Dispatcher(
     #ifdef USE_BEVEL_FRAME
         if(gdata->Bevel) DisposeObject(gdata->Bevel);
     #endif
+
+        /* Dispose all track gadgets */
+        TrackListAreaUi_DisposeGadgets(gdata);
 
         AukObjectPtr_Release( &gdata->_project);
 

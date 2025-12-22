@@ -46,13 +46,23 @@ typedef struct TrackListAreaUi {
     // get pixel rectangle iof the gadget at layout
     struct Rectangle _framerec;
 
-    // The document data which own the track list as AukArray ->tracks
+    /* The document data which own the track list as AukArray ->tracks */
     AukAProjectPtr _project;
 
-    // The array of TrackList as BOOPSI gadgets
+    /* Dynamic array of TrackHeader gadgets (left side) */
+    Object **_trackHeaders;
+    /* Dynamic array of TrackArea instances (right side) */
+    Object **_trackAreas;
+    /* Number of allocated track gadgets/headers */
+    ULONG _trackCount;
 
+    /* Fixed width for track headers on the left */
+    UWORD _headerWidth;
+    /* Height for each track row */
+    UWORD _trackHeight;
 
-
+    /* Vertical scroll position */
+    LONG _scrollTop;
 
 } TrackListAreaUi;
 
@@ -63,7 +73,10 @@ ULONG TrackListAreaUi_Render(Class *C, struct Gadget *Gad, struct gpRender *Rend
 ULONG TrackListAreaUi_HandleInput(Class *C, struct Gadget *Gad, struct gpInput *Input);
 ULONG TrackListAreaUi_Domain(Class *C, struct Gadget *Gad, struct gpDomain *D);
 
-// - - - - -- -
+/* Helper to dispose all gadget arrays */
+void TrackListAreaUi_DisposeGadgets(TrackListAreaUi *gdata);
+
+/* - - - - -- - */
 
 /** for dispatcher, very wise use of union.
  *  each  struct also starts with MethodID.
