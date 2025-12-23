@@ -110,30 +110,32 @@ ULONG TrackHeader_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout)
 
     gdata=INST_DATA(C, Gad);
 
+    bdbprintf(" *** TrackHeader_Layout\n");
+
     topedge = Gad->TopEdge;
     leftedge = Gad->LeftEdge;
     width = Gad->Width;
     height = Gad->Height;
 
-#ifdef USE_BEVEL_FRAME
-    if(gdata->Bevel)
-    {   // all other attribs that doesnt change are set at NewObject()
-        SetAttrs((Object *)gdata->Bevel,
-            IA_Left, leftedge,
-            IA_Top,        topedge,
-            IA_Width,      width,
-            IA_Height,     height,
-            BEVEL_ColorMap,(ULONG)layout->gpl_GInfo->gi_Screen->ViewPort.ColorMap,
-            BEVEL_Transparent,TRUE, // we will draw iside the frame ourselve.
-            BEVEL_Style,BVS_BUTTON,
-            TAG_DONE);
-        // consider the effective rectangle is inside the frame.
-        GetAttr(BEVEL_InnerTop,     gdata->Bevel,(ULONG *) &topedge);
-        GetAttr(BEVEL_InnerLeft,    gdata->Bevel,(ULONG *) &leftedge);
-        GetAttr(BEVEL_InnerWidth,   gdata->Bevel,(ULONG *) &width);
-        GetAttr(BEVEL_InnerHeight,  gdata->Bevel,(ULONG *) &height);
-    }
-#endif
+//#ifdef USE_BEVEL_FRAME
+//    if(gdata->Bevel)
+//    {   // all other attribs that doesnt change are set at NewObject()
+//        SetAttrs((Object *)gdata->Bevel,
+//            IA_Left, leftedge,
+//            IA_Top,        topedge,
+//            IA_Width,      width,
+//            IA_Height,     height,
+//            BEVEL_ColorMap,(ULONG)layout->gpl_GInfo->gi_Screen->ViewPort.ColorMap,
+//            BEVEL_Transparent,TRUE, // we will draw iside the frame ourselve.
+//            BEVEL_Style,BVS_BUTTON,
+//            TAG_DONE);
+//        // consider the effective rectangle is inside the frame.
+//        GetAttr(BEVEL_InnerTop,     gdata->Bevel,(ULONG *) &topedge);
+//        GetAttr(BEVEL_InnerLeft,    gdata->Bevel,(ULONG *) &leftedge);
+//        GetAttr(BEVEL_InnerWidth,   gdata->Bevel,(ULONG *) &width);
+//        GetAttr(BEVEL_InnerHeight,  gdata->Bevel,(ULONG *) &height);
+//    }
+//#endif
     gdata->_framerec.MinX = leftedge;
     gdata->_framerec.MinY = topedge;
     gdata->_framerec.MaxX = leftedge + width  -1;
@@ -158,6 +160,8 @@ ULONG TrackHeader_Render(Class *C, struct Gadget *Gad, struct gpRender *Render, 
   ULONG retval=1;
 
   gdata=INST_DATA(C, Gad);
+
+    bdbprintf(" *** TrackHeader_Render\n");
 
   // also sent from GM_GOINACTIVE (4).
   if(Render->MethodID==GM_RENDER)
@@ -194,13 +198,13 @@ ULONG TrackHeader_Render(Class *C, struct Gadget *Gad, struct gpRender *Render, 
     {
         penbg = 0;
     }
-    #ifdef USE_BEVEL_FRAME
-        if(gdata->Bevel) DrawImage(rp,gdata->Bevel,0,0);
-    #endif
+//    #ifdef USE_BEVEL_FRAME
+//        if(gdata->Bevel) DrawImage(rp,gdata->Bevel,0,0);
+//    #endif
 
-    #ifdef USE_REGION_CLIPPING
-        oldClipRegion = InstallClipRegion( rp->Layer, gdata->_clipRegion);
-    #endif
+//    #ifdef USE_REGION_CLIPPING
+//        oldClipRegion = InstallClipRegion( rp->Layer, gdata->_clipRegion);
+//    #endif
 
       SetDrMd(rp,JAM1);
       SetAPen(rp,penbg);
@@ -208,17 +212,17 @@ ULONG TrackHeader_Render(Class *C, struct Gadget *Gad, struct gpRender *Render, 
                   gdata->_framerec.MinY,
                   gdata->_framerec.MaxX,
                   gdata->_framerec.MaxY) ;
-        {
-            UWORD width = gdata->_framerec.MaxX - gdata->_framerec.MinX;
-            UWORD height = gdata->_framerec.MaxY - gdata->_framerec.MinY;
+//        {
+//            UWORD width = gdata->_framerec.MaxX - gdata->_framerec.MinX;
+//            UWORD height = gdata->_framerec.MaxY - gdata->_framerec.MinY;
 
-            UWORD xc = gdata->_framerec.MinX + ((width*gdata->_circleCenterX)>>16);
-            UWORD yc = gdata->_framerec.MinY + ((height*gdata->_circleCenterY)>>16);
-            SetAPen(rp,penb);
-            DrawEllipse(rp,xc,yc,width>>1,height>>1);
-            SetAPen(rp,penc);
-            DrawEllipse(rp,xc,yc,width>>2,height>>2);
-        }
+//            UWORD xc = gdata->_framerec.MinX + ((width*gdata->_circleCenterX)>>16);
+//            UWORD yc = gdata->_framerec.MinY + ((height*gdata->_circleCenterY)>>16);
+//            SetAPen(rp,penb);
+//            DrawEllipse(rp,xc,yc,width>>1,height>>1);
+//            SetAPen(rp,penc);
+//            DrawEllipse(rp,xc,yc,width>>2,height>>2);
+//        }
 		
 		if(bLayerUpdating) 
 		{

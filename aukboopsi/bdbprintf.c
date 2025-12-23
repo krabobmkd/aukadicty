@@ -106,4 +106,66 @@ int bdbavailable(void)
 {
     return BDB_BUFFER_SIZE - bdb_position - 1;
 }
+
+/* Instance tracking for leak detection */
+static volatile int instances_created = 0;
+static volatile int instances_disposed = 0;
+
+
+/*
+ * bdbprintf_new - Debug print for OM_NEW with instance tracking
+ */
+int bdbprintf_new(const char *className, void *instance)
+{
+    int result;
+
+    instances_created++;
+
+    result = bdbprintf("[NEW] %s instance:%lx (total created:%ld)\n",
+                       className, (unsigned long)instance, (long)instances_created);
+
+    return result;
+}
+
+/*
+ * bdbprintf_dispose - Debug print for OM_DISPOSE with instance tracking
+ */
+int bdbprintf_dispose(const char *className, void *instance)
+{
+    int result;
+
+    instances_disposed++;
+
+    result = bdbprintf("[DISPOSE] %s instance:%lx (total disposed:%ld)\n",
+                       className, (unsigned long)instance, (long)instances_disposed);
+
+    return result;
+}
+
+/*
+ * bdbprintf_report_leaks - Report any leaked BOOPSI instances
+ */
+void bdbprintf_report_leaks(void)
+{
+    long leaked;
+
+    leaked = instances_created - instances_disposed;
+
+    if(leaked != 0)
+    {
+        bdbprintf("\n*** MEMORY LEAK DETECTED ***\n");
+        bdbprintf("  BOOPSI Instances Created:  %ld\n", (long)instances_created);
+        bdbprintf("  BOOPSI Instances Disposed: %ld\n", (long)instances_disposed);
+        bdbprintf("  LEAKED INSTANCES:          %ld\n", leaked);
+        bdbprintf("*** END LEAK REPORT ***\n\n");
+        flushbdbprint();
+    }
+    else if(instances_created > 0)
+    {
+        bdbprintf("\nBOOPSI Instance Tracking: OK\n");
+        bdbprintf("  Total instances created and disposed: %ld\n", (long)instances_created);
+        bdbprintf("  No leaks detected.\n\n");
+        flushbdbprint();
+    }
+}
 #endif

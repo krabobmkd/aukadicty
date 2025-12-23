@@ -23,6 +23,13 @@ extern "C" {
 // enable or not some parts of code...
 #define USE_REGION_CLIPPING 1
 
+/** retain gadget children for a given data track */
+typedef struct TrackChild{
+    AukTrack *_dataTrack; // corresponding data
+    Object *_trackHeader; // TrackHeader gadget
+    Object *_trackArea; // TrackArea gadget
+} TrackChild;
+
 /**
 *
 * an important principle of boopsi is that structure for the class is hidden to the consumers.
@@ -49,10 +56,8 @@ typedef struct TrackListAreaUi {
     /* The document data which own the track list as AukArray ->tracks */
     AukAProjectPtr _project;
 
-    /* Dynamic array of TrackHeader gadgets (left side) */
-    Object **_trackHeaders;
-    /* Dynamic array of TrackArea instances (right side) */
-    Object **_trackAreas;
+    /* retain the synchronisation to data track list to gadgets... */
+    TrackChild *_tracks;
     /* Number of allocated track gadgets/headers */
     ULONG _trackCount;
 
@@ -63,6 +68,9 @@ typedef struct TrackListAreaUi {
 
     /* Vertical scroll position */
     LONG _scrollTop;
+
+    /* needed for refresh */
+    struct Window *window;
 
 } TrackListAreaUi;
 

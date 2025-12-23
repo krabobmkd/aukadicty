@@ -57,6 +57,9 @@
 
 #include "TrackListView.h"
 
+//#include "aukaproject.h"
+#include <aukadicty.h>
+
 #include "compilers.h"
 #include "bdbprintf.h"
 INLINE struct Window *boopsi_OpenWindow(Object *owin) {
@@ -125,14 +128,8 @@ typedef union MsgUnion
 
 /* Gadget action IDs, just to demonstrate some interactions
  */
-#define GAD_BUTTON_GENERATE 1
+#define GAD_BUTTONXXX 1
 #define GAD_BUTTON_ABOUT 2
-#define GAD_CB_SASC 3
-#define GAD_CB_MAKEFILE 4
-#define GAD_CB_CMAKELIST 5
-
-#define GAD_START_SELECT_TEMPLATE 16
-
 
 
 // all app related variables are here:
@@ -156,7 +153,7 @@ struct App
         //     Object *HeaderZone;
         //     Object *TrackVertLZone;
         //     Object *TrackVirtZone;
-        TrackListView trackslayout;
+        TrackListView tracksListView;
 
 
             // status bar
@@ -165,6 +162,9 @@ struct App
             Object* statusbarlabel;
 
      Object *reportReq;
+
+     // - - - retain document object
+     AukAProjectPtr _project;
 
 };
 // - - - note having a private "boopsi object class and instance"
@@ -249,7 +249,7 @@ void closeAppModel(void)
     AppModelClass = NULL;
 }
 
-
+int initProject();
 //  - - - -- - - - -  end of App modelclass management.
 
 int main(int argc, char **argv)
@@ -381,7 +381,7 @@ int main(int argc, char **argv)
     }
 
 
-    CreateTrackListView(&app->trackslayout,app->drawInfo, 64,app->fontHeight);
+    CreateTrackListView(&app->tracksListView,app->drawInfo, 64,app->fontHeight);
 
     {
         app->statusbarlabel = (Object *)NewObject( BUTTON_GetClass(),NULL,
@@ -427,7 +427,7 @@ int main(int argc, char **argv)
             LAYOUT_Orientation, LAYOUT_ORIENT_VERT,
             LAYOUT_AddChild, app->horizontallayoutA,
                 CHILD_WeightedHeight,0,
-            LAYOUT_AddChild, app->trackslayout.mainVl,
+            LAYOUT_AddChild, app->tracksListView.mainVl,
                 CHILD_WeightedHeight,4,
             LAYOUT_AddChild, app->bottombarlayout,
                 CHILD_WeightedHeight,0,
@@ -471,6 +471,8 @@ int main(int argc, char **argv)
 
 
     updateUIToStates();
+
+    initProject();
 //    // gui inited here.
 //    {
 //        char temp[64];
@@ -517,22 +519,24 @@ int main(int argc, char **argv)
                     {
                         ULONG gid = result &0xffff;
                        // printf("up gid:%d\n",gid);
-                        if(gid>=GAD_START_SELECT_TEMPLATE)
-                        {   // toggle button: which state ?
+//                        if(gid>=GAD_START_SELECT_TEMPLATE)
+//                        {   // toggle button: which state ?
 
-//                            gid -= GAD_START_SELECT_TEMPLATE;
-//                            if(app->TemplateButtonsList[gid])
-//                            {
-//                                 int selected = 0;
-//                                GetAttr(GA_Selected, app->TemplateButtonsList[gid], &selected);
-//                                if(selected)  selectTemplate(gid);
-//                            }
+////                            gid -= GAD_START_SELECT_TEMPLATE;
+////                            if(app->TemplateButtonsList[gid])
+////                            {
+////                                 int selected = 0;
+////                                GetAttr(GA_Selected, app->TemplateButtonsList[gid], &selected);
+////                                if(selected)  selectTemplate(gid);
+////                            }
 
 
-                        } else if(gid == GAD_BUTTON_GENERATE)
-                        {
-                            //generate();
-                        } else if(gid == GAD_BUTTON_ABOUT)
+//                        } else if(gid == GAD_BUTTON_GENERATE)
+//                        {
+//                            //generate();
+//                        } else
+
+                        if(gid == GAD_BUTTON_ABOUT)
                         {
                             openAboutReq();
                         }
@@ -582,18 +586,23 @@ void guiNotifier(int loglevel, const char *log)
 void exitclose(void)
 {
 
-
+    printf("exitclose()\n");
     if(app)
     {
-        CloseTrackListView(&app->trackslayout);
+        /* just release data listener and object retained */
+        CloseTrackListView(&app->tracksListView);
 
         /* Disposing of the window object will also close the
          * window if it is already opened and it will dispose of
          * all objects attached to it.
          */
         if(app->reportReq) DisposeObject( app->reportReq );
+            printf("app->window_obj:%08x\n",(int)app->window_obj);
+
+        // this should cascade all OM_DISPOSE:
         if(app->window_obj) DisposeObject(app->window_obj);
         else {
+        // not sure about mid-failure boopsies
 //            // but if not attached because mid-init fail, has to be manual.
 //            if(app->mainvlayout)  DisposeObject(app->mainvlayout);
 //            else {
@@ -610,6 +619,9 @@ void exitclose(void)
 //                }
 //            }
         }
+        // debug mode, check private class gadgets instance areall closed.
+        bdbprintf_report_leaks();
+
 //        if(dtbmLogo.bm) {
 //            closeDataTypeBm(&dtbmLogo);
 //        }
@@ -665,32 +677,7 @@ void openAboutReq()
     SetAttrs(app->reportReq,REQ_TitleText,(ULONG)"About...",TAG_END);
     // if ok, show a report requester
  static const char *p=
-    "***Be warned***:\nThis wizard is not an official AmigaOS NDK project\nand will most likely stick to Beta stage forever.\n\n"
-    "What it is, is: an OpenSource effort of individual developpers, open to participation\n"
-    " at: https://github.com/krabobmkd/boopsiwizard\n"
-    " The fact is, a lot of aspect of Amiga OS development are difficult to set up,\n"
-    "  and setting a simple project for a library, class, gadget, datatype, commodity\n"
-    "  project, for a given C compiler, is cryptic, and takes days if not more.\n"
-    "  So you *may* gain some times with this.\n\n"
-    "The templates code proposed here will try to be the more compliant possible with\n"
-    " official Amiga guidelines, but may not be 100% compliant. You are loudly welcome\n"
-    " to make any suggestion on the code at:\n"
-    " https://github.com/krabobmkd/boopsiwizard/issues\n"
-    " Your resources for coding Amiga OS3 should be:\n"
-    " The Amiga Developer CD v2.1, forum https://developer.amigaos3.net/forum\n"
-    " https://developer.amigaos3.net/article/13-recommended-reading-amiga-developer\n\n"
-    "How does it work and How can I do a template ?\n"
-    " Templates are just a json file with a corresponding zip file in templates dir.\n"
-    " Each json describes what should be renamed. At generation, if your project name\n"
-    " is \"MyProject\",In target files, BaseName will be MyProject,BASENAME MYPROJECT\n"
-    " and basename myproject. File names and text contents are replaced.\n"
-    " Adress file names case-wise, we allow linux cross-compilation.\n\n"
-    "License of wizard itself is LGPL, which means you can fork it or embedd it in\n"
-    " commercial projects. It uses cJson and zlib.\n"
-    " Some templates have code parts from official Amiga examples, some not.\n"
-    " If your compiler is GCC, from now on you should also install phxass, needed to\n"
-    " assemble the C startups."
-    "\n\n - krb, Nov.2025."
+    "..."
     ;
     SetAttrs(app->reportReq,REQ_BodyText,(ULONG)p,TAG_END);
 
@@ -698,4 +685,107 @@ void openAboutReq()
 
 }
 
+
+int initProject()
+{
+    if(!app) return;
+
+    AukAProject* project;
+    AukTrack* track1;
+    AukTrack* track2;
+    AukSoundFilePtr soundFile1 = NULL;
+    AukSound* sound1;
+    AukSound* sound2;
+    AukFixed duration;
+
+    /* Create a new project */
+    AukAProject_New(&app->_project);
+    project = app->_project;
+    if (!project) {
+        printf("Failed to create project\n");
+        return 1;
+    }
+    // link document with UI
+    TrackListView_setProject(&app->tracksListView,project);
+
+    /* Set project properties */
+    project->base.SetName(&project->base, "My First Project");
+    project->base.SetPath(&project->base, "Work:");
+    AukAProject_SetPreferences(project, 44100, 16);
+
+    /* Create tracks in the project */
+    track1 = project->CreateTrack(project);
+    track2 = project->CreateTrack(project);
+
+    if (!track1 || !track2) {
+        printf("Failed to create tracks\n");
+        AukObjectPtr_Release((AukObjectPtr*)&app->_project);
+        return 1;
+    }
+    AukTrack_SetName(track1, "Vocals");
+    AukTrack_SetName(track2, "Music");
+
+
+    /* Create a sound file reference */
+    AukSoundFile_New(&soundFile1);
+    if (!soundFile1) {
+        printf("Failed to create sound file\n");
+        AukObjectPtr_Release((AukObjectPtr*)&app->_project);
+        return 1;
+    }
+    AukSoundFile_SetFilename(soundFile1, "sounds/sample1.wav");
+    AukSoundFile_SetProperties(soundFile1, 44100, 2, 88200);
+
+    /* Create sounds on tracks */
+    sound1 = track1->CreateSound(track1, soundFile1,
+                                 AukFixed_FromInt(0),    /* Start at 0 seconds */
+                                 AukFixed_FromInt(5));   /* End at 5 seconds */
+
+    sound2 = track2->CreateSound(track2, soundFile1,
+                                 AukFixed_FromInt(2),    /* Start at 2 seconds */
+                                 AukFixed_FromInt(8));   /* End at 8 seconds */
+
+    if (!sound1 || !sound2) {
+        printf("Failed to add sounds\n");
+        AukObjectPtr_Release((AukObjectPtr*)&soundFile1);
+        AukObjectPtr_Release((AukObjectPtr*)&app->_project);
+        return 1;
+    }
+
+    /* Release our reference to sound file (sounds now own it) */
+    AukObjectPtr_Release((AukObjectPtr*)&soundFile1);
+
+    /* Set sound properties */
+    sound1->SetLoopCount(sound1, 2);  /* Loop twice */
+
+    /* Add envelope points to track1 */
+    track1->AddEnvelopePoint(track1,
+                             AukFixed_FromDouble(-0.25),
+                             0x0100);  /* Full volume at start (0x0100 = 1.0) */
+    track1->AddEnvelopePoint(track1,
+                             AukFixed_FromInt(5),
+                             0x0080);  /* Half volume at 5 seconds (0x0080 = 0.5) */
+
+    /* Get project duration */
+    duration = project->GetDuration(project);
+    printf("Project duration: %ld seconds\n", AukFixed_ToInt(duration));
+
+    /* Save project to JSON file */
+//    if (project->base.Save(project, "my_project.auk")) {
+//        printf("Project saved successfully\n");
+//    } else {
+//        printf("Failed to save project\n");
+//    }
+
+    /* Display project info */
+    printf("Project: %s\n", project->base.GetName(project));
+    printf("Tracks: %lu\n", project->GetTrackCount(project));
+    printf("Track 1: %s, Sounds: %lu\n",
+           AukTrack_GetName(track1),
+           track1->GetSoundCount(track1));
+    printf("Track 2: %s, Sounds: %lu\n",
+           AukTrack_GetName(track2),
+           track2->GetSoundCount(track2));
+    return 0;
+}
 

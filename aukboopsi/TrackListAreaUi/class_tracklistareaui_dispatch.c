@@ -63,8 +63,7 @@ ULONG ASM SAVEDS TrackListAreaUi_Dispatcher(
         gdata->_minimalHeight = 64;
 
         /* Initialize gadget arrays */
-        gdata->_trackHeaders = NULL;
-        gdata->_trackAreas = NULL;
+        gdata->_tracks = NULL;
         gdata->_trackCount = 0;
         gdata->_headerWidth = 100;  /* default header width */
         gdata->_trackHeight = 40;   /* default track height */
@@ -108,7 +107,10 @@ ULONG ASM SAVEDS TrackListAreaUi_Dispatcher(
 //            retval=(ULONG)Gad;
 //          }
 //        }
-        // means new object OK so far:
+
+        bdbprintf_new("TrackListAreaUi", Gad);
+
+        /* means new object OK so far: */
         retval=(ULONG)Gad;
       }
       break;
@@ -125,6 +127,8 @@ ULONG ASM SAVEDS TrackListAreaUi_Dispatcher(
      break;
 
     case OM_DISPOSE:
+        bdbprintf_dispose("TrackListAreaUi", Gad);
+
     #ifdef USE_BEVEL_FRAME
         if(gdata->Bevel) DisposeObject(gdata->Bevel);
     #endif

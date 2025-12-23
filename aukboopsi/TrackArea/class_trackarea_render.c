@@ -115,7 +115,7 @@ ULONG TrackArea_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout)
     struct GadgetInfo *gi;
     int retval;
 
-    retval=DoSuperMethodA(C,(Object *)Gad,(Msg)layout);
+    retval=1; //DoSuperMethodA(C,(Object *)Gad,(Msg)layout);
    // if(!retval) return retval;
 
     gdata=INST_DATA(C, Gad);
@@ -126,27 +126,8 @@ ULONG TrackArea_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout)
     width = Gad->Width;
     height = Gad->Height;
 
- bdbprintf("layout: t:%d l:%d w:%d h:%d\n",topedge,leftedge,width,height);
+ bdbprintf("TrackArea_Layout: t:%d l:%d w:%d h:%d\n",topedge,leftedge,width,height);
 
-#ifdef USE_BEVEL_FRAME
-    if(gdata->Bevel)
-    {   // all other attribs that doesnt change are set at NewObject()
-        SetAttrs((Object *)gdata->Bevel,
-            IA_Left, leftedge,
-            IA_Top,        topedge,
-            IA_Width,      width,
-            IA_Height,     height,
-            BEVEL_ColorMap,(ULONG)layout->gpl_GInfo->gi_Screen->ViewPort.ColorMap,
-            BEVEL_Transparent,TRUE, // we will draw iside the frame ourselve.
-            BEVEL_Style,BVS_BUTTON,
-            TAG_DONE);
-        // consider the effective rectangle is inside the frame.
-        GetAttr(BEVEL_InnerTop,     gdata->Bevel,(ULONG *) &topedge);
-        GetAttr(BEVEL_InnerLeft,    gdata->Bevel,(ULONG *) &leftedge);
-        GetAttr(BEVEL_InnerWidth,   gdata->Bevel,(ULONG *) &width);
-        GetAttr(BEVEL_InnerHeight,  gdata->Bevel,(ULONG *) &height);
-    }
-#endif
     /* Figure out the size/position of the gadget rectangle, taking relative
      * positioning into account.
      */
@@ -207,70 +188,70 @@ ULONG TrackArea_Render(Class *C, struct Gadget *Gad, struct gpRender *Render, UL
     if(Render->gpr_GInfo)
     {
         struct IBox	 ib =Render->gpr_GInfo->gi_Domain;
-        bdbprintf(" render domain IBox l:%d t:%d w:%d h:%d\n",(int)ib.Left,(int)ib.Top,(int)ib.Width,(int)ib.Height);
+        bdbprintf(" TrackArea_Render domain IBox l:%d t:%d w:%d h:%d\n",(int)ib.Left,(int)ib.Top,(int)ib.Width,(int)ib.Height);
     }
 
 
   if(rp)
   {
-	int bLayerUpdating=FALSE;
-    int penbg=1,penb=2,penc=3;
-    struct Region *oldClipRegion;
+//	int bLayerUpdating=FALSE;
+//    int penbg=1,penb=2,penc=3;
+//    struct Region *oldClipRegion;
 
-	// note from an OS3 official developer: we got to do manage the following:
-	if( ( rp->Layer->Flags & LAYERUPDATING ) != 0L )
-	{
-		bLayerUpdating = TRUE;
-		EndUpdate(rp->Layer, FALSE);
-		//bdbprintf(" ****Render->MethodID:%08lx LAYERUPDATING\n",(int)Render->MethodID);
-	} else
-	{
+//	// note from an OS3 official developer: we got to do manage the following:
+//	if( ( rp->Layer->Flags & LAYERUPDATING ) != 0L )
+//	{
+//		bLayerUpdating = TRUE;
+//		EndUpdate(rp->Layer, FALSE);
+//		//bdbprintf(" ****Render->MethodID:%08lx LAYERUPDATING\n",(int)Render->MethodID);
+//	} else
+//	{
 
-	}
+//	}
 
-    if(Gad->Flags & GFLG_DISABLED) // if disabled, draw background with another color.
-    {
-        penbg = 0;
-    }
-    #ifdef USE_BEVEL_FRAME
-        if(gdata->Bevel) DrawImage(rp,gdata->Bevel,0,0);
-    #endif
+//    if(Gad->Flags & GFLG_DISABLED) // if disabled, draw background with another color.
+//    {
+//        penbg = 0;
+//    }
+//    #ifdef USE_BEVEL_FRAME
+//        if(gdata->Bevel) DrawImage(rp,gdata->Bevel,0,0);
+//    #endif
 
-    #ifdef USE_REGION_CLIPPING
-struct Layer
-        ClearRegion(gdata->_clipRegion);
-        // if(rp->Layer->ClipRegion) OrRegionRegion(gdata->_clipRegion, rp->Layer->ClipRegion);  not sure
-        OrRectRegion(gdata->_clipRegion, &gdata->_framerec);
+//    #ifdef USE_REGION_CLIPPING
+//struct Layer
+//        ClearRegion(gdata->_clipRegion);
+//        // if(rp->Layer->ClipRegion) OrRegionRegion(gdata->_clipRegion, rp->Layer->ClipRegion);  not sure
+//        OrRectRegion(gdata->_clipRegion, &gdata->_framerec);
 
-        oldClipRegion = InstallClipRegion( rp->Layer, gdata->_clipRegion);
-    #endif
+//        oldClipRegion = InstallClipRegion( rp->Layer, gdata->_clipRegion);
+//    #endif
 
-      SetDrMd(rp,JAM1);
-      SetAPen(rp,penbg);
-      RectFill(rp,gdata->_framerec.MinX,
-                  gdata->_framerec.MinY,
-                  gdata->_framerec.MaxX,
-                  gdata->_framerec.MaxY) ;
-        {
-            UWORD width = gdata->_framerec.MaxX - gdata->_framerec.MinX;
-            UWORD height = gdata->_framerec.MaxY - gdata->_framerec.MinY;
+//      SetDrMd(rp,JAM1);
+//      SetAPen(rp,penbg);
+//      RectFill(rp,gdata->_framerec.MinX,
+//                  gdata->_framerec.MinY,
+//                  gdata->_framerec.MaxX,
+//                  gdata->_framerec.MaxY) ;
+//        {
+//            UWORD width = gdata->_framerec.MaxX - gdata->_framerec.MinX;
+//            UWORD height = gdata->_framerec.MaxY - gdata->_framerec.MinY;
 
-            UWORD xc = gdata->_framerec.MinX + ((width*gdata->_circleCenterX)>>16);
-            UWORD yc = gdata->_framerec.MinY + ((height*gdata->_circleCenterY)>>16);
-            SetAPen(rp,penb);
-            DrawEllipse(rp,xc,yc,width>>1,height>>1);
-            SetAPen(rp,penc);
-            DrawEllipse(rp,xc,yc,width>>2,height>>2);
-        }
+//            UWORD xc = gdata->_framerec.MinX + ((width*gdata->_circleCenterX)>>16);
+//            UWORD yc = gdata->_framerec.MinY + ((height*gdata->_circleCenterY)>>16);
+//            SetAPen(rp,penb);
+//            DrawEllipse(rp,xc,yc,width>>1,height>>1);
+//            SetAPen(rp,penc);
+//            DrawEllipse(rp,xc,yc,width>>2,height>>2);
+//        }
 
-    if(bLayerUpdating)
-    {
-        BeginUpdate(rp->Layer);
-    }
+//    if(bLayerUpdating)
+//    {
+//        BeginUpdate(rp->Layer);
+//    }
 
-    #ifdef USE_REGION_CLIPPING
-        InstallClipRegion( rp->Layer,oldClipRegion); // important to pass NULL if oldClipRegion is NULL.
-    #endif
+//    #ifdef USE_REGION_CLIPPING
+//        InstallClipRegion( rp->Layer,oldClipRegion); // important to pass NULL if oldClipRegion is NULL.
+//    #endif
 
     if (Render->MethodID != GM_RENDER)
       ReleaseGIRPort(rp);

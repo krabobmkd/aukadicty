@@ -106,7 +106,10 @@ ULONG ASM SAVEDS TrackHeader_Dispatcher(
 //            retval=(ULONG)Gad;
 //          }
 //        }
-        // means new object OK so far:
+
+        bdbprintf_new("TrackHeader", Gad);
+
+        /* means new object OK so far: */
         retval=(ULONG)Gad;
       }
       break;
@@ -123,6 +126,8 @@ ULONG ASM SAVEDS TrackHeader_Dispatcher(
      break;
 
     case OM_DISPOSE:
+        bdbprintf_dispose("TrackHeader", Gad);
+
     #ifdef USE_BEVEL_FRAME
         if(gdata->Bevel) DisposeObject(gdata->Bevel);
     #endif

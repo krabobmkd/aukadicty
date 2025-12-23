@@ -38,6 +38,7 @@
 // audio tracks project
 #include <aukaproject.h>
 #include <auktrack.h>
+#include "bdbprintf.h"
 
 #ifdef Remove
 #undef Remove
@@ -48,6 +49,8 @@ void cleanexit(const char *pmessage);
 void CreateTrackListView(TrackListView *pm,struct DrawInfo *drawInfo, int headerwidth, int fontheight)
 {
     // init private boopsi gadget & layout classes.
+
+    if(!InfiniteScrollStaticInit()) cleanexit("InfiniteScroll failed");
     if(!TimeRuleStaticInit()) cleanexit("TimeRule failed");
     if(!TrackAreaStaticInit()) cleanexit("TrackLayout init failed");
     if(!TrackHeaderStaticInit()) cleanexit("TrackLayout init failed");
@@ -145,6 +148,7 @@ static void AukUpdate_Track(AukObject* listenerObject, AukObject* modifiedObject
     TrackListView *pm = (TrackListView *)userData;
     AukTrack *track = (AukTrack*)modifiedObject;
     if(!pm || !track) return;
+    bdbprintf(" **** AukUpdate_Track ! \n");
     switch(message->type)
     {
         case AUK_MSG_TRACKMODIFIED_TIMECHANGE:
@@ -167,13 +171,19 @@ static void AukUpdate_Track(AukObject* listenerObject, AukObject* modifiedObject
 
 static void AukUpdate_TrackList(AukObject* listenerObject, AukObject* modifiedObject,void *userData, AukMessage *message)
 {
+    struct Gadget *trackListAreaUi;
     AukAProject *tracklist = (AukAProject*)modifiedObject;
     TrackListView *pm = (TrackListView *)userData;
+
+    bdbprintf(" **** AukUpdate_TrackList ! \n");
     if(!pm || !tracklist || !message) return;
+
+    trackListAreaUi = (struct Gadget *)pm->trackList;
     switch(message->type)
     {
         case AUK_MSG_TRACKADDED:
         {
+    bdbprintf(" **** AUK_MSG_TRACKADDED ! \n");
             AukMessage_AProject *m = (AukMessage_AProject *)message;
             AukTrack *track = m->_track;
             if(track)  AukObject_AddListener(track,
@@ -181,20 +191,25 @@ static void AukUpdate_TrackList(AukObject* listenerObject, AukObject* modifiedOb
                   (void*)pm, // userData
                   &AukUpdate_Track //AukUpdateCallback callback
                   );
-            //TODO update GUI, add ui track
+
+            // update GUI, add ui track
+            TrackListAreaUi_addTrack(trackListAreaUi,track);
         }
         break;
         case AUK_MSG_TRACKREMOVED:
         {
+    bdbprintf(" **** AUK_MSG_TRACKREMOVED ! \n");
             AukMessage_AProject *m = (AukMessage_AProject *)message;
             AukTrack *track = m->_track;
             if(track)  AukObject_RemoveListener(track,
                         pm->updateListener // AukObject* listenerObject,
                   );
-            //TODO update GUI, remove ui track
+            // update GUI, remove ui track
+            TrackListAreaUi_removeTrack(trackListAreaUi,track);
         }
         break;
         default:
+    bdbprintf(" **** AUK_MSG_XXX %d! \n",(int)message->type);
         break;
     }
 
@@ -207,11 +222,14 @@ static void AukUpdate_TrackList(AukObject* listenerObject, AukObject* modifiedOb
 void TrackListView_setProject(TrackListView *pm,AukAProject *project)
 {
     // listen project modification
-    AukObject_AddListener(&project->base.base,
-                  pm->updateListener, // AukObject* listenerObject,
-                  (void*)pm, // userData
-                  &AukUpdate_TrackList //AukUpdateCallback callback
-                  );
+    if(project)
+    {
+        AukObject_AddListener(&project->base.base,
+                      pm->updateListener, // AukObject* listenerObject,
+                      (void*)pm, // userData
+                      &AukUpdate_TrackList //AukUpdateCallback callback
+                      );
+    }
     // retain project
     AukObjectPtr_Set(&pm->project,&project->base.base);
 
@@ -224,6 +242,11 @@ void TrackListView_setProject(TrackListView *pm,AukAProject *project)
 void CloseTrackListView(TrackListView *pm)
 {
     if(!pm) return;
+// implicit with Releases
+//    if(pm->project && pm->updateListener)
+//    {
+//        AukObject_RemoveListener(&pm->project->base.base,pm->updateListener);
+//    }
     AukObjectPtr_Release(&pm->project);
     AukObjectPtr_Release(&pm->updateListener);
 
@@ -231,8 +254,9 @@ void CloseTrackListView(TrackListView *pm)
 // public close, free private gadget classes
 void CloseTrackListView_StaticClasses()
 {
-    TimeRuleStaticClose();
-    TrackAreaStaticClose();
-    TrackHeaderStaticClose();
     TrackListStaticClose();
+    TrackHeaderStaticClose();
+    TrackAreaStaticClose();
+    TimeRuleStaticClose();
+    InfiniteScrollStaticClose();
 }

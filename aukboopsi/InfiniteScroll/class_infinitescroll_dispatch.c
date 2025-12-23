@@ -87,6 +87,8 @@ ULONG ASM SAVEDS InfiniteScroll_Dispatcher(
         /* Process initial attributes */
         InfiniteScroll_SetAttrs(C,Gad,(struct opSet *)M);
 
+        bdbprintf_new("InfiniteScroll", Gad);
+
         /* means new object OK so far: */
         retval=(ULONG)Gad;
       }
@@ -103,6 +105,8 @@ ULONG ASM SAVEDS InfiniteScroll_Dispatcher(
      break;
 
     case OM_DISPOSE:
+        bdbprintf_dispose("InfiniteScroll", Gad);
+
         /* Dispose all tiles */
         InfiniteScroll_DisposeTiles(gdata);
 

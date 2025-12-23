@@ -91,6 +91,9 @@ ULONG ASM SAVEDS TrackArea_Dispatcher(
 //            retval=(ULONG)Gad;
 //          }
 //        }
+
+        bdbprintf_new("TrackArea", Gad);
+
         // means new object OK so far:
         retval=(ULONG)Gad;
       }
@@ -108,6 +111,8 @@ ULONG ASM SAVEDS TrackArea_Dispatcher(
      break;
 
     case OM_DISPOSE:
+        bdbprintf_dispose("TrackArea", Gad);
+
     #ifdef USE_BEVEL_FRAME
         if(gdata->Bevel) DisposeObject(gdata->Bevel);
     #endif

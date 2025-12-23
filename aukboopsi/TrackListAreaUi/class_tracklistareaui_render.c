@@ -29,6 +29,8 @@
     #include <images/bevel.h>
 #endif
 
+#include <aukarray.h>
+
 /* Most of the calls to boopsi methods are not done from the App's context,
  * but from a specific intuition context, and because of that we can't use DOS calls
  * like dos/Printf() , and also stdlib printf().
@@ -113,7 +115,8 @@ ULONG TrackListAreaUi_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layo
   LONG topedge,leftedge,width,height;
   LONG trackTop;
   ULONG i;
-  struct gpLayout childLayout;
+//  struct gpLayout childLayout;
+//  struct GadgetInfo subGadgetInfo;
 
     gdata=INST_DATA(C, Gad);
 
@@ -122,32 +125,25 @@ ULONG TrackListAreaUi_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layo
     width = Gad->Width;
     height = Gad->Height;
 
-#ifdef USE_BEVEL_FRAME
-    if(gdata->Bevel)
-    {   /* all other attribs that doesnt change are set at NewObject() */
-        SetAttrs((Object *)gdata->Bevel,
-            IA_Left, leftedge,
-            IA_Top,        topedge,
-            IA_Width,      width,
-            IA_Height,     height,
-            BEVEL_ColorMap,(ULONG)layout->gpl_GInfo->gi_Screen->ViewPort.ColorMap,
-            BEVEL_Transparent,TRUE, /* we will draw iside the frame ourselve. */
-            BEVEL_Style,BVS_BUTTON,
-            TAG_DONE);
-        /* consider the effective rectangle is inside the frame. */
-        GetAttr(BEVEL_InnerTop,     gdata->Bevel,(ULONG *) &topedge);
-        GetAttr(BEVEL_InnerLeft,    gdata->Bevel,(ULONG *) &leftedge);
-        GetAttr(BEVEL_InnerWidth,   gdata->Bevel,(ULONG *) &width);
-        GetAttr(BEVEL_InnerHeight,  gdata->Bevel,(ULONG *) &height);
-    }
-#endif
     gdata->_framerec.MinX = leftedge;
     gdata->_framerec.MinY = topedge;
     gdata->_framerec.MaxX = leftedge + width  -1;
     gdata->_framerec.MaxY = topedge  + height -1;
 
+    if(layout->gpl_GInfo)
+    {
+        gdata->window = layout->gpl_GInfo->gi_Window;
+    }
+
+ bdbprintf("TrackListAreaUi_Layout\n");
+//
+
+//    if(layout->gpl_GInfo)
+//    {
+//        subGadgetInfo = *(layout->gpl_GInfo);
+//    }
     /* Layout child gadgets (TrackHeaders and TrackGadgets) */
-    if(gdata->_trackHeaders && gdata->_trackAreas && gdata->_trackCount > 0)
+    if(gdata->_tracks && gdata->_trackCount > 0)
     {
         /* Default track height if not set */
         if(gdata->_trackHeight == 0) gdata->_trackHeight = 40;
@@ -158,13 +154,14 @@ ULONG TrackListAreaUi_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layo
         trackTop = topedge - gdata->_scrollTop;
 
         /* Prepare child layout message */
-        childLayout.MethodID = GM_LAYOUT;
-        childLayout.gpl_GInfo = layout->gpl_GInfo;
-        childLayout.gpl_Initial = 0;
+//        childLayout.MethodID = GM_LAYOUT;
+//        childLayout.gpl_GInfo = layout->gpl_GInfo;
+//        childLayout.gpl_Initial = layout->gpl_Initial;
 
         /* Layout each track row */
         for(i = 0; i < gdata->_trackCount; i++)
         {
+            TrackChild *strack;
             struct Gadget *headerGad;
             struct Gadget *trackGad;
 
@@ -181,8 +178,9 @@ ULONG TrackListAreaUi_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layo
                 break;
             }
 
-            headerGad = (struct Gadget*)gdata->_trackHeaders[i];
-            trackGad = (struct Gadget*)gdata->_trackAreas[i];
+            strack = &gdata->_tracks[i];
+            headerGad = (struct Gadget *) strack->_trackHeader;
+            trackGad = (struct Gadget *) strack->_trackArea;
 
             if(headerGad)
             {
@@ -192,8 +190,9 @@ ULONG TrackListAreaUi_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layo
                 headerGad->Width = gdata->_headerWidth;
                 headerGad->Height = gdata->_trackHeight;
 
-                /* Call child's GM_LAYOUT */
-                DoMethodA((Object*)headerGad, (Msg)&childLayout);
+                /* Call child's GM_LAYOUT */               
+        bdbprintf("  **** go layout header\n");
+            //   DoMethodA((Object*)headerGad, (Msg)&childLayout);
             }
 
             if(trackGad)
@@ -205,7 +204,8 @@ ULONG TrackListAreaUi_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layo
                 trackGad->Height = gdata->_trackHeight;
 
                 /* Call child's GM_LAYOUT */
-                DoMethodA((Object*)trackGad, (Msg)&childLayout);
+        bdbprintf("  **** go layout track\n");
+              // DoMethodA((Object*)trackGad, (Msg)&childLayout);
             }
 
             trackTop += gdata->_trackHeight;
@@ -225,6 +225,8 @@ ULONG TrackListAreaUi_Render(Class *C, struct Gadget *Gad, struct gpRender *Rend
 
   gdata=INST_DATA(C, Gad);
 
+ bdbprintf("TrackListAreaUi_Render\n");
+
   // also sent from GM_GOINACTIVE (4).
   if(Render->MethodID==GM_RENDER)
   {
@@ -236,19 +238,66 @@ ULONG TrackListAreaUi_Render(Class *C, struct Gadget *Gad, struct gpRender *Rend
     rp = ObtainGIRPort(Render->gpr_GInfo);
   }
 
+
+
   if(rp)
   {
+    LONG i;
+    LONG topedge,leftedge,width,height;
+    topedge = Gad->TopEdge;
+    leftedge = Gad->LeftEdge;
+    width = Gad->Width;
+    height = Gad->Height;
+
+    if(gdata->_tracks && gdata->_trackCount > 0)
+    {
+
+        /* Layout each track row */
+        for(i = 0; i < gdata->_trackCount; i++)
+        {
+            TrackChild *strack;
+            struct Gadget *headerGad;
+            struct Gadget *trackGad;
+            strack = &gdata->_tracks[i];
+            headerGad = (struct Gadget*)strack->_trackHeader;
+            trackGad = (struct Gadget*)strack->_trackArea;
+            if(!headerGad || !trackGad) continue;
+            /* Skip tracks that are scrolled out of view (above visible area) */
+            if( ( headerGad->TopEdge + headerGad->Height) < topedge)
+            {
+                continue;
+            }
+
+            /* Stop if track is below visible area */
+            if(headerGad->TopEdge > topedge + height)
+            {
+                break;
+            }
+ bdbprintf(" **would draw\n");
+            /* Call child's GM_RENDER */
+            DoMethodA((Object*)headerGad, (Msg)Render);
+            // C,Gad,(struct gpRender *)M
+            // ULONG TrackListAreaUi_Render(Class *C, struct Gadget *Gad, struct gpRender *Render, ULONG update)
+
+            /* Call child's GM_RENDER */
+
+           DoMethodA((Object*)trackGad, (Msg)Render);
+
+        }
+    }
+
     // vertical drawing management:
     // todo: recursively draw tracks on their projected rectangle
 
     // then draw eventually clear a rectangle of the empty scrool Area.
-  }
+  } // end if rp
   return(retval);
 }
 
 extern struct IClass   *TrackListClassPtr;
 extern struct IClass   *TrackHeaderClassPtr;
 extern struct IClass   *TrackGadgetClassPtr;
+
 
 /** Helper - dispose all allocated gadgets */
 void TrackListAreaUi_DisposeGadgets(TrackListAreaUi *gdata)
@@ -257,36 +306,25 @@ void TrackListAreaUi_DisposeGadgets(TrackListAreaUi *gdata)
     if(!gdata) return;
 
     /* Dispose all TrackHeader gadgets */
-    if(gdata->_trackHeaders)
+    if(gdata->_tracks)
     {
         for(i = 0; i < gdata->_trackCount; i++)
         {
-            if(gdata->_trackHeaders[i])
+            if(gdata->_tracks[i]._trackHeader)
             {
-                DisposeObject(gdata->_trackHeaders[i]);
-                gdata->_trackHeaders[i] = NULL;
+                DisposeObject(gdata->_tracks[i]._trackHeader);
+            }
+            if(gdata->_tracks[i]._trackArea)
+            {
+                DisposeObject(gdata->_tracks[i]._trackArea);
             }
         }
-        FreeVec(gdata->_trackHeaders);
-        gdata->_trackHeaders = NULL;
-    }
 
-    /* Dispose all TrackArea gadgets */
-    if(gdata->_trackAreas)
-    {
-        for(i = 0; i < gdata->_trackCount; i++)
-        {
-            if(gdata->_trackAreas[i])
-            {
-                DisposeObject(gdata->_trackAreas[i]);
-                gdata->_trackAreas[i] = NULL;
-            }
-        }
-        FreeVec(gdata->_trackAreas);
-        gdata->_trackAreas = NULL;
+        FreeVec(gdata->_tracks);
+        gdata->_tracks = NULL;
     }
-
     gdata->_trackCount = 0;
+
 }
 
 /** private,
@@ -298,8 +336,8 @@ static void TrackListAreaUi_updateTrackListUiToData(struct Gadget *Gad)
 {
     TrackListAreaUi *gdata;
     AukAProject *project;
-    ULONG trackCount;
-    ULONG i;
+    ULONG dataTrackCount;
+    ULONG i,nbTracksAlreadyInSync;
 
     if(!TrackListClassPtr || !Gad) return;
     gdata = INST_DATA(TrackListClassPtr, Gad);
@@ -313,39 +351,49 @@ static void TrackListAreaUi_updateTrackListUiToData(struct Gadget *Gad)
     }
 
     /* Get the track count from project */
-    trackCount = AukArray_GetCount(project->tracks);
+    dataTrackCount = AukArray_GetCount(project->tracks);
+
+    /* verify how much it changes */
+//    nbTracksAlreadyInSyncAtStart=0;
+//    nbTracksMinusOneAtEnd=0;
+//    for(i = 0; i < trackCount; i++)
+//    {
+//        _trackCount
+//    }
 
     /* If count changed, reallocate arrays */
-    if(trackCount != gdata->_trackCount)
+    if(dataTrackCount != gdata->_trackCount)
     {
         /* Dispose old gadgets first */
         TrackListAreaUi_DisposeGadgets(gdata);
 
-        if(trackCount > 0)
+        if(dataTrackCount > 0)
         {
             /* Allocate new arrays */
-            gdata->_trackHeaders = (Object**)AllocVec(trackCount * sizeof(Object*), MEMF_CLEAR);
-            gdata->_trackAreas = (Object**)AllocVec(trackCount * sizeof(Object*), MEMF_CLEAR);
+            gdata->_tracks = (TrackChild*)AllocVec(dataTrackCount * sizeof(TrackChild), MEMF_CLEAR);
 
-            if(!gdata->_trackHeaders || !gdata->_trackAreas)
+            if(!gdata->_tracks)
             {
                 /* Allocation failed, cleanup */
                 TrackListAreaUi_DisposeGadgets(gdata);
                 return;
             }
 
-            gdata->_trackCount = trackCount;
+            gdata->_trackCount = dataTrackCount;
 
             /* Create gadgets for each track */
-            for(i = 0; i < trackCount; i++)
+            for(i = 0; i < dataTrackCount; i++)
             {
                 /* Create TrackHeader gadget */
-                gdata->_trackHeaders[i] = NewObject(TRACKHEADER_GetClass(), NULL, TAG_END);
+                gdata->_tracks[i]._trackHeader = NewObject(TRACKHEADER_GetClass(), NULL, TAG_END);
 
                 /* Create TrackArea */
-                gdata->_trackAreas[i] = NewObject(TRACKAREA_GetClass(), NULL, TAG_END);
+                gdata->_tracks[i]._trackArea = NewObject(TRACKAREA_GetClass(), NULL, TAG_END);
 
-                if(!gdata->_trackHeaders[i] || !gdata->_trackAreas[i])
+                /* data we sync: */
+                gdata->_tracks[i]._dataTrack = project->tracks->items[i];
+
+                if(!gdata->_tracks[i]._trackHeader || !gdata->_tracks[i]._trackArea)
                 {
                     /* Failed to create gadgets, cleanup and abort */
                     TrackListAreaUi_DisposeGadgets(gdata);
@@ -354,6 +402,10 @@ static void TrackListAreaUi_updateTrackListUiToData(struct Gadget *Gad)
             }
         }
     }
+    bdbprintf("before RefreshGadget(gad)\n");
+    //RefreshGList(Gad,gdata->window,NULL,1);
+
+
 }
 
 
@@ -375,7 +427,79 @@ void TrackListAreaUi_setTrackList(struct Gadget *Gad,AukAProject *tracklist)
 void TrackListAreaUi_addTrack( struct Gadget *Gad,AukTrack *track)
 {
     /* When a track is added, resync the entire gadget array */
-    TrackListAreaUi_updateTrackListUiToData(Gad);
+    //TrackListAreaUi_updateTrackListUiToData(Gad);
+    TrackListAreaUi *gdata;
+    AukAProject *project;
+    ULONG dataTrackCount;
+    ULONG i,nbTracksAlreadyInSync;
+    TrackChild*ntracks;
+
+    if(!TrackListClassPtr || !Gad) return;
+    gdata = INST_DATA(TrackListClassPtr, Gad);
+
+    project = gdata->_project;
+    if(!project)
+    {
+        /* No project, clean up everything */
+        TrackListAreaUi_DisposeGadgets(gdata);
+        return;
+    }
+
+    /* Get the track count from project */
+    dataTrackCount = AukArray_GetCount(project->tracks);
+    if(dataTrackCount != gdata->_trackCount +1 )
+    {
+        // general update
+        TrackListAreaUi_updateTrackListUiToData(Gad);
+        return;
+    }
+
+    /* If count changed, reallocate arrays */
+
+    /* Allocate new arrays */
+    ntracks = (TrackChild*)AllocVec(dataTrackCount * sizeof(TrackChild), MEMF_CLEAR);
+    if(!ntracks)
+    {
+        /* Allocation failed, cleanup */
+        TrackListAreaUi_DisposeGadgets(gdata);
+        return;
+    }
+    if( gdata->_trackCount>0)
+    {
+        memcpy(ntracks,gdata->_tracks,sizeof(TrackChild)*gdata->_trackCount);
+    }
+    FreeVec(gdata->_tracks);
+    gdata->_tracks = ntracks;
+
+
+
+
+    /* Create gadgets for this track */
+    i = gdata->_trackCount;
+    {
+        /* Create TrackHeader gadget */
+        gdata->_tracks[i]._trackHeader = NewObject(TRACKHEADER_GetClass(), NULL, TAG_END);
+
+        /* Create TrackArea */
+        gdata->_tracks[i]._trackArea = NewObject(TRACKAREA_GetClass(), NULL, TAG_END);
+
+        /* data we sync: */
+        gdata->_tracks[i]._dataTrack = project->tracks->items[i];
+
+        if(!gdata->_tracks[i]._trackHeader || !gdata->_tracks[i]._trackArea)
+        {
+            /* Failed to create gadgets, cleanup and abort */
+            TrackListAreaUi_DisposeGadgets(gdata);
+            return;
+        }
+    }
+
+    gdata->_trackCount = dataTrackCount;
+
+    // - - - - -
+    bdbprintf("before RefreshGadget(gad)\n");
+    //RefreshGList(Gad,gdata->window,NULL,1);
+
 }
 
 void TrackListAreaUi_removeTrack(struct Gadget *Gad,AukTrack *track)

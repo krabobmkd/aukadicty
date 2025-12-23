@@ -43,11 +43,51 @@ void clearbdbprint(void);
  */
 int bdbavailable(void);
 
+/*
+ * bdbprintf_new - Debug print for OM_NEW with instance tracking
+ *
+ * Logs object creation and tracks instance count for leak detection.
+ * Calls bdbprintf internally.
+ *
+ * Parameters:
+ *   className - Name of the BOOPSI class being instantiated
+ *   instance  - Pointer to the created instance
+ *
+ * Returns: number of characters written
+ */
+int bdbprintf_new(const char *className, void *instance);
+
+/*
+ * bdbprintf_dispose - Debug print for OM_DISPOSE with instance tracking
+ *
+ * Logs object disposal and tracks instance count for leak detection.
+ * Calls bdbprintf internally.
+ *
+ * Parameters:
+ *   className - Name of the BOOPSI class being disposed
+ *   instance  - Pointer to the instance being disposed
+ *
+ * Returns: number of characters written
+ */
+int bdbprintf_dispose(const char *className, void *instance);
+
+/*
+ * bdbprintf_report_leaks - Report any leaked BOOPSI instances
+ *
+ * Called automatically via atexit() to report if any objects
+ * were created but not disposed (potential memory leaks).
+ * Prints total created vs disposed counts.
+ */
+void bdbprintf_report_leaks(void);
+
 #else
 INLINE int bdbprintf(const char *format, ...) { return 0; }
 INLINE void flushbdbprint(void) {}
 INLINE void clearbdbprint(void) {}
 INLINE int bdbavailable(void)  { return 0; }
+INLINE int bdbprintf_new(const char *className, void *instance) { return 0; }
+INLINE int bdbprintf_dispose(const char *className, void *instance) { return 0; }
+INLINE void bdbprintf_report_leaks(void) {}
 #endif
 
 #endif /* BDBPRINTF_H */

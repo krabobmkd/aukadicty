@@ -107,7 +107,10 @@ ULONG ASM SAVEDS TimeRule_Dispatcher(
 //            retval=(ULONG)Gad;
 //          }
 //        }
-        // means new object OK so far:
+
+        bdbprintf_new("TimeRule", Gad);
+
+        /* means new object OK so far: */
         retval=(ULONG)Gad;
       }
       break;
@@ -124,6 +127,8 @@ ULONG ASM SAVEDS TimeRule_Dispatcher(
      break;
 
     case OM_DISPOSE:
+        bdbprintf_dispose("TimeRule", Gad);
+
     #ifdef USE_BEVEL_FRAME
         if(gdata->Bevel) DisposeObject(gdata->Bevel);
     #endif
