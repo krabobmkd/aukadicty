@@ -103,74 +103,52 @@ ULONG TrackArea_Domain(Class *C, struct Gadget *Gad, struct gpDomain *D)
   return(1);
 }
 
-/**
- * method GM_LAYOUT
- * The gadget knows its final coordinates,
- * So we may have to resize what's inside our gadget.
- */
-ULONG TrackArea_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout)
+
+ULONG TrackArea_Render_rp( struct RastPort *rp,Class *C, struct Gadget *Gad, struct gpRender *Render)
 {
-  TrackArea *gdata;
   LONG topedge,leftedge,width,height;
-    struct GadgetInfo *gi;
-    int retval;
-
-    retval=1; //DoSuperMethodA(C,(Object *)Gad,(Msg)layout);
-   // if(!retval) return retval;
-
-    gdata=INST_DATA(C, Gad);
-    gi = (layout)?layout->gpl_GInfo:NULL;
+  TrackArea *gdata;
+   int penbg=5,penb=2,penc=3;
+  gdata=INST_DATA(C, Gad);
 
     topedge = Gad->TopEdge;
     leftedge = Gad->LeftEdge;
     width = Gad->Width;
     height = Gad->Height;
 
- bdbprintf("TrackArea_Layout: t:%d l:%d w:%d h:%d\n",topedge,leftedge,width,height);
+    gdata->_framerec.MinX = leftedge+1;
+    gdata->_framerec.MinY = topedge+1;
+    gdata->_framerec.MaxX = leftedge + width  -2;
+    gdata->_framerec.MaxY = topedge  + height -2;
 
-    /* Figure out the size/position of the gadget rectangle, taking relative
-     * positioning into account.
-     */
-    // if (gi) // not proven usefull...
-    // {
+      SetDrMd(rp,JAM1);
+      SetAPen(rp,penbg);
+      RectFill(rp,gdata->_framerec.MinX,
+                  gdata->_framerec.MinY,
+                  gdata->_framerec.MaxX,
+                  gdata->_framerec.MaxY) ;
 
-    // //bdbprintf(" has layout: l:%d t:%d w:%d h:%d\n",(int) gi->gi_Domain.Left,(int) gi->gi_Domain.Top,(int) gi->gi_Domain.Width,(int) gi->gi_Domain.Height);
-    //     if (Gad->Flags & GFLG_RELRIGHT)
-    //         leftedge   += gi->gi_Domain.Width - 1;
-
-    //     if (Gad->Flags & GFLG_RELBOTTOM)
-    //         topedge    += gi->gi_Domain.Height - 1;
-
-    //     if (Gad->Flags & GFLG_RELWIDTH)
-    //         width  += gi->gi_Domain.Width;
-
-    //     if (Gad->Flags & GFLG_RELHEIGHT)
-    //         height += gi->gi_Domain.Height;
-    // } else
-    // {
-    //     bdbprintf(" no layout info\n");
-    // }
-
-    gdata->_framerec.MinX = leftedge;
-    gdata->_framerec.MinY = topedge;
-    gdata->_framerec.MaxX = leftedge + width  -1;
-    gdata->_framerec.MaxY = topedge  + height -1;
-
-
-
-
-  return(retval);
 }
-
 
 /* draw yourself, in the appropriate state */
 ULONG TrackArea_Render(Class *C, struct Gadget *Gad, struct gpRender *Render, ULONG update)
 {
+  LONG topedge,leftedge,width,height;
   TrackArea *gdata;
   struct RastPort *rp; 
   ULONG retval=1;
 
   gdata=INST_DATA(C, Gad);
+
+    topedge = Gad->TopEdge;
+    leftedge = Gad->LeftEdge;
+    width = Gad->Width;
+    height = Gad->Height;
+
+    gdata->_framerec.MinX = leftedge+1;
+    gdata->_framerec.MinY = topedge+1;
+    gdata->_framerec.MaxX = leftedge + width  -2;
+    gdata->_framerec.MaxY = topedge  + height -2;
 
   if(Render->MethodID==GM_RENDER)
   {
@@ -188,26 +166,26 @@ ULONG TrackArea_Render(Class *C, struct Gadget *Gad, struct gpRender *Render, UL
     if(Render->gpr_GInfo)
     {
         struct IBox	 ib =Render->gpr_GInfo->gi_Domain;
-        bdbprintf(" TrackArea_Render domain IBox l:%d t:%d w:%d h:%d\n",(int)ib.Left,(int)ib.Top,(int)ib.Width,(int)ib.Height);
+        bdbprintf(" $$$$ TrackArea_Render domain IBox l:%d t:%d w:%d h:%d\n",(int)ib.Left,(int)ib.Top,(int)ib.Width,(int)ib.Height);
     }
 
 
   if(rp)
   {
-//	int bLayerUpdating=FALSE;
-//    int penbg=1,penb=2,penc=3;
+	int bLayerUpdating=FALSE;
+    int penbg=5,penb=2,penc=3;
 //    struct Region *oldClipRegion;
 
-//	// note from an OS3 official developer: we got to do manage the following:
-//	if( ( rp->Layer->Flags & LAYERUPDATING ) != 0L )
-//	{
-//		bLayerUpdating = TRUE;
-//		EndUpdate(rp->Layer, FALSE);
-//		//bdbprintf(" ****Render->MethodID:%08lx LAYERUPDATING\n",(int)Render->MethodID);
-//	} else
-//	{
+	// note from an OS3 official developer: we got to do manage the following:
+	if( ( rp->Layer->Flags & LAYERUPDATING ) != 0L )
+	{
+		bLayerUpdating = TRUE;
+		EndUpdate(rp->Layer, FALSE);
+		//bdbprintf(" ****Render->MethodID:%08lx LAYERUPDATING\n",(int)Render->MethodID);
+	} else
+	{
 
-//	}
+	}
 
 //    if(Gad->Flags & GFLG_DISABLED) // if disabled, draw background with another color.
 //    {
@@ -226,12 +204,7 @@ ULONG TrackArea_Render(Class *C, struct Gadget *Gad, struct gpRender *Render, UL
 //        oldClipRegion = InstallClipRegion( rp->Layer, gdata->_clipRegion);
 //    #endif
 
-//      SetDrMd(rp,JAM1);
-//      SetAPen(rp,penbg);
-//      RectFill(rp,gdata->_framerec.MinX,
-//                  gdata->_framerec.MinY,
-//                  gdata->_framerec.MaxX,
-//                  gdata->_framerec.MaxY) ;
+    TrackArea_Render_rp(rp,C,Gad,Render);
 //        {
 //            UWORD width = gdata->_framerec.MaxX - gdata->_framerec.MinX;
 //            UWORD height = gdata->_framerec.MaxY - gdata->_framerec.MinY;
@@ -244,10 +217,10 @@ ULONG TrackArea_Render(Class *C, struct Gadget *Gad, struct gpRender *Render, UL
 //            DrawEllipse(rp,xc,yc,width>>2,height>>2);
 //        }
 
-//    if(bLayerUpdating)
-//    {
-//        BeginUpdate(rp->Layer);
-//    }
+    if(bLayerUpdating)
+    {
+        BeginUpdate(rp->Layer);
+    }
 
 //    #ifdef USE_REGION_CLIPPING
 //        InstallClipRegion( rp->Layer,oldClipRegion); // important to pass NULL if oldClipRegion is NULL.

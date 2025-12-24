@@ -69,8 +69,13 @@ typedef struct TrackListAreaUi {
     /* Vertical scroll position */
     LONG _scrollTop;
 
+    /* allow our scroll strategy */
+    struct Region *_clipRegion;
+
     /* needed for refresh */
     struct Window *window;
+
+
 
 } TrackListAreaUi;
 

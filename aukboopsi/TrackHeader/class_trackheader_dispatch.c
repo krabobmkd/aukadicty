@@ -153,9 +153,9 @@ ULONG ASM SAVEDS TrackHeader_Dispatcher(
       TrackHeader_Render(C,Gad,(APTR)M,GREDRAW_UPDATE);
       break;
 
-    case GM_LAYOUT:
-      retval= TrackHeader_Layout(C,Gad,(struct gpLayout *)M);
-      break;
+//    case GM_LAYOUT:
+//      retval= TrackHeader_Layout(C,Gad,(struct gpLayout *)M);
+//      break;
 
     case GM_RENDER:
       retval=TrackHeader_Render(C,Gad,(struct gpRender *)M,0);

@@ -56,6 +56,11 @@
 //    struct TagItem	*gpd_Attrs;	/* Additional attributes */
 //};
 
+
+extern struct IClass   *TrackListClassPtr;
+extern struct IClass   *TrackHeaderClassPtr;
+extern struct IClass   *TrackAreaClassPtr;
+
 ULONG TrackListAreaUi_Domain(Class *C, struct Gadget *Gad, struct gpDomain *D)
 {
   TrackListAreaUi *gdata=0;
@@ -115,7 +120,7 @@ ULONG TrackListAreaUi_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layo
   LONG topedge,leftedge,width,height;
   LONG trackTop;
   ULONG i;
-//  struct gpLayout childLayout;
+  struct gpLayout childLayout;
 //  struct GadgetInfo subGadgetInfo;
 
     gdata=INST_DATA(C, Gad);
@@ -135,7 +140,7 @@ ULONG TrackListAreaUi_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layo
         gdata->window = layout->gpl_GInfo->gi_Window;
     }
 
- bdbprintf("TrackListAreaUi_Layout\n");
+ bdbprintf(" *** TrackListAreaUi_Layout  tracks:%d\n",(int)gdata->_trackCount);
 //
 
 //    if(layout->gpl_GInfo)
@@ -154,9 +159,9 @@ ULONG TrackListAreaUi_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layo
         trackTop = topedge - gdata->_scrollTop;
 
         /* Prepare child layout message */
-//        childLayout.MethodID = GM_LAYOUT;
-//        childLayout.gpl_GInfo = layout->gpl_GInfo;
-//        childLayout.gpl_Initial = layout->gpl_Initial;
+        childLayout.MethodID = GM_LAYOUT;
+        childLayout.gpl_GInfo = layout->gpl_GInfo;
+        childLayout.gpl_Initial = layout->gpl_Initial;
 
         /* Layout each track row */
         for(i = 0; i < gdata->_trackCount; i++)
@@ -191,8 +196,9 @@ ULONG TrackListAreaUi_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layo
                 headerGad->Height = gdata->_trackHeight;
 
                 /* Call child's GM_LAYOUT */               
-        bdbprintf("  **** go layout header\n");
+        bdbprintf("  **** layout header\n");
             //   DoMethodA((Object*)headerGad, (Msg)&childLayout);
+            //   DoGadgetMethodA(headerGad,gdata->window,NULL,(Msg)&childLayout);
             }
 
             if(trackGad)
@@ -204,23 +210,33 @@ ULONG TrackListAreaUi_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layo
                 trackGad->Height = gdata->_trackHeight;
 
                 /* Call child's GM_LAYOUT */
-        bdbprintf("  **** go layout track\n");
+        bdbprintf("  **** layout track\n");
               // DoMethodA((Object*)trackGad, (Msg)&childLayout);
+           //    DoGadgetMethodA(trackGad,gdata->window,NULL,(Msg)&childLayout);
             }
 
             trackTop += gdata->_trackHeight;
         }
     }
 
+    if(gdata->_clipRegion)
+    {
+        ClearRegion(gdata->_clipRegion);
+        OrRectRegion(gdata->_clipRegion, &gdata->_framerec);
+    }
+
   return(1);
 }
 
+//ULONG TrackHeader_Render(Class *C, struct Gadget *Gad, struct gpRender *Render, ULONG update);
+ULONG TrackArea_Render_rp( struct RastPort *rp,Class *C, struct Gadget *Gad, struct gpRender *Render);
+ULONG TrackHeader_Render_rp( struct RastPort *rp,Class *C, struct Gadget *Gad, struct gpRender *Render);
 
 /* draw yourself, in the appropriate state */
 ULONG TrackListAreaUi_Render(Class *C, struct Gadget *Gad, struct gpRender *Render, ULONG update)
 {
   TrackListAreaUi *gdata;
-  struct RastPort *rp; 
+  struct RastPort *rp;
   ULONG retval=1;
 
   gdata=INST_DATA(C, Gad);
@@ -238,16 +254,25 @@ ULONG TrackListAreaUi_Render(Class *C, struct Gadget *Gad, struct gpRender *Rend
     rp = ObtainGIRPort(Render->gpr_GInfo);
   }
 
-
-
   if(rp)
   {
+  	int bLayerUpdating=FALSE;
     LONG i;
     LONG topedge,leftedge,width,height;
     topedge = Gad->TopEdge;
     leftedge = Gad->LeftEdge;
     width = Gad->Width;
     height = Gad->Height;
+    struct Region *oldClipRegion;
+
+	if( ( rp->Layer->Flags & LAYERUPDATING ) != 0L )
+	{
+		bLayerUpdating = TRUE;
+		EndUpdate(rp->Layer, FALSE);
+		//bdbprintf(" ****Render->MethodID:%08lx LAYERUPDATING\n",(int)Render->MethodID);
+	}
+
+    oldClipRegion = InstallClipRegion( rp->Layer, gdata->_clipRegion);
 
     if(gdata->_tracks && gdata->_trackCount > 0)
     {
@@ -275,16 +300,36 @@ ULONG TrackListAreaUi_Render(Class *C, struct Gadget *Gad, struct gpRender *Rend
             }
  bdbprintf(" **would draw\n");
             /* Call child's GM_RENDER */
-            DoMethodA((Object*)headerGad, (Msg)Render);
+          //  DoMethodA((Object*)headerGad, (Msg)Render);
             // C,Gad,(struct gpRender *)M
             // ULONG TrackListAreaUi_Render(Class *C, struct Gadget *Gad, struct gpRender *Render, ULONG update)
 
             /* Call child's GM_RENDER */
 
-           DoMethodA((Object*)trackGad, (Msg)Render);
+
+         //  DoMethodA((Object*)trackGad, (Msg)Render);
+
+
+         if(headerGad->Width>0)
+            TrackHeader_Render_rp(rp,TrackHeaderClassPtr,headerGad,Render);
+//            DoGadgetMethodA(headerGad,gdata->window,NULL,(Msg)Render);
+         if(trackGad->Width>0)
+//            DoGadgetMethodA(trackGad,gdata->window,NULL,(Msg)Render);
+                TrackArea_Render_rp(rp,TrackAreaClassPtr,trackGad,Render);
+
 
         }
     }
+
+    InstallClipRegion( rp->Layer,oldClipRegion); // important to pass NULL if oldClipRegion is NULL.
+
+    if(bLayerUpdating)
+    {
+        BeginUpdate(rp->Layer);
+    }
+
+    if (Render->MethodID != GM_RENDER)
+      ReleaseGIRPort(rp);
 
     // vertical drawing management:
     // todo: recursively draw tracks on their projected rectangle
@@ -294,9 +339,6 @@ ULONG TrackListAreaUi_Render(Class *C, struct Gadget *Gad, struct gpRender *Rend
   return(retval);
 }
 
-extern struct IClass   *TrackListClassPtr;
-extern struct IClass   *TrackHeaderClassPtr;
-extern struct IClass   *TrackGadgetClassPtr;
 
 
 /** Helper - dispose all allocated gadgets */
@@ -312,10 +354,12 @@ void TrackListAreaUi_DisposeGadgets(TrackListAreaUi *gdata)
         {
             if(gdata->_tracks[i]._trackHeader)
             {
+                //if(gdata->window) RemoveGadget(gdata->window,gdata->_tracks[i]._trackHeader);
                 DisposeObject(gdata->_tracks[i]._trackHeader);
             }
             if(gdata->_tracks[i]._trackArea)
             {
+                //if(gdata->window) RemoveGadget(gdata->window,gdata->_tracks[i]._trackArea);
                 DisposeObject(gdata->_tracks[i]._trackArea);
             }
         }
@@ -363,12 +407,14 @@ static void TrackListAreaUi_updateTrackListUiToData(struct Gadget *Gad)
 
     /* If count changed, reallocate arrays */
     if(dataTrackCount != gdata->_trackCount)
-    {
+    {       
         /* Dispose old gadgets first */
         TrackListAreaUi_DisposeGadgets(gdata);
 
         if(dataTrackCount > 0)
         {
+            // UWORD ipos = 65534;
+
             /* Allocate new arrays */
             gdata->_tracks = (TrackChild*)AllocVec(dataTrackCount * sizeof(TrackChild), MEMF_CLEAR);
 
@@ -384,6 +430,7 @@ static void TrackListAreaUi_updateTrackListUiToData(struct Gadget *Gad)
             /* Create gadgets for each track */
             for(i = 0; i < dataTrackCount; i++)
             {
+
                 /* Create TrackHeader gadget */
                 gdata->_tracks[i]._trackHeader = NewObject(TRACKHEADER_GetClass(), NULL, TAG_END);
 
@@ -399,6 +446,17 @@ static void TrackListAreaUi_updateTrackListUiToData(struct Gadget *Gad)
                     TrackListAreaUi_DisposeGadgets(gdata);
                     return;
                 }
+                //
+//                if(gdata->window)
+//                {
+//                    bdbprintf(" *** added with windows !\n");
+//                    ipos = AddGadget(gdata->window,gdata->_tracks[i]._trackHeader,0/*ipos+1*/ );
+//                    ipos = AddGadget(gdata->window,gdata->_tracks[i]._trackArea,0/*ipos+1*/);
+//                } else
+//                {
+//                    bdbprintf(" *** no window yet ??\n");
+//                }
+
             }
         }
     }
@@ -477,6 +535,7 @@ void TrackListAreaUi_addTrack( struct Gadget *Gad,AukTrack *track)
     /* Create gadgets for this track */
     i = gdata->_trackCount;
     {
+         UWORD ipos = 65534;
         /* Create TrackHeader gadget */
         gdata->_tracks[i]._trackHeader = NewObject(TRACKHEADER_GetClass(), NULL, TAG_END);
 
@@ -492,6 +551,16 @@ void TrackListAreaUi_addTrack( struct Gadget *Gad,AukTrack *track)
             TrackListAreaUi_DisposeGadgets(gdata);
             return;
         }
+
+//        if(gdata->window)
+//        {
+//            bdbprintf(" *** added with windows ! %d\n",(int)ipos);
+//            ipos = AddGadget(gdata->window,gdata->_tracks[i]._trackHeader,0/*ipos+1*/ );
+//            ipos = AddGadget(gdata->window,gdata->_tracks[i]._trackArea,0/*ipos+1*/);
+//        } else
+//        {
+//            bdbprintf(" *** no window yet ??\n");
+//        }
     }
 
     gdata->_trackCount = dataTrackCount;

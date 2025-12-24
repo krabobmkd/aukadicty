@@ -74,20 +74,8 @@ ULONG ASM SAVEDS TrackListAreaUi_Dispatcher(
         /* default to false */
         SetSuperAttrs(C,(Object *)Gad, GA_TabCycle,TRUE,TAG_DONE);
 
-#ifdef USE_BEVEL_FRAME
-#ifdef __VBCC__
-          gdata->Bevel= vbNewObject(BEVEL_GetClass(),NULL,
-            BEVEL_Style, BVS_BUTTON,
-            BEVEL_FillPen, -1,
-            TAG_END);
-#else
-          gdata->Bevel= NewObject(BEVEL_GetClass(),NULL,
-            BEVEL_Style, BVS_BUTTON,
-            BEVEL_FillPen, -1,
-            TAG_END);
-#endif
+        gdata->_clipRegion = NewRegion();
 
-#endif
 
  //   Printf("instance:%lx\n",(int)gdata);
 //        SetSuperAttrs(C,Gad, GA_TabCycle,1,TAG_DONE);
@@ -129,10 +117,7 @@ ULONG ASM SAVEDS TrackListAreaUi_Dispatcher(
     case OM_DISPOSE:
         bdbprintf_dispose("TrackListAreaUi", Gad);
 
-    #ifdef USE_BEVEL_FRAME
-        if(gdata->Bevel) DisposeObject(gdata->Bevel);
-    #endif
-
+        if(gdata->_clipRegion) DisposeRegion(gdata->_clipRegion);
         /* Dispose all track gadgets */
         TrackListAreaUi_DisposeGadgets(gdata);
 
@@ -146,14 +131,15 @@ ULONG ASM SAVEDS TrackListAreaUi_Dispatcher(
       break;
 
     case GM_GOACTIVE:
-      Gad->Flags |= GFLG_SELECTED;
-      retval=TrackListAreaUi_HandleInput(C,Gad,(struct gpInput *)M);
+      //Gad->Flags |= GFLG_SELECTED;
+      //retval=TrackListAreaUi_HandleInput(C,Gad,(struct gpInput *)M);
+        return(GMR_NEXTACTIVE );
 //      gad_Render(C,Gad,(APTR)M,GREDRAW_UPDATE);
 //      retval=GMR_MEACTIVE;
       break;
 
     case GM_GOINACTIVE:
-      Gad->Flags &= ~GFLG_SELECTED;
+      //Gad->Flags &= ~GFLG_SELECTED;
       TrackListAreaUi_Render(C,Gad,(APTR)M,GREDRAW_UPDATE);
       break;
 
@@ -166,7 +152,8 @@ ULONG ASM SAVEDS TrackListAreaUi_Dispatcher(
       break;
 
     case GM_HANDLEINPUT:
-      retval=TrackListAreaUi_HandleInput(C,Gad,(struct gpInput *)M);
+     return(GMR_REUSE);
+      //retval=TrackListAreaUi_HandleInput(C,Gad,(struct gpInput *)M);
       break;
 
     case GM_DOMAIN:

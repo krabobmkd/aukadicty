@@ -130,20 +130,20 @@ ULONG ASM SAVEDS TrackArea_Dispatcher(
     case GM_GOACTIVE:
  bdbprintf("GM_GOACTIVE\n");
       Gad->Flags |= GFLG_SELECTED;
-      retval=TrackArea_HandleInput(C,Gad,(struct gpInput *)M);
+  //    retval=TrackArea_HandleInput(C,Gad,(struct gpInput *)M);
 //      gad_Render(C,Gad,(APTR)M,GREDRAW_UPDATE);
-//      retval=GMR_MEACTIVE;
+      retval=GMR_MEACTIVE;
       break;
 
     case GM_GOINACTIVE:
  bdbprintf("GM_GOINACTIVE\n");
       Gad->Flags &= ~GFLG_SELECTED;
-      TrackArea_Render(C,Gad,(APTR)M,GREDRAW_UPDATE);
+   //   TrackArea_Render(C,Gad,(APTR)M,GREDRAW_UPDATE);
       break;
 
-    case GM_LAYOUT:
-      retval= TrackArea_Layout(C,Gad,(struct gpLayout *)M);
-      break;
+//    case GM_LAYOUT:
+//      retval= TrackArea_Layout(C,Gad,(struct gpLayout *)M);
+//      break;
 
     case GM_RENDER:
       retval=TrackArea_Render(C,Gad,(struct gpRender *)M,0);

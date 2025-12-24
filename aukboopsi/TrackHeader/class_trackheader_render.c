@@ -103,65 +103,66 @@ ULONG TrackHeader_Domain(Class *C, struct Gadget *Gad, struct gpDomain *D)
  * The gadget knows its final coordinates,
  * So we may have to resize what's inside our gadget.
  */
-ULONG TrackHeader_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout)
+//ULONG TrackHeader_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout)
+//{
+//  TrackHeader *gdata;
+//  LONG topedge,leftedge,width,height;
+
+//    gdata=INST_DATA(C, Gad);
+
+//    bdbprintf(" $$$ TrackHeader_Layout\n");
+
+//    topedge = Gad->TopEdge;
+//    leftedge = Gad->LeftEdge;
+//    width = Gad->Width;
+//    height = Gad->Height;
+
+//    gdata->_framerec.MinX = leftedge+1;
+//    gdata->_framerec.MinY = topedge+1;
+//    gdata->_framerec.MaxX = leftedge + width  -2;
+//    gdata->_framerec.MaxY = topedge  + height -2;
+
+//  return(1);
+//}
+ULONG TrackHeader_Render_rp( struct RastPort *rp,Class *C, struct Gadget *Gad, struct gpRender *Render)
 {
-  TrackHeader *gdata;
   LONG topedge,leftedge,width,height;
+  TrackHeader *gdata;
+    int penbg=4,penb=2,penc=3;
+  ULONG retval=1;
 
-    gdata=INST_DATA(C, Gad);
-
-    bdbprintf(" *** TrackHeader_Layout\n");
+  gdata=INST_DATA(C, Gad);
 
     topedge = Gad->TopEdge;
     leftedge = Gad->LeftEdge;
     width = Gad->Width;
     height = Gad->Height;
 
-//#ifdef USE_BEVEL_FRAME
-//    if(gdata->Bevel)
-//    {   // all other attribs that doesnt change are set at NewObject()
-//        SetAttrs((Object *)gdata->Bevel,
-//            IA_Left, leftedge,
-//            IA_Top,        topedge,
-//            IA_Width,      width,
-//            IA_Height,     height,
-//            BEVEL_ColorMap,(ULONG)layout->gpl_GInfo->gi_Screen->ViewPort.ColorMap,
-//            BEVEL_Transparent,TRUE, // we will draw iside the frame ourselve.
-//            BEVEL_Style,BVS_BUTTON,
-//            TAG_DONE);
-//        // consider the effective rectangle is inside the frame.
-//        GetAttr(BEVEL_InnerTop,     gdata->Bevel,(ULONG *) &topedge);
-//        GetAttr(BEVEL_InnerLeft,    gdata->Bevel,(ULONG *) &leftedge);
-//        GetAttr(BEVEL_InnerWidth,   gdata->Bevel,(ULONG *) &width);
-//        GetAttr(BEVEL_InnerHeight,  gdata->Bevel,(ULONG *) &height);
-//    }
-//#endif
-    gdata->_framerec.MinX = leftedge;
-    gdata->_framerec.MinY = topedge;
-    gdata->_framerec.MaxX = leftedge + width  -1;
-    gdata->_framerec.MaxY = topedge  + height -1;
+    gdata->_framerec.MinX = leftedge+1;
+    gdata->_framerec.MinY = topedge+1;
+    gdata->_framerec.MaxX = leftedge + width  -2;
+    gdata->_framerec.MaxY = topedge  + height -2;
 
-#ifdef USE_REGION_CLIPPING
+      SetDrMd(rp,JAM1);
+      SetAPen(rp,penbg);
+      RectFill(rp,gdata->_framerec.MinX,
+                  gdata->_framerec.MinY,
+                  gdata->_framerec.MaxX,
+                  gdata->_framerec.MaxY) ;
 
-        ClearRegion(gdata->_clipRegion);
-        OrRectRegion(gdata->_clipRegion, &gdata->_framerec);
-
-#endif
-
-  return(1);
 }
-
 
 /* draw yourself, in the appropriate state */
 ULONG TrackHeader_Render(Class *C, struct Gadget *Gad, struct gpRender *Render, ULONG update)
 {
+  LONG topedge,leftedge,width,height;
   TrackHeader *gdata;
   struct RastPort *rp; 
   ULONG retval=1;
 
   gdata=INST_DATA(C, Gad);
 
-    bdbprintf(" *** TrackHeader_Render\n");
+    bdbprintf(" $$$ TrackHeader_Render\n");
 
   // also sent from GM_GOINACTIVE (4).
   if(Render->MethodID==GM_RENDER)
@@ -177,10 +178,10 @@ ULONG TrackHeader_Render(Class *C, struct Gadget *Gad, struct gpRender *Render, 
   if(rp)
   {
 	int bLayerUpdating=FALSE;
-    int penbg=1,penb=2,penc=3;
+
     struct Region *oldClipRegion;
 
-    bdbprintf(" **** TrackHeader_Render trace MethodID:%08lx Layer flags:%04lx\n",(int)Render->MethodID,(int)rp->Layer->Flags);
+   // bdbprintf(" $$$$ TrackHeader_Render trace MethodID:%08lx Layer flags:%04lx\n",(int)Render->MethodID,(int)rp->Layer->Flags);
 
 	// note from an OS3 official developer: we got to do manage the following:
 	if( ( rp->Layer->Flags & LAYERUPDATING ) != 0L )
@@ -194,10 +195,10 @@ ULONG TrackHeader_Render(Class *C, struct Gadget *Gad, struct gpRender *Render, 
 	}
 
 
-    if(Gad->Flags & GFLG_DISABLED) // if disabled, draw background with another color.
-    {
-        penbg = 0;
-    }
+//    if(Gad->Flags & GFLG_DISABLED) // if disabled, draw background with another color.
+//    {
+//        penbg = 0;
+//    }
 //    #ifdef USE_BEVEL_FRAME
 //        if(gdata->Bevel) DrawImage(rp,gdata->Bevel,0,0);
 //    #endif
@@ -206,12 +207,8 @@ ULONG TrackHeader_Render(Class *C, struct Gadget *Gad, struct gpRender *Render, 
 //        oldClipRegion = InstallClipRegion( rp->Layer, gdata->_clipRegion);
 //    #endif
 
-      SetDrMd(rp,JAM1);
-      SetAPen(rp,penbg);
-      RectFill(rp,gdata->_framerec.MinX,
-                  gdata->_framerec.MinY,
-                  gdata->_framerec.MaxX,
-                  gdata->_framerec.MaxY) ;
+    TrackHeader_Render_rp(rp,C,Gad,Render);
+
 //        {
 //            UWORD width = gdata->_framerec.MaxX - gdata->_framerec.MinX;
 //            UWORD height = gdata->_framerec.MaxY - gdata->_framerec.MinY;
@@ -229,9 +226,6 @@ ULONG TrackHeader_Render(Class *C, struct Gadget *Gad, struct gpRender *Render, 
 			BeginUpdate(rp->Layer);
 		}
 		
-    #ifdef USE_REGION_CLIPPING
-        InstallClipRegion( rp->Layer,oldClipRegion); // important to pass NULL if oldClipRegion is NULL.
-    #endif
 
     if (Render->MethodID != GM_RENDER)
       ReleaseGIRPort(rp);
