@@ -35,7 +35,19 @@
  * Template projects that uses boopsi classes with LoadLibrary() do not.
  */
 #include "bdbprintf.h"
-
+typedef union MsgUnion
+{
+  ULONG  MethodID;
+  // from classusr.h or gadgetclass.h, all starts with MethodID.
+  struct opSet        opSet;
+  struct opUpdate     opUpdate;
+  struct opGet        opGet;
+  struct gpHitTest    gpHitTest;
+  struct gpRender     gpRender;
+  struct gpInput      gpInput;
+  struct gpGoInactive gpGoInactive;
+  struct gpLayout     gpLayout;
+} *Msgs;
 
 /** WATCH OUT ! boopsi docs says:
 *  "the rkmmodelclass dispatcher must be able to run on Intuition's context,
@@ -66,7 +78,7 @@ ULONG ASM SAVEDS TrackListAreaUi_Dispatcher(
         gdata->_tracks = NULL;
         gdata->_trackCount = 0;
         gdata->_headerWidth = 100;  /* default header width */
-        gdata->_trackHeight = 40;   /* default track height */
+        gdata->_defaulTrackHeight = 40;   /* default track height */
         gdata->_scrollTop = 0;
 
         /* set gadget (super class) attributes for this instance like this: */

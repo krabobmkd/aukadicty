@@ -25,6 +25,20 @@
 #include <proto/graphics.h>
 #include <proto/utility.h>
 
+typedef union MsgUnion
+{
+  ULONG  MethodID;
+  // from classusr.h or gadgetclass.h, all starts with MethodID.
+  struct opSet        opSet;
+  struct opUpdate     opUpdate;
+  struct opGet        opGet;
+  struct gpHitTest    gpHitTest;
+  struct gpRender     gpRender;
+  struct gpInput      gpInput;
+  struct gpGoInactive gpGoInactive;
+  struct gpLayout     gpLayout;
+} *Msgs;
+
 /* Most of the calls to boopsi methods are not done from the App's context,
  * but from a specific intuition context, and because of that we can't use DOS calls
  * like dos/Printf() , and also stdlib printf().

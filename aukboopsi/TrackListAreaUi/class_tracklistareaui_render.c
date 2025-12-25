@@ -17,6 +17,8 @@
 #include <intuition/gadgetclass.h>
 #include <utility/tagitem.h>
 
+#include "class_trackarea_private.h"
+
 #include "class_tracklistareaui.h"
 #include "class_tracklistareaui_private.h"
 
@@ -120,8 +122,6 @@ ULONG TrackListAreaUi_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layo
   LONG topedge,leftedge,width,height;
   LONG trackTop;
   ULONG i;
-  struct gpLayout childLayout;
-//  struct GadgetInfo subGadgetInfo;
 
     gdata=INST_DATA(C, Gad);
 
@@ -151,41 +151,46 @@ ULONG TrackListAreaUi_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layo
     if(gdata->_tracks && gdata->_trackCount > 0)
     {
         /* Default track height if not set */
-        if(gdata->_trackHeight == 0) gdata->_trackHeight = 40;
+        if(gdata->_defaulTrackHeight == 0) gdata->_defaulTrackHeight = 40;
         /* Default header width if not set */
         if(gdata->_headerWidth == 0) gdata->_headerWidth = 100;
 
         /* Start from the top, accounting for vertical scroll */
         trackTop = topedge - gdata->_scrollTop;
 
-        /* Prepare child layout message */
-        childLayout.MethodID = GM_LAYOUT;
-        childLayout.gpl_GInfo = layout->gpl_GInfo;
-        childLayout.gpl_Initial = layout->gpl_Initial;
 
         /* Layout each track row */
         for(i = 0; i < gdata->_trackCount; i++)
         {
+            TrackArea *trackArea;
             TrackChild *strack;
             struct Gadget *headerGad;
             struct Gadget *trackGad;
-
-            /* Skip tracks that are scrolled out of view (above visible area) */
-            if(trackTop + gdata->_trackHeight < topedge)
-            {
-                trackTop += gdata->_trackHeight;
-                continue;
-            }
-
-            /* Stop if track is below visible area */
-            if(trackTop > topedge + height)
-            {
-                break;
-            }
+            UWORD trackHeight=0;
 
             strack = &gdata->_tracks[i];
             headerGad = (struct Gadget *) strack->_trackHeader;
             trackGad = (struct Gadget *) strack->_trackArea;
+
+            if(trackGad)
+            {
+                trackArea = INST_DATA(TrackAreaClassPtr, trackGad);
+                trackHeight = trackArea->_prefHeight;
+                if(trackHeight==0) trackHeight = gdata->_defaulTrackHeight;
+            }
+
+            /* Skip tracks that are scrolled out of view (above visible area)
+            disable also if is below visible area
+            */
+            if((trackTop + trackHeight < topedge ) ||
+                (trackTop > topedge + height)
+                 )
+            {
+                headerGad->Width = 0; // how we say it's not layouted.
+                trackGad->Width = 0;
+                trackTop += trackHeight ;
+                continue;
+            }
 
             if(headerGad)
             {
@@ -193,29 +198,28 @@ ULONG TrackListAreaUi_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layo
                 headerGad->LeftEdge = leftedge;
                 headerGad->TopEdge = trackTop;
                 headerGad->Width = gdata->_headerWidth;
-                headerGad->Height = gdata->_trackHeight;
+                headerGad->Height = trackHeight;
 
                 /* Call child's GM_LAYOUT */               
-        bdbprintf("  **** layout header\n");
-            //   DoMethodA((Object*)headerGad, (Msg)&childLayout);
+               DoMethodA((Object*)headerGad, (Msg)layout);
             //   DoGadgetMethodA(headerGad,gdata->window,NULL,(Msg)&childLayout);
             }
 
             if(trackGad)
             {
+
                 /* Position TrackArea on the right, after header */
                 trackGad->LeftEdge = leftedge + gdata->_headerWidth;
                 trackGad->TopEdge = trackTop;
                 trackGad->Width = width - gdata->_headerWidth;
-                trackGad->Height = gdata->_trackHeight;
+                trackGad->Height = trackHeight;
 
                 /* Call child's GM_LAYOUT */
-        bdbprintf("  **** layout track\n");
               // DoMethodA((Object*)trackGad, (Msg)&childLayout);
            //    DoGadgetMethodA(trackGad,gdata->window,NULL,(Msg)&childLayout);
             }
-
-            trackTop += gdata->_trackHeight;
+// _defaulTrackHeight
+            trackTop += trackHeight;
         }
     }
 
@@ -251,7 +255,8 @@ ULONG TrackListAreaUi_Render(Class *C, struct Gadget *Gad, struct gpRender *Rend
   }
   else
   {
-    rp = ObtainGIRPort(Render->gpr_GInfo);
+    return 0; //
+//    rp = ObtainGIRPort(Render->gpr_GInfo);
   }
 
   if(rp)
@@ -306,20 +311,18 @@ ULONG TrackListAreaUi_Render(Class *C, struct Gadget *Gad, struct gpRender *Rend
 
             /* Call child's GM_RENDER */
 
-
-         //  DoMethodA((Object*)trackGad, (Msg)Render);
-
-
-         if(headerGad->Width>0)
-            TrackHeader_Render_rp(rp,TrackHeaderClassPtr,headerGad,Render);
-//            DoGadgetMethodA(headerGad,gdata->window,NULL,(Msg)Render);
-         if(trackGad->Width>0)
-//            DoGadgetMethodA(trackGad,gdata->window,NULL,(Msg)Render);
-                TrackArea_Render_rp(rp,TrackAreaClassPtr,trackGad,Render);
-
-
-        }
-    }
+          // recurse
+         // note wouldn't work for GM_GOINACTIVE redirected to GM_RENDER
+         if(headerGad->Width>0) // if layouted
+         {
+            DoMethodA((Object*)headerGad, (Msg)Render); // not DoGadgetMethodA in that case
+         }
+         if(trackGad->Width>0) // if layouted
+         {
+            DoMethodA((Object*)trackGad, (Msg)Render); // not DoGadgetMethodA in that case
+         }
+        } // end loop per track
+    } // end if any track
 
     InstallClipRegion( rp->Layer,oldClipRegion); // important to pass NULL if oldClipRegion is NULL.
 
@@ -328,8 +331,8 @@ ULONG TrackListAreaUi_Render(Class *C, struct Gadget *Gad, struct gpRender *Rend
         BeginUpdate(rp->Layer);
     }
 
-    if (Render->MethodID != GM_RENDER)
-      ReleaseGIRPort(rp);
+    // if (Render->MethodID != GM_RENDER)
+    //   ReleaseGIRPort(rp);
 
     // vertical drawing management:
     // todo: recursively draw tracks on their projected rectangle

@@ -63,8 +63,8 @@ typedef struct TrackListAreaUi {
 
     /* Fixed width for track headers on the left */
     UWORD _headerWidth;
-    /* Height for each track row */
-    UWORD _trackHeight;
+    /* Default height for each track row, then value in TrackArea gadget */
+    UWORD _defaulTrackHeight;
 
     /* Vertical scroll position */
     LONG _scrollTop;
@@ -95,19 +95,19 @@ void TrackListAreaUi_DisposeGadgets(TrackListAreaUi *gdata);
  *  each  struct also starts with MethodID.
  * and they are the very parameters for each methods.
  */
-typedef union MsgUnion
-{
-  ULONG  MethodID;
-  // from classusr.h or gadgetclass.h, all starts with MethodID.
-  struct opSet        opSet;
-  struct opUpdate     opUpdate;
-  struct opGet        opGet;
-  struct gpHitTest    gpHitTest;
-  struct gpRender     gpRender;
-  struct gpInput      gpInput;
-  struct gpGoInactive gpGoInactive;
-  struct gpLayout     gpLayout;
-} *Msgs;
+// typedef union MsgUnion
+// {
+//   ULONG  MethodID;
+//   // from classusr.h or gadgetclass.h, all starts with MethodID.
+//   struct opSet        opSet;
+//   struct opUpdate     opUpdate;
+//   struct opGet        opGet;
+//   struct gpHitTest    gpHitTest;
+//   struct gpRender     gpRender;
+//   struct gpInput      gpInput;
+//   struct gpGoInactive gpGoInactive;
+//   struct gpLayout     gpLayout;
+// } *Msgs;
 
 /**
 * This is to publish ou data when they change.
@@ -125,15 +125,15 @@ ULONG TrackListAreaUi_NotifyCoords(Class *C, struct Gadget *Gad, struct GadgetIn
  * That said, layout.gadget has tool methods like any library.
  * must be mirrored to equivalent in classinit.s
  */
-struct ExtClassLib
-{
-    struct ClassLibrary cb_ClassLibrary;
+// struct ExtClassLib
+// {
+//     struct ClassLibrary cb_ClassLibrary;
 
-    APTR  cb_SysBase; // this is passed as LibInit
-    APTR  cb_SegList; // this is passed at OpenLib and needed at expunge.
-    // note: old libraries examples adds bases for graphics/intuition/utility after this
-    // but C compiler will only search then in globals...
-};
+//     APTR  cb_SysBase; // this is passed as LibInit
+//     APTR  cb_SegList; // this is passed at OpenLib and needed at expunge.
+//     // note: old libraries examples adds bases for graphics/intuition/utility after this
+//     // but C compiler will only search then in globals...
+// };
 
 #ifdef __cplusplus
 }

@@ -717,6 +717,13 @@ int initProject()
     track1 = project->CreateTrack(project);
     track2 = project->CreateTrack(project);
 
+ project->CreateTrack(project);
+project->CreateTrack(project);
+project->CreateTrack(project);
+project->CreateTrack(project);
+project->CreateTrack(project);
+project->CreateTrack(project);
+
     if (!track1 || !track2) {
         printf("Failed to create tracks\n");
         AukObjectPtr_Release((AukObjectPtr*)&app->_project);

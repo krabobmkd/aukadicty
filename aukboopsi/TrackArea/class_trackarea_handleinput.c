@@ -31,29 +31,6 @@
  */
 #include "bdbprintf.h"
 
-// ULONG TrackArea_DoNotify(struct IClass *C, struct Gadget *Gad, Msg M, ULONG Flags, Tag Tags, ...);
-ULONG TrackArea_NotifyCoords(Class *C, struct Gadget *Gad, struct GadgetInfo	*GInfo)
-{
-    struct opUpdate notifymsg;
-    TrackArea *gdata=INST_DATA(C, Gad);
-    ULONG tags[]={
-        GA_ID,0,
-        TRACKAREA_CenterX,0,
-        TRACKAREA_CenterY,0,
-        TAG_DONE
-    };
-
-    tags[1] = Gad->GadgetID;
-    tags[3] = (LONG)gdata->_circleCenterX;
-    tags[5] = (LONG)gdata->_circleCenterY;
-    notifymsg.MethodID = OM_NOTIFY;
-    notifymsg.opu_AttrList = (struct TagItem *)&tags[0];
-    notifymsg.opu_GInfo = GInfo; // "always there for gadget, in all messages"
-    notifymsg.opu_Flags = 0;
-    return DoSuperMethodA(C,(APTR)Gad,(Msg)&notifymsg );
-
-}
-
 #define MRK_BUFFER_SIZE 3
 
 ULONG TrackArea_HandleInput(Class *C, struct Gadget *Gad, struct gpInput *Input)
@@ -316,23 +293,22 @@ ULONG TrackArea_HandleInput(Class *C, struct Gadget *Gad, struct gpInput *Input)
             }
             else if((Gad->Flags & GFLG_DISABLED)==0) // don't manage clicks if disabled.
             {
-            LONG cx = gdata->_circleCenterX;
-            LONG cy = gdata->_circleCenterY;
 
-            // mouse click inside gadget !
-            // recenter circle proportionaly.
-            if(Gad->Width>0)
-                cx = ((Input->gpi_Mouse).X <<16)/Gad->Width;
-            if(Gad->Height>0)
-                cy = ((Input->gpi_Mouse).Y <<16)/Gad->Height;
 
-              gdata->_MouseMode=1;
-              SetGadgetAttrs(Gad,Input->gpi_GInfo->gi_Window,NULL,
-                    TRACKAREA_CenterX,cx,
-                    TRACKAREA_CenterY,cy,
-                    TAG_END
-                );
-              //TrackArea_Render(C,Gad,(APTR)Input,GREDRAW_UPDATE);
+            // // mouse click inside gadget !
+            // // recenter circle proportionaly.
+            // if(Gad->Width>0)
+            //     cx = ((Input->gpi_Mouse).X <<16)/Gad->Width;
+            // if(Gad->Height>0)
+            //     cy = ((Input->gpi_Mouse).Y <<16)/Gad->Height;
+
+            //   gdata->_MouseMode=1;
+            //   SetGadgetAttrs(Gad,Input->gpi_GInfo->gi_Window,NULL,
+            //         TRACKAREA_CenterX,cx,
+            //         TRACKAREA_CenterY,cy,
+            //         TAG_END
+            //     );
+            //   //TrackArea_Render(C,Gad,(APTR)Input,GREDRAW_UPDATE);
 
               retval = GMR_MEACTIVE;
             }
@@ -361,11 +337,6 @@ ULONG TrackArea_HandleInput(Class *C, struct Gadget *Gad, struct gpInput *Input)
       } // end of IECLASS_RAWMOUSE
       break;
   } // end of ieclass switch
-
-    // if(notifCoords)
-    // {
-    //     TrackArea_NotifyCoords(C,Gad,Input->gpi_GInfo);
-    // }
 
   if(retval!=GMR_MEACTIVE)
   {

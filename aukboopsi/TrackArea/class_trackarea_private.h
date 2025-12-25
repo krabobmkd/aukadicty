@@ -30,16 +30,14 @@ extern "C" {
 * DEVTODO: make this class evolve to retain the data needed to draw and interact with your gadget.
 */
 typedef struct ITrackArea {
-    /* let's say we have coordinates of the center of the circle */
-    UWORD _circleCenterX,_circleCenterY;
+
+    /* configurable height for this track, pixel. */
+    UWORD _prefHeight;
+    UWORD _dum;
 
     /* DEVTODO: we could manage the mouse interaction current state.... */
     ULONG _MouseMode;
     ULONG _EditMode;
-
-    /* would have minimal size here. */
-    UWORD _minimalWidth,_minimalHeight;
-
 
     struct Rectangle _framerec;
 #ifdef USE_REGION_CLIPPING

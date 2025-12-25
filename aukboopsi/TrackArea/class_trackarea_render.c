@@ -87,16 +87,10 @@ ULONG TrackArea_Domain(Class *C, struct Gadget *Gad, struct gpDomain *D)
 
     case GDOMAIN_MINIMUM:
     default:
-     if(gdata)
-     {
-       D->gpd_Domain.Width =gdata->_minimalWidth; // sqrt(gdata->Pens) * 8 + 8;
-       D->gpd_Domain.Height=gdata->_minimalHeight; // sqrt(gdata->Pens) * 8 + 8;
-     }
-     else
-      {
-        D->gpd_Domain.Width=  50;
-        D->gpd_Domain.Height= 50;
-      }
+
+    D->gpd_Domain.Width=  50;
+    D->gpd_Domain.Height= 50;
+
       break;
 
   }
@@ -149,6 +143,8 @@ ULONG TrackArea_Render(Class *C, struct Gadget *Gad, struct gpRender *Render, UL
     gdata->_framerec.MinY = topedge+1;
     gdata->_framerec.MaxX = leftedge + width  -2;
     gdata->_framerec.MaxY = topedge  + height -2;
+
+           bdbprintf(" $$ TrackArea_Render\n");
 
   if(Render->MethodID==GM_RENDER)
   {

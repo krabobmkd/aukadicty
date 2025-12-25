@@ -34,12 +34,12 @@ ULONG TrackArea_GetAttr(Class *C, struct Gadget *Gad, struct opGet *Get)
 
   switch(Get->opg_AttrID)
   {
-    case TRACKAREA_CenterX:
-        *data = (LONG)gdata->_circleCenterX;
-    break;
-    case TRACKAREA_CenterY:
-        *data = (LONG)gdata->_circleCenterY;
-    break;
+    // case TRACKAREA_CenterX:
+    //     *data = (LONG)gdata->_circleCenterX;
+    // break;
+    // case TRACKAREA_CenterY:
+    //     *data = (LONG)gdata->_circleCenterY;
+    // break;
     // super class gadget things. would manage attribs selected/hightlighted, ...
     default:
         DoSuperCall = 1;
@@ -71,23 +71,23 @@ ULONG TrackArea_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
 
     switch(tag->ti_Tag)
     {
-     case TRACKAREA_CenterX:
-        if((UWORD)data != gdata->_circleCenterX )
-        {
-            gdata->_circleCenterX = (UWORD)data ;
-            redraw=1;
-            notifCoords = 1;
-        }
-        break;
-     case TRACKAREA_CenterY:
-        if((UWORD)data != gdata->_circleCenterY )
-        {
-            gdata->_circleCenterY = (UWORD)data ;
+     // case TRACKAREA_CenterX:
+     //    if((UWORD)data != gdata->_circleCenterX )
+     //    {
+     //        gdata->_circleCenterX = (UWORD)data ;
+     //        redraw=1;
+     //        notifCoords = 1;
+     //    }
+     //    break;
+     // case TRACKAREA_CenterY:
+     //    if((UWORD)data != gdata->_circleCenterY )
+     //    {
+     //        gdata->_circleCenterY = (UWORD)data ;
 
-            redraw=1;
-            notifCoords = 1;
-        }
-        break;
+     //        redraw=1;
+     //        notifCoords = 1;
+     //    }
+     //    break;
      // - - - actually we have to manage super class attribs:
      // with GA_XXX and struct Gadget members...
      // is there  a way to super call this ? DoSuperMethodA() deosn't seems to manage these attribs.
