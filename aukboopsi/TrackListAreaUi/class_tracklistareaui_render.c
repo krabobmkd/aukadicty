@@ -26,10 +26,11 @@
 #include "../TrackArea/class_trackarea.h"
 #include "../TrackHeader/class_trackheader.h"
 
-#ifdef USE_BEVEL_FRAME
-    #include <proto/bevel.h>
-    #include <images/bevel.h>
-#endif
+#include <proto/layout.h>
+#include <gadgets/layout.h>
+
+#include <proto/button.h>
+#include <gadgets/button.h>
 
 #include <aukarray.h>
 
@@ -200,8 +201,8 @@ ULONG TrackListAreaUi_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layo
                 headerGad->Width = gdata->_headerWidth;
                 headerGad->Height = trackHeight;
 
-                /* Call child's GM_LAYOUT */               
-               DoMethodA((Object*)headerGad, (Msg)layout);
+                /* Call child's GM_LAYOUT */
+                DoMethodA((Object*)headerGad, (Msg)layout);
             //   DoGadgetMethodA(headerGad,gdata->window,NULL,(Msg)&childLayout);
             }
 
@@ -233,8 +234,8 @@ ULONG TrackListAreaUi_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layo
 }
 
 //ULONG TrackHeader_Render(Class *C, struct Gadget *Gad, struct gpRender *Render, ULONG update);
-ULONG TrackArea_Render_rp( struct RastPort *rp,Class *C, struct Gadget *Gad, struct gpRender *Render);
-ULONG TrackHeader_Render_rp( struct RastPort *rp,Class *C, struct Gadget *Gad, struct gpRender *Render);
+// ULONG TrackArea_Render_rp( struct RastPort *rp,Class *C, struct Gadget *Gad, struct gpRender *Render);
+// ULONG TrackHeader_Render_rp( struct RastPort *rp,Class *C, struct Gadget *Gad, struct gpRender *Render);
 
 /* draw yourself, in the appropriate state */
 ULONG TrackListAreaUi_Render(Class *C, struct Gadget *Gad, struct gpRender *Render, ULONG update)
@@ -374,6 +375,29 @@ void TrackListAreaUi_DisposeGadgets(TrackListAreaUi *gdata)
 
 }
 
+// static Object *CreateHeader()
+// {
+//     Object *LeftVertlayout;
+//     Object *Bt = NewObject( BUTTON_GetClass(),NULL,
+//                                     GA_Text, "Button",
+//                                   //  GA_ID,GAD_BUTTON_ABOUT,
+//                                     GA_RelVerify, TRUE,
+//                          //           GA_Disabled,TRUE,
+//                         // BUTTON_BevelStyle,BVS_NONE,
+//                         // BUTTON_Transparent, TRUE,
+//                                 TAG_END);
+
+//         // in this paragraph we create the layout hierarchy
+//         LeftVertlayout  = (Object *)NewObject( LAYOUT_GetClass(), NULL,
+//                     LAYOUT_Orientation, LAYOUT_ORIENT_VERT,
+//                     LAYOUT_AddChild, Bt,
+//                     TAG_DONE);
+
+
+
+//     return LeftVertlayout;
+// }
+
 /** private,
 * manage synchronisation of tracks
 * alloc/free/realloc Tracks, when needed and recursively
@@ -435,7 +459,9 @@ static void TrackListAreaUi_updateTrackListUiToData(struct Gadget *Gad)
             {
 
                 /* Create TrackHeader gadget */
-                gdata->_tracks[i]._trackHeader = NewObject(TRACKHEADER_GetClass(), NULL, TAG_END);
+                gdata->_tracks[i]._trackHeader = //CreateHeader();
+
+                 NewObject(TRACKHEADER_GetClass(), NULL, TAG_END);
 
                 /* Create TrackArea */
                 gdata->_tracks[i]._trackArea = NewObject(TRACKAREA_GetClass(), NULL, TAG_END);
@@ -540,7 +566,9 @@ void TrackListAreaUi_addTrack( struct Gadget *Gad,AukTrack *track)
     {
          UWORD ipos = 65534;
         /* Create TrackHeader gadget */
-        gdata->_tracks[i]._trackHeader = NewObject(TRACKHEADER_GetClass(), NULL, TAG_END);
+        gdata->_tracks[i]._trackHeader = // CreateHeader();
+
+         NewObject(TRACKHEADER_GetClass(), NULL, TAG_END);
 
         /* Create TrackArea */
         gdata->_tracks[i]._trackArea = NewObject(TRACKAREA_GetClass(), NULL, TAG_END);

@@ -15,6 +15,9 @@
 #include <intuition/classes.h>
 #include <intuition/classusr.h>
 
+#include <proto/layout.h>
+#include <gadgets/layout.h>
+
 #include "class_trackheader_private.h"
 
 #ifdef USE_BEVEL_FRAME
@@ -177,13 +180,18 @@ struct IClass   *TRACKHEADER_GetClass()
 int TrackHeaderStaticInit()
 { 
    if(!TrackHeader_OpenLibs_Dependencies()) return 0;
-    if(TrackHeaderClassPtr=MakeClass(NULL,TrackHeaderSuperClassID,0,sizeof(TrackHeader),0))
+    //if(TrackHeaderClassPtr=MakeClass(NULL,TrackHeaderSuperClassID,0,sizeof(TrackHeader),0))
+    // MakeClass( ClassID, SuperClassID, SuperClassPtr,InstanceSize, Flags )
+    if(TrackHeaderClassPtr=MakeClass(NULL,NULL,LAYOUT_GetClass(),sizeof(TrackHeader),0))
     {
       TrackHeaderClassPtr->cl_Dispatcher.h_Entry=(REHOOKFUNC)TrackHeader_Dispatcher;
      // do not AddClass() when static, no need to publish, TrackHeaderClassPtr will be enough.
+
+     bdbprintf("TrackHeaderClassPtr class ok\n");
       /* Success */
       return(1);
     }
+     bdbprintf("TrackHeaderClassPtr class fail\n");
     return 0;
 }
 

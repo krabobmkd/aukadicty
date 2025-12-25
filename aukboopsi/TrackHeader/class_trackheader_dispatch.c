@@ -15,10 +15,11 @@
 #include "class_trackheader.h"
 #include "class_trackheader_private.h"
 
-#ifdef USE_BEVEL_FRAME
-    #include <proto/bevel.h>
-    #include <images/bevel.h>
-#endif
+#include <proto/layout.h>
+#include <gadgets/layout.h>
+
+#include <proto/button.h>
+#include <gadgets/button.h>
 
 #include <proto/exec.h>
 #include <proto/intuition.h>
@@ -50,7 +51,6 @@ typedef union MsgUnion
  */
 #include "bdbprintf.h"
 
-
 /** WATCH OUT ! boopsi docs says:
 *  "the rkmmodelclass dispatcher must be able to run on Intuition's context,
 *  which puts some limitations on what the dispatcher is permitted to do:
@@ -69,124 +69,124 @@ ULONG ASM SAVEDS TrackHeader_Dispatcher(
   switch(M->MethodID)
   {
     case OM_NEW:
-      if(Gad=(struct Gadget *)DoSuperMethodA(C,(Object *)Gad,(Msg)M))
       {
-        gdata=INST_DATA(C, Gad);
-        // DEVTODO: here you write the default values for your objects.
-        gdata->_circleCenterX = 32767;
-        gdata->_circleCenterY = 32767;
+        Object *VolumeRule,*CloseButton,*NameLabel,*VolumeSlider,*PanSlider,
+                *LeftVertlayout,*CloseAndNameHl;
 
-        gdata->_minimalWidth = 64;
-        gdata->_minimalHeight = 64;
+        CloseButton = NewObject( BUTTON_GetClass(),NULL,
+                                    GA_Text, "X",
+                                  //  GA_ID,GAD_BUTTON_ABOUT,
+                                    GA_RelVerify, TRUE,
+                         //           GA_Disabled,TRUE,
+                        // BUTTON_BevelStyle,BVS_NONE,
+                        // BUTTON_Transparent, TRUE,
+                                TAG_END);
+        NameLabel = NewObject( BUTTON_GetClass(),NULL,
+                                    GA_Text, "Name",
+                                  //  GA_ID,GAD_BUTTON_ABOUT,
+                                    GA_RelVerify, TRUE,
+                         //           GA_Disabled,TRUE,
+                        // BUTTON_BevelStyle,BVS_NONE,
+                        // BUTTON_Transparent, TRUE,
+                                TAG_END);
 
-        // set gadget (super class) attributes for this instance like this:
-        // (BOOL) Indicate whether gadget is part of TAB/SHIFT-TAB cycle.
-        // default to false
-        SetSuperAttrs(C,(Object *)Gad, GA_TabCycle,TRUE,TAG_DONE);
 
-#ifdef USE_REGION_CLIPPING
-    gdata->_clipRegion = NewRegion();
-#endif
-#ifdef USE_BEVEL_FRAME
-#ifdef __VBCC__
-          gdata->Bevel= vbNewObject(BEVEL_GetClass(),NULL,
-            BEVEL_Style, BVS_BUTTON,
-            BEVEL_FillPen, -1,
-            TAG_END);
-#else
-          gdata->Bevel= NewObject(BEVEL_GetClass(),NULL,
-            BEVEL_Style, BVS_BUTTON,
-            BEVEL_FillPen, -1,
-            TAG_END);
-#endif
+        CloseAndNameHl  = (Object *)NewObject( LAYOUT_GetClass(), NULL,
+                    LAYOUT_Orientation, LAYOUT_ORIENT_HORIZ,
+                    LAYOUT_AddChild, CloseButton,
+                     CHILD_WeightedWidth,0,
+                    LAYOUT_AddChild, NameLabel,
+                     CHILD_WeightedWidth,1,
+                    TAG_DONE);
 
-#endif
+        VolumeSlider = NewObject( BUTTON_GetClass(),NULL,
+                                    GA_Text, "VolSlider",
+                                  //  GA_ID,GAD_BUTTON_ABOUT,
+                                    GA_RelVerify, TRUE,
+                         //           GA_Disabled,TRUE,
+                        // BUTTON_BevelStyle,BVS_NONE,
+                        // BUTTON_Transparent, TRUE,
+                                TAG_END);
 
- //   Printf("instance:%lx\n",(int)gdata);
-//        SetSuperAttrs(C,Gad, GA_TabCycle,1,TAG_DONE);
+        // in this paragraph we create the layout hierarchy
+        LeftVertlayout  = (Object *)NewObject( LAYOUT_GetClass(), NULL,
+                    LAYOUT_Orientation, LAYOUT_ORIENT_VERT,
+//                    LAYOUT_BevelStyle, /*BVS_GROUP*/BVS_NONE,
+                    LAYOUT_AddChild, CloseAndNameHl,
+                     CHILD_WeightedHeight,0,
 
-        // DEVTODO:
-        // you could create instances of other objects as members...
-        // to be deleted in OM_DISPOSE of course...
+                    LAYOUT_AddChild, VolumeSlider,
+                     CHILD_WeightedHeight,1,
 
-//        gdata->Pattern=NewObject(0,(UBYTE *)"mlr_ordered.pattern", TAG_DONE);
-//        {
-//          if(gdata->Bevel=BevelObject, BEVEL_Style, BVS_BUTTON, BEVEL_FillPen, -1, End)
-//          {
-//            gdata->Precision=8;
-//            gdata->ShowSelected=1;
+                    TAG_DONE);
 
-//            gad_SetAttrs(C,Gad,(struct opSet *)M);
-//            retval=(ULONG)Gad;
-//          }
-//        }
+        VolumeRule = NewObject( BUTTON_GetClass(),NULL,
+                                    GA_Text, "VR",
+                                  //  GA_ID,GAD_BUTTON_ABOUT,
+                                    GA_RelVerify, TRUE,
+                         //           GA_Disabled,TRUE,
+                        // BUTTON_BevelStyle,BVS_NONE,
+                        // BUTTON_Transparent, TRUE,
+                                TAG_END);
 
-        bdbprintf_new("TrackHeader", Gad);
+/*
+    Object *CloseButton;
+    Object *NameLabel;
 
-        /* means new object OK so far: */
-        retval=(ULONG)Gad;
+    Object  *VolumeSlider;
+    Object  *PanSlider;
+
+    // ------------- H
+    Object *VolumeRule;
+
+*/
+        {
+
+        // we are a layout that forces its parameter...
+        ULONG tags[]={
+            LAYOUT_Orientation, LAYOUT_ORIENT_HORIZ,
+                    LAYOUT_BevelStyle, /*BVS_GROUP*/BVS_NONE,
+                    LAYOUT_AddChild, LeftVertlayout,
+                     CHILD_WeightedWidth,1,
+                    LAYOUT_AddChild, VolumeRule,
+                     CHILD_WeightedWidth,0,
+                    TAG_DONE
+        };
+        struct opSet opset;
+        opset.MethodID = OM_NEW;
+        opset.ops_GInfo = M->opSet.ops_GInfo;
+        opset.ops_AttrList = &tags[0];
+
+          if(Gad=(struct Gadget *)DoSuperMethodA(C,(Object *)Gad,&opset))
+          {
+            gdata=INST_DATA(C, Gad);
+            bdbprintf_new("TrackHeader", Gad);
+
+            gdata->CloseButton = CloseButton;
+            /* means new object OK so far: */
+            retval=(ULONG)Gad;
+          }
+        }
       }
       break;
 
     case OM_UPDATE:
     case OM_SET:
-       // Printf("OM_SET: GadgetID:%ld gad:%lx\n",(int)Gad->GadgetID,(int)Gad);
       retval=DoSuperMethodA(C,(Object *)Gad,(Msg)M);
       TrackHeader_SetAttrs(C,Gad,(struct opSet *)M);
      break;
 
     case OM_GET:
-      TrackHeader_GetAttr(C,Gad,(struct opGet *)M);
+      retval=DoSuperMethodA(C,(Object *)Gad,(Msg)M);
+      //TrackHeader_GetAttr(C,Gad,(struct opGet *)M);
      break;
 
     case OM_DISPOSE:
         bdbprintf_dispose("TrackHeader", Gad);
-
-    #ifdef USE_BEVEL_FRAME
-        if(gdata->Bevel) DisposeObject(gdata->Bevel);
-    #endif
-    #ifdef USE_REGION_CLIPPING
-        if(gdata->_clipRegion) DisposeRegion(gdata->_clipRegion);
-    #endif
       retval=DoSuperMethodA(C,(Object *)Gad,(Msg)M);
       break;
-
-    case GM_HITTEST:
-      retval = GMR_GADGETHIT;
-      break;
-
-    case GM_GOACTIVE:
-      Gad->Flags |= GFLG_SELECTED;
-      retval=TrackHeader_HandleInput(C,Gad,(struct gpInput *)M);
-//      gad_Render(C,Gad,(APTR)M,GREDRAW_UPDATE);
-//      retval=GMR_MEACTIVE;
-      break;
-
-    case GM_GOINACTIVE:
-      Gad->Flags &= ~GFLG_SELECTED;
-      TrackHeader_Render(C,Gad,(APTR)M,GREDRAW_UPDATE);
-      break;
-
-//    case GM_LAYOUT:
-//      retval= TrackHeader_Layout(C,Gad,(struct gpLayout *)M);
-//      break;
-
-    case GM_RENDER:
-      retval=TrackHeader_Render(C,Gad,(struct gpRender *)M,0);
-      break;
-
-    case GM_HANDLEINPUT:
-      retval=TrackHeader_HandleInput(C,Gad,(struct gpInput *)M);
-      break;
-
-    case GM_DOMAIN:
-      TrackHeader_Domain(C, Gad, (APTR)M);
-      retval=1;
-
-    break;
-
     default:
-  //  Printf(" - default unmanaged method - %lx\n",);
+      // for anything, use default layout behaviour.
       retval=DoSuperMethodA(C,(Object *)Gad,(Msg)M);
       break;
   }

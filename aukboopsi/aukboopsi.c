@@ -585,7 +585,7 @@ void guiNotifier(int loglevel, const char *log)
 
 void exitclose(void)
 {
-
+           flushbdbprint();
     printf("exitclose()\n");
     if(app)
     {

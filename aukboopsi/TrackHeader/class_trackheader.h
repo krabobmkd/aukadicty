@@ -9,7 +9,7 @@
 #include <intuition/classes.h>
             #include <inline/macros.h>
 #define VERSION_TRACKHEADER 1
-#define TrackHeader_SUPERCLASS_ID "gadgetclass"
+#define TrackHeader_SUPERCLASS_ID "layout.gadget"
 
 #ifdef TRACKHEADER_STATICLINK
     extern int TrackHeaderStaticInit();
@@ -38,7 +38,7 @@
         #if defined(__VBCC__)
             Class * __TRACKHEADER_GetClass(__reg("a6") void *)="\tjsr\t-$1e(a6)";
             #define TRACKHEADER_GetClass() __TRACKHEADER_GetClass(TrackHeaderBase)
-			// ... could have other functions here			
+			// ... could have other functions here
         #endif
     #endif /* _NO_INLINE */
 
@@ -58,12 +58,12 @@
  */
 // different classes may not use same base.
 //DEVTODO: have another offset for your new class to not collide super class ones and optimize...
-#define TRACKHEADER_Dummy			(TAG_USER+0x04110000)
+#define TRACKHEADER_Dummy			(TAG_USER+0x04190000)
 
-// abstract coordinate from 0 to 65535 , whatever width is.
-#define	TRACKHEADER_CenterX		(TRACKHEADER_Dummy+1)
-// abstract coordinate from 0 to 65535, whatever height is.
-#define	TRACKHEADER_CenterY		(TRACKHEADER_Dummy+2)
+#define TRACKHEADER_Name (TRACKHEADER_Dummy+1)
+#define TRACKHEADER_Pan (TRACKHEADER_Dummy+2)
+#define TRACKHEADER_Volume (TRACKHEADER_Dummy+3)
+
 
 /** DEVTODO: adds attributes definitions here and
  * manage them in class_trackheader_attribs.c

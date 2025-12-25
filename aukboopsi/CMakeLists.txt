@@ -70,8 +70,6 @@ set(AUKBOOPSI_SOURCES
     TrackHeader/class_trackheader_attribs.c
     TrackHeader/class_trackheader_dispatch.c
     TrackHeader/class_trackheader_lib.c
-    TrackHeader/class_trackheader_render.c
-    TrackHeader/class_trackheader_handleinput.c
     TrackHeader/class_trackheader_private.h
     TrackHeader/class_trackheader.h
 
