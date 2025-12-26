@@ -57,6 +57,7 @@ typedef struct sAukTrack AukTrack;
 void TrackListView_setProject(TrackListView *pm,AukAProject *project);
 
 void TrackListView_ListenTrackListMessage(TrackListView *pm,struct opUpdate *M);
+void TrackListView_ListenScrollVMessage(TrackListView *pm,struct opUpdate *M);
 void TrackListView_CheckUpdates(TrackListView *pm);
 
 void CloseTrackListView(TrackListView *pm);

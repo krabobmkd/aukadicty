@@ -180,10 +180,6 @@ ULONG TrackListArea_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout
     gdata->_framerec.MaxX = leftedge + width  -1;
     gdata->_framerec.MaxY = topedge  + height -1;
 
-    if(layout->gpl_GInfo)
-    {
-        gdata->window = layout->gpl_GInfo->gi_Window;
-    }
     prevDomainHeight = gdata->_domainHeight;
 
     /* Layout child gadgets (TrackHeaders and TrackGadgets) */
@@ -196,6 +192,23 @@ ULONG TrackListArea_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout
         /* Default header width if not set */
         if(gdata->_headerWidth == 0) gdata->_headerWidth = 100;
 
+
+        /* count total height first */
+        for(i = 0; i < gdata->_trackCount; i++)
+        {
+            UWORD trackHeight=0;
+            TrackChild *strack;
+            strack = &gdata->_tracks[i];
+            trackHeight = strack->_prefHeight;
+            if(trackHeight==0) trackHeight = gdata->_defaulTrackHeight;
+            totalDomainHeight += trackHeight;
+        }
+
+        if((totalDomainHeight-gdata->_scrollY) < height)
+        {
+            gdata->_scrollY = totalDomainHeight-height;
+        }
+        if(gdata->_scrollY<0) gdata->_scrollY=0;
         /* Start from the top, accounting for vertical scroll */
         trackTop = topedge - gdata->_scrollY;
 
@@ -216,12 +229,12 @@ ULONG TrackListArea_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout
             if(trackGad)
             {
                 trackArea = INST_DATA(TrackAreaClassPtr, trackGad);
-                trackHeight = strack->_prefHeight;
-                if(trackHeight==0) trackHeight = gdata->_defaulTrackHeight;
             }
+            trackHeight = strack->_prefHeight;
+            if(trackHeight==0) trackHeight = gdata->_defaulTrackHeight;
 
             /* Accumulate total domain height */
-            totalDomainHeight += trackHeight;
+
 
             /* Skip tracks that are scrolled out of view (above visible area)
             disable also if is below visible area
@@ -520,9 +533,6 @@ static void TrackListArea_updateTrackListUiToData(struct Gadget *Gad)
             }
         }
     }
-   // bdbprintf("before RefreshGadget(gad)\n");
-    //RefreshGList(Gad,gdata->window,NULL,1);
-
 
 }
 

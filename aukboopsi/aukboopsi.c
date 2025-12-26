@@ -198,8 +198,15 @@ ULONG ASM SAVEDS AppModelDispatch(
 
             if( sender_ID == GAD_TRACKLIST )
             {
+                   bdbprintf(" ( sender_ID == GAD_TRACKLIST )\n");
                 TrackListView_ListenTrackListMessage( &app->tracksListView, &M->opUpdate );
                 retval = 1;
+            } else
+            if(  sender_ID == GAD_SCROLLER_V )
+            {
+             bdbprintf(" ( sender_ID == GAD_SCROLLER_V )\n");
+                TrackListView_ListenScrollVMessage( &app->tracksListView, &M->opUpdate );
+                retval=1;
             }
             //else{...}
             else
@@ -459,6 +466,7 @@ int main(int argc, char **argv)
     /*  Open the window. */
     app->win = boopsi_OpenWindow(app->window_obj);
     if(!app->win) cleanexit("can't open window");
+    app->tracksListView.window = app->win;
 
     updateUIToStates();
 
@@ -521,6 +529,7 @@ int main(int argc, char **argv)
 
                     case WMHI_UNICONIFY:
                         app->win = boopsi_OpenWindow(app->window_obj);
+                        app->tracksListView.window = app->win;
                         if (!app->win) cleanexit("can't open window");
 
                         break;

@@ -89,7 +89,7 @@ typedef struct TrackListArea {
 } TrackListArea;
 
 // internal tool
-ULONG TrackListArea_NotifyAttribValue(Class *C,struct Gadget *Gad, struct GadgetInfo	*GInfo,ULONG attrib, ULONG value);
+ULONG TrackListArea_NotifyAttribValue(struct Gadget *Gad, struct GadgetInfo	*GInfo,ULONG attrib, ULONG value);
 
 ULONG TrackListArea_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set);
 ULONG TrackListArea_GetAttr(Class *C, struct Gadget *Gad, struct opGet *Get);

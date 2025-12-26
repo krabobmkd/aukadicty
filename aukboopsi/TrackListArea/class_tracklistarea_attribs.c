@@ -30,18 +30,18 @@
  * Template projects that uses boopsi classes with LoadLibrary() do not.
  */
 #include "bdbprintf.h"
+extern struct IClass   *TrackListClassPtr;
 
-
-ULONG TrackListArea_NotifyAttribValue(Class *C,struct Gadget *Gad, struct GadgetInfo *GInfo,ULONG attrib, ULONG value)
+ULONG TrackListArea_NotifyAttribValue(struct Gadget *Gad, struct GadgetInfo *GInfo,ULONG attrib, ULONG value)
 {
     struct opUpdate notifymsg;
-    TrackListArea *gdata=INST_DATA(C, Gad);
+    TrackListArea *gdata=INST_DATA(TrackListClassPtr, Gad);
     ULONG tags[]={
      GA_ID,0,
      0,0,
      TAG_DONE
     };
-
+ bdbprintf(" **** TrackListArea_NotifyAttribValue: Gad->GadgetID:%d \n",Gad->GadgetID);
     tags[1] = Gad->GadgetID;
     tags[2] = attrib;
     tags[3] = value;
@@ -50,7 +50,7 @@ ULONG TrackListArea_NotifyAttribValue(Class *C,struct Gadget *Gad, struct Gadget
     notifymsg.opu_GInfo = GInfo; // "always there for gadget, in all messages"
     notifymsg.opu_Flags = 0;
 
-    return DoSuperMethodA(C,(APTR)Gad,(Msg)&notifymsg );
+    return DoSuperMethodA(TrackListClassPtr,(APTR)Gad,(Msg)&notifymsg );
 }
 
 
@@ -112,8 +112,8 @@ ULONG TrackListArea_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
           if(gdata->_scrollY != newScrollY)
           {
             gdata->_scrollY = newScrollY;
-    bdbprintf(" **** TrackListArea_SetAttrs: newScrollY:%d \n",newScrollY);
-            TrackListArea_NotifyAttribValue(C,Gad,Set->ops_GInfo, TRACKLIST_ScrollY, newScrollY);
+  //  bdbprintf(" **** TrackListArea_SetAttrs: newScrollY:%d  Gad->GadgetID:%d\n",newScrollY,Gad->GadgetID);
+            TrackListArea_NotifyAttribValue(Gad,Set->ops_GInfo, TRACKLIST_ScrollY, newScrollY);
           }
         }
         break;

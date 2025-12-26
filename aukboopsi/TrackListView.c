@@ -50,11 +50,14 @@ extern struct Task	*myTask;
 
 void cleanexit(const char *pmessage);
 
-/* Mapping array to connect scroller to trackList scroll position */
-static const struct TagItem map_scrollerV_to_scrollY[] = {
-    { SCROLLER_Top, TRACKLIST_ScrollY },
-    { TAG_END, 0 }
-};
+/* Mapping array to connect scroller to trackList scroll position
+    it gaves the wrong Gad at target message notify, it's the sender object with the target dispatcher !
+    Totally stop using that, all messages are sent to AppModel to be redispatched.
+*/
+//static const struct TagItem map_scrollerV_to_scrollY[] = {
+//    { SCROLLER_Top, TRACKLIST_ScrollY },
+//    { TAG_END, 0 }
+//};
 
 void CreateTrackListView(TrackListView *pm,struct DrawInfo *drawInfo,
                 Object *appModel,
@@ -89,8 +92,10 @@ void CreateTrackListView(TrackListView *pm,struct DrawInfo *drawInfo,
                                 SCROLLER_Visible, 40,
                                 SCROLLER_Orientation, FREEVERT,
                                 SCROLLER_Stretch,TRUE,
-                                ICA_TARGET, pm->trackList,
-                                ICA_MAP, (ULONG)map_scrollerV_to_scrollY,
+                                GA_ID,GAD_SCROLLER_V,
+                                ICA_TARGET,appModel,
+                                //ICA_TARGET, pm->trackList, // this send uncorrect Gad to target !!
+                                //ICA_MAP, (ULONG)map_scrollerV_to_scrollY,
                                 TAG_END);
 
     pm->subBHl = (Object *)NewObject( LAYOUT_GetClass(), NULL,
@@ -282,6 +287,40 @@ void updateVerticalScrollDomain(TrackListView *pm)
 ////        SCROLLER_Top, scrollTop,
 //        TAG_END);
 }
+void TrackListView_RefreshTrackListArea(TrackListView *pm)
+{
+    if(!pm->window) return;
+
+    struct RastPort *rp = pm->window->RPort;
+
+   bdbprintf(" **** TrackListView_RefreshTrackListArea\n");
+
+    // - - - - layout
+    {
+        struct GadgetInfo gi={0};
+        struct gpLayout gpl;
+        gpl.MethodID = GM_LAYOUT;
+        gpl.gpl_GInfo = &gi;
+        gpl.gpl_Initial = 0;
+        gi.gi_Window = pm->window;
+        gi.gi_RastPort = rp;
+
+        DoMethodA((Object *)pm->trackList,(Msg)&gpl);
+    }
+
+    // - - -  -render
+    {
+        struct GadgetInfo gi={0};
+        struct gpRender gpr;
+        gpr.MethodID = GM_RENDER;
+        gpr.gpr_GInfo = &gi;
+        gpr.gpr_RPort = rp;
+        gpr.gpr_Redraw = 1;
+
+        DoMethodA((Object *)pm->trackList,(Msg)&gpr);
+    }
+
+}
 
 void TrackListView_setProject(TrackListView *pm,AukAProject *project)
 {
@@ -306,8 +345,9 @@ void TrackListView_ListenTrackListMessage(TrackListView *pm,struct opUpdate *M)
 {
     struct TagItem *ptag;
     ULONG changedDomainHeight=0;
-    // here we know that sender is GA_ID == GAD_TRACKLIST
-
+    /* here we know that sender is GA_ID == GAD_TRACKLIST
+      We listen to change and actually delay application to next loop, to avoid inter signal recursions...
+    */
     if((ptag = FindTagItem( TRACKLIST_DomainHeight,M->opu_AttrList ))!=NULL) changedDomainHeight = ptag->ti_Data;
     if(changedDomainHeight >0)
     {
@@ -316,10 +356,33 @@ void TrackListView_ListenTrackListMessage(TrackListView *pm,struct opUpdate *M)
         if(myTask) Signal(myTask,SIGBREAKF_CTRL_F);
        //delay updateVerticalScrollDomain(pm);
     }
+       bdbprintf(" **** TrackListView_ListenTrackListMessage\n");
+
+    if((ptag = FindTagItem( TRACKLIST_ScrollY,M->opu_AttrList ))!=NULL)
+    {
+        pm->updateBits |= TLVB_UPDATE_FULLREDRAW;
+        if(myTask) Signal(myTask,SIGBREAKF_CTRL_F);
+    }
+
+}
+void TrackListView_ListenScrollVMessage(TrackListView *pm,struct opUpdate *M)
+{
+    struct TagItem *ptag;
+    if((ptag = FindTagItem( SCROLLER_Top,M->opu_AttrList ))!=NULL)
+    {
+        LONG scrollY = ptag->ti_Data;
+        SetGadgetAttrs((struct Gadget *)pm->trackList, pm->window, NULL,
+                    TRACKLIST_ScrollY,scrollY,
+                    TAG_END
+                );
+    }
+
+
 }
 void TrackListView_CheckUpdates(TrackListView *pm)
 {
     if(pm->updateBits & TLVB_UPDATE_VERTSCROLLDOMAIN) updateVerticalScrollDomain(pm);
+    if(pm->updateBits & TLVB_UPDATE_FULLREDRAW) TrackListView_RefreshTrackListArea(pm);
 
     pm->updateBits = 0;
 }

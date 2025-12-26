@@ -122,20 +122,20 @@ ULONG TimeRule_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
 
   if(redraw | update)
   {
-    struct RastPort *rp;
+//    struct RastPort *rp;
 
-    if(rp=ObtainGIRPort(Set->ops_GInfo))
-    {
-        // freeze with "..." call with GCC6.5, use local struct works 100%.
-        struct gpRender gpr;
-        gpr.MethodID = GM_RENDER;
-        gpr.gpr_GInfo = Set->ops_GInfo;
-        gpr.gpr_RPort = rp;
-        gpr.gpr_Redraw = (redraw?GREDRAW_REDRAW:GREDRAW_UPDATE);
+//    if(rp=ObtainGIRPort(Set->ops_GInfo))
+//    {
+//        // freeze with "..." call with GCC6.5, use local struct works 100%.
+//        struct gpRender gpr;
+//        gpr.MethodID = GM_RENDER;
+//        gpr.gpr_GInfo = Set->ops_GInfo;
+//        gpr.gpr_RPort = rp;
+//        gpr.gpr_Redraw = (redraw?GREDRAW_REDRAW:GREDRAW_UPDATE);
 
-        DoMethodA((Object *)Gad,(Msg)&gpr.MethodID);
-        ReleaseGIRPort(rp);
-    }
+//        DoMethodA((Object *)Gad,(Msg)&gpr.MethodID);
+//        ReleaseGIRPort(rp);
+//    }
 
     if(notifCoords)
     {

@@ -134,29 +134,6 @@ ULONG TrackHeader_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
     } // end switch
   } // end for
 
-  if(redraw | update)
-  {
-    struct RastPort *rp;
-
-    if(rp=ObtainGIRPort(Set->ops_GInfo))
-    {
-        // freeze with "..." call with GCC6.5, use local struct works 100%.
-        struct gpRender gpr;
-        gpr.MethodID = GM_RENDER;
-        gpr.gpr_GInfo = Set->ops_GInfo;
-        gpr.gpr_RPort = rp;
-        gpr.gpr_Redraw = (redraw?GREDRAW_REDRAW:GREDRAW_UPDATE);
-
-        DoMethodA((Object *)Gad,(Msg)&gpr.MethodID);
-        ReleaseGIRPort(rp);
-    }
-
-    if(notifCoords)
-    {
-        TrackHeader_NotifyCoords(C,Gad,Set->ops_GInfo);
-    }
-  }
-
   return(redraw| update);
 }
 
