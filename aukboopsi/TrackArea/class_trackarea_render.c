@@ -144,7 +144,7 @@ ULONG TrackArea_Render(Class *C, struct Gadget *Gad, struct gpRender *Render, UL
     gdata->_framerec.MaxX = leftedge + width  -2;
     gdata->_framerec.MaxY = topedge  + height -2;
 
-           bdbprintf(" $$ TrackArea_Render\n");
+        //   bdbprintf(" $$ TrackArea_Render\n");
 
   if(Render->MethodID==GM_RENDER)
   {
@@ -162,7 +162,7 @@ ULONG TrackArea_Render(Class *C, struct Gadget *Gad, struct gpRender *Render, UL
     if(Render->gpr_GInfo)
     {
         struct IBox	 ib =Render->gpr_GInfo->gi_Domain;
-        bdbprintf(" $$$$ TrackArea_Render domain IBox l:%d t:%d w:%d h:%d\n",(int)ib.Left,(int)ib.Top,(int)ib.Width,(int)ib.Height);
+        //bdbprintf(" $$$$ TrackArea_Render domain IBox l:%d t:%d w:%d h:%d\n",(int)ib.Left,(int)ib.Top,(int)ib.Width,(int)ib.Height);
     }
 
 

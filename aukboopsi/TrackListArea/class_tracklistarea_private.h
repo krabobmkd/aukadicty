@@ -2,7 +2,7 @@
 #define _CLASS_TRACKLISTPRIVATE_H_
 
 #include "compilers.h"
-#include "class_tracklistareaui.h"
+#include "class_tracklistarea.h"
 
 // not much sense because c++ static runtime are hard to link.
 #ifdef __cplusplus
@@ -28,20 +28,22 @@ typedef struct TrackChild{
     AukTrack *_dataTrack; // corresponding data
     Object *_trackHeader; // TrackHeader gadget
     Object *_trackArea; // TrackArea gadget
+    /* configurable height for this track, pixel. */
+    UWORD _prefHeight;
 } TrackChild;
 
 /**
 *
 * an important principle of boopsi is that structure for the class is hidden to the consumers.
-*  - yes, but as TrackListAreaUi is an internal class, we use the private methods in the main for the moment.
-*  We use TrackListAreaUi as a layout boopsi gadget, that allocates/place/free automatically boopsi Track gadgets,
+*  - yes, but as TrackListArea is an internal class, we use the private methods in the main for the moment.
+*  We use TrackListArea as a layout boopsi gadget, that allocates/place/free automatically boopsi Track gadgets,
 *  to mirror the data tracks, and we layout them like if we were a vertical scroll area.
 *  then boopsi Track gadgets acts as layouts placnig
 *  boopsi objects Tracks, itself acting
 *
 *  in charge of allocating, layouting and  boopsi class
 */
-typedef struct TrackListAreaUi {
+typedef struct TrackListArea {
 
     // DEVTODO: we could manage the mouse interaction current state....
     // ULONG _MouseMode;
@@ -66,8 +68,15 @@ typedef struct TrackListAreaUi {
     /* Default height for each track row, then value in TrackArea gadget */
     UWORD _defaulTrackHeight;
 
-    /* Vertical scroll position */
-    LONG _scrollTop;
+    /* Vertical scroll position (first visible pixel line) */
+    LONG _scrollY;
+
+    /* Total domain height (sum of all track heights), updated in Layout */
+    ULONG _domainHeight;
+    /* check for change at layout*/
+    ULONG _prevHeight;
+    /* Pointer to AukStyleSheet for visual styling */
+    struct AukStyleSheet *_styleSheet;
 
     /* allow our scroll strategy */
     struct Region *_clipRegion;
@@ -77,17 +86,20 @@ typedef struct TrackListAreaUi {
 
 
 
-} TrackListAreaUi;
+} TrackListArea;
 
-ULONG TrackListAreaUi_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set);
-ULONG TrackListAreaUi_GetAttr(Class *C, struct Gadget *Gad, struct opGet *Get);
-ULONG TrackListAreaUi_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout);
-ULONG TrackListAreaUi_Render(Class *C, struct Gadget *Gad, struct gpRender *Render, ULONG update);
-ULONG TrackListAreaUi_HandleInput(Class *C, struct Gadget *Gad, struct gpInput *Input);
-ULONG TrackListAreaUi_Domain(Class *C, struct Gadget *Gad, struct gpDomain *D);
+// internal tool
+ULONG TrackListArea_NotifyAttribValue(Class *C,struct Gadget *Gad, struct GadgetInfo	*GInfo,ULONG attrib, ULONG value);
+
+ULONG TrackListArea_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set);
+ULONG TrackListArea_GetAttr(Class *C, struct Gadget *Gad, struct opGet *Get);
+ULONG TrackListArea_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout);
+ULONG TrackListArea_Render(Class *C, struct Gadget *Gad, struct gpRender *Render, ULONG update);
+ULONG TrackListArea_HandleInput(Class *C, struct Gadget *Gad, struct gpInput *Input);
+ULONG TrackListArea_Domain(Class *C, struct Gadget *Gad, struct gpDomain *D);
 
 /* Helper to dispose all gadget arrays */
-void TrackListAreaUi_DisposeGadgets(TrackListAreaUi *gdata);
+void TrackListArea_DisposeGadgets(TrackListArea *gdata);
 
 /* - - - - -- - */
 
@@ -114,7 +126,7 @@ void TrackListAreaUi_DisposeGadgets(TrackListAreaUi *gdata);
 * It may be better to just notify what change and have many notify functions per theme.
 * Some examples use only one Notify which send all attribs.
 */
-ULONG TrackListAreaUi_NotifyCoords(Class *C, struct Gadget *Gad, struct GadgetInfo	*GInfo);
+ULONG TrackListArea_NotifyCoords(Class *C, struct Gadget *Gad, struct GadgetInfo	*GInfo);
 
 /** this is the struct that is the extended struct Library
  * That is created with OpenLibrary().

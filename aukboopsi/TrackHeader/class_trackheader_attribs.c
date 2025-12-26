@@ -81,6 +81,10 @@ ULONG TrackHeader_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
 
     switch(tag->ti_Tag)
     {
+      case TRACKHEADER_StyleSheet:
+        gdata->_styleSheet = (struct AukStyleSheet *)data;
+        break;
+
      // case TRACKHEADER_CenterX:
      //    if((UWORD)data != gdata->_circleCenterX )
      //    {

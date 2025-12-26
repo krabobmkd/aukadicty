@@ -55,6 +55,7 @@
 #include <proto/asl.h>
 #include <libraries/asl.h>
 
+#include "gadgetid.h"
 #include "TrackListView.h"
 
 //#include "aukaproject.h"
@@ -126,12 +127,6 @@ typedef union MsgUnion
   struct gpLayout     gpLayout;
 } *Msgs;
 
-/* Gadget action IDs, just to demonstrate some interactions
- */
-#define GAD_BUTTONXXX 1
-#define GAD_BUTTON_ABOUT 2
-
-
 // all app related variables are here:
 struct App
 {
@@ -149,12 +144,8 @@ struct App
         Object *horizontallayoutA;
          //   Object *titlelabel;
             Object* btAbout;
-        // Object *horizontallayoutB;
-        //     Object *HeaderZone;
-        //     Object *TrackVertLZone;
-        //     Object *TrackVirtZone;
-        TrackListView tracksListView;
 
+        TrackListView tracksListView;
 
             // status bar
         Object *horizontallayoutC;
@@ -199,19 +190,19 @@ ULONG ASM SAVEDS AppModelDispatch(
     case OM_UPDATE:
         {
             struct TagItem *ptag;
-            // here receive events from gadgets as target.
+            // here receive events from gadgets which ICA_TARGET is appModel.
             ULONG sender_ID=0;
             if((ptag = FindTagItem( GA_ID,M->opUpdate.opu_AttrList ))!=NULL) sender_ID = ptag->ti_Data;
             // our gadget is notifying new clicked coordinates!
             // note any button action is either managed here or in more generic main loop
 
-            // if( sender_ID >= GAD_START_SELECT_TEMPLATE)
-            // {
-            // } else
-            // if( sender_ID == GAD_BUTTON_GENERATE )
-            // {
-            //     retval = 1;
-            // } else
+            if( sender_ID == GAD_TRACKLIST )
+            {
+                TrackListView_ListenTrackListMessage( &app->tracksListView, &M->opUpdate );
+                retval = 1;
+            }
+            //else{...}
+            else
             {
                 retval=DoSuperMethodA(C,(Object *)obj,(Msg)M);
             }
@@ -381,7 +372,7 @@ int main(int argc, char **argv)
     }
 
 
-    CreateTrackListView(&app->tracksListView,app->drawInfo, 64,app->fontHeight);
+    CreateTrackListView(&app->tracksListView,app->drawInfo, AppInstance, 64,app->fontHeight);
 
     {
         app->statusbarlabel = (Object *)NewObject( BUTTON_GetClass(),NULL,
@@ -469,7 +460,6 @@ int main(int argc, char **argv)
     app->win = boopsi_OpenWindow(app->window_obj);
     if(!app->win) cleanexit("can't open window");
 
-
     updateUIToStates();
 
     initProject();
@@ -482,18 +472,19 @@ int main(int argc, char **argv)
 
 
     {
-        ULONG signal;
+        ULONG winsignal;
         BOOL ok = TRUE;
 
         /* Obtain the window wait signal mask.*/
-        GetAttr(WINDOW_SigMask, app->window_obj, &signal);
+        GetAttr(WINDOW_SigMask, app->window_obj, &winsignal);
 
         /* Input Event Loop */
         while (ok)
         {
-            ULONG result;
+            ULONG result,currentSignal;
 
-            Wait(signal | (1L << app->app_port->mp_SigBit) | SIGBREAKF_CTRL_F);
+            currentSignal = Wait(winsignal | (1L << app->app_port->mp_SigBit) | SIGBREAKF_CTRL_F);
+
            flushbdbprint();
             /* CA_HandleInput() returns the gadget ID of a clicked
              * gadget, or one of several pre-defined values.  For
@@ -517,29 +508,10 @@ int main(int argc, char **argv)
 
                     case WMHI_GADGETUP:
                     {
-                        ULONG gid = result &0xffff;
-                       // printf("up gid:%d\n",gid);
-//                        if(gid>=GAD_START_SELECT_TEMPLATE)
-//                        {   // toggle button: which state ?
-
-////                            gid -= GAD_START_SELECT_TEMPLATE;
-////                            if(app->TemplateButtonsList[gid])
-////                            {
-////                                 int selected = 0;
-////                                GetAttr(GA_Selected, app->TemplateButtonsList[gid], &selected);
-////                                if(selected)  selectTemplate(gid);
-////                            }
-
-
-//                        } else if(gid == GAD_BUTTON_GENERATE)
+//                        if(gid == GAD_BUTTON_ABOUT)
 //                        {
-//                            //generate();
-//                        } else
-
-                        if(gid == GAD_BUTTON_ABOUT)
-                        {
-                            openAboutReq();
-                        }
+//                            openAboutReq();
+//                        }
                         break;
                     }
                     case WMHI_ICONIFY:
@@ -559,6 +531,12 @@ int main(int argc, char **argv)
 
 
             } // end while messages
+
+            // delay some messages to avoid big graphic update recursion
+            if(app->tracksListView.updateBits)
+            {
+                TrackListView_CheckUpdates(&app->tracksListView);
+            }
         } // end while app loop
     } // loop paragraph end
 
@@ -719,10 +697,10 @@ int initProject()
 
  project->CreateTrack(project);
 project->CreateTrack(project);
-project->CreateTrack(project);
-project->CreateTrack(project);
-project->CreateTrack(project);
-project->CreateTrack(project);
+//project->CreateTrack(project);
+//project->CreateTrack(project);
+//project->CreateTrack(project);
+//project->CreateTrack(project);
 
     if (!track1 || !track2) {
         printf("Failed to create tracks\n");

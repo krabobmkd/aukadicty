@@ -183,7 +183,7 @@ ULONG TimeRule_Render(Class *C, struct Gadget *Gad, struct gpRender *Render, ULO
     int penbg=2,penb=2,penc=3;
     struct Region *oldClipRegion;
 
-    bdbprintf(" **** TimeRule_Render trace MethodID:%08lx Layer flags:%04lx\n",(int)Render->MethodID,(int)rp->Layer->Flags);
+  //  bdbprintf(" **** TimeRule_Render trace MethodID:%08lx Layer flags:%04lx\n",(int)Render->MethodID,(int)rp->Layer->Flags);
 
 	// note from an OS3 official developer: we got to do manage the following:
 	if( ( rp->Layer->Flags & LAYERUPDATING ) != 0L )

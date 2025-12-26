@@ -93,6 +93,12 @@ ULONG ASM SAVEDS TrackHeader_Dispatcher(
 
         CloseAndNameHl  = (Object *)NewObject( LAYOUT_GetClass(), NULL,
                     LAYOUT_Orientation, LAYOUT_ORIENT_HORIZ,
+            LAYOUT_DeferLayout, TRUE, // Layout refreshes done on task's context (by thewindow class)
+            LAYOUT_BottomSpacing, 0,
+            LAYOUT_TopSpacing,0,
+            LAYOUT_LeftSpacing,0,
+            LAYOUT_RightSpacing,0,
+            LAYOUT_InnerSpacing,1,
                     LAYOUT_AddChild, CloseButton,
                      CHILD_WeightedWidth,0,
                     LAYOUT_AddChild, NameLabel,
@@ -111,6 +117,14 @@ ULONG ASM SAVEDS TrackHeader_Dispatcher(
         // in this paragraph we create the layout hierarchy
         LeftVertlayout  = (Object *)NewObject( LAYOUT_GetClass(), NULL,
                     LAYOUT_Orientation, LAYOUT_ORIENT_VERT,
+            LAYOUT_BevelStyle,BVS_NONE,
+            LAYOUT_DeferLayout, TRUE, // Layout refreshes done on task's context (by thewindow class)
+            LAYOUT_BottomSpacing, 0,
+            LAYOUT_TopSpacing,0,
+            LAYOUT_LeftSpacing,0,
+            LAYOUT_RightSpacing,0,
+            LAYOUT_InnerSpacing,1,
+
 //                    LAYOUT_BevelStyle, /*BVS_GROUP*/BVS_NONE,
                     LAYOUT_AddChild, CloseAndNameHl,
                      CHILD_WeightedHeight,0,
@@ -145,6 +159,13 @@ ULONG ASM SAVEDS TrackHeader_Dispatcher(
         // we are a layout that forces its parameter...
         ULONG tags[]={
             LAYOUT_Orientation, LAYOUT_ORIENT_HORIZ,
+            LAYOUT_DeferLayout, TRUE, // Layout refreshes done on task's context (by thewindow class)
+            LAYOUT_BottomSpacing, 0,
+            LAYOUT_TopSpacing,0,
+            LAYOUT_LeftSpacing,0,
+            LAYOUT_RightSpacing,0,
+            LAYOUT_InnerSpacing,0,
+
                     LAYOUT_BevelStyle, /*BVS_GROUP*/BVS_NONE,
                     LAYOUT_AddChild, LeftVertlayout,
                      CHILD_WeightedWidth,1,

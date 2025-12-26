@@ -36,6 +36,9 @@ typedef struct ITrackHeader {
     // ------------- H
     Object *VolumeRule;
 
+    /* Pointer to AukStyleSheet for visual styling */
+    struct AukStyleSheet *_styleSheet;
+
 } TrackHeader;
 
 #ifdef __cplusplus

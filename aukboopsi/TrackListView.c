@@ -32,7 +32,9 @@
 #include "TimeRule/class_timerule.h"
 #include "TrackArea/class_trackarea.h"
 #include "TrackHeader/class_trackheader.h"
-#include "TrackListAreaUi/class_tracklistareaui.h"
+#include "TrackListArea/class_tracklistarea.h"
+
+#include "gadgetid.h"
 
 #include <aukobject.h>
 // audio tracks project
@@ -44,9 +46,19 @@
 #undef Remove
 #endif
 
+extern struct Task	*myTask;
+
 void cleanexit(const char *pmessage);
 
-void CreateTrackListView(TrackListView *pm,struct DrawInfo *drawInfo, int headerwidth, int fontheight)
+/* Mapping array to connect scroller to trackList scroll position */
+static const struct TagItem map_scrollerV_to_scrollY[] = {
+    { SCROLLER_Top, TRACKLIST_ScrollY },
+    { TAG_END, 0 }
+};
+
+void CreateTrackListView(TrackListView *pm,struct DrawInfo *drawInfo,
+                Object *appModel,
+    int headerwidth, int fontheight)
 {
     // init private boopsi gadget & layout classes.
 
@@ -55,8 +67,8 @@ void CreateTrackListView(TrackListView *pm,struct DrawInfo *drawInfo, int header
     if(!TrackAreaStaticInit()) cleanexit("TrackLayout init failed");
     if(!TrackHeaderStaticInit()) cleanexit("TrackLayout init failed");
     if(!TrackListStaticInit()) cleanexit("TrackLayout init failed");
-    // - - - - - A
 
+    // - - - - - A
     pm->timerule = (Object *)NewObject( TIMERULE_GetClass(), NULL,
                             TIMERULE_DefHeight,(fontheight*3)/2,
                             TAG_END);
@@ -64,19 +76,21 @@ void CreateTrackListView(TrackListView *pm,struct DrawInfo *drawInfo, int header
 
     // - - - - - B
         pm->trackList = (Object *)NewObject( TRACKLIST_GetClass(), NULL,
+                                TRACKLIST_StyleSheet, (ULONG)&pm->styleSheet,
+                                GA_ID,GAD_TRACKLIST, /* allows to redirect notify messages */
+                                ICA_TARGET,appModel, /* will send messages, that will be received by the main app boopsi object model */
                                 TAG_END);
 
         pm->scrollerV = (Object *)NewObject( SCROLLER_GetClass(), NULL,
                                     GA_DrawInfo, drawInfo,
-                                    //GA_ID,GAD_SCROLLER_VALUE,
-                                    GA_RelVerify, TRUE, // needed
+                                    GA_RelVerify, TRUE,
                                 SCROLLER_Top, 0,
                                 SCROLLER_Total, 40,
-                                SCROLLER_Visible, 10,
+                                SCROLLER_Visible, 40,
                                 SCROLLER_Orientation, FREEVERT,
                                 SCROLLER_Stretch,TRUE,
-                             //   ICA_TARGET,app->testBaseName,
-                             //   ICA_MAP,(ULONG)map_slider_to_basename_value,
+                                ICA_TARGET, pm->trackList,
+                                ICA_MAP, (ULONG)map_scrollerV_to_scrollY,
                                 TAG_END);
 
     pm->subBHl = (Object *)NewObject( LAYOUT_GetClass(), NULL,
@@ -193,7 +207,7 @@ static void AukUpdate_TrackList(AukObject* listenerObject, AukObject* modifiedOb
                   );
 
             // update GUI, add ui track
-            TrackListAreaUi_addTrack(trackListAreaUi,track);
+            TrackListArea_addTrack(trackListAreaUi,track);
         }
         break;
         case AUK_MSG_TRACKREMOVED:
@@ -205,7 +219,8 @@ static void AukUpdate_TrackList(AukObject* listenerObject, AukObject* modifiedOb
                         pm->updateListener // AukObject* listenerObject,
                   );
             // update GUI, remove ui track
-            TrackListAreaUi_removeTrack(trackListAreaUi,track);
+            TrackListArea_removeTrack(trackListAreaUi,track);
+
         }
         break;
         default:
@@ -218,6 +233,55 @@ static void AukUpdate_TrackList(AukObject* listenerObject, AukObject* modifiedOb
 
 
 
+
+/**
+ * Update the vertical scroller's domain based on the trackList's total height
+ * Should be called after track count changes or layout changes
+ */
+void updateVerticalScrollDomain(TrackListView *pm)
+{
+    struct Gadget *trackListGad;
+    ULONG domainHeight = 0;
+    ULONG visibleHeight = 0;
+    //ULONG scrollTop = 0;
+
+    if(!pm || !pm->trackList || !pm->scrollerV) return;
+
+    trackListGad = (struct Gadget *)pm->trackList;
+
+    /* Get the total domain height from the trackList gadget */
+    GetAttr(TRACKLIST_DomainHeight, pm->trackList, &domainHeight);
+
+    /* Get the visible height from the gadget's actual height */
+    visibleHeight = (ULONG)trackListGad->Height;
+
+    /* Get current scroll position */
+    //GetAttr(TRACKLIST_ScrollY, pm->trackList, &scrollTop);
+    if(domainHeight ==0) domainHeight=1;
+    if(visibleHeight>domainHeight) visibleHeight = domainHeight;
+
+    bdbprintf(" **** updateVerticalScrollDomain: domainHeight:%d visibleHeight:%d \n",domainHeight,visibleHeight);
+
+    /* Update the scroller */
+    {
+        ULONG tags[]={
+            SCROLLER_Total, 0,
+            SCROLLER_Visible, 0,
+//            SCROLLER_Top, 0,
+            TAG_END
+        };
+        tags[1] = domainHeight;
+        tags[3] = visibleHeight;
+//        tags[5] = scrollTop;
+
+        SetGadgetAttrsA((struct Gadget *)pm->scrollerV, pm->window, NULL,&tags[0]);
+    }
+
+//    SetGadgetAttrs((struct Gadget *)pm->scrollerV, pm->window, NULL,
+//        SCROLLER_Visible, visibleHeight,
+////        SCROLLER_Top, scrollTop,
+//        TAG_END);
+}
 
 void TrackListView_setProject(TrackListView *pm,AukAProject *project)
 {
@@ -234,8 +298,30 @@ void TrackListView_setProject(TrackListView *pm,AukAProject *project)
     AukObjectPtr_Set(&pm->project,&project->base.base);
 
     // link data to UI
-    TrackListAreaUi_setTrackList(pm->trackList ,project );
+    TrackListArea_setTrackList(pm->trackList ,project );
 
+}
+
+void TrackListView_ListenTrackListMessage(TrackListView *pm,struct opUpdate *M)
+{
+    struct TagItem *ptag;
+    ULONG changedDomainHeight=0;
+    // here we know that sender is GA_ID == GAD_TRACKLIST
+
+    if((ptag = FindTagItem( TRACKLIST_DomainHeight,M->opu_AttrList ))!=NULL) changedDomainHeight = ptag->ti_Data;
+    if(changedDomainHeight >0)
+    {
+        pm->window = M->opu_GInfo->gi_Window;
+        pm->updateBits |= TLVB_UPDATE_VERTSCROLLDOMAIN;
+        if(myTask) Signal(myTask,SIGBREAKF_CTRL_F);
+       //delay updateVerticalScrollDomain(pm);
+    }
+}
+void TrackListView_CheckUpdates(TrackListView *pm)
+{
+    if(pm->updateBits & TLVB_UPDATE_VERTSCROLLDOMAIN) updateVerticalScrollDomain(pm);
+
+    pm->updateBits = 0;
 }
 
 // public close, free objects
@@ -260,3 +346,11 @@ void CloseTrackListView_StaticClasses()
     TimeRuleStaticClose();
     InfiniteScrollStaticClose();
 }
+
+/*
+ debug report note:
+  if send OM_UPDATE to notify a size at the end of a GM_LAYOUT, and modify scroller domain in it, will not work
+  -> delay update for setGadgetAttrib()
+
+
+*/

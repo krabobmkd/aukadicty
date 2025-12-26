@@ -64,6 +64,9 @@
 #define TRACKHEADER_Pan (TRACKHEADER_Dummy+2)
 #define TRACKHEADER_Volume (TRACKHEADER_Dummy+3)
 
+/* Pointer to AukStyleSheet for visual styling */
+#define	TRACKHEADER_StyleSheet		(TRACKHEADER_Dummy+4)
+
 
 /** DEVTODO: adds attributes definitions here and
  * manage them in class_trackheader_attribs.c

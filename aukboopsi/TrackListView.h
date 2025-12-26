@@ -4,6 +4,9 @@
 #include <intuition/classusr.h>
 
 #include <aukobject.h>
+#include "aukstylesheet.h"
+
+
 
 /*
     keeps anything related to track list view in the UI.
@@ -24,9 +27,25 @@ typedef struct TrackListView
     // - - - the aukObject to listen updates from all project objects.
     AukObjectPtr updateListener;
     AukObjectPtr project;
+
+    Object *appModel;
+    struct Window *window;
+
+    /* Visual style configuration */
+    AukStyleSheet styleSheet;
+
+    // kind of easy message update to delay, def below. If zero, nothing to do
+    ULONG updateBits;
+
 } TrackListView;
 
+
+#define TLVB_UPDATE_VERTSCROLLDOMAIN 1
+#define TLVB_UPDATE_HORIZSCROLLDOMAIN 2
+#define TLVB_UPDATE_FULLREDRAW 4
+
 void CreateTrackListView(TrackListView *pm,struct DrawInfo *drawInfo,
+                Object *appModel,
                 int headerwidth,
                 int fontheight);
 
@@ -36,6 +55,9 @@ typedef struct sAukTrack AukTrack;
     if project NULL, will release.
 */
 void TrackListView_setProject(TrackListView *pm,AukAProject *project);
+
+void TrackListView_ListenTrackListMessage(TrackListView *pm,struct opUpdate *M);
+void TrackListView_CheckUpdates(TrackListView *pm);
 
 void CloseTrackListView(TrackListView *pm);
 void CloseTrackListView_StaticClasses();

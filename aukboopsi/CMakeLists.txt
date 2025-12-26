@@ -27,6 +27,9 @@ set(AUKBOOPSI_SOURCES
     TrackListView.c
     TrackListView.h
 
+    aukstylesheet.h
+    gadgetid.h
+
     bdbprintf.c
     bdbprintf.h
 
@@ -51,13 +54,13 @@ set(AUKBOOPSI_SOURCES
     TrackArea/class_trackarea_private.h
     TrackArea/class_trackarea.h
 
-    TrackListAreaUi/class_tracklistareaui_attribs.c
-    TrackListAreaUi/class_tracklistareaui_dispatch.c
-    TrackListAreaUi/class_tracklistareaui_lib.c
-    TrackListAreaUi/class_tracklistareaui_render.c
-    TrackListAreaUi/class_tracklistareaui_handleinput.c
-    TrackListAreaUi/class_tracklistareaui_private.h
-    TrackListAreaUi/class_tracklistareaui.h
+    TrackListArea/class_tracklistarea_attribs.c
+    TrackListArea/class_tracklistarea_dispatch.c
+    TrackListArea/class_tracklistarea_lib.c
+    TrackListArea/class_tracklistarea_render.c
+    TrackListArea/class_tracklistarea_handleinput.c
+    TrackListArea/class_tracklistarea_private.h
+    TrackListArea/class_tracklistarea.h
 
     TimeRule/class_timerule_attribs.c
     TimeRule/class_timerule_dispatch.c

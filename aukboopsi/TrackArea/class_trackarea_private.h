@@ -31,8 +31,6 @@ extern "C" {
 */
 typedef struct ITrackArea {
 
-    /* configurable height for this track, pixel. */
-    UWORD _prefHeight;
     UWORD _dum;
 
     /* DEVTODO: we could manage the mouse interaction current state.... */
@@ -43,6 +41,9 @@ typedef struct ITrackArea {
 #ifdef USE_REGION_CLIPPING
     struct Region *_clipRegion;
 #endif
+
+    /* Pointer to AukStyleSheet for visual styling */
+    struct AukStyleSheet *_styleSheet;
 
 } TrackArea;
 

@@ -53,9 +53,6 @@ ULONG ASM SAVEDS TrackArea_Dispatcher(
         gdata=INST_DATA(C, Gad);
         // DEVTODO: here you write the default values for your objects.
 
-
-        gdata->_prefHeight = 96;
-
         // set gadget (super class) attributes for this instance like this:
         // (BOOL) Indicate whether gadget is part of TAB/SHIFT-TAB cycle.
         // default to false
