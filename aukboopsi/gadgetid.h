@@ -26,9 +26,13 @@
 #define GAD_BUTTON_ABOUT 16
 
 /* Individual track area gadgets start from this base */
-#define GAD_TRACKAREA_BASE      100
+#define GAD_TRACKAREA_BASE      4096
 
 /* Individual track header gadgets start from this base */
-#define GAD_TRACKHEADER_BASE    200
+#define GAD_TRACKHEADER_BASE    8192
+
+#define GAD_TRACKHEADER_CLOSE    (GAD_TRACKHEADER_BASE+1)
+#define GAD_TRACKHEADER_NAME    (GAD_TRACKHEADER_BASE+2)
+
 
 #endif /* GADGETID_H */

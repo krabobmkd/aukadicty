@@ -141,19 +141,18 @@ ULONG ASM SAVEDS TrackListArea_Dispatcher(
 
     case GM_HITTEST:
       retval = GMR_GADGETHIT;
+     //    retval=TrackListArea_HandleInput(C,Gad,(struct gpInput *)M, M->gpHitTest.gpht_Mouse.X, M->gpHitTest.gpht_Mouse.Y);
+
       break;
 
     case GM_GOACTIVE:
-      //Gad->Flags |= GFLG_SELECTED;
-      //retval=TrackListArea_HandleInput(C,Gad,(struct gpInput *)M);
-        return(GMR_NEXTACTIVE );
-//      gad_Render(C,Gad,(APTR)M,GREDRAW_UPDATE);
-//      retval=GMR_MEACTIVE;
+                    bdbprintf("GM_GOACTIVE\n");
+     retval=TrackListArea_HandleInput(C,Gad,(struct gpInput *)M, M->gpInput.gpi_Mouse.X,M->gpInput.gpi_Mouse.Y);
       break;
 
     case GM_GOINACTIVE:
-      //Gad->Flags &= ~GFLG_SELECTED;
-      //TrackListArea_Render(C,Gad,(APTR)M,GREDRAW_UPDATE);
+                    bdbprintf("GM_GOINACTIVE\n");
+    //  retval=TrackListArea_HandleInput(C,Gad,(struct gpInput *)M,0,0);
       break;
 
     case GM_LAYOUT:
@@ -165,8 +164,9 @@ ULONG ASM SAVEDS TrackListArea_Dispatcher(
       break;
 
     case GM_HANDLEINPUT:
-     return(GMR_REUSE);
-      //retval=TrackListArea_HandleInput(C,Gad,(struct gpInput *)M);
+     //return(GMR_REUSE);
+    bdbprintf("GM_HANDLEINPUT\n");
+      retval=TrackListArea_HandleInput(C,Gad,(struct gpInput *)M,M->gpInput.gpi_Mouse.X,M->gpInput.gpi_Mouse.Y);
       break;
 
     case GM_DOMAIN:

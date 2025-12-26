@@ -110,8 +110,8 @@ ULONG TrackArea_Render_rp( struct RastPort *rp,Class *C, struct Gadget *Gad, str
     width = Gad->Width;
     height = Gad->Height;
 
-    gdata->_framerec.MinX = leftedge+1;
-    gdata->_framerec.MinY = topedge+1;
+    gdata->_framerec.MinX = leftedge;
+    gdata->_framerec.MinY = topedge;
     gdata->_framerec.MaxX = leftedge + width  -2;
     gdata->_framerec.MaxY = topedge  + height -2;
 
@@ -121,6 +121,13 @@ ULONG TrackArea_Render_rp( struct RastPort *rp,Class *C, struct Gadget *Gad, str
                   gdata->_framerec.MinY,
                   gdata->_framerec.MaxX,
                   gdata->_framerec.MaxY) ;
+
+      SetAPen(rp,1);
+      RectFill(rp,gdata->_framerec.MinX,
+                  gdata->_framerec.MaxY+1,
+                  gdata->_framerec.MaxX,
+                  gdata->_framerec.MaxY+1) ;
+
 
 }
 
@@ -178,40 +185,9 @@ ULONG TrackArea_Render(Class *C, struct Gadget *Gad, struct gpRender *Render, UL
 		bLayerUpdating = TRUE;
 		EndUpdate(rp->Layer, FALSE);
 		//bdbprintf(" ****Render->MethodID:%08lx LAYERUPDATING\n",(int)Render->MethodID);
-	} else
-	{
-
 	}
 
-//    if(Gad->Flags & GFLG_DISABLED) // if disabled, draw background with another color.
-//    {
-//        penbg = 0;
-//    }
-//    #ifdef USE_BEVEL_FRAME
-//        if(gdata->Bevel) DrawImage(rp,gdata->Bevel,0,0);
-//    #endif
-
-//    #ifdef USE_REGION_CLIPPING
-//struct Layer
-//        ClearRegion(gdata->_clipRegion);
-//        // if(rp->Layer->ClipRegion) OrRegionRegion(gdata->_clipRegion, rp->Layer->ClipRegion);  not sure
-//        OrRectRegion(gdata->_clipRegion, &gdata->_framerec);
-
-//        oldClipRegion = InstallClipRegion( rp->Layer, gdata->_clipRegion);
-//    #endif
-
     TrackArea_Render_rp(rp,C,Gad,Render);
-//        {
-//            UWORD width = gdata->_framerec.MaxX - gdata->_framerec.MinX;
-//            UWORD height = gdata->_framerec.MaxY - gdata->_framerec.MinY;
-
-//            UWORD xc = gdata->_framerec.MinX + ((width*gdata->_circleCenterX)>>16);
-//            UWORD yc = gdata->_framerec.MinY + ((height*gdata->_circleCenterY)>>16);
-//            SetAPen(rp,penb);
-//            DrawEllipse(rp,xc,yc,width>>1,height>>1);
-//            SetAPen(rp,penc);
-//            DrawEllipse(rp,xc,yc,width>>2,height>>2);
-//        }
 
     if(bLayerUpdating)
     {

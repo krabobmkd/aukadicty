@@ -91,7 +91,7 @@ ULONG TrackListArea_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set);
 ULONG TrackListArea_GetAttr(Class *C, struct Gadget *Gad, struct opGet *Get);
 ULONG TrackListArea_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout);
 ULONG TrackListArea_Render(Class *C, struct Gadget *Gad, struct gpRender *Render);
-ULONG TrackListArea_HandleInput(Class *C, struct Gadget *Gad, struct gpInput *Input);
+ULONG TrackListArea_HandleInput(Class *C, struct Gadget *Gad,Msg M, int x, int y);
 ULONG TrackListArea_Domain(Class *C, struct Gadget *Gad, struct gpDomain *D);
 
 /* esxternal way to refresh (experimental */

@@ -26,6 +26,8 @@
 #include <proto/graphics.h>
 #include <proto/utility.h>
 
+#include "gadgetid.h"
+
 typedef union MsgUnion
 {
   ULONG  MethodID;
@@ -75,7 +77,7 @@ ULONG ASM SAVEDS TrackHeader_Dispatcher(
 
         CloseButton = NewObject( BUTTON_GetClass(),NULL,
                                     GA_Text, "X",
-                                  //  GA_ID,GAD_BUTTON_ABOUT,
+                                    GA_ID,GAD_TRACKHEADER_CLOSE,
                                     GA_RelVerify, TRUE,
                          //           GA_Disabled,TRUE,
                         // BUTTON_BevelStyle,BVS_NONE,
@@ -83,7 +85,7 @@ ULONG ASM SAVEDS TrackHeader_Dispatcher(
                                 TAG_END);
         NameLabel = NewObject( BUTTON_GetClass(),NULL,
                                     GA_Text, "Name",
-                                  //  GA_ID,GAD_BUTTON_ABOUT,
+                                    GA_ID,GAD_TRACKHEADER_NAME,
                                     GA_RelVerify, TRUE,
                          //           GA_Disabled,TRUE,
                         // BUTTON_BevelStyle,BVS_NONE,
