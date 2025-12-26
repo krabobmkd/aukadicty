@@ -167,8 +167,9 @@ ULONG TrackListArea_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout
   LONG trackTop;
   ULONG i;
  ULONG prevDomainHeight;
- ULONG prevHeight;
+// ULONG prevHeight;
     gdata=INST_DATA(C, Gad);
+
 
     topedge = Gad->TopEdge;
     leftedge = Gad->LeftEdge;
@@ -312,19 +313,18 @@ ULONG TrackListArea_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout
 // ULONG TrackHeader_Render_rp( struct RastPort *rp,Class *C, struct Gadget *Gad, struct gpRender *Render);
 
 /* draw yourself, in the appropriate state */
-ULONG TrackListArea_Render(Class *C, struct Gadget *Gad, struct gpRender *Render, ULONG update)
+ULONG TrackListArea_Render(Class *C, struct Gadget *Gad, struct gpRender *Render)
 {
   TrackListArea *gdata;
   struct RastPort *rp;
   ULONG retval=1;
 
   gdata=INST_DATA(C, Gad);
-
   // also sent from GM_GOINACTIVE (4).
   if(Render->MethodID==GM_RENDER)
   {
     rp=Render->gpr_RPort;
-    update=Render->gpr_Redraw;
+   // update=Render->gpr_Redraw;
   }
   else
   {
@@ -347,7 +347,7 @@ ULONG TrackListArea_Render(Class *C, struct Gadget *Gad, struct gpRender *Render
 	{
 		bLayerUpdating = TRUE;
 		EndUpdate(rp->Layer, FALSE);
-		//bdbprintf(" ****Render->MethodID:%08lx LAYERUPDATING\n",(int)Render->MethodID);
+//		bdbprintf(" ****Render->MethodID:%08lx LAYERUPDATING\n",(int)Render->MethodID);
 	}
 
     oldClipRegion = InstallClipRegion( rp->Layer, gdata->_clipRegion);
@@ -627,3 +627,7 @@ void TrackListArea_trackModified(struct Gadget *Gad,AukTrack *track)
     /* Track content modified - for now we don't need to do anything
      * as the TrackGadgets will handle their own rendering based on data */
 }
+// void TrackListArea_Refresh(struct Gadget *Gad, struct Window *window)
+// {
+//     RethinkLayout(Gad,window,NULL,0);
+// }

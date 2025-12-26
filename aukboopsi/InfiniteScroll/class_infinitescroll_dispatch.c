@@ -132,7 +132,7 @@ ULONG ASM SAVEDS InfiniteScroll_Dispatcher(
 
     case GM_GOINACTIVE:
       Gad->Flags &= ~GFLG_SELECTED;
-      InfiniteScroll_Render(C,Gad,(APTR)M,GREDRAW_UPDATE);
+     // InfiniteScroll_Render(C,Gad,(APTR)M,GREDRAW_UPDATE);
       break;
 
     case GM_LAYOUT:

@@ -78,6 +78,8 @@
 /* Pointer to AukStyleSheet for visual styling */
 #define	TRACKLIST_StyleSheet		(TRACKLIST_Dummy+6)
 
+/* force redraw trick */
+#define	TRACKLIST_Refresh		(TRACKLIST_Dummy+7)
 
 // GM_METHODS
 //

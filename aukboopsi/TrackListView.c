@@ -100,6 +100,7 @@ void CreateTrackListView(TrackListView *pm,struct DrawInfo *drawInfo,
 
     pm->subBHl = (Object *)NewObject( LAYOUT_GetClass(), NULL,
                 LAYOUT_Orientation, LAYOUT_ORIENT_HORIZ,
+                LAYOUT_DeferLayout,TRUE,
                 LAYOUT_BevelStyle, /*BVS_GROUP*/BVS_NONE,
 
          LAYOUT_SpaceOuter, FALSE,
@@ -136,6 +137,7 @@ void CreateTrackListView(TrackListView *pm,struct DrawInfo *drawInfo,
 
     pm->mainVl = (Object *)NewObject( LAYOUT_GetClass(), NULL,
                     LAYOUT_Orientation, LAYOUT_ORIENT_VERT,
+                    LAYOUT_DeferLayout,TRUE,
                     LAYOUT_BevelStyle, /*BVS_GROUP*/BVS_NONE,
 
              LAYOUT_SpaceOuter, FALSE,
@@ -287,40 +289,6 @@ void updateVerticalScrollDomain(TrackListView *pm)
 ////        SCROLLER_Top, scrollTop,
 //        TAG_END);
 }
-void TrackListView_RefreshTrackListArea(TrackListView *pm)
-{
-    if(!pm->window) return;
-
-    struct RastPort *rp = pm->window->RPort;
-
-   bdbprintf(" **** TrackListView_RefreshTrackListArea\n");
-
-    // - - - - layout
-    {
-        struct GadgetInfo gi={0};
-        struct gpLayout gpl;
-        gpl.MethodID = GM_LAYOUT;
-        gpl.gpl_GInfo = &gi;
-        gpl.gpl_Initial = 0;
-        gi.gi_Window = pm->window;
-        gi.gi_RastPort = rp;
-
-        DoMethodA((Object *)pm->trackList,(Msg)&gpl);
-    }
-
-    // - - -  -render
-    {
-        struct GadgetInfo gi={0};
-        struct gpRender gpr;
-        gpr.MethodID = GM_RENDER;
-        gpr.gpr_GInfo = &gi;
-        gpr.gpr_RPort = rp;
-        gpr.gpr_Redraw = 1;
-
-        DoMethodA((Object *)pm->trackList,(Msg)&gpr);
-    }
-
-}
 
 void TrackListView_setProject(TrackListView *pm,AukAProject *project)
 {
@@ -382,9 +350,19 @@ void TrackListView_ListenScrollVMessage(TrackListView *pm,struct opUpdate *M)
 void TrackListView_CheckUpdates(TrackListView *pm)
 {
     if(pm->updateBits & TLVB_UPDATE_VERTSCROLLDOMAIN) updateVerticalScrollDomain(pm);
-    if(pm->updateBits & TLVB_UPDATE_FULLREDRAW) TrackListView_RefreshTrackListArea(pm);
+    if(pm->updateBits & TLVB_UPDATE_FULLREDRAW)
+    {
+        SetGadgetAttrs(pm->trackList, pm->window, NULL,TRACKLIST_Refresh,TRUE,TAG_END);
+
+    }
 
     pm->updateBits = 0;
+}
+
+void TrackListView_UpdateTrackList(TrackListView *pm)
+{
+    if(!pm->trackList) return;
+    SetGadgetAttrs(pm->trackList, pm->window, NULL,TRACKLIST_Refresh,TRUE,TAG_END);
 }
 
 // public close, free objects

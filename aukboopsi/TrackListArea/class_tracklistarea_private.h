@@ -81,22 +81,21 @@ typedef struct TrackListArea {
     /* allow our scroll strategy */
     struct Region *_clipRegion;
 
-    /* needed for refresh */
-    struct Window *window;
-
-
-
 } TrackListArea;
 
 // internal tool
 ULONG TrackListArea_NotifyAttribValue(struct Gadget *Gad, struct GadgetInfo	*GInfo,ULONG attrib, ULONG value);
 
+/* internal use */
 ULONG TrackListArea_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set);
 ULONG TrackListArea_GetAttr(Class *C, struct Gadget *Gad, struct opGet *Get);
 ULONG TrackListArea_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout);
-ULONG TrackListArea_Render(Class *C, struct Gadget *Gad, struct gpRender *Render, ULONG update);
+ULONG TrackListArea_Render(Class *C, struct Gadget *Gad, struct gpRender *Render);
 ULONG TrackListArea_HandleInput(Class *C, struct Gadget *Gad, struct gpInput *Input);
 ULONG TrackListArea_Domain(Class *C, struct Gadget *Gad, struct gpDomain *D);
+
+/* esxternal way to refresh (experimental */
+//void TrackListArea_Refresh(struct Gadget *Gad, struct Window *window);
 
 /* Helper to dispose all gadget arrays */
 void TrackListArea_DisposeGadgets(TrackListArea *gdata);

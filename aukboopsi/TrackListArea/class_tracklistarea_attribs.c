@@ -147,6 +147,33 @@ ULONG TrackListArea_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
             else Gad->Flags &= ~GFLG_SELECTED; // remove bit.
         }
         break;
+    case TRACKLIST_Refresh:
+    {
+        bdbprintf("TrackListArea_SetAttrs TRACKLIST_Refresh:%08x\n",(int)Set->ops_GInfo);
+        // goes layout...
+        {
+            struct gpLayout gpl;
+            gpl.MethodID = GM_LAYOUT;
+            gpl.gpl_GInfo = Set->ops_GInfo;
+            gpl.gpl_Initial = 0;
+            TrackListArea_Layout(C,Gad,&gpl);
+        }
+        // goes render...
+        {
+            struct gpRender gpr;
+            gpr.MethodID = GM_RENDER;
+            gpr.gpr_GInfo = Set->ops_GInfo;
+            gpr.gpr_RPort = ObtainGIRPort(gpr.gpr_GInfo);
+            if(gpr.gpr_RPort)
+            {
+                gpr.gpr_Redraw = 1;
+                TrackListArea_Render(C,Gad,&gpr);
+                ReleaseGIRPort(gpr.gpr_RPort);
+            }
+        }
+    }
+    break;
+
     default:
         //does not seems to do anything for gadgets.... DoSuperMethodA(C,(APTR)Gad,(Msg)Set);
         //note: apparently super call is not to be managed here (not sure !!!)

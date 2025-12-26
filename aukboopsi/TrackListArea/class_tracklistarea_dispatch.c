@@ -153,7 +153,7 @@ ULONG ASM SAVEDS TrackListArea_Dispatcher(
 
     case GM_GOINACTIVE:
       //Gad->Flags &= ~GFLG_SELECTED;
-      TrackListArea_Render(C,Gad,(APTR)M,GREDRAW_UPDATE);
+      //TrackListArea_Render(C,Gad,(APTR)M,GREDRAW_UPDATE);
       break;
 
     case GM_LAYOUT:
@@ -161,7 +161,7 @@ ULONG ASM SAVEDS TrackListArea_Dispatcher(
       break;
 
     case GM_RENDER:
-      retval=TrackListArea_Render(C,Gad,(struct gpRender *)M,0);
+      retval=TrackListArea_Render(C,Gad,(struct gpRender *)M);
       break;
 
     case GM_HANDLEINPUT:

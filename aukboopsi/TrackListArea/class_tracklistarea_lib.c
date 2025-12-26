@@ -15,12 +15,11 @@
 #include <intuition/classes.h>
 #include <intuition/classusr.h>
 
+#include <proto/layout.h>
+#include <gadgets/layout.h>
+
 #include "class_tracklistarea.h"
 #include "class_tracklistarea_private.h"
-
-#ifdef USE_BEVEL_FRAME
-    #include <proto/bevel.h>
-#endif
 
 /* Most of the calls to boopsi methods are not done from the App's context,
  * but from a specific intuition context, and because of that we can't use DOS calls
@@ -176,9 +175,10 @@ struct IClass   *TRACKLIST_GetClass()
 
 // just use this one once when static link
 int TrackListStaticInit()
-{ 
+{
    if(!TrackList_OpenLibs_Dependencies()) return 0;
     if(TrackListClassPtr=MakeClass(NULL,TrackListSuperClassID,0,sizeof(TrackListArea),0))
+//    if(TrackListClassPtr=MakeClass(NULL,NULL,LAYOUT_GetClass(),sizeof(TrackListArea),0))
     {
       TrackListClassPtr->cl_Dispatcher.h_Entry=(REHOOKFUNC)TrackListArea_Dispatcher;
      // do not AddClass() when static, no need to publish, TrackListClassPtr will be enough.

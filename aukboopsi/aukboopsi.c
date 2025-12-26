@@ -198,13 +198,13 @@ ULONG ASM SAVEDS AppModelDispatch(
 
             if( sender_ID == GAD_TRACKLIST )
             {
-                   bdbprintf(" ( sender_ID == GAD_TRACKLIST )\n");
+                //   bdbprintf(" ( sender_ID == GAD_TRACKLIST )\n");
                 TrackListView_ListenTrackListMessage( &app->tracksListView, &M->opUpdate );
                 retval = 1;
             } else
             if(  sender_ID == GAD_SCROLLER_V )
             {
-             bdbprintf(" ( sender_ID == GAD_SCROLLER_V )\n");
+            // bdbprintf(" ( sender_ID == GAD_SCROLLER_V )\n");
                 TrackListView_ListenScrollVMessage( &app->tracksListView, &M->opUpdate );
                 retval=1;
             }
@@ -449,8 +449,10 @@ int main(int argc, char **argv)
 
     /* Create the window object. */
     app->window_obj = (Object *)NewObject( WINDOW_GetClass(), NULL,
-        WA_Left, 0,
-        WA_Top, (ULONG)(app->lockedscreen->Font->ta_YSize) + 3,
+        WA_Left, 40,
+        WA_Top, (ULONG)(app->lockedscreen->Font->ta_YSize) + 3 + 16,
+        WA_Width,320,
+        WA_Height,240,
         WA_CustomScreen, (ULONG) app->lockedscreen,
         WA_IDCMP, IDCMP_CLOSEWINDOW | IDCMP_RAWKEY ,
         WA_Flags, WFLG_DRAGBAR | WFLG_DEPTHGADGET | WFLG_CLOSEGADGET | WFLG_SIZEGADGET | WFLG_ACTIVATE | WFLG_SMART_REFRESH,
@@ -471,6 +473,7 @@ int main(int argc, char **argv)
     updateUIToStates();
 
     initProject();
+    TrackListView_UpdateTrackList(&app->tracksListView);
 //    // gui inited here.
 //    {
 //        char temp[64];
