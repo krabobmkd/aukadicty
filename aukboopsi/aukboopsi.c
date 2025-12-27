@@ -14,6 +14,7 @@
 #include <proto/graphics.h>
 #include <proto/intuition.h>
 #include <proto/utility.h>
+#include <proto/diskfont.h>
 #include <proto/dos.h>
 #include <proto/icon.h>
 #include <exec/alerts.h>
@@ -83,6 +84,7 @@ struct Library *LayersBase=NULL; // only used by gadgets drawing in static link 
 // used for appicon.
 struct Library *IconBase=NULL;
 struct Library *AslBase=NULL;
+struct Library *DiskfontBase=NULL;
 
 // boopsi classes bases:
 struct Library *WindowBase=NULL;
@@ -208,6 +210,12 @@ ULONG ASM SAVEDS AppModelDispatch(
                 TrackListView_ListenScrollVMessage( &app->tracksListView, &M->opUpdate );
                 retval=1;
             } else
+            if( sender_ID == GAD_SCROLLER_H )
+            {
+            // bdbprintf(" ( sender_ID == GAD_SCROLLER_H )\n");
+                TrackListView_ListenScrollHMessage( &app->tracksListView, &M->opUpdate );
+                retval=1;
+            } else
             if( sender_ID >= GAD_TRACKHEADER_BASE)
             {
                 TrackListView_ListenTrackHeaderMessage( &app->tracksListView, &M->opUpdate,sender_ID);
@@ -284,6 +292,9 @@ int main(int argc, char **argv)
 
     if ( ! (AslBase = OpenLibrary("asl.library",39)))
         cleanexit("Can't open asl.library");
+
+    if ( ! (DiskfontBase = OpenLibrary("diskfont.library",39)))
+        cleanexit("Can't open diskfont.library");
     // note: DOSBase is opened by C startup.
 
     // - - - - open boopsi classes...
@@ -333,6 +344,21 @@ int main(int argc, char **argv)
     // let's size according to font height.
     app->fontHeight = 8+4; // default;
     if(app->drawInfo && app->drawInfo->dri_Font) app->fontHeight =app->drawInfo->dri_Font->tf_YSize + 4;
+
+    /* Initialize stylesheet fonts using OpenDiskFont */
+    {
+        static struct TextAttr tinyFontAttr = {
+            "topaz.font",   /* Font name */
+            8,              /* YSize - small font */
+            FS_NORMAL,      /* Style */
+            FPF_ROMFONT     /* Flags - prefer ROM font for speed */
+        };
+        app->tracksListView.styleSheet.fontTiny = OpenDiskFont(&tinyFontAttr);
+        /* fontNormal and fontBig can use screen font or be opened similarly */
+        app->tracksListView.styleSheet.fontNormal = app->drawInfo ? app->drawInfo->dri_Font : NULL;
+        app->tracksListView.styleSheet.fontBig = NULL; /* TODO: open larger font if needed */
+        app->tracksListView.styleSheet.fontHeight = app->fontHeight;
+    }
 
     {
         extern unsigned char bpwizard_png[];
@@ -626,6 +652,13 @@ void exitclose(void)
 //            closeDataTypeBm(&dtbmLogo);
 //        }
 
+        /* Close fonts opened with OpenDiskFont before closing library */
+        if(app->tracksListView.styleSheet.fontTiny) {
+            CloseFont(app->tracksListView.styleSheet.fontTiny);
+            app->tracksListView.styleSheet.fontTiny = NULL;
+        }
+        /* Note: fontNormal points to drawInfo->dri_Font, don't close it separately */
+
         if(app->drawInfo) FreeScreenDrawInfo(app->lockedscreen, app->drawInfo);
         if(app->lockedscreen) UnlockPubScreen(0, app->lockedscreen);
 
@@ -656,6 +689,7 @@ void exitclose(void)
     //if(DOSBase) CloseLibrary((struct Library*)DOSBase);
     if(IconBase) CloseLibrary(IconBase);
     if(AslBase) CloseLibrary(AslBase);
+    if(DiskfontBase) CloseLibrary(DiskfontBase);
 
 }
 // synchronize greying buttons...

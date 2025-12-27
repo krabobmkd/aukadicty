@@ -3,13 +3,21 @@
 /**
  * Definitions for Gadget TimeRule
  * (This is the public file that can be released when publishing just the .gadget)
+ *
+ * TimeRule inherits from InfiniteScroll to use bitmap tile caching.
+ * It draws time graduations with lines and text showing time units.
  */
 #include <exec/types.h>
 #include <intuition/gadgetclass.h>
 #include <intuition/classes.h>
-            #include <inline/macros.h>
+#include <inline/macros.h>
+
+/* TimeRule inherits from InfiniteScroll for tile caching */
+#include "../InfiniteScroll/class_infinitescroll.h"
+
 #define VERSION_TIMERULE 1
-#define TimeRule_SUPERCLASS_ID "gadgetclass"
+/* Use InfiniteScroll as superclass - requires INFINITESCROLL_GetClass() */
+#define TimeRule_SUPERCLASS_ID NULL  /* Use class pointer, not string */
 
 #ifdef TIMERULE_STATICLINK
     extern int TimeRuleStaticInit();
@@ -54,18 +62,26 @@
 #endif
 
 /**  Attributes defined by the gadget class,
- * all attribs from gadgetclass.h are also valid.
+ * all attribs from gadgetclass.h and InfiniteScroll are also valid.
  */
-// different classes may not use same base.
-//DEVTODO: have another offset for your new class to not collide super class ones and optimize...
+/* different classes may not use same base. */
 #define TIMERULE_Dummy			(TAG_USER+0x04110000)
 
-// abstract coordinate from 0 to 65535 , whatever width is.
+/* Default height for the time ruler */
 #define	TIMERULE_DefHeight		(TIMERULE_Dummy+1)
-// abstract coordinate from 0 to 65535, whatever height is.
-//#define	TIMERULE_CenterY		(TIMERULE_Dummy+2)
 
-/** DEVTODO: adds attributes definitions here and
- * manage them in class_timerule_attribs.c
- */
+/* Time at left border of TimeRule (signed 64-bit AukFixed, Hi/Lo split) */
+#define	TIMERULE_TimeLeftHi		(TIMERULE_Dummy+2)
+#define	TIMERULE_TimeLeftLo		(TIMERULE_Dummy+3)
+
+/* Time at right border of TimeRule (signed 64-bit AukFixed, Hi/Lo split) */
+#define	TIMERULE_TimeRightHi	(TIMERULE_Dummy+4)
+#define	TIMERULE_TimeRightLo	(TIMERULE_Dummy+5)
+
+/* X offset from TimeRule left to where TrackListArea starts (for alignment) */
+#define TIMERULE_TrackAreaOffsetX (TIMERULE_Dummy+6)
+
+/* Pointer to AukStyleSheet for visual styling (fonts, colors) */
+#define TIMERULE_StyleSheet (TIMERULE_Dummy+7)
+
 #endif

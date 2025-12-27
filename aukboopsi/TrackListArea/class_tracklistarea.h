@@ -70,17 +70,39 @@
 /* Vertical scroll position (first visible line in pixels) */
 #define	TRACKLIST_ScrollY		(TRACKLIST_Dummy+3)
 
-/* Domain width - total virtual pixel width of the longest track time length, reported to pixels */
+/* Domain width - total virtual pixel width of the longest track time length, reported to pixels
+ is modified by tracks data content, current zoom, window resize.
+*/
 #define	TRACKLIST_DomainWidth		(TRACKLIST_Dummy+4)
+/* totaly need a 64 bit value, so it is sent as 2x 32 bits values,
+ * this beging the high value.
+*/
+#define	TRACKLIST_DomainWidthHigh		(TRACKLIST_Dummy+5)
 
 /* Domain height - total pixel height of all tracks (GetAttr only) */
-#define	TRACKLIST_DomainHeight		(TRACKLIST_Dummy+5)
+#define	TRACKLIST_DomainHeight		(TRACKLIST_Dummy+6)
 
 /* Pointer to AukStyleSheet for visual styling */
-#define	TRACKLIST_StyleSheet		(TRACKLIST_Dummy+6)
+#define	TRACKLIST_StyleSheet		(TRACKLIST_Dummy+7)
 
 /* force redraw trick */
-#define	TRACKLIST_Refresh		(TRACKLIST_Dummy+7)
+#define	TRACKLIST_Refresh		(TRACKLIST_Dummy+8)
+
+/* Time per pixel width - AukFixed 32.32 format (seconds per pixel)
+ * Controls horizontal zoom level. Lower values = more zoomed in.
+ * Minimum: 1/(44100*2) seconds/pixel (44kHz sample = 2 pixels)
+ */
+#define	TRACKLIST_TimePerPixelWidth		(TRACKLIST_Dummy+9)
+#define	TRACKLIST_TimePerPixelWidthHigh		(TRACKLIST_Dummy+10)
+
+/* Horizontal scroll position - signed 64-bit time at left border (AukFixed format)
+ * Can be negative to allow time before zero.
+ */
+#define	TRACKLIST_ScrollX		(TRACKLIST_Dummy+11)
+#define	TRACKLIST_ScrollXHigh		(TRACKLIST_Dummy+12)
+
+/* Header width in pixels (read-only, set internally based on TrackHeader width) */
+#define	TRACKLIST_HeaderWidth		(TRACKLIST_Dummy+13)
 
 // GM_METHODS
 //

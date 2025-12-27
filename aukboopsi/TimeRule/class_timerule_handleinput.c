@@ -83,23 +83,22 @@ ULONG TimeRule_HandleInput(Class *C, struct Gadget *Gad, struct gpInput *Input)
             break;
 
           case SELECTDOWN:
-            // actually receive all clics on the whole WB !!
+            /* actually receive all clicks on the whole WB !! */
              if ( (((Input->gpi_Mouse).X < 0) ||
                  ((Input->gpi_Mouse).X >= Gad->Width) ||
                  ((Input->gpi_Mouse).Y < 0) ||
                  ((Input->gpi_Mouse).Y >= Gad->Height))
                   )
-            {// outside gadget or disabled.
+            {/* outside gadget or disabled. */
 
               if(gdata->_EditMode)
               {
                 gdata->_EditMode=0;
-                TimeRule_Render(C,Gad,(APTR)Input,GREDRAW_UPDATE);
+                /* Render is handled by InfiniteScroll superclass */
               }
-//              retval = GMR_NOREUSE | GMR_VERIFY;
               retval = GMR_REUSE;
             }
-            else if((Gad->Flags & GFLG_DISABLED)==0) // don't manage clicks if disabled.
+            else if((Gad->Flags & GFLG_DISABLED)==0) /* don't manage clicks if disabled. */
             {
 
               retval = GMR_MEACTIVE;

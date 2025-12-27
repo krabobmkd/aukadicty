@@ -87,6 +87,9 @@
 /* GM_INFINITESCROLL_INVALIDATETILES - Mark tiles dirty to force re-render */
 #define GM_INFINITESCROLL_INVALIDATETILES (INFINITESCROLL_GMDummy+1)
 
+/* GM_INFINITESCROLL_RENDERTILE - Render a single tile (override in subclass) */
+#define GM_INFINITESCROLL_RENDERTILE (INFINITESCROLL_GMDummy+2)
+
 /* Message structure for GM_INFINITESCROLL_INVALIDATETILES */
 struct gpInvalidateTiles
 {
@@ -96,6 +99,18 @@ struct gpInvalidateTiles
     LONG RangeMinLo;
     LONG RangeMaxHi; /* End of range to invalidate (abstract 64-bit) */
     LONG RangeMaxLo;
+};
+
+/* Message structure for GM_INFINITESCROLL_RENDERTILE */
+struct gpRenderTile
+{
+    ULONG MethodID;            /* GM_INFINITESCROLL_RENDERTILE */
+    struct RastPort *RPort;    /* RastPort for tile bitmap (draw at 0,0) */
+    UWORD TileWidth;           /* Width of tile in pixels */
+    UWORD TileHeight;          /* Height of tile in pixels */
+    LONG AbstractPosHi;        /* Abstract position of tile left edge (64-bit) */
+    LONG AbstractPosLo;
+    ULONG TileIndex;           /* Index of this tile in the array */
 };
 
 #endif

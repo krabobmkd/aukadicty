@@ -1,13 +1,11 @@
 
-
 #ifdef __SASC
     #include <clib/alib_protos.h>
 #else
-    // GCC, vbcc
+    /* GCC, vbcc */
     #include "minialib.h"
 #endif
 #include <proto/dos.h>
-//#include <proto/utility.h>
 #include <intuition/classes.h>
 #include <intuition/classusr.h>
 #include <intuition/gadgetclass.h>
@@ -15,10 +13,8 @@
 #include "class_timerule.h"
 #include "class_timerule_private.h"
 
-#ifdef USE_BEVEL_FRAME
-    #include <proto/bevel.h>
-    #include <images/bevel.h>
-#endif
+/* Include InfiniteScroll private for access to superclass data */
+#include "../InfiniteScroll/class_infinitescroll_private.h"
 
 #include <proto/exec.h>
 #include <proto/intuition.h>
@@ -37,12 +33,16 @@
 #include "bdbprintf.h"
 
 
-/** WATCH OUT ! boopsi docs says:
-*  "the rkmmodelclass dispatcher must be able to run on Intuition's context,
-*  which puts some limitations on what the dispatcher is permitted to do:
-*  it can't use dos.library, it can't wait on application signals or message ports
-* and it can't call any Intuition functions which might wait on Intuition."
-*/
+/** WATCH OUT ! BOOPSI docs says:
+ *  "the model class dispatcher must be able to run on Intuition's context,
+ *  which puts some limitations on what the dispatcher is permitted to do:
+ *  it can't use dos.library, it can't wait on application signals or message ports
+ *  and it can't call any Intuition functions which might wait on Intuition."
+ *
+ * TimeRule inherits from InfiniteScroll.
+ * InfiniteScroll handles: tiles, _framerec, _clipRegion, GM_LAYOUT, GM_RENDER
+ * TimeRule adds: time border attributes, custom tile rendering for graduations
+ */
 ULONG ASM SAVEDS TimeRule_Dispatcher(
                     REG(a0,struct IClass *C),
                     REG(a2,struct Gadget *Gad),
@@ -55,58 +55,30 @@ ULONG ASM SAVEDS TimeRule_Dispatcher(
   switch(M->MethodID)
   {
     case OM_NEW:
+      /* Let InfiniteScroll handle creation first (it sets up tiles, etc) */
       if(Gad=(struct Gadget *)DoSuperMethodA(C,(Object *)Gad,(Msg)M))
       {
         gdata=INST_DATA(C, Gad);
-        // DEVTODO: here you write the default values for your objects.
-        gdata->_defaultHeight = 12;
 
+        /* Initialize TimeRule-specific data */
+        gdata->_defaultHeight = 16;
+        gdata->_MouseMode = 0;
+        gdata->_EditMode = 0;
 
-        // set gadget (super class) attributes for this instance like this:
-        // (BOOL) Indicate whether gadget is part of TAB/SHIFT-TAB cycle.
-        // default to false
-        SetSuperAttrs(C,(Object *)Gad, GA_TabCycle,TRUE,TAG_DONE);
+        /* Initialize time borders to 0 */
+        gdata->_timeLeftHi = 0;
+        gdata->_timeLeftLo = 0;
+        gdata->_timeRightHi = 0;
+        gdata->_timeRightLo = (10 << 16);  /* Default: 10 seconds at right edge */
 
+        /* X offset where track area starts (typically TrackHeader width) */
+        gdata->_trackAreaOffsetX = 0;
+
+        /* Process TimeRule-specific attributes from creation tags */
         if(M->opSet.ops_AttrList)
         {
             TimeRule_SetAttrs(C,Gad,&M->opSet);
         }
-#ifdef USE_REGION_CLIPPING
-    gdata->_clipRegion = NewRegion();
-#endif
-#ifdef USE_BEVEL_FRAME
-#ifdef __VBCC__
-          gdata->Bevel= vbNewObject(BEVEL_GetClass(),NULL,
-            BEVEL_Style, BVS_BUTTON,
-            BEVEL_FillPen, -1,
-            TAG_END);
-#else
-          gdata->Bevel= NewObject(BEVEL_GetClass(),NULL,
-            BEVEL_Style, BVS_BUTTON,
-            BEVEL_FillPen, -1,
-            TAG_END);
-#endif
-
-#endif
-
- //   Printf("instance:%lx\n",(int)gdata);
-//        SetSuperAttrs(C,Gad, GA_TabCycle,1,TAG_DONE);
-
-        // DEVTODO:
-        // you could create instances of other objects as members...
-        // to be deleted in OM_DISPOSE of course...
-
-//        gdata->Pattern=NewObject(0,(UBYTE *)"mlr_ordered.pattern", TAG_DONE);
-//        {
-//          if(gdata->Bevel=BevelObject, BEVEL_Style, BVS_BUTTON, BEVEL_FillPen, -1, End)
-//          {
-//            gdata->Precision=8;
-//            gdata->ShowSelected=1;
-
-//            gad_SetAttrs(C,Gad,(struct opSet *)M);
-//            retval=(ULONG)Gad;
-//          }
-//        }
 
         bdbprintf_new("TimeRule", Gad);
 
@@ -117,63 +89,36 @@ ULONG ASM SAVEDS TimeRule_Dispatcher(
 
     case OM_UPDATE:
     case OM_SET:
-       // Printf("OM_SET: GadgetID:%ld gad:%lx\n",(int)Gad->GadgetID,(int)Gad);
+      /* Let InfiniteScroll handle its attribs first */
       retval=DoSuperMethodA(C,(Object *)Gad,(Msg)M);
-      TimeRule_SetAttrs(C,Gad,(struct opSet *)M);
-     break;
+      /* Then handle TimeRule-specific attribs */
+      retval |= TimeRule_SetAttrs(C,Gad,(struct opSet *)M);
+      break;
 
     case OM_GET:
-      TimeRule_GetAttr(C,Gad,(struct opGet *)M);
-     break;
+      /* Try TimeRule attribs first, then delegate to InfiniteScroll */
+      retval = TimeRule_GetAttr(C,Gad,(struct opGet *)M);
+      break;
 
     case OM_DISPOSE:
-        bdbprintf_dispose("TimeRule", Gad);
-
-    #ifdef USE_BEVEL_FRAME
-        if(gdata->Bevel) DisposeObject(gdata->Bevel);
-    #endif
-    #ifdef USE_REGION_CLIPPING
-        if(gdata->_clipRegion) DisposeRegion(gdata->_clipRegion);
-    #endif
+      bdbprintf_dispose("TimeRule", Gad);
+      /* Let InfiniteScroll clean up tiles, clipRegion, etc */
       retval=DoSuperMethodA(C,(Object *)Gad,(Msg)M);
-      break;
-
-    case GM_HITTEST:
-      retval = GMR_GADGETHIT;
-      break;
-
-    case GM_GOACTIVE:
-      Gad->Flags |= GFLG_SELECTED;
-      retval=TimeRule_HandleInput(C,Gad,(struct gpInput *)M);
-//      gad_Render(C,Gad,(APTR)M,GREDRAW_UPDATE);
-//      retval=GMR_MEACTIVE;
-      break;
-
-    case GM_GOINACTIVE:
-      Gad->Flags &= ~GFLG_SELECTED;
-      TimeRule_Render(C,Gad,(APTR)M,GREDRAW_UPDATE);
-      break;
-
-    case GM_LAYOUT:
-      retval= TimeRule_Layout(C,Gad,(struct gpLayout *)M);
-      break;
-
-    case GM_RENDER:
-      retval=TimeRule_Render(C,Gad,(struct gpRender *)M,0);
-      break;
-
-    case GM_HANDLEINPUT:
-      retval=TimeRule_HandleInput(C,Gad,(struct gpInput *)M);
       break;
 
     case GM_DOMAIN:
+      /* Override domain for TimeRule height */
       TimeRule_Domain(C, Gad, (APTR)M);
       retval=1;
+      break;
 
-    break;
+    case GM_INFINITESCROLL_RENDERTILE:
+      /* Override tile rendering to draw time graduations */
+      retval = TimeRule_RenderTile(C, Gad, (struct gpRenderTile *)M);
+      break;
 
+    /* Let InfiniteScroll handle these: GM_LAYOUT, GM_RENDER, GM_HITTEST, etc */
     default:
-  //  Printf(" - default unmanaged method - %lx\n",);
       retval=DoSuperMethodA(C,(Object *)Gad,(Msg)M);
       break;
   }

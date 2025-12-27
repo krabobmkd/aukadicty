@@ -4,11 +4,12 @@
 #include <proto/graphics.h>
 #include <proto/layers.h>
 
+#include <string.h>  /* For strlen */
+
 #ifdef __SASC
-//    #include "minialib.h"
     #include <clib/alib_protos.h>
 #else
-    // GCC
+    /* GCC */
     #include "minialib.h"
 #endif
 
@@ -19,228 +20,331 @@
 
 #include "class_timerule.h"
 #include "class_timerule_private.h"
+#include "../aukstylesheet.h"
 
-#ifdef USE_BEVEL_FRAME
-    #include <proto/bevel.h>
-    #include <images/bevel.h>
-#endif
+/* Include InfiniteScroll private for access to superclass data */
+#include "../InfiniteScroll/class_infinitescroll_private.h"
 
-/* Most of the calls to boopsi methods are not done from the App's context,
- * but from a specific intuition context, and because of that we can't use DOS calls
- * like dos/Printf() , and also stdlib printf().
- * So we may print debug informations with a special buffer,and function bdbprintf(),
- * hen flushbdbprint() in main process will print for real to standard output.
- * remove word USE_DEBUG_BDBPRINT to desactivate all bdbprintf()/flushbdbprint() calls.
- * Template projects that links boopsi classes statically use USE_DEBUG_BDBPRINT by default.
- * Template projects that uses boopsi classes with LoadLibrary() do not.
- */
 #include "bdbprintf.h"
 
-/* The GM_DOMAIN method is used to obtain the sizing requirements of an
- * object for a class before ever creating an object. */
-
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 /* GM_DOMAIN */
-//struct gpDomain
-//{
-//    ULONG		 MethodID;
-//    struct GadgetInfo	*gpd_GInfo;
-//    struct RastPort	*gpd_RPort;	/* RastPort to layout for */
-//    LONG		 gpd_Which;
-//    struct IBox		 gpd_Domain;	/* Resulting domain */
-//    struct TagItem	*gpd_Attrs;	/* Additional attributes */
-//};
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 ULONG TimeRule_Domain(Class *C, struct Gadget *Gad, struct gpDomain *D)
 {
   TimeRule *gdata=0;
 
   if(Gad) gdata=INST_DATA(C, Gad);
-// Printf("TimeRule_Domain data:%lx\n",(int)gdata);
 
   D->gpd_Domain.Left=0;
   D->gpd_Domain.Top=0;
 
-if(gdata)
-{
-bdbprintf("TimeRule_Domain %d\n",(int)gdata->_defaultHeight);
-} else
-{
-bdbprintf("TimeRule_Domain -\n");
-}
   switch(D->gpd_Which)
   {
     case GDOMAIN_NOMINAL:
      if(gdata)
      {
-       D->gpd_Domain.Width =100;
-       D->gpd_Domain.Height=gdata->_defaultHeight;
+       D->gpd_Domain.Width = 200;
+       D->gpd_Domain.Height = gdata->_defaultHeight;
      }
      else
-      {
-        D->gpd_Domain.Width=100;
-        D->gpd_Domain.Height=12;
-      }
-      break;
+     {
+       D->gpd_Domain.Width = 200;
+       D->gpd_Domain.Height = 16;
+     }
+     break;
 
     case GDOMAIN_MAXIMUM:
-      D->gpd_Domain.Width=16000;
-      D->gpd_Domain.Height=gdata->_defaultHeight;
+      D->gpd_Domain.Width = 16000;
+      D->gpd_Domain.Height = gdata ? gdata->_defaultHeight : 16;
       break;
 
     case GDOMAIN_MINIMUM:
     default:
      if(gdata)
      {
-       D->gpd_Domain.Width =64; // sqrt(gdata->Pens) * 8 + 8;
-       D->gpd_Domain.Height=gdata->_defaultHeight; // sqrt(gdata->Pens) * 8 + 8;
+       D->gpd_Domain.Width = 64;
+       D->gpd_Domain.Height = gdata->_defaultHeight;
      }
      else
-      {
-        D->gpd_Domain.Width=  50;
-        D->gpd_Domain.Height= 12;
-      }
-      break;
-
+     {
+       D->gpd_Domain.Width = 50;
+       D->gpd_Domain.Height = 12;
+     }
+     break;
   }
   return(1);
 }
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+/* Time Formatting Helper */
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 /**
- * method GM_LAYOUT
- * The gadget knows its final coordinates,
- * So we may have to resize what's inside our gadget.
+ * Format a time value (64-bit fixed point, integer part is seconds) as text.
+ * Outputs format like "0:00", "1:23", "12:34" etc.
+ * For sub-second graduations, adds milliseconds: "0:00.1", "0:00.5"
+ *
+ * @param timeHi   High 32 bits of time value
+ * @param timeLo   Low 32 bits of time value (fractional part in upper bits)
+ * @param buffer   Output buffer (must be at least 12 chars)
+ * @param showMs   If TRUE, show one decimal for sub-second
  */
-ULONG TimeRule_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout)
+void TimeRule_FormatTime(LONG timeHi, LONG timeLo, char *buffer, BOOL showMs)
 {
-  TimeRule *gdata;
-  LONG topedge,leftedge,width,height;
+    LONG seconds;
+    LONG minutes;
+    LONG ms;
+    char *p = buffer;
 
-    gdata=INST_DATA(C, Gad);
+    /* Get integer seconds from fixed-point */
+    /* timeHi contains the integer part for values >= 0 */
+    /* For negative values, we would need special handling */
+    seconds = timeHi;
+    if(seconds < 0) seconds = 0;  /* Don't display negative times for now */
 
-    topedge = Gad->TopEdge;
-    leftedge = Gad->LeftEdge;
-    width = Gad->Width;
-    height = Gad->Height;
+    minutes = seconds / 60;
+    seconds = seconds % 60;
 
-#ifdef USE_BEVEL_FRAME
-    if(gdata->Bevel)
-    {   // all other attribs that doesnt change are set at NewObject()
-        SetAttrs((Object *)gdata->Bevel,
-            IA_Left, leftedge,
-            IA_Top,        topedge,
-            IA_Width,      width,
-            IA_Height,     height,
-            BEVEL_ColorMap,(ULONG)layout->gpl_GInfo->gi_Screen->ViewPort.ColorMap,
-            BEVEL_Transparent,TRUE, // we will draw iside the frame ourselve.
-            BEVEL_Style,BVS_BUTTON,
-            TAG_DONE);
-        // consider the effective rectangle is inside the frame.
-        GetAttr(BEVEL_InnerTop,     gdata->Bevel,(ULONG *) &topedge);
-        GetAttr(BEVEL_InnerLeft,    gdata->Bevel,(ULONG *) &leftedge);
-        GetAttr(BEVEL_InnerWidth,   gdata->Bevel,(ULONG *) &width);
-        GetAttr(BEVEL_InnerHeight,  gdata->Bevel,(ULONG *) &height);
-    }
-#endif
-    gdata->_framerec.MinX = leftedge;
-    gdata->_framerec.MinY = topedge;
-    gdata->_framerec.MaxX = leftedge + width  -1;
-    gdata->_framerec.MaxY = topedge  + height -1;
-
-#ifdef USE_REGION_CLIPPING
-
-        ClearRegion(gdata->_clipRegion);
-        OrRectRegion(gdata->_clipRegion, &gdata->_framerec);
-
-#endif
-
-  return(1);
-}
-
-
-/* draw yourself, in the appropriate state */
-ULONG TimeRule_Render(Class *C, struct Gadget *Gad, struct gpRender *Render, ULONG update)
-{
-  TimeRule *gdata;
-  struct RastPort *rp; 
-  ULONG retval=1;
-
-  gdata=INST_DATA(C, Gad);
-
-  // also sent from GM_GOINACTIVE (4).
-  if(Render->MethodID==GM_RENDER)
-  {
-    rp=Render->gpr_RPort;
-    update=Render->gpr_Redraw;
-  }
-  else
-  {
-    rp = ObtainGIRPort(Render->gpr_GInfo);
-  }
-
-  if(rp)
-  {
-	int bLayerUpdating=FALSE;
-    int penbg=2,penb=2,penc=3;
-    struct Region *oldClipRegion;
-
-  //  bdbprintf(" **** TimeRule_Render trace MethodID:%08lx Layer flags:%04lx\n",(int)Render->MethodID,(int)rp->Layer->Flags);
-
-	// note from an OS3 official developer: we got to do manage the following:
-	if( ( rp->Layer->Flags & LAYERUPDATING ) != 0L )
-	{
-		bLayerUpdating = TRUE;
-		EndUpdate(rp->Layer, FALSE);
-		//bdbprintf(" ****Render->MethodID:%08lx LAYERUPDATING\n",(int)Render->MethodID);
-	} else
-	{
-
-	}
-
-
-    if(Gad->Flags & GFLG_DISABLED) // if disabled, draw background with another color.
+    /* Format minutes:seconds */
+    if(minutes >= 10)
     {
-        penbg = 0;
+        *p++ = '0' + (minutes / 10);
     }
-    #ifdef USE_BEVEL_FRAME
-        if(gdata->Bevel) DrawImage(rp,gdata->Bevel,0,0);
-    #endif
+    *p++ = '0' + (minutes % 10);
+    *p++ = ':';
+    *p++ = '0' + (seconds / 10);
+    *p++ = '0' + (seconds % 10);
 
-    #ifdef USE_REGION_CLIPPING
-        oldClipRegion = InstallClipRegion( rp->Layer, gdata->_clipRegion);
-    #endif
+    if(showMs)
+    {
+        /* Get first decimal from fractional part */
+        /* timeLo upper bits are fraction, scale to get 0-9 */
+        ms = ((ULONG)timeLo >> 28) & 0xF;  /* Get top 4 bits */
+        if(ms > 9) ms = 9;
+        *p++ = '.';
+        *p++ = '0' + ms;
+    }
 
-      SetDrMd(rp,JAM1);
-      SetAPen(rp,penbg);
-      RectFill(rp,gdata->_framerec.MinX,
-                  gdata->_framerec.MinY,
-                  gdata->_framerec.MaxX,
-                  gdata->_framerec.MaxY) ;
-        // {
-        //     UWORD width = gdata->_framerec.MaxX - gdata->_framerec.MinX;
-        //     UWORD height = gdata->_framerec.MaxY - gdata->_framerec.MinY;
-
-        //     UWORD xc = gdata->_framerec.MinX + ((width*gdata->_circleCenterX)>>16);
-        //     UWORD yc = gdata->_framerec.MinY + ((height*gdata->_circleCenterY)>>16);
-        //     SetAPen(rp,penb);
-        //     DrawEllipse(rp,xc,yc,width>>1,height>>1);
-        //     SetAPen(rp,penc);
-        //     DrawEllipse(rp,xc,yc,width>>2,height>>2);
-        // }
-		
-		if(bLayerUpdating) 
-		{
-			BeginUpdate(rp->Layer);
-		}
-		
-    #ifdef USE_REGION_CLIPPING
-        InstallClipRegion( rp->Layer,oldClipRegion); // important to pass NULL if oldClipRegion is NULL.
-    #endif
-
-    if (Render->MethodID != GM_RENDER)
-      ReleaseGIRPort(rp);
-  }
-  return(retval);
+    *p = '\0';
 }
 
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+/* GM_INFINITESCROLL_RENDERTILE - Override to draw time graduations */
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
+/**
+ * Render a tile with time graduations.
+ *
+ * The TimeRule displays a time scale matching TrackListArea's horizontal scroll.
+ * - Major ticks with numbers every N seconds (N depends on zoom)
+ * - Minor ticks between major ticks
+ *
+ * Drawing coordinate system:
+ * - Tile RastPort is at 0,0, size is TileWidth x TileHeight
+ * - AbstractPos is the time value at the LEFT edge of this tile
+ * - We need to convert time -> pixel position within the tile
+ */
+ULONG TimeRule_RenderTile(Class *C, struct Gadget *Gad, struct gpRenderTile *M)
+{
+    TimeRule *gdata;
+    InfiniteScroll *superData;
+    struct RastPort *rp;
+    UWORD tileWidth, tileHeight;
+
+    /* Time range for this TimeRule (from attributes) */
+    long long timeLeft, timeRight, timeRange;
+    long long tileAbstractPos;
+
+    /* Drawing parameters */
+    long long timePerPixel;
+    long long majorTickInterval;  /* Time between major ticks */
+    long long minorTickInterval;  /* Time between minor ticks */
+    long long currentTime;
+    LONG pixelX;
+    UWORD majorTickHeight, minorTickHeight;
+    char timeBuf[16];
+
+    if(!C || !Gad || !M) return 0;
+
+    gdata = INST_DATA(C, Gad);
+    /* Get superclass data for framerec info */
+    superData = INST_DATA(C->cl_Super, Gad);
+
+    rp = M->RPort;
+    if(!rp) return 0;
+
+    tileWidth = M->TileWidth;
+    tileHeight = M->TileHeight;
+
+    /* Clear tile to background (pen 0 = typically grey) */
+    SetAPen(rp, 0);
+    SetBPen(rp, 0);
+    RectFill(rp, 0, 0, tileWidth - 1, tileHeight - 1);
+
+    /* Get time range from TimeRule attributes */
+    timeLeft = ((long long)gdata->_timeLeftHi << 32) | ((ULONG)gdata->_timeLeftLo);
+    timeRight = ((long long)gdata->_timeRightHi << 32) | ((ULONG)gdata->_timeRightLo);
+    timeRange = timeRight - timeLeft;
+
+    if(timeRange <= 0) return 1;  /* Invalid range */
+
+    /* Get tile abstract position (this is the time at tile's left edge) */
+    tileAbstractPos = ((long long)M->AbstractPosHi << 32) | ((ULONG)M->AbstractPosLo);
+
+    /* Calculate time per pixel based on TimeRule width and time range */
+    /* timePerPixel = timeRange / (frame width) */
+    /* For now we use the superclass frame width */
+    {
+        UWORD frameWidth = superData->_framerec.MaxX - superData->_framerec.MinX + 1;
+        if(frameWidth > 0)
+        {
+            timePerPixel = timeRange / frameWidth;
+        }
+        else
+        {
+            timePerPixel = 1LL << 32;  /* 1 second per pixel fallback */
+        }
+    }
+
+    /* Determine tick intervals based on zoom level (timePerPixel) */
+    /* We want major ticks to be readable (at least ~50 pixels apart) */
+    {
+        long long minMajorPixels = 60;  /* Minimum pixels between major ticks */
+        long long minMajorTime = timePerPixel * minMajorPixels;
+
+        /* Round up to nice intervals: 0.1s, 0.5s, 1s, 2s, 5s, 10s, 30s, 1min, 5min... */
+        /* Using fixed point: 1 second = 1LL << 32 */
+        #define SEC_FP (1LL << 32)
+
+        if(minMajorTime <= SEC_FP / 10)        /* <= 0.1s */
+        {
+            majorTickInterval = SEC_FP / 10;   /* 0.1 second */
+            minorTickInterval = SEC_FP / 100;  /* 0.01 second (10 minor per major) */
+        }
+        else if(minMajorTime <= SEC_FP / 2)    /* <= 0.5s */
+        {
+            majorTickInterval = SEC_FP / 2;    /* 0.5 second */
+            minorTickInterval = SEC_FP / 10;   /* 0.1 second */
+        }
+        else if(minMajorTime <= SEC_FP)        /* <= 1s */
+        {
+            majorTickInterval = SEC_FP;        /* 1 second */
+            minorTickInterval = SEC_FP / 5;    /* 0.2 second */
+        }
+        else if(minMajorTime <= SEC_FP * 2)    /* <= 2s */
+        {
+            majorTickInterval = SEC_FP * 2;    /* 2 seconds */
+            minorTickInterval = SEC_FP / 2;    /* 0.5 second */
+        }
+        else if(minMajorTime <= SEC_FP * 5)    /* <= 5s */
+        {
+            majorTickInterval = SEC_FP * 5;    /* 5 seconds */
+            minorTickInterval = SEC_FP;        /* 1 second */
+        }
+        else if(minMajorTime <= SEC_FP * 10)   /* <= 10s */
+        {
+            majorTickInterval = SEC_FP * 10;   /* 10 seconds */
+            minorTickInterval = SEC_FP * 2;    /* 2 seconds */
+        }
+        else if(minMajorTime <= SEC_FP * 30)   /* <= 30s */
+        {
+            majorTickInterval = SEC_FP * 30;   /* 30 seconds */
+            minorTickInterval = SEC_FP * 5;    /* 5 seconds */
+        }
+        else if(minMajorTime <= SEC_FP * 60)   /* <= 1min */
+        {
+            majorTickInterval = SEC_FP * 60;   /* 1 minute */
+            minorTickInterval = SEC_FP * 10;   /* 10 seconds */
+        }
+        else
+        {
+            majorTickInterval = SEC_FP * 300;  /* 5 minutes */
+            minorTickInterval = SEC_FP * 60;   /* 1 minute */
+        }
+    }
+
+    /* Lines are drawn from bottom - make them short (half of previous size) */
+    majorTickHeight = tileHeight / 3;
+    minorTickHeight = tileHeight / 6;
+
+    /* Draw ticks within this tile */
+    /* Find first minor tick at or after tileAbstractPos */
+    currentTime = (tileAbstractPos / minorTickInterval) * minorTickInterval;
+    if(currentTime < tileAbstractPos) currentTime += minorTickInterval;
+
+    /* Set pen for tick marks (pen 1 = typically dark) */
+    SetAPen(rp, 1);
+
+    while(1)
+    {
+        long long relTime = currentTime - tileAbstractPos;
+        LONG px;
+
+        /* Convert time offset to pixel position within tile */
+        if(timePerPixel > 0)
+        {
+            px = (LONG)(relTime / timePerPixel);
+        }
+        else
+        {
+            px = 0;
+        }
+
+        if(px >= tileWidth) break;  /* Past end of tile */
+
+        if(px >= 0)
+        {
+            BOOL isMajor = ((currentTime % majorTickInterval) == 0);
+
+            if(isMajor)
+            {
+                /* Major tick - draw full height line */
+                Move(rp, px, tileHeight - majorTickHeight);
+                Draw(rp, px, tileHeight - 1);
+
+                /* Draw time text near bottom of tile */
+                {
+                    LONG seconds = (LONG)(currentTime >> 32);
+                    LONG timeLo = (LONG)(currentTime & 0xFFFFFFFF);
+                    BOOL showMs = (majorTickInterval < SEC_FP);
+                    UWORD textY;
+
+                    TimeRule_FormatTime(seconds, timeLo, timeBuf, showMs);
+
+                    /* Use fontTiny if available from stylesheet */
+                    if(gdata->_styleSheet && gdata->_styleSheet->fontTiny)
+                    {
+                        SetFont(rp, gdata->_styleSheet->fontTiny);
+                        /* Position text close to bottom - baseline at tileHeight - 2 */
+                        textY = tileHeight - 2;
+                    }
+                    else
+                    {
+                        /* Fallback: position based on default font */
+                        textY = tileHeight - 2;
+                    }
+
+                    /* Draw text - position adjusted for text width */
+                    Move(rp, px + 2, textY);
+                    Text(rp, timeBuf, strlen(timeBuf));
+                }
+            }
+            else
+            {
+                /* Minor tick - draw shorter line */
+                Move(rp, px, tileHeight - minorTickHeight);
+                Draw(rp, px, tileHeight - 1);
+            }
+        }
+
+        currentTime += minorTickInterval;
+
+        /* Safety limit */
+        if(currentTime < 0) break;
+    }
+
+    return 1;
+}
 

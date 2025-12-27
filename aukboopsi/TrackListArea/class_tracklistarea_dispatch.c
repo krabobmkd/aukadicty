@@ -81,7 +81,21 @@ ULONG ASM SAVEDS TrackListArea_Dispatcher(
         gdata->_headerWidth = 100;  /* default header width */
         gdata->_defaulTrackHeight = 40;   /* default track height */
         gdata->_scrollY = 0;
+        gdata->_scrollX = 0; /* Time at left border, can be negative */
         gdata->_domainHeight = 0;
+
+        /* Time per pixel width in AukFixed 32.32 format.
+         * This is the amount of time (in seconds) that one horizontal pixel represents.
+         * Lower value = more zoomed in (more detail).
+         *
+         * Default: 10 seconds / 640 pixels = 0.015625 seconds/pixel
+         *
+         * Minimum zoom limit: At 44100 Hz, one sample = 1/44100 seconds.
+         * To have at least 2 pixels per sample: min = 1/(44100*2) = ~0.00001133 sec/px
+         * In fixed-point: (1LL << 32) / (44100 * 2) = ~48693 (approximately)
+         * We'll define this constant for zoom clamping elsewhere.
+         */
+        gdata->_timePerPixelWidth = (10LL<<32)/640; /* 10 seconds for 640 pixel width.*/
 
         /* set gadget (super class) attributes for this instance like this: */
         /* (BOOL) Indicate whether gadget is part of TAB/SHIFT-TAB cycle. */

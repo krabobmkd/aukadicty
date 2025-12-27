@@ -29,6 +29,26 @@
  */
 #include "../bdbprintf.h"
 
+/** for dispatcher, very wise use of union.
+ *  each  struct also starts with MethodID.
+ * and they are the very parameters for each methods.
+ */
+typedef union MsgUnion
+{
+  ULONG  MethodID;
+  /* from classusr.h or gadgetclass.h, all starts with MethodID. */
+  struct opSet        opSet;
+  struct opUpdate     opUpdate;
+  struct opGet        opGet;
+  struct gpHitTest    gpHitTest;
+  struct gpRender     gpRender;
+  struct gpInput      gpInput;
+  struct gpGoInactive gpGoInactive;
+  struct gpLayout     gpLayout;
+  struct gpDomain     gpDomain;
+  struct gpInvalidateTiles gpInvalidateTiles;
+  struct gpRenderTile gpRenderTile;
+} *Msgs;
 
 /** WATCH OUT ! BOOPSI docs says:
 *  "the model class dispatcher must be able to run on Intuition's context,
@@ -155,7 +175,23 @@ ULONG ASM SAVEDS InfiniteScroll_Dispatcher(
     case GM_INFINITESCROLL_INVALIDATETILES:
       InfiniteScroll_InvalidateTiles(C, Gad, (struct gpInvalidateTiles *)M);
       retval=1;
-    break;
+      break;
+
+    case GM_INFINITESCROLL_RENDERTILE:
+      /* Default tile rendering - clear to background color */
+      /* Subclasses should override this to draw actual content */
+      {
+          struct gpRenderTile *rt = (struct gpRenderTile *)M;
+          struct RastPort *rp = rt->RPort;
+          if(rp)
+          {
+              SetAPen(rp, 0);
+              SetBPen(rp, 0);
+              RectFill(rp, 0, 0, rt->TileWidth - 1, rt->TileHeight - 1);
+          }
+      }
+      retval=1;
+      break;
 
     default:
       retval=DoSuperMethodA(C,(Object *)Gad,(Msg)M);

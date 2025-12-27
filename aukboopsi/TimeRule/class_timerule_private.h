@@ -22,38 +22,54 @@ extern "C" {
 #define USE_REGION_CLIPPING 1
 
 /**
-*  this is the internal private gadget struct that own the data of the object instances.
-* an important principle of boopsi is that structure for the class is hidden to the consumers.
-* the consumers will only see the public header, and will do setAtribs()/GetAttribs()/Domethod().
-* Also: for the same Gadget, superclass members are in struct Gadget * passed to functions.
-* (These are just concatenated structs in a system private way.)
-* DEVTODO: make this class evolve to retain the data needed to draw and interact with your gadget.
-*/
+ * This is the internal private gadget struct that own the data of the object instances.
+ * An important principle of BOOPSI is that structure for the class is hidden to the consumers.
+ * The consumers will only see the public header, and will do SetAttribs()/GetAttribs()/DoMethod().
+ * Also: for the same Gadget, superclass members are in struct Gadget * passed to functions.
+ * (These are just concatenated structs in a system private way.)
+ *
+ * TimeRule inherits from InfiniteScroll - the superclass manages:
+ * - _tiles array with offscreen bitmaps
+ * - _framerec rectangle
+ * - _clipRegion for clipping
+ * - _domainMin/Max, _viewPos, _viewZoom
+ * - _tileWidth, _tileHeight, _tileCount
+ */
 typedef struct ITimeRule {
-    // let's say we have
+    /* Default height for the ruler */
     UWORD _defaultHeight;
 
-    // DEVTODO: we could manage the mouse interaction current state....
+    /* Mouse interaction state (for future use) */
     ULONG _MouseMode;
     ULONG _EditMode;
 
-    // would have minimal size here.
-    //UWORD _minimalWidth,_minimalHeight;
+    /* Time at left border of TimeRule (signed 64-bit AukFixed) */
+    LONG _timeLeftHi;
+    LONG _timeLeftLo;
 
+    /* Time at right border of TimeRule (signed 64-bit AukFixed) */
+    LONG _timeRightHi;
+    LONG _timeRightLo;
 
-    struct Rectangle _framerec;
-#ifdef USE_REGION_CLIPPING
-    struct Region *_clipRegion;
-#endif
+    /* X offset from TimeRule left to where TrackListArea starts */
+    /* This is typically the TrackHeader width */
+    UWORD _trackAreaOffsetX;
+
+    /* Pointer to AukStyleSheet for visual styling (fonts, colors) */
+    struct AukStyleSheet *_styleSheet;
 
 } TimeRule;
 
 ULONG TimeRule_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set);
 ULONG TimeRule_GetAttr(Class *C, struct Gadget *Gad, struct opGet *Get);
-ULONG TimeRule_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout);
-ULONG TimeRule_Render(Class *C, struct Gadget *Gad, struct gpRender *Render, ULONG update);
-ULONG TimeRule_HandleInput(Class *C, struct Gadget *Gad, struct gpInput *Input);
 ULONG TimeRule_Domain(Class *C, struct Gadget *Gad, struct gpDomain *D);
+
+/* TimeRule overrides InfiniteScroll tile rendering to draw graduations */
+/* This handles GM_INFINITESCROLL_RENDERTILE method */
+ULONG TimeRule_RenderTile(Class *C, struct Gadget *Gad, struct gpRenderTile *M);
+
+/* Helper to format time value as text */
+void TimeRule_FormatTime(LONG timeHi, LONG timeLo, char *buffer, BOOL showMs);
 
 // - - - - -- -
 
@@ -64,7 +80,7 @@ ULONG TimeRule_Domain(Class *C, struct Gadget *Gad, struct gpDomain *D);
 typedef union MsgUnion
 {
   ULONG  MethodID;
-  // from classusr.h or gadgetclass.h, all starts with MethodID.
+  /* from classusr.h or gadgetclass.h, all starts with MethodID. */
   struct opSet        opSet;
   struct opUpdate     opUpdate;
   struct opGet        opGet;
@@ -73,6 +89,8 @@ typedef union MsgUnion
   struct gpInput      gpInput;
   struct gpGoInactive gpGoInactive;
   struct gpLayout     gpLayout;
+  struct gpDomain     gpDomain;
+  struct gpRenderTile gpRenderTile;  /* From InfiniteScroll */
 } *Msgs;
 
 /**

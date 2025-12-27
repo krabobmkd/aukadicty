@@ -124,15 +124,14 @@ void CreateTrackListView(TrackListView *pm,struct DrawInfo *drawInfo,
     // - - - - - C
     pm->scrollerH = (Object *)NewObject( SCROLLER_GetClass(), NULL,
                                 GA_DrawInfo, drawInfo,
-                                //GA_ID,GAD_SCROLLER_VALUE,
+                                GA_ID, GAD_SCROLLER_H,
                                 GA_RelVerify, TRUE, // needed
                             SCROLLER_Top, 0,
-                            SCROLLER_Total, 40,
-                            SCROLLER_Visible, 10,
+                            SCROLLER_Total, 100,
+                            SCROLLER_Visible, 100,
                             SCROLLER_Orientation, FREEHORIZ,
                             SCROLLER_Stretch,TRUE,
-                         //   ICA_TARGET,app->testBaseName,
-                         //   ICA_MAP,(ULONG)map_slider_to_basename_value,
+                            ICA_TARGET, appModel,
                             TAG_END);
     // - - - - - A+B+C
 
@@ -175,13 +174,29 @@ static void AukUpdate_Track(AukObject* listenerObject, AukObject* modifiedObject
     {
         case AUK_MSG_TRACKMODIFIED_TIMECHANGE:
         {
-
-            //TODO update GUI, add ui track
+            /* Time of a sound changed, may affect project duration.
+             * Schedule horizontal scroll domain update.
+             */
+            pm->updateBits |= TLVB_UPDATE_HORIZSCROLLDOMAIN;
+            if(myTask) Signal(myTask, SIGBREAKF_CTRL_F);
         }
         break;
         case AUK_MSG_TRACKMODIFIED_SOUNDADDED:
         {
-
+            /* Sound added to track, may affect project duration.
+             * Schedule horizontal scroll domain update.
+             */
+            pm->updateBits |= TLVB_UPDATE_HORIZSCROLLDOMAIN;
+            if(myTask) Signal(myTask, SIGBREAKF_CTRL_F);
+        }
+        break;
+        case AUK_MSG_TRACKMODIFIED_SOUNDREMOVED:
+        {
+            /* Sound removed from track, may affect project duration.
+             * Schedule horizontal scroll domain update.
+             */
+            pm->updateBits |= TLVB_UPDATE_HORIZSCROLLDOMAIN;
+            if(myTask) Signal(myTask, SIGBREAKF_CTRL_F);
         }
         break;
 
@@ -216,6 +231,10 @@ static void AukUpdate_TrackList(AukObject* listenerObject, AukObject* modifiedOb
 
             // update GUI, add ui track
             TrackListArea_addTrack(trackListAreaUi,track);
+
+            /* Track added may affect project duration, update horizontal scroll domain */
+            pm->updateBits |= TLVB_UPDATE_HORIZSCROLLDOMAIN;
+            if(myTask) Signal(myTask, SIGBREAKF_CTRL_F);
         }
         break;
         case AUK_MSG_TRACKREMOVED:
@@ -229,6 +248,9 @@ static void AukUpdate_TrackList(AukObject* listenerObject, AukObject* modifiedOb
             // update GUI, remove ui track
             TrackListArea_removeTrack(trackListAreaUi,track);
 
+            /* Track removed may affect project duration, update horizontal scroll domain */
+            pm->updateBits |= TLVB_UPDATE_HORIZSCROLLDOMAIN;
+            if(myTask) Signal(myTask, SIGBREAKF_CTRL_F);
         }
         break;
         default:
@@ -268,28 +290,164 @@ void updateVerticalScrollDomain(TrackListView *pm)
     if(domainHeight ==0) domainHeight=1;
     if(visibleHeight>domainHeight) visibleHeight = domainHeight;
 
-    bdbprintf(" **** updateVerticalScrollDomain: domainHeight:%d visibleHeight:%d \n",domainHeight,visibleHeight);
+    //bdbprintf(" **** updateVerticalScrollDomain: domainHeight:%d visibleHeight:%d \n",domainHeight,visibleHeight);
 
     /* Update the scroller */
     {
         ULONG tags[]={
             SCROLLER_Total, 0,
             SCROLLER_Visible, 0,
-//            SCROLLER_Top, 0,
             TAG_END
         };
         tags[1] = domainHeight;
         tags[3] = visibleHeight;
-//        tags[5] = scrollTop;
+
 
         SetGadgetAttrsA((struct Gadget *)pm->scrollerV, pm->window, NULL,&tags[0]);
     }
 
-//    SetGadgetAttrs((struct Gadget *)pm->scrollerV, pm->window, NULL,
-//        SCROLLER_Visible, visibleHeight,
-////        SCROLLER_Top, scrollTop,
-//        TAG_END);
 }
+
+
+/* Minimum timePerPixelWidth: 1 sample at 44100Hz should give at least 2 pixels.
+ * min = 1/(44100*2) seconds/pixel = 1/88200 sec/px
+ * In fixed-point 32.32: (1LL << 32) / 88200 = approximately 48693
+ */
+#define MIN_TIME_PER_PIXEL_WIDTH 48693LL
+
+/**
+ * Update the Horizontal scroller's domain based on the trackList's max time length
+ * Should be called after track count changes, track modified, or layout changes.
+ *
+ * Domain (total) = project duration / timePerPixelWidth (in pixels)
+ * Visible = current trackArea width (gadget width - header width)
+ *
+ * Also updates TimeRule's time border attributes to match visible time range.
+ */
+void updateHorizontalScrollDomain(TrackListView *pm)
+{
+    struct Gadget *trackListGad;
+    AukAProject *project;
+    long long duration;
+    long long timePerPixelWidth;
+    long long scrollX;
+    long long timeLeft, timeRight;
+    ULONG timePerPixLo = 0, timePerPixHi = 0;
+    ULONG scrollXLo = 0, scrollXHi = 0;
+    ULONG domainWidthLo = 0, domainWidthHi = 0;
+    unsigned long long domainWidth;
+    ULONG visibleWidth;
+    ULONG totalScroll;
+    ULONG visibleScroll;
+
+    if(!pm || !pm->trackList || !pm->scrollerH) return;
+
+    trackListGad = (struct Gadget *)pm->trackList;
+    project = (AukAProject *)pm->project;
+
+    if(!project) return;
+
+    /* Get project duration (AukFixed 32.32 format, in seconds) */
+    duration = project->GetDuration(project);
+    bdbprintf("updateHorizontalScrollDomain duration:%08x.%08x\n",(int)(duration>>32),(int)duration);
+    if(duration <= 0) {
+        /* No duration, set scroller to full visible (disabled state) */
+        SetGadgetAttrs((struct Gadget *)pm->scrollerH, pm->window, NULL,
+            SCROLLER_Total, 1,
+            SCROLLER_Visible, 1,
+            TAG_END);
+
+        /* Set TimeRule to show 0-10 seconds default range */
+        if(pm->timerule)
+        {
+            SetGadgetAttrs((struct Gadget *)pm->timerule, pm->window, NULL,
+                TIMERULE_TimeLeftHi, 0,
+                TIMERULE_TimeLeftLo, 0,
+                TIMERULE_TimeRightHi, 0,
+                TIMERULE_TimeRightLo, (10 << 16),  /* 10 seconds in fixed-point (approx) */
+                TAG_END);
+        }
+        return;
+    }
+
+    /* Get timePerPixelWidth from trackList */
+    GetAttr(TRACKLIST_TimePerPixelWidth, pm->trackList, &timePerPixLo);
+    GetAttr(TRACKLIST_TimePerPixelWidthHigh, pm->trackList, &timePerPixHi);
+    timePerPixelWidth = ((long long)timePerPixHi << 32) | timePerPixLo;
+
+    /* Clamp timePerPixelWidth to minimum (prevent divide by zero and over-zoom) */
+    if(timePerPixelWidth < MIN_TIME_PER_PIXEL_WIDTH) {
+        timePerPixelWidth = MIN_TIME_PER_PIXEL_WIDTH;
+    }
+
+    /* Calculate domain width in pixels: domainWidth = duration / timePerPixelWidth
+     * Both are in AukFixed 32.32 format, so dividing them gives an integer result in pixels.
+     */
+    domainWidth = (unsigned long long)(duration / timePerPixelWidth);
+
+    /* Get visible width from the gadget. TrackListArea uses headerWidth for left side,
+     * so visible track area width = gadget width.
+     * The actual visible time area would be gadget width, but we use domainWidth directly.
+     */
+    GetAttr(TRACKLIST_DomainWidth, pm->trackList, &domainWidthLo);
+    GetAttr(TRACKLIST_DomainWidthHigh, pm->trackList, &domainWidthHi);
+
+    /* Use gadget width as visible width in scroller units (pixels) */
+    visibleWidth = (ULONG)trackListGad->Width;
+    if(visibleWidth == 0) visibleWidth = 1;
+
+    /* Scroller total = domainWidth (pixels), visible = gadget width (pixels)
+     * If domain fits in visible, scroller is effectively disabled.
+     */
+    totalScroll = (ULONG)domainWidth;
+    if(totalScroll == 0) totalScroll = 1;
+    visibleScroll = visibleWidth;
+    if(visibleScroll > totalScroll) visibleScroll = totalScroll;
+
+    /* bdbprintf("updateHorizontalScrollDomain: duration=%lld timePerPix=%lld domain=%lu visible=%lu\n",
+               duration, timePerPixelWidth, totalScroll, visibleScroll); */
+
+    SetGadgetAttrs((struct Gadget *)pm->scrollerH, pm->window, NULL,
+        SCROLLER_Total, totalScroll,
+        SCROLLER_Visible, visibleScroll,
+        TAG_END);
+
+    /* Update TimeRule time border attributes to match visible time range.
+     *
+     * The TimeRule spans the full window width, but TrackListArea's track area
+     * starts after the header. So TimeRule's time scale must account for this offset:
+     *
+     * TimeRule pixels 0 to headerWidth are "before" the track area's time start.
+     * timeLeft = scrollX - (headerWidth * timePerPixelWidth)
+     * timeRight = scrollX + ((visibleWidth - headerWidth) * timePerPixelWidth)
+     *
+     * This way, at pixel position headerWidth in TimeRule, the time shown equals scrollX,
+     * matching the left edge of the TrackListArea's track content.
+     */
+    if(pm->timerule)
+    {
+        ULONG headerWidth = 0;
+
+        GetAttr(TRACKLIST_ScrollX, pm->trackList, &scrollXLo);
+        GetAttr(TRACKLIST_ScrollXHigh, pm->trackList, &scrollXHi);
+        GetAttr(TRACKLIST_HeaderWidth, pm->trackList, &headerWidth);
+        scrollX = ((long long)scrollXHi << 32) | scrollXLo;
+
+        /* Time at TimeRule left edge (before track area) */
+        timeLeft = scrollX - ((long long)headerWidth * timePerPixelWidth);
+        /* Time at TimeRule right edge */
+        timeRight = scrollX + ((long long)(visibleWidth - headerWidth) * timePerPixelWidth);
+
+        SetGadgetAttrs((struct Gadget *)pm->timerule, pm->window, NULL,
+            TIMERULE_TimeLeftHi, (ULONG)(timeLeft >> 32),
+            TIMERULE_TimeLeftLo, (ULONG)(timeLeft & 0xFFFFFFFF),
+            TIMERULE_TimeRightHi, (ULONG)(timeRight >> 32),
+            TIMERULE_TimeRightLo, (ULONG)(timeRight & 0xFFFFFFFF),
+            TIMERULE_TrackAreaOffsetX, headerWidth,
+            TAG_END);
+    }
+}
+
 
 void TrackListView_setProject(TrackListView *pm,AukAProject *project)
 {
@@ -315,17 +473,20 @@ void TrackListView_ListenTrackListMessage(TrackListView *pm,struct opUpdate *M)
     struct TagItem *ptag;
     ULONG changedDomainHeight=0;
     /* here we know that sender is GA_ID == GAD_TRACKLIST
-      We listen to change and actually delay application to next loop, to avoid inter signal recursions...
+      We listen to change and actually delay application to next Wait() main loop,
+     to avoid inter signal recursions.
     */
     if((ptag = FindTagItem( TRACKLIST_DomainHeight,M->opu_AttrList ))!=NULL) changedDomainHeight = ptag->ti_Data;
     if(changedDomainHeight >0)
     {
         pm->window = M->opu_GInfo->gi_Window;
         pm->updateBits |= TLVB_UPDATE_VERTSCROLLDOMAIN;
+        /* Layout changed, also update horizontal scroll domain
+         * (visible width may have changed due to window resize)
+         */
+        pm->updateBits |= TLVB_UPDATE_HORIZSCROLLDOMAIN;
         if(myTask) Signal(myTask,SIGBREAKF_CTRL_F);
-       //delay updateVerticalScrollDomain(pm);
     }
-       bdbprintf(" **** TrackListView_ListenTrackListMessage\n");
 
     if((ptag = FindTagItem( TRACKLIST_ScrollY,M->opu_AttrList ))!=NULL)
     {
@@ -333,7 +494,17 @@ void TrackListView_ListenTrackListMessage(TrackListView *pm,struct opUpdate *M)
         if(myTask) Signal(myTask,SIGBREAKF_CTRL_F);
     }
 
+    if((ptag = FindTagItem( TRACKLIST_ScrollX,M->opu_AttrList ))!=NULL)
+    {
+        pm->updateBits |= TLVB_UPDATE_FULLREDRAW;
+        if(myTask) Signal(myTask,SIGBREAKF_CTRL_F);
+    }
+
+    // can manage more update signals here...
+
 }
+/* Update trackList drawing from vertical scroll position
+*/
 void TrackListView_ListenScrollVMessage(TrackListView *pm,struct opUpdate *M)
 {
     struct TagItem *ptag;
@@ -346,8 +517,69 @@ void TrackListView_ListenScrollVMessage(TrackListView *pm,struct opUpdate *M)
                 );
     }
 
-
 }
+/* Update trackList horizontal scroll position from horizontal scroller.
+ * The scroller SCROLLER_Top is in "scroller units" which we convert to time.
+ * The scroller's domain is computed in updateHorizontalScrollDomain().
+ * Also updates TimeRule's time border attributes to match new scroll position.
+ */
+void TrackListView_ListenScrollHMessage(TrackListView *pm, struct opUpdate *M)
+{
+    struct TagItem *ptag;
+    if((ptag = FindTagItem( SCROLLER_Top, M->opu_AttrList )) != NULL)
+    {
+        /* SCROLLER_Top is the scroller position.
+         * We need to convert this to a time value (_scrollX).
+         * The scroller domain corresponds to the project duration in "scroller units".
+         * For now, scroller units = pixels of domain width.
+         * scrollX (time) = scrollerTop * timePerPixelWidth
+         */
+        ULONG scrollerTop = ptag->ti_Data;
+        ULONG timePerPixLo = 0, timePerPixHi = 0;
+        ULONG headerWidth = 0;
+        long long timePerPixelWidth;
+        long long scrollX;
+        long long timeLeft, timeRight;
+        ULONG visibleWidth;
+        struct Gadget *trackListGad;
+
+        GetAttr(TRACKLIST_TimePerPixelWidth, pm->trackList, &timePerPixLo);
+        GetAttr(TRACKLIST_TimePerPixelWidthHigh, pm->trackList, &timePerPixHi);
+        GetAttr(TRACKLIST_HeaderWidth, pm->trackList, &headerWidth);
+        timePerPixelWidth = ((long long)timePerPixHi << 32) | timePerPixLo;
+
+        /* scrollX = scrollerTop * timePerPixelWidth (in fixed-point) */
+        scrollX = (long long)scrollerTop * timePerPixelWidth;
+
+        /* Set both low and high parts of _scrollX */
+        SetGadgetAttrs((struct Gadget *)pm->trackList, pm->window, NULL,
+                    TRACKLIST_ScrollX, (ULONG)(scrollX & 0xFFFFFFFF),
+                    TRACKLIST_ScrollXHigh, (ULONG)(scrollX >> 32),
+                    TAG_END
+                );
+
+        /* Update TimeRule time borders to match new scroll position */
+        if(pm->timerule)
+        {
+            trackListGad = (struct Gadget *)pm->trackList;
+            visibleWidth = (ULONG)trackListGad->Width;
+            if(visibleWidth == 0) visibleWidth = 1;
+
+            /* Time at TimeRule left edge (before track area) */
+            timeLeft = scrollX - ((long long)headerWidth * timePerPixelWidth);
+            /* Time at TimeRule right edge */
+            timeRight = scrollX + ((long long)(visibleWidth - headerWidth) * timePerPixelWidth);
+
+            SetGadgetAttrs((struct Gadget *)pm->timerule, pm->window, NULL,
+                TIMERULE_TimeLeftHi, (ULONG)(timeLeft >> 32),
+                TIMERULE_TimeLeftLo, (ULONG)(timeLeft & 0xFFFFFFFF),
+                TIMERULE_TimeRightHi, (ULONG)(timeRight >> 32),
+                TIMERULE_TimeRightLo, (ULONG)(timeRight & 0xFFFFFFFF),
+                TAG_END);
+        }
+    }
+}
+
 void TrackListView_ListenTrackHeaderMessage(TrackListView *pm,struct opUpdate *M, ULONG gadId)
 {
     ULONG buttonId = gadId & GAD_TRACKHEADER_IDMASK;
@@ -376,6 +608,8 @@ void TrackListView_ListenTrackHeaderMessage(TrackListView *pm,struct opUpdate *M
 void TrackListView_CheckUpdates(TrackListView *pm)
 {
     if(pm->updateBits & TLVB_UPDATE_VERTSCROLLDOMAIN) updateVerticalScrollDomain(pm);
+    if(pm->updateBits & TLVB_UPDATE_HORIZSCROLLDOMAIN) updateHorizontalScrollDomain(pm);
+
     if(pm->updateBits & TLVB_UPDATE_FULLREDRAW)
     {
         SetGadgetAttrs(pm->trackList, pm->window, NULL,TRACKLIST_Refresh,TRUE,TAG_END);

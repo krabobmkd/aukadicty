@@ -17,6 +17,7 @@
 
 #include "class_timerule.h"
 #include "class_timerule_private.h"
+#include "../aukstylesheet.h"
 
 #include <utility/tagitem.h>
 
@@ -45,13 +46,36 @@ ULONG TimeRule_GetAttr(Class *C, struct Gadget *Gad, struct opGet *Get)
   switch(Get->opg_AttrID)
   {
     case TIMERULE_DefHeight:
-        *data = (LONG)gdata->_defaultHeight;
-    break;
+        *data = (ULONG)gdata->_defaultHeight;
+        break;
 
-    // super class gadget things. would manage attribs selected/hightlighted, ...
+    case TIMERULE_TimeLeftHi:
+        *data = (ULONG)gdata->_timeLeftHi;
+        break;
+    case TIMERULE_TimeLeftLo:
+        *data = (ULONG)gdata->_timeLeftLo;
+        break;
+
+    case TIMERULE_TimeRightHi:
+        *data = (ULONG)gdata->_timeRightHi;
+        break;
+    case TIMERULE_TimeRightLo:
+        *data = (ULONG)gdata->_timeRightLo;
+        break;
+
+    case TIMERULE_TrackAreaOffsetX:
+        *data = (ULONG)gdata->_trackAreaOffsetX;
+        break;
+
+    case TIMERULE_StyleSheet:
+        *data = (ULONG)gdata->_styleSheet;
+        break;
+
+    /* super class gadget things. would manage attribs selected/highlighted, ... */
+    /* InfiniteScroll attribs are also handled by supercall */
     default:
         DoSuperCall = 1;
-      // everything we don't manage directly is managed by supercall.
+        /* everything we don't manage directly is managed by supercall. */
   }
   if(DoSuperCall)  retval=DoSuperMethodA(C, (APTR)Gad, (APTR)Get);
 
@@ -62,14 +86,14 @@ ULONG TimeRule_GetAttr(Class *C, struct Gadget *Gad, struct opGet *Get)
 ULONG TimeRule_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
 {
   struct TagItem *tag;
-  ULONG data; // for SetAttribs, retval means if anything needed redraw.
+  ULONG data;
   TimeRule *gdata;
-  ULONG redraw=0, update=0, notifCoords=0;
+  ULONG redraw=0, invalidateTiles=0;
 
   gdata=INST_DATA(C, Gad);
 
- // set can use a list of attribs to change, so we manage this with a loop.
- // this also allows to have just one draw refresh for a set of change.
+  /* set can use a list of attribs to change, so we manage this with a loop. */
+  /* this also allows to have just one draw refresh for a set of change. */
   for( tag = Set->ops_AttrList ;
         tag->ti_Tag != TAG_END ;
         tag++
@@ -79,71 +103,97 @@ ULONG TimeRule_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
 
     switch(tag->ti_Tag)
     {
-     case TIMERULE_DefHeight:
-        if((UWORD)data != gdata->_defaultHeight )
+      case TIMERULE_DefHeight:
+        if((UWORD)data != gdata->_defaultHeight)
         {
-            gdata->_defaultHeight = (UWORD)data ;
+            gdata->_defaultHeight = (UWORD)data;
             redraw=1;
-            notifCoords = 1;
         }
         break;
 
-     // - - - actually we have to manage super class attribs:
-     // with GA_XXX and struct Gadget members...
-     // is there  a way to super call this ? DoSuperMethodA() deosn't seems to manage these attribs.
+      case TIMERULE_TimeLeftHi:
+        if((LONG)data != gdata->_timeLeftHi)
+        {
+            gdata->_timeLeftHi = (LONG)data;
+            invalidateTiles=1;
+        }
+        break;
+      case TIMERULE_TimeLeftLo:
+        if((LONG)data != gdata->_timeLeftLo)
+        {
+            gdata->_timeLeftLo = (LONG)data;
+            invalidateTiles=1;
+        }
+        break;
+
+      case TIMERULE_TimeRightHi:
+        if((LONG)data != gdata->_timeRightHi)
+        {
+            gdata->_timeRightHi = (LONG)data;
+            invalidateTiles=1;
+        }
+        break;
+      case TIMERULE_TimeRightLo:
+        if((LONG)data != gdata->_timeRightLo)
+        {
+            gdata->_timeRightLo = (LONG)data;
+            invalidateTiles=1;
+        }
+        break;
+
+      case TIMERULE_TrackAreaOffsetX:
+        if((UWORD)data != gdata->_trackAreaOffsetX)
+        {
+            gdata->_trackAreaOffsetX = (UWORD)data;
+            invalidateTiles=1;
+        }
+        break;
+
+      case TIMERULE_StyleSheet:
+        if((struct AukStyleSheet *)data != gdata->_styleSheet)
+        {
+            gdata->_styleSheet = (struct AukStyleSheet *)data;
+            invalidateTiles=1;
+        }
+        break;
+
+      /* GA_XXX attribs with struct Gadget members... */
       case GA_Disabled:
         {
-            if(data) Gad->Flags |= GFLG_DISABLED; // set bit
-            else Gad->Flags &= ~GFLG_DISABLED; // remove bit.
+            if(data) Gad->Flags |= GFLG_DISABLED;
+            else Gad->Flags &= ~GFLG_DISABLED;
             redraw=1;
         }
         break;
       case GA_Highlight:
         {
-            if(data) Gad->Flags |= GFLG_GADGHBOX; // set bit
-            else Gad->Flags &= ~GFLG_GADGHBOX; // remove bit.
+            if(data) Gad->Flags |= GFLG_GADGHBOX;
+            else Gad->Flags &= ~GFLG_GADGHBOX;
             redraw=1;
         }
         break;
       case GA_Selected:
         {
-            if(data) Gad->Flags |= GFLG_SELECTED; // set bit
-            else Gad->Flags &= ~GFLG_SELECTED; // remove bit.
+            if(data) Gad->Flags |= GFLG_SELECTED;
+            else Gad->Flags &= ~GFLG_SELECTED;
             redraw=1;
         }
         break;
-    default:
-        //does not seems to do anything for gadgets.... DoSuperMethodA(C,(APTR)Gad,(Msg)Set);
-        //note: apparently super call is not to be managed here (not sure !!!)
+      default:
+        /* InfiniteScroll attribs are handled by supercall in dispatcher */
         break;
 
-    } // end switch
-  } // end for
+    } /* end switch */
+  } /* end for */
 
-  if(redraw | update)
+  if(invalidateTiles)
   {
-//    struct RastPort *rp;
-
-//    if(rp=ObtainGIRPort(Set->ops_GInfo))
-//    {
-//        // freeze with "..." call with GCC6.5, use local struct works 100%.
-//        struct gpRender gpr;
-//        gpr.MethodID = GM_RENDER;
-//        gpr.gpr_GInfo = Set->ops_GInfo;
-//        gpr.gpr_RPort = rp;
-//        gpr.gpr_Redraw = (redraw?GREDRAW_REDRAW:GREDRAW_UPDATE);
-
-//        DoMethodA((Object *)Gad,(Msg)&gpr.MethodID);
-//        ReleaseGIRPort(rp);
-//    }
-
-    if(notifCoords)
-    {
-        //TimeRule_NotifyCoords(C,Gad,Set->ops_GInfo);
-    }
+      /* When time borders change, all tiles need to be redrawn */
+      /* The render function will handle this */
+      redraw = 1;
   }
 
-  return(redraw| update);
+  return(redraw);
 }
 
 

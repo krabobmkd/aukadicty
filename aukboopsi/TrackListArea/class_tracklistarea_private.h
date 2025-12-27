@@ -45,10 +45,6 @@ typedef struct TrackChild{
 */
 typedef struct TrackListArea {
 
-    // DEVTODO: we could manage the mouse interaction current state....
-    // ULONG _MouseMode;
-    // ULONG _EditMode;
-
     // would have minimal size here.
     UWORD _minimalWidth,_minimalHeight;
 
@@ -73,6 +69,20 @@ typedef struct TrackListArea {
 
     /* Total domain height (sum of all track heights), updated in Layout */
     ULONG _domainHeight;
+
+    /* Total domain width in pixels, computed from project duration / timePerPixelWidth */
+    unsigned long long _domainWidth;
+    /* Amount of seconds for a pixel width in fixed 32.32 value, aka the time zoom rate.
+     * Lower value = more zoomed in. Must not be zero.
+     * Minimum allowed: 1/(44100*2) to ensure 44kHz sample gets at least 2 pixels.
+     */
+    AukFixed _timePerPixelWidth;
+
+    /* Horizontal scroll position: time at the left border of scroll area.
+     * Signed 64-bit AukFixed value - can be negative for time before zero.
+     */
+    long long _scrollX;
+
     /* check for change at layout*/
     ULONG _prevHeight;
     /* Pointer to AukStyleSheet for visual styling */

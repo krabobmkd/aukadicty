@@ -55,15 +55,16 @@ struct Library        *UtilityBase=NULL;
 #ifdef USE_BEVEL_FRAME
 struct Library        *BevelBase=NULL;
 #endif
-// this is the only global writtable we should see in the whole class binary !
+/* this is the only global writable we should see in the whole class binary ! */
 struct IClass   *TimeRuleClassPtr=NULL;
-// this 2 strings are also linked to the asm startup header ( in .gadget mode)
-// note: (const char *str="") would make str be a (char **) to the linker. so char str[] is linkable to asm startup
+/* this 2 strings are also linked to the asm startup header ( in .gadget mode) */
+/* note: (const char *str="") would make str be a (char **) to the linker. so char str[] is linkable to asm startup */
 #ifndef TIMERULE_STATICLINK
 const char Class_ID[]= TimeRule_CLASS_ID;
-const char *VersionString = "timerule.gadget 1.0 "; // add date
+const char *VersionString = "timerule.gadget 1.0 "; /* add date */
 #endif
-const char TimeRuleSuperClassID[]=TimeRule_SUPERCLASS_ID;
+/* TimeRule uses InfiniteScroll as superclass (class pointer, not string) */
+/* const char TimeRuleSuperClassID[]=TimeRule_SUPERCLASS_ID; -- not used, we use class pointer */
 
 
 
@@ -173,16 +174,25 @@ struct IClass   *TIMERULE_GetClass()
 
 #ifdef TIMERULE_STATICLINK
 
-// just use this one once when static link
+/* just use this one once when static link */
+/* TimeRule inherits from InfiniteScroll - must be initialized first */
 int TimeRuleStaticInit()
-{ 
-   if(!TimeRule_OpenLibs_Dependencies()) return 0;
-    if(TimeRuleClassPtr=MakeClass(NULL,TimeRuleSuperClassID,0,sizeof(TimeRule),0))
+{
+    struct IClass *superClass;
+
+    if(!TimeRule_OpenLibs_Dependencies()) return 0;
+
+    /* Get InfiniteScroll class - it must be initialized before TimeRule */
+    superClass = INFINITESCROLL_GetClass();
+    if(!superClass) return 0;
+
+    /* MakeClass with class pointer (not string) as superclass */
+    if(TimeRuleClassPtr = MakeClass(NULL, NULL, superClass, sizeof(TimeRule), 0))
     {
-      TimeRuleClassPtr->cl_Dispatcher.h_Entry=(REHOOKFUNC)TimeRule_Dispatcher;
-     // do not AddClass() when static, no need to publish, TimeRuleClassPtr will be enough.
-      /* Success */
-      return(1);
+        TimeRuleClassPtr->cl_Dispatcher.h_Entry = (REHOOKFUNC)TimeRule_Dispatcher;
+        /* do not AddClass() when static, no need to publish, TimeRuleClassPtr will be enough. */
+        /* Success */
+        return(1);
     }
     return 0;
 }

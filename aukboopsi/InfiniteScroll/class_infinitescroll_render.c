@@ -154,24 +154,29 @@ void InfiniteScroll_RefreshTiles(Class *C, struct Gadget *Gad)
 }
 
 /**
- * Render a single tile - to be overridden by child classes
- * Default implementation clears the tile to background color
+ * Render a single tile - sends GM_INFINITESCROLL_RENDERTILE to allow subclass override
+ * Default implementation (handled in dispatcher) clears the tile to background color
  */
 void InfiniteScroll_RenderTile(Class *C, struct Gadget *Gad, InfiniteScrollTile *tile, ULONG tileIndex)
 {
-    struct RastPort *rp;
+    InfiniteScroll *gdata;
+    struct gpRenderTile msg;
 
     if(!tile || !tile->isValid || !tile->bitmap._rp) return;
 
-    rp = tile->bitmap._rp;
+    gdata = INST_DATA(C, Gad);
 
-    /* Default: Clear to background color (pen 0) */
-    SetAPen(rp, 0);
-    SetBPen(rp, 0);
-    RectFill(rp, 0, 0, tile->bitmap._bm->BytesPerRow * 8 - 1,
-             tile->bitmap._bm->Rows - 1);
+    /* Build message for subclass to handle */
+    msg.MethodID = GM_INFINITESCROLL_RENDERTILE;
+    msg.RPort = tile->bitmap._rp;
+    msg.TileWidth = gdata->_tileWidth;
+    msg.TileHeight = gdata->_tileHeight;
+    msg.AbstractPosHi = tile->abstractPosHi;
+    msg.AbstractPosLo = tile->abstractPosLo;
+    msg.TileIndex = tileIndex;
 
-    /* Child classes should override this method to render actual content */
+    /* Send to object - subclass dispatcher can handle or pass to super */
+    DoMethodA((Object *)Gad, (Msg)&msg);
 }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */

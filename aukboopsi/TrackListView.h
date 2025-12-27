@@ -58,6 +58,7 @@ void TrackListView_setProject(TrackListView *pm,AukAProject *project);
 
 void TrackListView_ListenTrackListMessage(TrackListView *pm,struct opUpdate *M);
 void TrackListView_ListenScrollVMessage(TrackListView *pm,struct opUpdate *M);
+void TrackListView_ListenScrollHMessage(TrackListView *pm,struct opUpdate *M);
 void TrackListView_ListenTrackHeaderMessage(TrackListView *pm,struct opUpdate *M, ULONG gadId);
 void TrackListView_CheckUpdates(TrackListView *pm);
 void TrackListView_UpdateTrackList(TrackListView *pm);
