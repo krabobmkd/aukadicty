@@ -15,6 +15,7 @@
     extern int TrackHeaderStaticInit();
     extern void TrackHeaderStaticClose();
     extern Class *TRACKHEADER_GetClass();
+    extern Class *HEADERBUTTON_GetClass();
 #else
     // TrackHeader_CLASS_ID is the identifier for this class, when shared.
     // NewObject() can use either TRACKHEADER_GetClass() or TrackHeader_CLASS_ID.
@@ -58,14 +59,22 @@
  */
 // different classes may not use same base.
 //DEVTODO: have another offset for your new class to not collide super class ones and optimize...
-#define TRACKHEADER_Dummy			(TAG_USER+0x04190000)
+#define TRACKHEADER_Dummy			(TAG_USER+0x04240000)
 
-#define TRACKHEADER_Name (TRACKHEADER_Dummy+1)
-#define TRACKHEADER_Pan (TRACKHEADER_Dummy+2)
-#define TRACKHEADER_Volume (TRACKHEADER_Dummy+3)
+/* needed by OM_NEW */
+#define TRACKHEADER_TrackIndex (TRACKHEADER_Dummy+1)
+
+/* */
+#define TRACKHEADER_Name (TRACKHEADER_Dummy+2)
+
+/* */
+#define TRACKHEADER_Pan (TRACKHEADER_Dummy+3)
+
+/* */
+#define TRACKHEADER_Volume (TRACKHEADER_Dummy+4)
 
 /* Pointer to AukStyleSheet for visual styling */
-#define	TRACKHEADER_StyleSheet		(TRACKHEADER_Dummy+4)
+#define	TRACKHEADER_StyleSheet		(TRACKHEADER_Dummy+5)
 
 
 /** DEVTODO: adds attributes definitions here and

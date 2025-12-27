@@ -15,6 +15,7 @@
 #include <intuition/classes.h>
 #include <intuition/classusr.h>
 #include <intuition/gadgetclass.h>
+#include <intuition/icclass.h>
 #include <utility/tagitem.h>
 
 #include "class_trackarea_private.h"
@@ -444,12 +445,14 @@ void TrackListArea_DisposeGadgets(TrackListArea *gdata)
     gdata->_trackCount = 0;
 
 }
-
-static int TrackListArea_CreateTrackLine(TrackChild *strack, AukTrack *dataTrack, struct AukStyleSheet *styleSheet)
+extern Class *AppModelClass;
+static int TrackListArea_CreateTrackLine(TrackChild *strack, AukTrack *dataTrack, struct AukStyleSheet *styleSheet, int iTrack)
 {
     /* Create TrackHeader gadget */
     strack->_trackHeader = NewObject(TRACKHEADER_GetClass(), NULL,
                                      TRACKHEADER_StyleSheet, (ULONG)styleSheet,
+                                     TRACKHEADER_TrackIndex,iTrack,
+                                     ICA_TARGET,AppModelClass,
                                      TAG_END);
     if(!strack->_trackHeader ) return 0;
     /* Create TrackArea */
@@ -524,7 +527,7 @@ static void TrackListArea_updateTrackListUiToData(struct Gadget *Gad)
             /* Create gadgets for each track */
             for(i = 0; i < dataTrackCount; i++)
             {
-                if(!TrackListArea_CreateTrackLine( &gdata->_tracks[i], project->tracks->items[i], gdata->_styleSheet ))
+                if(!TrackListArea_CreateTrackLine( &gdata->_tracks[i], project->tracks->items[i], gdata->_styleSheet,i ))
                 {
                     /* Failed to create gadgets, cleanup and abort */
                     TrackListArea_DisposeGadgets(gdata);
@@ -602,7 +605,7 @@ void TrackListArea_addTrack( struct Gadget *Gad,AukTrack *track)
 
     /* Create gadgets for this track */
     i =  gdata->_trackCount;
-    if(!TrackListArea_CreateTrackLine( &gdata->_tracks[i], project->tracks->items[i], gdata->_styleSheet ))
+    if(!TrackListArea_CreateTrackLine( &gdata->_tracks[i], project->tracks->items[i], gdata->_styleSheet, i ))
     {
         /* Failed to create gadgets, cleanup and abort */
         TrackListArea_DisposeGadgets(gdata);

@@ -26,20 +26,28 @@ extern "C" {
 * (These are just concatenated structs in a system private way.)
 * DEVTODO: make this class evolve to retain the data needed to draw and interact with your gadget.
 */
+
+/* subs gadget in our layout */
+#define THS_CloseButton 0
+#define THS_NameButton  1
+#define THS_VolumeSlider  2
+#define THS_PanSlider  3
+#define THS_VolumeRule  4
+#define THS_Total  5
+
 typedef struct ITrackHeader {
-    Object *CloseButton;
-    Object *NameLabel;
 
-    Object  *VolumeSlider;
-    Object  *PanSlider;
-
-    // ------------- H
-    Object *VolumeRule;
+    Object *subs[THS_Total];
 
     /* Pointer to AukStyleSheet for visual styling */
     struct AukStyleSheet *_styleSheet;
 
 } TrackHeader;
+
+typedef struct TrackHeaderButton {
+    int _d;
+} TrackHeaderButton;
+
 
 #ifdef __cplusplus
 }

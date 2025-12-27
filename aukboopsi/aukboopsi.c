@@ -202,10 +202,15 @@ ULONG ASM SAVEDS AppModelDispatch(
                 TrackListView_ListenTrackListMessage( &app->tracksListView, &M->opUpdate );
                 retval = 1;
             } else
-            if(  sender_ID == GAD_SCROLLER_V )
+            if( sender_ID == GAD_SCROLLER_V )
             {
             // bdbprintf(" ( sender_ID == GAD_SCROLLER_V )\n");
                 TrackListView_ListenScrollVMessage( &app->tracksListView, &M->opUpdate );
+                retval=1;
+            } else
+            if( sender_ID >= GAD_TRACKHEADER_BASE)
+            {
+                TrackListView_ListenTrackHeaderMessage( &app->tracksListView, &M->opUpdate,sender_ID);
                 retval=1;
             }
             //else{...}
@@ -791,3 +796,10 @@ project->CreateTrack(project);
     return 0;
 }
 
+void TrackListView_UpdateTrackList_Generic()
+{
+    if(!app) return;
+    //TrackListView_UpdateTrackList(&app->tracksListView);
+        app->tracksListView.updateBits |= TLVB_UPDATE_FULLREDRAW;
+        if(myTask) Signal(myTask,SIGBREAKF_CTRL_F);
+}

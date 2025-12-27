@@ -348,6 +348,31 @@ void TrackListView_ListenScrollVMessage(TrackListView *pm,struct opUpdate *M)
 
 
 }
+void TrackListView_ListenTrackHeaderMessage(TrackListView *pm,struct opUpdate *M, ULONG gadId)
+{
+    ULONG buttonId = gadId & GAD_TRACKHEADER_IDMASK;
+    ULONG trackId = (gadId & GAD_TRACKHEADER_TRACKMASK)>>4; // 4096 tracks possible, 16 buttons
+
+    switch(buttonId)
+    {
+        case GAD_TRACKHEADER_CLOSE:
+        // TODO close track
+        break;
+        case GAD_TRACKHEADER_NAME:
+            // TODO track name edit.
+        break;
+        case GAD_TRACKHEADER_VOL:
+            // TODO volume slide has changed
+        break;
+        case GAD_TRACKHEADER_PAN:
+            // TODO pan slide has changed
+        break;
+        default:
+        break;
+
+    }
+
+}
 void TrackListView_CheckUpdates(TrackListView *pm)
 {
     if(pm->updateBits & TLVB_UPDATE_VERTSCROLLDOMAIN) updateVerticalScrollDomain(pm);

@@ -34,6 +34,7 @@
  * Template projects that links boopsi classes statically use USE_DEBUG_BDBPRINT by default.
  * Template projects that uses boopsi classes with LoadLibrary() do not.
  */
+
 #include "bdbprintf.h"
 typedef union MsgUnion
 {
@@ -62,7 +63,7 @@ ULONG ASM SAVEDS TrackListArea_Dispatcher(
 {
   TrackListArea *gdata;
   ULONG retval=0;
-  gdata=INST_DATA(C, Gad);
+
 
   switch(M->MethodID)
   {
@@ -89,26 +90,6 @@ ULONG ASM SAVEDS TrackListArea_Dispatcher(
 
         gdata->_clipRegion = NewRegion();
 
-
- //   Printf("instance:%lx\n",(int)gdata);
-//        SetSuperAttrs(C,Gad, GA_TabCycle,1,TAG_DONE);
-
-        // DEVTODO:
-        // you could create instances of other objects as members...
-        // to be deleted in OM_DISPOSE of course...
-
-//        gdata->Pattern=NewObject(0,(UBYTE *)"mlr_ordered.pattern", TAG_DONE);
-//        {
-//          if(gdata->Bevel=BevelObject, BEVEL_Style, BVS_BUTTON, BEVEL_FillPen, -1, End)
-//          {
-//            gdata->Precision=8;
-//            gdata->ShowSelected=1;
-
-//            gad_SetAttrs(C,Gad,(struct opSet *)M);
-//            retval=(ULONG)Gad;
-//          }
-//        }
-
         bdbprintf_new("TrackListArea", Gad);
 
         /* means new object OK so far: */
@@ -118,6 +99,7 @@ ULONG ASM SAVEDS TrackListArea_Dispatcher(
 
     case OM_UPDATE:
     case OM_SET:
+
        // Printf("OM_SET: GadgetID:%ld gad:%lx\n",(int)Gad->GadgetID,(int)Gad);
       retval=DoSuperMethodA(C,(Object *)Gad,(Msg)M);
       TrackListArea_SetAttrs(C,Gad,(struct opSet *)M);
@@ -128,6 +110,7 @@ ULONG ASM SAVEDS TrackListArea_Dispatcher(
      break;
 
     case OM_DISPOSE:
+      gdata=INST_DATA(C, Gad);
         bdbprintf_dispose("TrackListArea", Gad);
 
         if(gdata->_clipRegion) DisposeRegion(gdata->_clipRegion);
@@ -139,21 +122,24 @@ ULONG ASM SAVEDS TrackListArea_Dispatcher(
       retval=DoSuperMethodA(C,(Object *)Gad,(Msg)M);
       break;
 
-    case GM_HITTEST:
-      retval = GMR_GADGETHIT;
-     //    retval=TrackListArea_HandleInput(C,Gad,(struct gpInput *)M, M->gpHitTest.gpht_Mouse.X, M->gpHitTest.gpht_Mouse.Y);
-
+    /* return GMR_GADGETHIT if you are clicked on (whether or not you
+     * are disabled). */
+    case GM_HITTEST:    
+      retval =TrackListArea_HandleHitTest(C,Gad,(struct gpHitTest *)M);
       break;
-
+    /* you are now going to be fed input */
     case GM_GOACTIVE:
-                    bdbprintf("GM_GOACTIVE\n");
-     retval=TrackListArea_HandleInput(C,Gad,(struct gpInput *)M, M->gpInput.gpi_Mouse.X,M->gpInput.gpi_Mouse.Y);
+        retval=TrackListArea_HandleInput(C,Gad,(struct gpInput *)M, M->gpInput.gpi_Mouse.X,M->gpInput.gpi_Mouse.Y);
       break;
 
-    case GM_GOINACTIVE:
-                    bdbprintf("GM_GOINACTIVE\n");
-    //  retval=TrackListArea_HandleInput(C,Gad,(struct gpInput *)M,0,0);
+    case GM_GOINACTIVE:    
+        TrackListArea_GoInactive(C,Gad,(struct gpRender *)M);
       break;
+    case GM_HANDLEINPUT:
+      gdata=INST_DATA(C, Gad);
+      retval=TrackListArea_HandleInput(C,Gad,(struct gpInput *)M,M->gpInput.gpi_Mouse.X,M->gpInput.gpi_Mouse.Y);
+      break;
+
 
     case GM_LAYOUT:
       retval= TrackListArea_Layout(C,Gad,(struct gpLayout *)M);
@@ -161,12 +147,6 @@ ULONG ASM SAVEDS TrackListArea_Dispatcher(
 
     case GM_RENDER:
       retval=TrackListArea_Render(C,Gad,(struct gpRender *)M);
-      break;
-
-    case GM_HANDLEINPUT:
-     //return(GMR_REUSE);
-    bdbprintf("GM_HANDLEINPUT\n");
-      retval=TrackListArea_HandleInput(C,Gad,(struct gpInput *)M,M->gpInput.gpi_Mouse.X,M->gpInput.gpi_Mouse.Y);
       break;
 
     case GM_DOMAIN:

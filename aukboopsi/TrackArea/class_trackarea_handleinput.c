@@ -44,11 +44,6 @@ ULONG TrackArea_HandleInput(Class *C, struct Gadget *Gad, struct gpInput *Input)
   //retval = GMR_MEACTIVE;
   ie = Input->gpi_IEvent;
 
-//  if(gdata->Disabled)
-//    return(GMR_NOREUSE);
-
-    bdbprintf(" $$$$ TrackArea_HandleInput:%08x\n",(int)ie->ie_Class);
-
   switch(ie->ie_Class)
   {    case IECLASS_RAWKEY:
 //      KP("RAW KEY CODE - %lx %8lx\n",ie->ie_Code,ie->ie_Qualifier);

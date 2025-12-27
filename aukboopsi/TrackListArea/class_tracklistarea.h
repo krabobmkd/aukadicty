@@ -15,6 +15,7 @@
     extern int TrackListStaticInit();
     extern void TrackListStaticClose();
     extern Class *TRACKLIST_GetClass();
+    extern Class *TRACKLIST_GetClass();
 #else
     // TrackList_CLASS_ID is the identifier for this class, when shared.
     // NewObject() can use either TRACKLIST_GetClass() or TrackList_CLASS_ID.

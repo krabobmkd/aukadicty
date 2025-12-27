@@ -18,6 +18,9 @@
 #include <proto/layout.h>
 #include <gadgets/layout.h>
 
+#include <proto/button.h>
+#include <gadgets/button.h>
+
 #include "class_trackheader_private.h"
 
 #ifdef USE_BEVEL_FRAME
@@ -60,6 +63,7 @@ struct Library        *BevelBase=NULL;
 #endif
 // this is the only global writtable we should see in the whole class binary !
 struct IClass   *TrackHeaderClassPtr=NULL;
+struct IClass   *HeaderButtonClassPtr=NULL;
 // this 2 strings are also linked to the asm startup header ( in .gadget mode)
 // note: (const char *str="") would make str be a (char **) to the linker. so char str[] is linkable to asm startup
 #ifndef TRACKHEADER_STATICLINK
@@ -121,6 +125,11 @@ ULONG ASM SAVEDS TrackHeader_Dispatcher(
                     REG(a2,struct Gadget *Gad),
                     REG(a1,union MsgUnion *M));
 
+ULONG ASM SAVEDS HeaderButton_Dispatcher(
+                    REG(a0,struct IClass *C),
+                    REG(a2,struct Gadget *Gad),
+                    REG(a1,union MsgUnion *M));
+
 #ifndef TRACKHEADER_STATICLINK
 // called by shared Lib init to create class.
 
@@ -170,6 +179,10 @@ struct IClass   *TRACKHEADER_GetClass()
 {
     return TrackHeaderClassPtr;
 }
+struct IClass   *HEADERBUTTON_GetClass()
+{
+    return HeaderButtonClassPtr;
+}
 #endif
 
 //====================================================================================
@@ -182,16 +195,21 @@ int TrackHeaderStaticInit()
    if(!TrackHeader_OpenLibs_Dependencies()) return 0;
     //if(TrackHeaderClassPtr=MakeClass(NULL,TrackHeaderSuperClassID,0,sizeof(TrackHeader),0))
     // MakeClass( ClassID, SuperClassID, SuperClassPtr,InstanceSize, Flags )
+
+
     if(TrackHeaderClassPtr=MakeClass(NULL,NULL,LAYOUT_GetClass(),sizeof(TrackHeader),0))
     {
       TrackHeaderClassPtr->cl_Dispatcher.h_Entry=(REHOOKFUNC)TrackHeader_Dispatcher;
      // do not AddClass() when static, no need to publish, TrackHeaderClassPtr will be enough.
 
-     bdbprintf("TrackHeaderClassPtr class ok\n");
+        HeaderButtonClassPtr=MakeClass(NULL,NULL,BUTTON_GetClass(),sizeof(TrackHeaderButton),0);
+        if(HeaderButtonClassPtr)
+        {
+            HeaderButtonClassPtr->cl_Dispatcher.h_Entry=(REHOOKFUNC)HeaderButton_Dispatcher;
+        }
       /* Success */
       return(1);
     }
-     bdbprintf("TrackHeaderClassPtr class fail\n");
     return 0;
 }
 
