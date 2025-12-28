@@ -146,11 +146,9 @@ void TimeRule_FormatTime(LONG timeHi, LONG timeLo, char *buffer, BOOL showMs)
  * - AbstractPos is the time value at the LEFT edge of this tile
  * - We need to convert time -> pixel position within the tile
  */
-ULONG TimeRule_RenderTile(Class *C, struct Gadget *Gad, struct gpRenderTile *M)
+void TimeRule_RenderDelegate(InfiniteScrollRenderParams *p)
 {
     TimeRule *gdata;
-    InfiniteScroll *superData;
-    struct RastPort *rp;
     UWORD tileWidth, tileHeight;
 
     /* Time range for this TimeRule (from attributes) */
@@ -166,17 +164,13 @@ ULONG TimeRule_RenderTile(Class *C, struct Gadget *Gad, struct gpRenderTile *M)
     UWORD majorTickHeight, minorTickHeight;
     char timeBuf[16];
 
-    if(!C || !Gad || !M) return 0;
+    Class *C = p->C;
+    struct Gadget *Gad = p->Gad;
+    struct RastPort *rp = p->rp;
+
+    if(!C || !Gad || !rp) return ;
 
     gdata = INST_DATA(C, Gad);
-    /* Get superclass data for framerec info */
-    superData = INST_DATA(C->cl_Super, Gad);
-
-    rp = M->RPort;
-    if(!rp) return 0;
-
-    tileWidth = M->TileWidth;
-    tileHeight = M->TileHeight;
 
     /* Clear tile to background (pen 0 = typically grey) */
     SetAPen(rp, 0);

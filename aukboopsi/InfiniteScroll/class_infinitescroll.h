@@ -13,7 +13,7 @@
 #include <intuition/gadgetclass.h>
 #include <intuition/classes.h>
 #include <inline/macros.h>
-
+#include "compilers.h"
 #define VERSION_INFINITESCROLL 1
 #define InfiniteScroll_SUPERCLASS_ID "gadgetclass"
 
@@ -55,62 +55,73 @@
 /* end if dynamic link */
 #endif
 
+
+/**
+ * NOW, we have a struct to define bitmap scroll position allocated elsewhere,
+ * and an attrib as a pointer to it, to define projection.
+ * We don't manage a domain at this level, just tile cache and scrolling.
+*/
+typedef struct InfiniteScrollPosition {
+
+    long long _scrollx;
+} InfiniteScrollPosition;
+
+INLINE int InfiniteScrollPosition_isSame(InfiniteScrollPosition *a, InfiniteScrollPosition *b)
+{
+    return (int)(a->_scrollx == b->_scrollx);
+}
+
+typedef struct ScrollDomain {
+    /* start, included  */
+    InfiniteScrollPosition _start;
+    /* note end is excluded, last valid pixel is just behind.  */
+    InfiniteScrollPosition _end;
+} ScrollDomain;
+
+/** NOW, params for InfiniteScrollRender function */
+typedef struct InfiniteScrollRenderParams {
+    Class *C;
+    struct Gadget *Gad;
+    struct RastPort *rp;
+    /* start position of scroll to render */
+    InfiniteScrollPosition _start;
+    /* rectangle to render in Rastport */
+    WORD destX,destY,destWidth,destHeight;
+
+} InfiniteScrollRenderParams;
+
+/**
+ * NOW, we have  function pointer type to ask rendering a portion of space.
+ * This is to be passed by inherited class.
+*/
+typedef void (*InfiniteScrollRenderf)(InfiniteScrollRenderParams *p);
+
+
 /**  Attributes defined by the gadget class,
  * all attribs from gadgetclass.h are also valid.
  */
 /* different classes may not use same base. */
-#define INFINITESCROLL_Dummy			(TAG_USER+0x04130000)
+#define INFINITESCROLL_Dummy			(TAG_USER+0x03110000)
 
-/* Scrollable domain min value (signed 64-bit, stored as two LONG) */
-#define	INFINITESCROLL_DomainMinHi		(INFINITESCROLL_Dummy+1)
-#define	INFINITESCROLL_DomainMinLo		(INFINITESCROLL_Dummy+2)
+/* Scrollable domain min value as pointer to a signed 64-bit (InfiniteScrollPosition *)
+    Apply to OM_NEW OM_SET OM_GET.
+*/
+#define	INFINITESCROLL_Position		(INFINITESCROLL_Dummy+1)
 
-/* Scrollable domain max value (signed 64-bit, stored as two LONG) */
-#define	INFINITESCROLL_DomainMaxHi		(INFINITESCROLL_Dummy+3)
-#define	INFINITESCROLL_DomainMaxLo		(INFINITESCROLL_Dummy+4)
+/* This abstract class need a Render function to actually draw,
+  of type InfiniteScrollRenderf.
+  Implementer will use InfiniteScrollRenderParams._start
+  and destX,destY,destWidth,destHeight to know where to render in Rastport.
 
-/* Current view position (signed 64-bit, stored as two LONG) */
-#define	INFINITESCROLL_ViewPosHi		(INFINITESCROLL_Dummy+5)
-#define	INFINITESCROLL_ViewPosLo		(INFINITESCROLL_Dummy+6)
+    Apply to OM_NEW OM_SET OM_GET.
+*/
+#define	INFINITESCROLL_RenderFunction		(INFINITESCROLL_Dummy+2)
 
-/* Current view zoom (signed 64-bit, stored as two LONG) */
-/* Higher value = more zoomed in, lower value = more zoomed out */
-#define	INFINITESCROLL_ViewZoomHi		(INFINITESCROLL_Dummy+7)
-#define	INFINITESCROLL_ViewZoomLo		(INFINITESCROLL_Dummy+8)
-
-/* Tile width in pixels (default 128) */
-#define	INFINITESCROLL_TileWidth		(INFINITESCROLL_Dummy+9)
+/* external layout to render us, as notify message. */
+#define	INFINITESCROLL_Redraw		(INFINITESCROLL_Dummy+3)
 
 /* Methods */
 #define INFINITESCROLL_GMDummy			(INFINITESCROLL_Dummy+0x100)
 
-/* GM_INFINITESCROLL_INVALIDATETILES - Mark tiles dirty to force re-render */
-#define GM_INFINITESCROLL_INVALIDATETILES (INFINITESCROLL_GMDummy+1)
-
-/* GM_INFINITESCROLL_RENDERTILE - Render a single tile (override in subclass) */
-#define GM_INFINITESCROLL_RENDERTILE (INFINITESCROLL_GMDummy+2)
-
-/* Message structure for GM_INFINITESCROLL_INVALIDATETILES */
-struct gpInvalidateTiles
-{
-    ULONG MethodID;  /* GM_INFINITESCROLL_INVALIDATETILES */
-    /* If both Hi/Lo are 0, invalidate all tiles */
-    LONG RangeMinHi; /* Start of range to invalidate (abstract 64-bit) */
-    LONG RangeMinLo;
-    LONG RangeMaxHi; /* End of range to invalidate (abstract 64-bit) */
-    LONG RangeMaxLo;
-};
-
-/* Message structure for GM_INFINITESCROLL_RENDERTILE */
-struct gpRenderTile
-{
-    ULONG MethodID;            /* GM_INFINITESCROLL_RENDERTILE */
-    struct RastPort *RPort;    /* RastPort for tile bitmap (draw at 0,0) */
-    UWORD TileWidth;           /* Width of tile in pixels */
-    UWORD TileHeight;          /* Height of tile in pixels */
-    LONG AbstractPosHi;        /* Abstract position of tile left edge (64-bit) */
-    LONG AbstractPosLo;
-    ULONG TileIndex;           /* Index of this tile in the array */
-};
 
 #endif

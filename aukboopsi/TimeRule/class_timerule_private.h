@@ -65,8 +65,15 @@ ULONG TimeRule_GetAttr(Class *C, struct Gadget *Gad, struct opGet *Get);
 ULONG TimeRule_Domain(Class *C, struct Gadget *Gad, struct gpDomain *D);
 
 /* TimeRule overrides InfiniteScroll tile rendering to draw graduations */
-/* This handles GM_INFINITESCROLL_RENDERTILE method */
-ULONG TimeRule_RenderTile(Class *C, struct Gadget *Gad, struct gpRenderTile *M);
+/* NOW, the InfiniteScroll inheritage just need that render function
+*/
+void TimeRule_RenderDelegate(InfiniteScrollRenderParams *p);
+
+/**
+ * NOW, we have  function pointer type to ask rendering a portion of space.
+ * This is to be passed by inherited class.
+*/
+typedef void (*InfiniteScrollRenderf)(InfiniteScrollRenderParams *p);
 
 /* Helper to format time value as text */
 void TimeRule_FormatTime(LONG timeHi, LONG timeLo, char *buffer, BOOL showMs);
@@ -90,7 +97,6 @@ typedef union MsgUnion
   struct gpGoInactive gpGoInactive;
   struct gpLayout     gpLayout;
   struct gpDomain     gpDomain;
-  struct gpRenderTile gpRenderTile;  /* From InfiniteScroll */
 } *Msgs;
 
 /**

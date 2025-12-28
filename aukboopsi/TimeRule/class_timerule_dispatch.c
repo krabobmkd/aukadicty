@@ -79,6 +79,8 @@ ULONG ASM SAVEDS TimeRule_Dispatcher(
         {
             TimeRule_SetAttrs(C,Gad,&M->opSet);
         }
+        /* NOW, this is just how we implement InfiniteScroller inheritageoverriding */
+        SetSuperAttrs(C,Gad, INFINITESCROLL_RenderFunction, &TimeRule_RenderDelegate,TAG_END);
 
         bdbprintf_new("TimeRule", Gad);
 
@@ -112,10 +114,6 @@ ULONG ASM SAVEDS TimeRule_Dispatcher(
       retval=1;
       break;
 
-    case GM_INFINITESCROLL_RENDERTILE:
-      /* Override tile rendering to draw time graduations */
-      retval = TimeRule_RenderTile(C, Gad, (struct gpRenderTile *)M);
-      break;
 
     /* Let InfiniteScroll handle these: GM_LAYOUT, GM_RENDER, GM_HITTEST, etc */
     default:

@@ -30,15 +30,11 @@ typedef struct InfiniteScrollTile
     /* Offscreen bitmap for this tile */
     OffscreenBitMap bitmap;
 
-    /* Abstract position this tile represents (left edge, 64-bit signed) */
-    LONG abstractPosHi;
-    LONG abstractPosLo;
+    /* position this tile represents (left edge, 64-bit signed) */
+    InfiniteScrollPosition position;
 
-    /* Dirty flag - TRUE if tile needs re-rendering */
-    BOOL isDirty;
-
-    /* Valid flag - TRUE if tile is allocated and initialized */
-    BOOL isValid;
+    /* Valid flag - TRUE if tile is allocated and rendered */
+    int isValid;
 
 } InfiniteScrollTile;
 
@@ -52,23 +48,9 @@ typedef struct InfiniteScrollTile
  * (These are just concatenated structs in a system private way.)
  */
 typedef struct IInfiniteScroll {
-    /* Would have minimal size here */
-    UWORD _minimalWidth, _minimalHeight;
 
-    /* Gadget rectangle set at layout */
-    struct Rectangle _framerec;
-
-#ifdef USE_REGION_CLIPPING
-    struct Region *_clipRegion;
-#endif
-
-    /* Scrollable domain (signed 64-bit values) */
-    LONG _domainMinHi, _domainMinLo;  /* Minimum abstract position */
-    LONG _domainMaxHi, _domainMaxLo;  /* Maximum abstract position */
-
-    /* Current view state (signed 64-bit values) */
-    LONG _viewPosHi, _viewPosLo;      /* Current scroll position */
-    LONG _viewZoomHi, _viewZoomLo;    /* Current zoom level */
+    /* Scrollable position in pixel */
+    InfiniteScrollPosition _position;
 
     /* Tile configuration */
     UWORD _tileWidth;                  /* Width of each tile in pixels (default 128) */
@@ -76,27 +58,37 @@ typedef struct IInfiniteScroll {
 
     /* Tile array */
     InfiniteScrollTile *_tiles;        /* Array of tiles */
-    ULONG _tileCount;                  /* Number of allocated tiles */
+    UWORD _tileCount;                  /* Number of allocated tiles */
 
-    /* Cached bitmap mode info for tile allocation */
-    struct BitMap *_friendBitmap;      /* Friend bitmap for mode (from screen) */
+    /* current index of tile used for the current leftmost tile in _tiles table,
+      for which last rendered position fits between tile->position and tile->position+_tileWidth.
+      Important: if <0, means no tile used yet, they need to be reattributed to some location.
+     */
+    WORD _currentLeftBorderTileIndex;
+    /* Remember dimension for which _tiles has been inited. */
+    WORD _initedForWidth,_initedForHeight;
 
+    /* The actual render function of the inherited implementation. */
+    InfiniteScrollRenderf _renderFunction;
+
+    /* internal use, allow using target screen pixel format in our bitmap */
+    struct BitMap *_friendBitmap;
 } InfiniteScroll;
 
 ULONG InfiniteScroll_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set);
 ULONG InfiniteScroll_GetAttr(Class *C, struct Gadget *Gad, struct opGet *Get);
 ULONG InfiniteScroll_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout);
-ULONG InfiniteScroll_Render(Class *C, struct Gadget *Gad, struct gpRender *Render, ULONG update);
+ULONG InfiniteScroll_Render(Class *C, struct Gadget *Gad, struct gpRender *Render);
 ULONG InfiniteScroll_HandleInput(Class *C, struct Gadget *Gad, struct gpInput *Input);
 ULONG InfiniteScroll_Domain(Class *C, struct Gadget *Gad, struct gpDomain *D);
 
 /* Tile management helpers */
 void InfiniteScroll_DisposeTiles(InfiniteScroll *gdata);
-void InfiniteScroll_InvalidateTiles(Class *C, struct Gadget *Gad, struct gpInvalidateTiles *Msg);
-void InfiniteScroll_RefreshTiles(Class *C, struct Gadget *Gad);
+// void InfiniteScroll_InvalidateTiles(Class *C, struct Gadget *Gad, struct gpInvalidateTiles *Msg);
+// void InfiniteScroll_RefreshTiles(Class *C, struct Gadget *Gad);
 
 /* Helper to render a single tile (calls child class implementation) */
-void InfiniteScroll_RenderTile(Class *C, struct Gadget *Gad, InfiniteScrollTile *tile, ULONG tileIndex);
+//void InfiniteScroll_RenderTile(Class *C, struct Gadget *Gad, InfiniteScrollTile *tile, ULONG tileIndex);
 
 /* - - - - -- - */
 

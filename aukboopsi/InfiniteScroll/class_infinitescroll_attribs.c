@@ -14,6 +14,29 @@
 
 #include "../bdbprintf.h"
 
+
+ULONG InfiniteScroll_NotifyAttribValue(Class *C,struct Gadget *Gad, struct GadgetInfo *GInfo,ULONG attrib, ULONG value)
+{
+    struct opUpdate notifymsg;
+    // InfiniteScroll *gdata;
+    // gdata = INST_DATA(C, Gad);
+    ULONG tags[]={
+     GA_ID,0,
+     0,0,
+     TAG_DONE
+    };
+    tags[1] = Gad->GadgetID;
+    tags[2] = attrib;
+    tags[3] = value;
+    notifymsg.MethodID = OM_NOTIFY;
+    notifymsg.opu_AttrList = (struct TagItem *)&tags[0];
+    notifymsg.opu_GInfo = GInfo; // "always there for gadget, in all messages"
+    notifymsg.opu_Flags = 0;
+
+    return DoSuperMethodA(C,(APTR)Gad,(Msg)&notifymsg );
+}
+
+
 /**
  * OM_SET / OM_UPDATE handler
  */
@@ -22,7 +45,6 @@ ULONG InfiniteScroll_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
     InfiniteScroll *gdata;
     struct TagItem *tags, *tag;
     BOOL needsRefresh = FALSE;
-
     gdata = INST_DATA(C, Gad);
     tags = Set->ops_AttrList;
 
@@ -30,82 +52,42 @@ ULONG InfiniteScroll_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
     {
         switch(tag->ti_Tag)
         {
-            case INFINITESCROLL_DomainMinHi:
-                gdata->_domainMinHi = (LONG)tag->ti_Data;
-                needsRefresh = TRUE;
-                break;
-
-            case INFINITESCROLL_DomainMinLo:
-                gdata->_domainMinLo = (LONG)tag->ti_Data;
-                needsRefresh = TRUE;
-                break;
-
-            case INFINITESCROLL_DomainMaxHi:
-                gdata->_domainMaxHi = (LONG)tag->ti_Data;
-                needsRefresh = TRUE;
-                break;
-
-            case INFINITESCROLL_DomainMaxLo:
-                gdata->_domainMaxLo = (LONG)tag->ti_Data;
-                needsRefresh = TRUE;
-                break;
-
-            case INFINITESCROLL_ViewPosHi:
-                if(gdata->_viewPosHi != (LONG)tag->ti_Data)
+            case INFINITESCROLL_Position:
+            {
+                InfiniteScrollPosition *pp = (InfiniteScrollPosition*)tag->ti_Data;
+                if(pp)
                 {
-                    gdata->_viewPosHi = (LONG)tag->ti_Data;
+                    gdata->_position._scrollx = 0;
                     needsRefresh = TRUE;
                 }
-                break;
-
-            case INFINITESCROLL_ViewPosLo:
-                if(gdata->_viewPosLo != (LONG)tag->ti_Data)
+                else
                 {
-                    gdata->_viewPosLo = (LONG)tag->ti_Data;
-                    needsRefresh = TRUE;
+                    if(!InfiniteScrollPosition_isSame(pp,&gdata->_position))
+                    {
+                        gdata->_position = *pp;
+                        needsRefresh = TRUE;
+                    }
                 }
-                break;
-
-            case INFINITESCROLL_ViewZoomHi:
-                if(gdata->_viewZoomHi != (LONG)tag->ti_Data)
+            }
+            break;
+            case INFINITESCROLL_RenderFunction:
+            {
+                InfiniteScrollRenderf f = (InfiniteScrollRenderf)tag->ti_Data;
+                if(f !=  gdata->_renderFunction)
                 {
-                    gdata->_viewZoomHi = (LONG)tag->ti_Data;
-                    needsRefresh = TRUE;
+                   gdata->_renderFunction = f;
+                   needsRefresh = TRUE;
                 }
-                break;
-
-            case INFINITESCROLL_ViewZoomLo:
-                if(gdata->_viewZoomLo != (LONG)tag->ti_Data)
-                {
-                    gdata->_viewZoomLo = (LONG)tag->ti_Data;
-                    needsRefresh = TRUE;
-                }
-                break;
-
-            case INFINITESCROLL_TileWidth:
-                if(gdata->_tileWidth != (UWORD)tag->ti_Data && tag->ti_Data > 0)
-                {
-                    gdata->_tileWidth = (UWORD)tag->ti_Data;
-                    /* Changing tile width requires reallocation at next layout */
-                    InfiniteScroll_DisposeTiles(gdata);
-                }
-                break;
-
+            } break;
             default:
                 break;
         }
     }
 
-    /* If view changed, mark all tiles as dirty */
     if(needsRefresh)
     {
-        struct gpInvalidateTiles invalidMsg;
-        invalidMsg.MethodID = GM_INFINITESCROLL_INVALIDATETILES;
-        invalidMsg.RangeMinHi = 0;
-        invalidMsg.RangeMinLo = 0;
-        invalidMsg.RangeMaxHi = 0;
-        invalidMsg.RangeMaxLo = 0;
-        InfiniteScroll_InvalidateTiles(C, Gad, &invalidMsg);
+        // notify external source to render us.
+        InfiniteScroll_NotifyAttribValue(C,Gad,Set->ops_GInfo,INFINITESCROLL_Redraw,1);
     }
 
     return 1;
@@ -123,42 +105,25 @@ ULONG InfiniteScroll_GetAttr(Class *C, struct Gadget *Gad, struct opGet *Get)
 
     switch(Get->opg_AttrID)
     {
-        case INFINITESCROLL_DomainMinHi:
-            *Get->opg_Storage = (ULONG)gdata->_domainMinHi;
-            break;
-
-        case INFINITESCROLL_DomainMinLo:
-            *Get->opg_Storage = (ULONG)gdata->_domainMinLo;
-            break;
-
-        case INFINITESCROLL_DomainMaxHi:
-            *Get->opg_Storage = (ULONG)gdata->_domainMaxHi;
-            break;
-
-        case INFINITESCROLL_DomainMaxLo:
-            *Get->opg_Storage = (ULONG)gdata->_domainMaxLo;
-            break;
-
-        case INFINITESCROLL_ViewPosHi:
-            *Get->opg_Storage = (ULONG)gdata->_viewPosHi;
-            break;
-
-        case INFINITESCROLL_ViewPosLo:
-            *Get->opg_Storage = (ULONG)gdata->_viewPosLo;
-            break;
-
-        case INFINITESCROLL_ViewZoomHi:
-            *Get->opg_Storage = (ULONG)gdata->_viewZoomHi;
-            break;
-
-        case INFINITESCROLL_ViewZoomLo:
-            *Get->opg_Storage = (ULONG)gdata->_viewZoomLo;
-            break;
-
-        case INFINITESCROLL_TileWidth:
-            *Get->opg_Storage = (ULONG)gdata->_tileWidth;
-            break;
-
+       case INFINITESCROLL_Position:
+        {
+            InfiniteScrollPosition *pp = (InfiniteScrollPosition*)Get->opg_Storage;
+            if(pp)
+            {
+               // pp->_scrollx = gdata->_position._scrollx;
+               *pp = gdata->_position; // copy all struct
+            }
+        }
+        break;
+        case INFINITESCROLL_RenderFunction:
+        {
+            InfiniteScrollRenderf *pp = (InfiniteScrollRenderf*)Get->opg_Storage;
+            if(pp)
+            {
+               *pp = gdata->_renderFunction;
+            }
+        }
+        break;
         default:
             retval = 0;
             break;

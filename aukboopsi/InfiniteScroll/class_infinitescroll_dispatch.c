@@ -46,8 +46,6 @@ typedef union MsgUnion
   struct gpGoInactive gpGoInactive;
   struct gpLayout     gpLayout;
   struct gpDomain     gpDomain;
-  struct gpInvalidateTiles gpInvalidateTiles;
-  struct gpRenderTile gpRenderTile;
 } *Msgs;
 
 /** WATCH OUT ! BOOPSI docs says:
@@ -72,32 +70,11 @@ ULONG ASM SAVEDS InfiniteScroll_Dispatcher(
       {
         gdata=INST_DATA(C, Gad);
 
-        gdata->_minimalWidth = 128;
-        gdata->_minimalHeight = 32;
-
         /* Initialize tile arrays */
         gdata->_tiles = NULL;
         gdata->_tileCount = 0;
         gdata->_tileWidth = 128;  /* default tile width */
         gdata->_tileHeight = 0;   /* will be set at layout */
-
-        /* Initialize domain to 0..0 */
-        gdata->_domainMinHi = 0;
-        gdata->_domainMinLo = 0;
-        gdata->_domainMaxHi = 0;
-        gdata->_domainMaxLo = 0;
-
-        /* Initialize view to 0 pos, zoom 1 */
-        gdata->_viewPosHi = 0;
-        gdata->_viewPosLo = 0;
-        gdata->_viewZoomHi = 0;
-        gdata->_viewZoomLo = 1;  /* zoom = 1 (no zoom) */
-
-        gdata->_friendBitmap = NULL;
-
-#ifdef USE_REGION_CLIPPING
-        gdata->_clipRegion = NULL;
-#endif
 
         /* set gadget (super class) attributes for this instance like this: */
         /* (BOOL) Indicate whether gadget is part of TAB/SHIFT-TAB cycle. */
@@ -130,13 +107,6 @@ ULONG ASM SAVEDS InfiniteScroll_Dispatcher(
         /* Dispose all tiles */
         InfiniteScroll_DisposeTiles(gdata);
 
-#ifdef USE_REGION_CLIPPING
-        if(gdata->_clipRegion)
-        {
-            DisposeRegion(gdata->_clipRegion);
-            gdata->_clipRegion = NULL;
-        }
-#endif
 
       retval=DoSuperMethodA(C,(Object *)Gad,(Msg)M);
       break;
@@ -160,7 +130,7 @@ ULONG ASM SAVEDS InfiniteScroll_Dispatcher(
       break;
 
     case GM_RENDER:
-      retval=InfiniteScroll_Render(C,Gad,(struct gpRender *)M,0);
+      retval=InfiniteScroll_Render(C,Gad,(struct gpRender *)M);
       break;
 
     case GM_HANDLEINPUT:
@@ -172,26 +142,21 @@ ULONG ASM SAVEDS InfiniteScroll_Dispatcher(
       retval=1;
     break;
 
-    case GM_INFINITESCROLL_INVALIDATETILES:
-      InfiniteScroll_InvalidateTiles(C, Gad, (struct gpInvalidateTiles *)M);
-      retval=1;
-      break;
-
-    case GM_INFINITESCROLL_RENDERTILE:
-      /* Default tile rendering - clear to background color */
-      /* Subclasses should override this to draw actual content */
-      {
-          struct gpRenderTile *rt = (struct gpRenderTile *)M;
-          struct RastPort *rp = rt->RPort;
-          if(rp)
-          {
-              SetAPen(rp, 0);
-              SetBPen(rp, 0);
-              RectFill(rp, 0, 0, rt->TileWidth - 1, rt->TileHeight - 1);
-          }
-      }
-      retval=1;
-      break;
+    // case GM_INFINITESCROLL_RENDERTILE:
+    //   /* Default tile rendering - clear to background color */
+    //   /* Subclasses should override this to draw actual content */
+    //   {
+    //       struct gpRenderTile *rt = (struct gpRenderTile *)M;
+    //       struct RastPort *rp = rt->RPort;
+    //       if(rp)
+    //       {
+    //           SetAPen(rp, 0);
+    //           SetBPen(rp, 0);
+    //           RectFill(rp, 0, 0, rt->TileWidth - 1, rt->TileHeight - 1);
+    //       }
+    //   }
+    //   retval=1;
+    //   break;
 
     default:
       retval=DoSuperMethodA(C,(Object *)Gad,(Msg)M);
