@@ -84,8 +84,7 @@ void InfiniteScroll_DisposeTiles(InfiniteScroll *gdata)
     }
 
     gdata->_tileCount = 0;
-    gdata->_initedForWidth = 0;
-    gdata->_initedForHeight = 0;
+    gdata->_tileHeight = 0;
 }
 
 /**
@@ -196,27 +195,25 @@ ULONG InfiniteScroll_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layou
     width = Gad->Width;
     height = Gad->Height;
 
-    if(gdata->_initedForWidth == width &&
-        gdata->_initedForHeight == height
-        )
-        {
-            // layout already inited with right size, don't change.
-            return 1;
-        }
 
     /* Calculate needed tile count: (width / tileWidth) + 2 */
     /* +2 for smooth scrolling (one tile on each side can be pre-rendered) */
     if(gdata->_tileWidth == 0) gdata->_tileWidth=128;
 
+
+
     neededTileCount = (width / gdata->_tileWidth) + 2;
-    // let's round that to allow less realloc when resizing...
-    // neededTileCount = (neededTileCount+3) & (~3UL);
+
+  bdbprintf("InfiniteScroll_Layout %d\n",(int)neededTileCount);
+
+
 
     /* Check if we need to reallocate tiles */
     if(neededTileCount != gdata->_tileCount || gdata->_tileHeight != height)
     {
+        int bmdepth=8;
         /* Dispose old tiles */
-        InfiniteScroll_DisposeTiles(gdata);
+       InfiniteScroll_DisposeTiles(gdata);
 
         /* Update tile height */
         gdata->_tileHeight = height;
@@ -241,32 +238,33 @@ ULONG InfiniteScroll_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layou
             {
                 gdata->_friendBitmap = &layout->gpl_GInfo->gi_Screen->RastPort.BitMap;
             }
+  bdbprintf("_friendBitmap %08x\n",(int)gdata->_friendBitmap);
+  if(gdata->_friendBitmap)
+  {
+  bdbprintf("_friendBitmap depth %d\n",(int)gdata->_friendBitmap->Depth);
+  }
 
             /* Initialize each tile */
             for(i = 0; i < gdata->_tileCount; i++)
             {
                 /* Allocate offscreen bitmap for this tile */
-                OffscreenBitMap_Init(&gdata->_tiles[i].bitmap,
-                                     gdata->_tileWidth,
-                                     gdata->_tileHeight,
-                                     0, /* depth from friend */
-                                     BMF_CLEAR,
-                                     gdata->_friendBitmap);
+                // OffscreenBitMap_Init(&gdata->_tiles[i].bitmap,
+                //                      gdata->_tileWidth,
+                //                      gdata->_tileHeight,
+                //                      bmdepth, /* depth from friend */
+                //                      BMF_CLEAR,
+                //                      gdata->_friendBitmap);
+                // valid if gdata->_tiles[i].bitmap._rp is there
+                //if(gdata->_tiles[i].bitmap._rp)
 
-                if(gdata->_tiles[i].bitmap._rp)
-                {
-                    gdata->_tiles[i].isRendered = FALSE; // because not rendered
-                    gdata->_tiles[i].position._scrollx = 0;
-                }
-                else
-                {
-                    /* Allocation failed */
-                    gdata->_tiles[i].isRendered = FALSE;
-                }
-                gdata->_currentLeftBorderTileIndex = -1; // means, no tile affected yet.
+                gdata->_tiles[i].isRendered = FALSE;
+                gdata->_tiles[i].position._scrollx = 0;
             }
+            gdata->_currentLeftBorderTileIndex = -1; // means, no tile affected yet.
+            bdbprintf("allocated tiles:%d\n",gdata->_tileCount);
         }
     }
+
 
   return(1);
 }
@@ -336,15 +334,16 @@ ULONG InfiniteScroll_Render(Class *C, struct Gadget *Gad, struct gpRender *Rende
 
     InfiniteScrollRenderParams renderParams;
     // We render only under GM_RENDER.
-    if(!Render->MethodID==GM_RENDER) return;
+    if(!Render->MethodID==GM_RENDER) return retval;
 
     gdata=INST_DATA(C, Gad);
 
-    if( !gdata->_tiles) return;
+    if( !gdata->_tiles) return retval;
     // common params for tile rendering
     renderParams.C = C;
     renderParams.Gad = Gad;
-
+//test
+    return 1;
 
     if(gdata->_currentLeftBorderTileIndex<0)
     {

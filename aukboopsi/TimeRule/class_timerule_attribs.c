@@ -91,7 +91,7 @@ ULONG TimeRule_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
             long long *pv = (long long *)data;
             if( gdata->_timePerPixelWidth != *pv) fullRedraw=1;
             gdata->_timePerPixelWidth = *pv;
-
+            TimeRule_UpdateTimeInterval(gdata);
             used=1;
         }
       case TIMERULE_StyleSheet:

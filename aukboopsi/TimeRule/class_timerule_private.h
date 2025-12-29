@@ -37,15 +37,22 @@ typedef struct ITimeRule {
     /* next GM_RENDER will do accoringly */
     WORD _justScroll,_fullRedraw;
 
-
     /* Pointer to AukStyleSheet for visual styling (fonts, colors) */
     struct AukStyleSheet *_styleSheet;
 
+    /* computed for a tppw  */
+    long long majorTickInterval;  /* Time between major ticks */
+    long long minorTickInterval;  /* Time between minor ticks */
+
+    UWORD majorTickHeight, minorTickHeight;
 } TimeRule;
 
 ULONG TimeRule_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set);
 ULONG TimeRule_GetAttr(Class *C, struct Gadget *Gad, struct opGet *Get);
 ULONG TimeRule_Domain(Class *C, struct Gadget *Gad, struct gpDomain *D);
+ULONG TimeRule_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout);
+
+void TimeRule_UpdateTimeInterval(TimeRule *gdata);
 
 /* TimeRule overrides InfiniteScroll tile rendering to draw graduations */
 /* NOW, the InfiniteScroll inheritage just need that render function

@@ -77,7 +77,7 @@ ULONG TimeRule_HandleInput(Class *C, struct Gadget *Gad, struct gpInput *Input)
          {
 
           case SELECTUP:
-             gdata->_MouseMode=0;
+           //  gdata->_MouseMode=0;
 
            retval = GMR_MEACTIVE;
             break;
@@ -91,11 +91,11 @@ ULONG TimeRule_HandleInput(Class *C, struct Gadget *Gad, struct gpInput *Input)
                   )
             {/* outside gadget or disabled. */
 
-              if(gdata->_EditMode)
-              {
-                gdata->_EditMode=0;
-                /* Render is handled by InfiniteScroll superclass */
-              }
+              // if(gdata->_EditMode)
+              // {
+              //   gdata->_EditMode=0;
+              //   /* Render is handled by InfiniteScroll superclass */
+              // }
               retval = GMR_REUSE;
             }
             else if((Gad->Flags & GFLG_DISABLED)==0) /* don't manage clicks if disabled. */

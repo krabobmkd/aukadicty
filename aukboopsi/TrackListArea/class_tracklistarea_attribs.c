@@ -41,7 +41,7 @@ ULONG TrackListArea_NotifyAttribValue(struct Gadget *Gad, struct GadgetInfo *GIn
      0,0,
      TAG_DONE
     };
- bdbprintf(" **** TrackListArea_NotifyAttribValue: Gad->GadgetID:%d \n",Gad->GadgetID);
+// bdbprintf(" **** TrackListArea_NotifyAttribValue: Gad->GadgetID:%d \n",Gad->GadgetID);
     tags[1] = Gad->GadgetID;
     tags[2] = attrib;
     tags[3] = value;

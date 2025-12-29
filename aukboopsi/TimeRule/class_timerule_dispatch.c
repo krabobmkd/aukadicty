@@ -61,6 +61,8 @@ ULONG ASM SAVEDS TimeRule_Dispatcher(
         gdata=INST_DATA(C, Gad);
 
         gdata->_timePerPixelWidth = 1;
+        gdata->majorTickInterval = 0;
+        gdata->minorTickInterval = 0;
 
         /* Process TimeRule-specific attributes from creation tags */
         if(M->opSet.ops_AttrList)
@@ -101,7 +103,9 @@ ULONG ASM SAVEDS TimeRule_Dispatcher(
       TimeRule_Domain(C, Gad, (APTR)M);
       retval=1;
       break;
-
+   case GM_LAYOUT:
+      retval = TimeRule_Layout(C,(Object *)Gad,(Msg)M);
+        break;
 
     /* Let InfiniteScroll handle these: GM_LAYOUT, GM_RENDER, GM_HITTEST, etc */
     default:

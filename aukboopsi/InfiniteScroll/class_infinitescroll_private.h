@@ -65,8 +65,6 @@ typedef struct IInfiniteScroll {
       Important: if <0, means no tile used yet, they need to be reattributed to some location.
      */
     WORD _currentLeftBorderTileIndex,_renderedTilesCount;
-    /* Remember dimension for which _tiles has been inited. */
-    WORD _initedForWidth,_initedForHeight;
 
     /* The actual render function of the inherited implementation. */
     InfiniteScrollRenderf _renderFunction;
