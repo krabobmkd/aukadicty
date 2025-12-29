@@ -33,8 +33,8 @@ typedef struct InfiniteScrollTile
     /* position this tile represents (left edge, 64-bit signed) */
     InfiniteScrollPosition position;
 
-    /* Valid flag - TRUE if tile is allocated and rendered */
-    int isValid;
+    /* isRendered flag - TRUE if tile is allocated and rendered */
+    int isRendered;
 
 } InfiniteScrollTile;
 
@@ -58,13 +58,13 @@ typedef struct IInfiniteScroll {
 
     /* Tile array */
     InfiniteScrollTile *_tiles;        /* Array of tiles */
-    UWORD _tileCount;                  /* Number of allocated tiles */
+    ULONG _tileCount;                  /* Number of allocated tiles */
 
     /* current index of tile used for the current leftmost tile in _tiles table,
       for which last rendered position fits between tile->position and tile->position+_tileWidth.
       Important: if <0, means no tile used yet, they need to be reattributed to some location.
      */
-    WORD _currentLeftBorderTileIndex;
+    WORD _currentLeftBorderTileIndex,_renderedTilesCount;
     /* Remember dimension for which _tiles has been inited. */
     WORD _initedForWidth,_initedForHeight;
 

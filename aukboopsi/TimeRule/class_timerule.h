@@ -65,23 +65,12 @@
  * all attribs from gadgetclass.h and InfiniteScroll are also valid.
  */
 /* different classes may not use same base. */
-#define TIMERULE_Dummy			(TAG_USER+0x04110000)
+#define TIMERULE_Dummy			(TAG_USER+0x04510000)
 
-/* Default height for the time ruler */
-#define	TIMERULE_DefHeight		(TIMERULE_Dummy+1)
-
-/* Time at left border of TimeRule (signed 64-bit AukFixed, Hi/Lo split) */
-#define	TIMERULE_TimeLeftHi		(TIMERULE_Dummy+2)
-#define	TIMERULE_TimeLeftLo		(TIMERULE_Dummy+3)
-
-/* Time at right border of TimeRule (signed 64-bit AukFixed, Hi/Lo split) */
-#define	TIMERULE_TimeRightHi	(TIMERULE_Dummy+4)
-#define	TIMERULE_TimeRightLo	(TIMERULE_Dummy+5)
-
-/* X offset from TimeRule left to where TrackListArea starts (for alignment) */
-#define TIMERULE_TrackAreaOffsetX (TIMERULE_Dummy+6)
+/* pointer to a long long. Note scroll poistion per pixel is at InfiniteScroll level  */
+#define	TIMERULE_TimePerPixelWidth	(TIMERULE_Dummy+1)
 
 /* Pointer to AukStyleSheet for visual styling (fonts, colors) */
-#define TIMERULE_StyleSheet (TIMERULE_Dummy+7)
+#define TIMERULE_StyleSheet (TIMERULE_Dummy+2)
 
 #endif

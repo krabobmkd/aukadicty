@@ -75,28 +75,11 @@ ULONG TrackListArea_GetAttr(Class *C, struct Gadget *Gad, struct opGet *Get)
       *data = gdata->_domainHeight;
       break;
 
-    case TRACKLIST_DomainWidth:
-      *data = (ULONG)(gdata->_domainWidth & 0xFFFFFFFF);
-      break;
-
-    case TRACKLIST_DomainWidthHigh:
-      *data = (ULONG)(gdata->_domainWidth >> 32);
-      break;
-
-    case TRACKLIST_TimePerPixelWidth:
-      *data = (ULONG)(gdata->_timePerPixelWidth & 0xFFFFFFFF);
-      break;
-
-    case TRACKLIST_TimePerPixelWidthHigh:
-      *data = (ULONG)(gdata->_timePerPixelWidth >> 32);
-      break;
-
-    case TRACKLIST_ScrollX:
-      *data = (ULONG)(gdata->_scrollX & 0xFFFFFFFF);
-      break;
-
-    case TRACKLIST_ScrollXHigh:
-      *data = (ULONG)(gdata->_scrollX >> 32);
+    case TRACKLIST_TimeProjection:
+    {
+        ((TimeProjection *)data)->_timeAtLeft = gdata->_scrollX;
+        ((TimeProjection *)data)->_timePerPixelWidth = gdata->_timePerPixelWidth;
+      }
       break;
 
     case TRACKLIST_HeaderWidth:
@@ -147,55 +130,19 @@ ULONG TrackListArea_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
         }
         break;
 
-      case TRACKLIST_ScrollX:
-        {
-            used = 1;
-            /* Set low 32 bits of _scrollX, preserve high bits */
-            long long newScrollX = (gdata->_scrollX & 0xFFFFFFFF00000000LL) | (ULONG)data;
-            if(gdata->_scrollX != newScrollX)
-            {
-                gdata->_scrollX = newScrollX;
-                TrackListArea_NotifyAttribValue(Gad, Set->ops_GInfo, TRACKLIST_ScrollX, (ULONG)data);
-            }
-        }
-        break;
-
-      case TRACKLIST_ScrollXHigh:
-        {
-            used = 1;
-            /* Set high 32 bits of _scrollX, preserve low bits */
-            long long newScrollX = (gdata->_scrollX & 0x00000000FFFFFFFFLL) | ((long long)data << 32);
-            if(gdata->_scrollX != newScrollX)
-            {
-                gdata->_scrollX = newScrollX;
-                TrackListArea_NotifyAttribValue(Gad, Set->ops_GInfo, TRACKLIST_ScrollXHigh, (ULONG)data);
-            }
-        }
-        break;
-
-      case TRACKLIST_TimePerPixelWidth:
-        {
-            used = 1;
-            /* Set low 32 bits of _timePerPixelWidth, preserve high bits */
-            long long newVal = (gdata->_timePerPixelWidth & 0xFFFFFFFF00000000LL) | (ULONG)data;
-            if(gdata->_timePerPixelWidth != newVal)
-            {
-                gdata->_timePerPixelWidth = newVal;
-            }
-        }
-        break;
-
-      case TRACKLIST_TimePerPixelWidthHigh:
-        {
-            used = 1;
-            /* Set high 32 bits of _timePerPixelWidth, preserve low bits */
-            long long newVal = (gdata->_timePerPixelWidth & 0x00000000FFFFFFFFLL) | ((long long)data << 32);
-            if(gdata->_timePerPixelWidth != newVal)
-            {
-                gdata->_timePerPixelWidth = newVal;
-            }
-        }
-        break;
+    case TRACKLIST_TimeProjection:
+    {
+       TimeProjection *pproj = (TimeProjection *)data;
+        used = 1;
+        if(pproj->_timeAtLeft != gdata->_scrollX ||
+           pproj->_timePerPixelWidth != gdata->_timePerPixelWidth )
+           {
+                gdata->_scrollX = pproj->_timeAtLeft;
+                gdata->_timePerPixelWidth = gdata->_timePerPixelWidth;
+                TrackListArea_NotifyAttribValue(Gad, Set->ops_GInfo, TRACKLIST_TimeProjection, (ULONG)data);
+           }
+      }
+      break;
 
       case TRACKLIST_StyleSheet:
       used = 1;

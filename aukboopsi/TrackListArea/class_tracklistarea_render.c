@@ -66,29 +66,27 @@ extern struct IClass   *TrackHeaderClassPtr;
 extern struct IClass   *TrackAreaClassPtr;
 
 
-// todo
+//static ULONG TrackListArea_NotifyChangeWidth(struct Gadget *Gad, struct GadgetInfo	*GInfo)
+//{
+//    struct opUpdate notifymsg;
+//    TrackListArea *gdata=INST_DATA(TrackListClassPtr, Gad);
+//    ULONG tags[]={
+//     GA_ID,0,
+//     TRACKLIST_DomainWidth,0,
+//     TRACKLIST_DomainWidthHigh,0,
+//     TAG_DONE
+//    };
 
-static ULONG TrackListArea_NotifyChangeWidth(struct Gadget *Gad, struct GadgetInfo	*GInfo)
-{
-    struct opUpdate notifymsg;
-    TrackListArea *gdata=INST_DATA(TrackListClassPtr, Gad);
-    ULONG tags[]={
-     GA_ID,0,
-     TRACKLIST_DomainWidth,0,
-     TRACKLIST_DomainWidthHigh,0,
-     TAG_DONE
-    };
+//    tags[1] = Gad->GadgetID;
+//    tags[3] = (ULONG)gdata->_domainWidth;
+//    tags[5] = (ULONG)(gdata->_domainWidth>>32);
+//    notifymsg.MethodID = OM_NOTIFY;
+//    notifymsg.opu_AttrList = (struct TagItem *)&tags[0];
+//    notifymsg.opu_GInfo = GInfo; // "always there for gadget, in all messages"
+//    notifymsg.opu_Flags = 0;
 
-    tags[1] = Gad->GadgetID;
-    tags[3] = (ULONG)gdata->_domainWidth;
-    tags[5] = (ULONG)(gdata->_domainWidth>>32);
-    notifymsg.MethodID = OM_NOTIFY;
-    notifymsg.opu_AttrList = (struct TagItem *)&tags[0];
-    notifymsg.opu_GInfo = GInfo; // "always there for gadget, in all messages"
-    notifymsg.opu_Flags = 0;
-
-    return DoSuperMethodA(TrackListClassPtr,(APTR)Gad,(Msg)&notifymsg );
-}
+//    return DoSuperMethodA(TrackListClassPtr,(APTR)Gad,(Msg)&notifymsg );
+//}
 
 
 static ULONG TrackListArea_NotifyChangeHeight(struct Gadget *Gad, struct GadgetInfo	*GInfo)

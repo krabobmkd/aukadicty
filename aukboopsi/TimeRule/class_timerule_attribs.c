@@ -45,28 +45,11 @@ ULONG TimeRule_GetAttr(Class *C, struct Gadget *Gad, struct opGet *Get)
 
   switch(Get->opg_AttrID)
   {
-    case TIMERULE_DefHeight:
-        *data = (ULONG)gdata->_defaultHeight;
-        break;
-
-    case TIMERULE_TimeLeftHi:
-        *data = (ULONG)gdata->_timeLeftHi;
-        break;
-    case TIMERULE_TimeLeftLo:
-        *data = (ULONG)gdata->_timeLeftLo;
-        break;
-
-    case TIMERULE_TimeRightHi:
-        *data = (ULONG)gdata->_timeRightHi;
-        break;
-    case TIMERULE_TimeRightLo:
-        *data = (ULONG)gdata->_timeRightLo;
-        break;
-
-    case TIMERULE_TrackAreaOffsetX:
-        *data = (ULONG)gdata->_trackAreaOffsetX;
-        break;
-
+    case TIMERULE_TimePerPixelWidth:
+    {
+        long long *pv = (long long *)data;
+        *pv = gdata->_timePerPixelWidth;
+    }
     case TIMERULE_StyleSheet:
         *data = (ULONG)gdata->_styleSheet;
         break;
@@ -88,7 +71,7 @@ ULONG TimeRule_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
   struct TagItem *tag;
   ULONG data;
   TimeRule *gdata;
-  ULONG redraw=0, invalidateTiles=0;
+  ULONG fullRedraw=0, justScroll=0,used=0;
 
   gdata=INST_DATA(C, Gad);
 
@@ -103,57 +86,20 @@ ULONG TimeRule_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
 
     switch(tag->ti_Tag)
     {
-      case TIMERULE_DefHeight:
-        if((UWORD)data != gdata->_defaultHeight)
+        case TIMERULE_TimePerPixelWidth:
         {
-            gdata->_defaultHeight = (UWORD)data;
-            redraw=1;
-        }
-        break;
+            long long *pv = (long long *)data;
+            if( gdata->_timePerPixelWidth != *pv) fullRedraw=1;
+            gdata->_timePerPixelWidth = *pv;
 
-      case TIMERULE_TimeLeftHi:
-        if((LONG)data != gdata->_timeLeftHi)
-        {
-            gdata->_timeLeftHi = (LONG)data;
-            invalidateTiles=1;
+            used=1;
         }
-        break;
-      case TIMERULE_TimeLeftLo:
-        if((LONG)data != gdata->_timeLeftLo)
-        {
-            gdata->_timeLeftLo = (LONG)data;
-            invalidateTiles=1;
-        }
-        break;
-
-      case TIMERULE_TimeRightHi:
-        if((LONG)data != gdata->_timeRightHi)
-        {
-            gdata->_timeRightHi = (LONG)data;
-            invalidateTiles=1;
-        }
-        break;
-      case TIMERULE_TimeRightLo:
-        if((LONG)data != gdata->_timeRightLo)
-        {
-            gdata->_timeRightLo = (LONG)data;
-            invalidateTiles=1;
-        }
-        break;
-
-      case TIMERULE_TrackAreaOffsetX:
-        if((UWORD)data != gdata->_trackAreaOffsetX)
-        {
-            gdata->_trackAreaOffsetX = (UWORD)data;
-            invalidateTiles=1;
-        }
-        break;
-
       case TIMERULE_StyleSheet:
         if((struct AukStyleSheet *)data != gdata->_styleSheet)
         {
             gdata->_styleSheet = (struct AukStyleSheet *)data;
-            invalidateTiles=1;
+            fullRedraw=1;
+            used=1;
         }
         break;
 
@@ -162,21 +108,24 @@ ULONG TimeRule_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
         {
             if(data) Gad->Flags |= GFLG_DISABLED;
             else Gad->Flags &= ~GFLG_DISABLED;
-            redraw=1;
+            fullRedraw=1;
+            used=1;
         }
         break;
       case GA_Highlight:
         {
             if(data) Gad->Flags |= GFLG_GADGHBOX;
             else Gad->Flags &= ~GFLG_GADGHBOX;
-            redraw=1;
+            fullRedraw=1;
+            used=1;
         }
         break;
       case GA_Selected:
         {
             if(data) Gad->Flags |= GFLG_SELECTED;
             else Gad->Flags &= ~GFLG_SELECTED;
-            redraw=1;
+            fullRedraw=1;
+            used=1;
         }
         break;
       default:
@@ -186,14 +135,13 @@ ULONG TimeRule_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
     } /* end switch */
   } /* end for */
 
-  if(invalidateTiles)
-  {
-      /* When time borders change, all tiles need to be redrawn */
-      /* The render function will handle this */
-      redraw = 1;
-  }
 
-  return(redraw);
+    if((justScroll|fullRedraw)!=0)
+    {
+       // notify TODO
+    }
+
+  return(used);
 }
 
 

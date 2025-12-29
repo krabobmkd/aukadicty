@@ -18,8 +18,6 @@ extern "C" {
 #include <graphics/gfx.h>
 #include <graphics/regions.h>
 
-// enable or not some parts of code...
-#define USE_REGION_CLIPPING 1
 
 /**
  * This is the internal private gadget struct that own the data of the object instances.
@@ -29,31 +27,16 @@ extern "C" {
  * (These are just concatenated structs in a system private way.)
  *
  * TimeRule inherits from InfiniteScroll - the superclass manages:
- * - _tiles array with offscreen bitmaps
- * - _framerec rectangle
- * - _clipRegion for clipping
- * - _domainMin/Max, _viewPos, _viewZoom
- * - _tileWidth, _tileHeight, _tileCount
+ * - IT CHANGEd.
  */
 typedef struct ITimeRule {
-    /* Default height for the ruler */
-    UWORD _defaultHeight;
 
-    /* Mouse interaction state (for future use) */
-    ULONG _MouseMode;
-    ULONG _EditMode;
+    /* Gives current projection */
+    unsigned long long _timePerPixelWidth;
 
-    /* Time at left border of TimeRule (signed 64-bit AukFixed) */
-    LONG _timeLeftHi;
-    LONG _timeLeftLo;
+    /* next GM_RENDER will do accoringly */
+    WORD _justScroll,_fullRedraw;
 
-    /* Time at right border of TimeRule (signed 64-bit AukFixed) */
-    LONG _timeRightHi;
-    LONG _timeRightLo;
-
-    /* X offset from TimeRule left to where TrackListArea starts */
-    /* This is typically the TrackHeader width */
-    UWORD _trackAreaOffsetX;
 
     /* Pointer to AukStyleSheet for visual styling (fonts, colors) */
     struct AukStyleSheet *_styleSheet;
@@ -69,11 +52,6 @@ ULONG TimeRule_Domain(Class *C, struct Gadget *Gad, struct gpDomain *D);
 */
 void TimeRule_RenderDelegate(InfiniteScrollRenderParams *p);
 
-/**
- * NOW, we have  function pointer type to ask rendering a portion of space.
- * This is to be passed by inherited class.
-*/
-typedef void (*InfiniteScrollRenderf)(InfiniteScrollRenderParams *p);
 
 /* Helper to format time value as text */
 void TimeRule_FormatTime(LONG timeHi, LONG timeLo, char *buffer, BOOL showMs);

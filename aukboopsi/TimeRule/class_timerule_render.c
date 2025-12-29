@@ -46,7 +46,7 @@ ULONG TimeRule_Domain(Class *C, struct Gadget *Gad, struct gpDomain *D)
      if(gdata)
      {
        D->gpd_Domain.Width = 200;
-       D->gpd_Domain.Height = gdata->_defaultHeight;
+       D->gpd_Domain.Height = 12; // gdata->_defaultHeight;
      }
      else
      {
@@ -57,21 +57,15 @@ ULONG TimeRule_Domain(Class *C, struct Gadget *Gad, struct gpDomain *D)
 
     case GDOMAIN_MAXIMUM:
       D->gpd_Domain.Width = 16000;
-      D->gpd_Domain.Height = gdata ? gdata->_defaultHeight : 16;
+      D->gpd_Domain.Height =  16;
       break;
 
     case GDOMAIN_MINIMUM:
     default:
-     if(gdata)
-     {
-       D->gpd_Domain.Width = 64;
-       D->gpd_Domain.Height = gdata->_defaultHeight;
-     }
-     else
-     {
+
        D->gpd_Domain.Width = 50;
        D->gpd_Domain.Height = 12;
-     }
+
      break;
   }
   return(1);
@@ -142,9 +136,9 @@ void TimeRule_FormatTime(LONG timeHi, LONG timeLo, char *buffer, BOOL showMs)
  * - Minor ticks between major ticks
  *
  * Drawing coordinate system:
+ * NOW
  * - Tile RastPort is at 0,0, size is TileWidth x TileHeight
  * - AbstractPos is the time value at the LEFT edge of this tile
- * - We need to convert time -> pixel position within the tile
  */
 void TimeRule_RenderDelegate(InfiniteScrollRenderParams *p)
 {
@@ -171,21 +165,30 @@ void TimeRule_RenderDelegate(InfiniteScrollRenderParams *p)
     if(!C || !Gad || !rp) return ;
 
     gdata = INST_DATA(C, Gad);
-
     /* Clear tile to background (pen 0 = typically grey) */
     SetAPen(rp, 0);
     SetBPen(rp, 0);
-    RectFill(rp, 0, 0, tileWidth - 1, tileHeight - 1);
+    RectFill(rp, p->destX, p->destY, p->destWidth - 1, p->destHeight - 1);
 
     /* Get time range from TimeRule attributes */
-    timeLeft = ((long long)gdata->_timeLeftHi << 32) | ((ULONG)gdata->_timeLeftLo);
-    timeRight = ((long long)gdata->_timeRightHi << 32) | ((ULONG)gdata->_timeRightLo);
-    timeRange = timeRight - timeLeft;
+    timePerPixel = gdata->_timePerPixelWidth;
 
-    if(timeRange <= 0) return 1;  /* Invalid range */
+    /* old: Time per  horizontal pixel  (signed 64-bit AukFixed)
+       _timeRight =  _timeLeft + ((_timePerPixelWidth*Gad->Width)>>32)
+    */
+    timeLeft = gdata->_values._timeAtLeft;
+    timeRange = timePerPixel * Gad->Width;
+    timeRight = timeLeft + timeRange;
 
-    /* Get tile abstract position (this is the time at tile's left edge) */
-    tileAbstractPos = ((long long)M->AbstractPosHi << 32) | ((ULONG)M->AbstractPosLo);
+
+    if(timeRange <= 0) return;  /* Invalid range */
+
+    /* Now, Abstract InfiniteScroll only give a pixel offset position for the left border of this tile.
+      //Get tile abstract position (this is the time at tile's left edge)
+    */
+    tileAbstractPos = p->_start._scrollx;
+
+    //tileAbstractPos = ((long long)M->AbstractPosHi << 32) | ((ULONG)M->AbstractPosLo);
 
     /* Calculate time per pixel based on TimeRule width and time range */
     /* timePerPixel = timeRange / (frame width) */

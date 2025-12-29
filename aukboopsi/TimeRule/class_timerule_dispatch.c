@@ -60,19 +60,7 @@ ULONG ASM SAVEDS TimeRule_Dispatcher(
       {
         gdata=INST_DATA(C, Gad);
 
-        /* Initialize TimeRule-specific data */
-        gdata->_defaultHeight = 16;
-        gdata->_MouseMode = 0;
-        gdata->_EditMode = 0;
-
-        /* Initialize time borders to 0 */
-        gdata->_timeLeftHi = 0;
-        gdata->_timeLeftLo = 0;
-        gdata->_timeRightHi = 0;
-        gdata->_timeRightLo = (10 << 16);  /* Default: 10 seconds at right edge */
-
-        /* X offset where track area starts (typically TrackHeader width) */
-        gdata->_trackAreaOffsetX = 0;
+        gdata->_timePerPixelWidth = 1;
 
         /* Process TimeRule-specific attributes from creation tags */
         if(M->opSet.ops_AttrList)

@@ -82,8 +82,8 @@ typedef struct ScrollDomain {
 typedef struct InfiniteScrollRenderParams {
     Class *C;
     struct Gadget *Gad;
-    struct RastPort *rp;
-    /* start position of scroll to render */
+    struct RastPort *rp;   
+    /* start position of scroll to render, for that tile */
     InfiniteScrollPosition _start;
     /* rectangle to render in Rastport */
     WORD destX,destY,destWidth,destHeight;

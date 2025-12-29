@@ -73,7 +73,6 @@ void CreateTrackListView(TrackListView *pm,struct DrawInfo *drawInfo,
 
     // - - - - - A
     pm->timerule = (Object *)NewObject( TIMERULE_GetClass(), NULL,
-                            TIMERULE_DefHeight,(fontheight*3)/2,
                             TAG_END);
 
 
@@ -326,15 +325,12 @@ void updateVerticalScrollDomain(TrackListView *pm)
  */
 void updateHorizontalScrollDomain(TrackListView *pm)
 {
+    TimeProjection trackListTimeproj;
     struct Gadget *trackListGad;
     AukAProject *project;
     long long duration;
     long long timePerPixelWidth;
-    long long scrollX;
     long long timeLeft, timeRight;
-    ULONG timePerPixLo = 0, timePerPixHi = 0;
-    ULONG scrollXLo = 0, scrollXHi = 0;
-    ULONG domainWidthLo = 0, domainWidthHi = 0;
     unsigned long long domainWidth;
     ULONG visibleWidth;
     ULONG totalScroll;
@@ -357,23 +353,16 @@ void updateHorizontalScrollDomain(TrackListView *pm)
             SCROLLER_Visible, 1,
             TAG_END);
 
-        /* Set TimeRule to show 0-10 seconds default range */
-        if(pm->timerule)
-        {
-            SetGadgetAttrs((struct Gadget *)pm->timerule, pm->window, NULL,
-                TIMERULE_TimeLeftHi, 0,
-                TIMERULE_TimeLeftLo, 0,
-                TIMERULE_TimeRightHi, 0,
-                TIMERULE_TimeRightLo, (10 << 16),  /* 10 seconds in fixed-point (approx) */
-                TAG_END);
-        }
         return;
     }
 
-    /* Get timePerPixelWidth from trackList */
-    GetAttr(TRACKLIST_TimePerPixelWidth, pm->trackList, &timePerPixLo);
-    GetAttr(TRACKLIST_TimePerPixelWidthHigh, pm->trackList, &timePerPixHi);
-    timePerPixelWidth = ((long long)timePerPixHi << 32) | timePerPixLo;
+
+    /* Get visible width from the gadget. TrackListArea uses headerWidth for left side,
+     * so visible track area width = gadget width.
+     * The actual visible time area would be gadget width, but we use domainWidth directly.
+     */
+     GetAttr(TRACKLIST_TimeProjection, pm->trackList, &trackListTimeproj);
+     timePerPixelWidth = trackListTimeproj._timePerPixelWidth;
 
     /* Clamp timePerPixelWidth to minimum (prevent divide by zero and over-zoom) */
     if(timePerPixelWidth < MIN_TIME_PER_PIXEL_WIDTH) {
@@ -385,12 +374,7 @@ void updateHorizontalScrollDomain(TrackListView *pm)
      */
     domainWidth = (unsigned long long)(duration / timePerPixelWidth);
 
-    /* Get visible width from the gadget. TrackListArea uses headerWidth for left side,
-     * so visible track area width = gadget width.
-     * The actual visible time area would be gadget width, but we use domainWidth directly.
-     */
-    GetAttr(TRACKLIST_DomainWidth, pm->trackList, &domainWidthLo);
-    GetAttr(TRACKLIST_DomainWidthHigh, pm->trackList, &domainWidthHi);
+
 
     /* Use gadget width as visible width in scroller units (pixels) */
     visibleWidth = (ULONG)trackListGad->Width;
@@ -412,40 +396,6 @@ void updateHorizontalScrollDomain(TrackListView *pm)
         SCROLLER_Visible, visibleScroll,
         TAG_END);
 
-    /* Update TimeRule time border attributes to match visible time range.
-     *
-     * The TimeRule spans the full window width, but TrackListArea's track area
-     * starts after the header. So TimeRule's time scale must account for this offset:
-     *
-     * TimeRule pixels 0 to headerWidth are "before" the track area's time start.
-     * timeLeft = scrollX - (headerWidth * timePerPixelWidth)
-     * timeRight = scrollX + ((visibleWidth - headerWidth) * timePerPixelWidth)
-     *
-     * This way, at pixel position headerWidth in TimeRule, the time shown equals scrollX,
-     * matching the left edge of the TrackListArea's track content.
-     */
-    if(pm->timerule)
-    {
-        ULONG headerWidth = 0;
-
-        GetAttr(TRACKLIST_ScrollX, pm->trackList, &scrollXLo);
-        GetAttr(TRACKLIST_ScrollXHigh, pm->trackList, &scrollXHi);
-        GetAttr(TRACKLIST_HeaderWidth, pm->trackList, &headerWidth);
-        scrollX = ((long long)scrollXHi << 32) | scrollXLo;
-
-        /* Time at TimeRule left edge (before track area) */
-        timeLeft = scrollX - ((long long)headerWidth * timePerPixelWidth);
-        /* Time at TimeRule right edge */
-        timeRight = scrollX + ((long long)(visibleWidth - headerWidth) * timePerPixelWidth);
-
-        SetGadgetAttrs((struct Gadget *)pm->timerule, pm->window, NULL,
-            TIMERULE_TimeLeftHi, (ULONG)(timeLeft >> 32),
-            TIMERULE_TimeLeftLo, (ULONG)(timeLeft & 0xFFFFFFFF),
-            TIMERULE_TimeRightHi, (ULONG)(timeRight >> 32),
-            TIMERULE_TimeRightLo, (ULONG)(timeRight & 0xFFFFFFFF),
-            TIMERULE_TrackAreaOffsetX, headerWidth,
-            TAG_END);
-    }
 }
 
 
@@ -494,7 +444,7 @@ void TrackListView_ListenTrackListMessage(TrackListView *pm,struct opUpdate *M)
         if(myTask) Signal(myTask,SIGBREAKF_CTRL_F);
     }
 
-    if((ptag = FindTagItem( TRACKLIST_ScrollX,M->opu_AttrList ))!=NULL)
+    if((ptag = FindTagItem( TRACKLIST_TimeProjection,M->opu_AttrList ))!=NULL)
     {
         pm->updateBits |= TLVB_UPDATE_FULLREDRAW;
         if(myTask) Signal(myTask,SIGBREAKF_CTRL_F);
@@ -538,23 +488,21 @@ void TrackListView_ListenScrollHMessage(TrackListView *pm, struct opUpdate *M)
         ULONG timePerPixLo = 0, timePerPixHi = 0;
         ULONG headerWidth = 0;
         long long timePerPixelWidth;
-        long long scrollX;
         long long timeLeft, timeRight;
         ULONG visibleWidth;
         struct Gadget *trackListGad;
+        TimeProjection trackListTimeproj;
 
-        GetAttr(TRACKLIST_TimePerPixelWidth, pm->trackList, &timePerPixLo);
-        GetAttr(TRACKLIST_TimePerPixelWidthHigh, pm->trackList, &timePerPixHi);
+        GetAttr(TRACKLIST_TimeProjection, pm->trackList, &trackListTimeproj);
+
         GetAttr(TRACKLIST_HeaderWidth, pm->trackList, &headerWidth);
-        timePerPixelWidth = ((long long)timePerPixHi << 32) | timePerPixLo;
+        timePerPixelWidth = trackListTimeproj._timePerPixelWidth; // ((long long)timePerPixHi << 32) | timePerPixLo;
 
         /* scrollX = scrollerTop * timePerPixelWidth (in fixed-point) */
-        scrollX = (long long)scrollerTop * timePerPixelWidth;
+        trackListTimeproj._timeAtLeft = (long long)scrollerTop * timePerPixelWidth;
 
-        /* Set both low and high parts of _scrollX */
         SetGadgetAttrs((struct Gadget *)pm->trackList, pm->window, NULL,
-                    TRACKLIST_ScrollX, (ULONG)(scrollX & 0xFFFFFFFF),
-                    TRACKLIST_ScrollXHigh, (ULONG)(scrollX >> 32),
+                    TRACKLIST_TimeProjection,(ULONG *) &trackListTimeproj,
                     TAG_END
                 );
 
@@ -562,20 +510,14 @@ void TrackListView_ListenScrollHMessage(TrackListView *pm, struct opUpdate *M)
         if(pm->timerule)
         {
             trackListGad = (struct Gadget *)pm->trackList;
-            visibleWidth = (ULONG)trackListGad->Width;
-            if(visibleWidth == 0) visibleWidth = 1;
 
-            /* Time at TimeRule left edge (before track area) */
-            timeLeft = scrollX - ((long long)headerWidth * timePerPixelWidth);
-            /* Time at TimeRule right edge */
-            timeRight = scrollX + ((long long)(visibleWidth - headerWidth) * timePerPixelWidth);
+            trackListTimeproj._timeAtLeft =  (long long)(scrollerTop-headerWidth)* timePerPixelWidth;
 
             SetGadgetAttrs((struct Gadget *)pm->timerule, pm->window, NULL,
-                TIMERULE_TimeLeftHi, (ULONG)(timeLeft >> 32),
-                TIMERULE_TimeLeftLo, (ULONG)(timeLeft & 0xFFFFFFFF),
-                TIMERULE_TimeRightHi, (ULONG)(timeRight >> 32),
-                TIMERULE_TimeRightLo, (ULONG)(timeRight & 0xFFFFFFFF),
+                TIMERULE_TimePerPixelWidth,&trackListTimeproj._timePerPixelWidth,
+                INFINITESCROLL_Position, &trackListTimeproj._timeAtLeft,
                 TAG_END);
+
         }
     }
 }
