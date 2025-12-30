@@ -80,7 +80,6 @@ typedef struct ScrollDomain {
 
 /** NOW, params for InfiniteScrollRender function */
 typedef struct InfiniteScrollRenderParams {
-    Class *C;
     struct Gadget *Gad;
     struct RastPort *rp;   
     /* start position of scroll to render, for that tile */
@@ -101,7 +100,7 @@ typedef void (*InfiniteScrollRenderf)(InfiniteScrollRenderParams *p);
  * all attribs from gadgetclass.h are also valid.
  */
 /* different classes may not use same base. */
-#define INFINITESCROLL_Dummy			(TAG_USER+0x03110000)
+#define INFINITESCROLL_Dummy			(TAG_USER+0x03210000)
 
 /* Scrollable domain min value as pointer to a signed 64-bit (InfiniteScrollPosition *)
     Apply to OM_NEW OM_SET OM_GET.

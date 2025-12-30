@@ -14,8 +14,8 @@
 #include "class_timerule_private.h"
 
 /* Include InfiniteScroll private for access to superclass data */
-#include "../InfiniteScroll/class_infinitescroll_private.h"
-
+//#include "../InfiniteScroll/class_infinitescroll_private.h"
+#include "../InfiniteScroll/class_infinitescroll.h"
 #include <proto/exec.h>
 #include <proto/intuition.h>
 #include <proto/graphics.h>
@@ -43,6 +43,7 @@
  * InfiniteScroll handles: tiles, _framerec, _clipRegion, GM_LAYOUT, GM_RENDER
  * TimeRule adds: time border attributes, custom tile rendering for graduations
  */
+
 ULONG ASM SAVEDS TimeRule_Dispatcher(
                     REG(a0,struct IClass *C),
                     REG(a2,struct Gadget *Gad),
@@ -58,9 +59,24 @@ ULONG ASM SAVEDS TimeRule_Dispatcher(
       /* Let InfiniteScroll handle creation first (it sets up tiles, etc) */
       if(Gad=(struct Gadget *)DoSuperMethodA(C,(Object *)Gad,(Msg)M))
       {
+            struct opSet superops;
+            ULONG supertags[] = {
+                INFINITESCROLL_RenderFunction,NULL,
+                TAG_END
+            };
+            superops.MethodID     = OM_SET;
+            superops.ops_AttrList = ( struct TagItem *)&supertags[0];
+            superops.ops_GInfo    = M->opSet.ops_GInfo;
+            supertags[1] = (ULONG)&TimeRule_RenderDelegate;
+
+            DoSuperMethodA(C, Gad, (Msg)&superops);
+           // SHOULD WORK BUT DO NOT, INLINE COMPILER ISSUE.
+           //SetSuperAttrs(C,Gad, INFINITESCROLL_RenderFunction, renderFunction,TAG_DONE);
+            bdbprintf_new("TimeRule", Gad);
+
         gdata=INST_DATA(C, Gad);
 
-        gdata->_timePerPixelWidth = 1;
+        gdata->_timePerPixelWidth = 0; // 0 means not inited, important.
         gdata->majorTickInterval = 0;
         gdata->minorTickInterval = 0;
 
@@ -69,10 +85,7 @@ ULONG ASM SAVEDS TimeRule_Dispatcher(
         {
             TimeRule_SetAttrs(C,Gad,&M->opSet);
         }
-        /* NOW, this is just how we implement InfiniteScroller inheritageoverriding */
-        SetSuperAttrs(C,Gad, INFINITESCROLL_RenderFunction, &TimeRule_RenderDelegate,TAG_END);
 
-        bdbprintf_new("TimeRule", Gad);
 
         /* means new object OK so far: */
         retval=(ULONG)Gad;
@@ -104,7 +117,10 @@ ULONG ASM SAVEDS TimeRule_Dispatcher(
       retval=1;
       break;
    case GM_LAYOUT:
-      retval = TimeRule_Layout(C,(Object *)Gad,(Msg)M);
+   bdbprintf("TimeRule GM_LAYOUT%08x %d\n",M->gpLayout.gpl_GInfo->gi_Screen,
+   M->gpLayout.gpl_GInfo->gi_Screen->RastPort.BitMap->Depth);
+
+      retval = TimeRule_Layout(C,(Object *)Gad,(struct gpLayout *)M);
         break;
 
     /* Let InfiniteScroll handle these: GM_LAYOUT, GM_RENDER, GM_HITTEST, etc */

@@ -100,7 +100,7 @@ ULONG ASM SAVEDS TrackListArea_Dispatcher(
         /* set gadget (super class) attributes for this instance like this: */
         /* (BOOL) Indicate whether gadget is part of TAB/SHIFT-TAB cycle. */
         /* default to false */
-        SetSuperAttrs(C,(Object *)Gad, GA_TabCycle,TRUE,TAG_DONE);
+        //SetSuperAttrs(C,(Object *)Gad, GA_TabCycle,TRUE,TAG_DONE);
 
         gdata->_clipRegion = NewRegion();
 

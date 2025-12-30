@@ -76,10 +76,7 @@ ULONG ASM SAVEDS InfiniteScroll_Dispatcher(
         gdata->_tileWidth = 128;  /* default tile width */
         gdata->_tileHeight = 0;   /* will be set at layout */
 
-        /* set gadget (super class) attributes for this instance like this: */
-        /* (BOOL) Indicate whether gadget is part of TAB/SHIFT-TAB cycle. */
-        /* default to false */
-        SetSuperAttrs(C,(Object *)Gad, GA_TabCycle,FALSE,TAG_DONE);
+        gdata->_renderFunction = NULL;
 
         /* Process initial attributes */
         InfiniteScroll_SetAttrs(C,Gad,(struct opSet *)M);

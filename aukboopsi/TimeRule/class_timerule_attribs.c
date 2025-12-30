@@ -32,6 +32,29 @@
  */
 #include "bdbprintf.h"
 
+
+//static ULONG TimeRule_NotifyAttribValue(Class *C,struct Gadget *Gad, struct GadgetInfo *GInfo,ULONG attrib, ULONG value)
+//{
+//    struct opUpdate notifymsg;
+//    // InfiniteScroll *gdata;
+//    // gdata = INST_DATA(C, Gad);
+//    ULONG tags[]={
+//     GA_ID,0,
+//     0,0,
+//     TAG_DONE
+//    };
+//    tags[1] = Gad->GadgetID;
+//    tags[2] = attrib;
+//    tags[3] = value;
+//    notifymsg.MethodID = OM_NOTIFY;
+//    notifymsg.opu_AttrList = (struct TagItem *)&tags[0];
+//    notifymsg.opu_GInfo = GInfo; // "always there for gadget, in all messages"
+//    notifymsg.opu_Flags = 0;
+
+//    return DoSuperMethodA(C,(APTR)Gad,(Msg)&notifymsg );
+//}
+
+
 ULONG TimeRule_GetAttr(Class *C, struct Gadget *Gad, struct opGet *Get)
 {
   ULONG retval=1;
@@ -91,6 +114,11 @@ ULONG TimeRule_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
             long long *pv = (long long *)data;
             if( gdata->_timePerPixelWidth != *pv) fullRedraw=1;
             gdata->_timePerPixelWidth = *pv;
+
+        bdbprintf("gdata %08x TIMERULE_TimePerPixelWidth set %08x.%08x\n",
+            (int)gdata,
+         (int)(gdata->_timePerPixelWidth>>32),(int)gdata->_timePerPixelWidth);
+
             TimeRule_UpdateTimeInterval(gdata);
             used=1;
         }
@@ -138,7 +166,20 @@ ULONG TimeRule_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
 
     if((justScroll|fullRedraw)!=0)
     {
-       // notify TODO
+       // goes render...
+        {
+            struct gpRender gpr;
+            gpr.MethodID = GM_RENDER;
+            gpr.gpr_GInfo = Set->ops_GInfo;
+            gpr.gpr_RPort = ObtainGIRPort(gpr.gpr_GInfo);
+            if(gpr.gpr_RPort)
+            {
+                gpr.gpr_Redraw = 1;
+                //Do(C,Gad,&gpr);
+                DoSuperMethodA(C,(APTR)Gad,(Msg)&gpr );
+                ReleaseGIRPort(gpr.gpr_RPort);
+            }
+        }
     }
 
   return(used);

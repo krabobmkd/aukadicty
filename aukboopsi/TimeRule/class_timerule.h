@@ -73,4 +73,6 @@
 /* Pointer to AukStyleSheet for visual styling (fonts, colors) */
 #define TIMERULE_StyleSheet (TIMERULE_Dummy+2)
 
+#define TIMERULE_Refresh (TIMERULE_Dummy+3)
+
 #endif

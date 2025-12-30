@@ -73,6 +73,7 @@ void CreateTrackListView(TrackListView *pm,struct DrawInfo *drawInfo,
 
     // - - - - - A
     pm->timerule = (Object *)NewObject( TIMERULE_GetClass(), NULL,
+                            ICA_TARGET,appModel,
                             TAG_END);
 
 
@@ -396,6 +397,12 @@ void updateHorizontalScrollDomain(TrackListView *pm)
         SCROLLER_Visible, visibleScroll,
         TAG_END);
 
+
+    SetGadgetAttrs((struct Gadget *)pm->timerule, pm->window, NULL,
+        TIMERULE_TimePerPixelWidth,&timePerPixelWidth,
+        // INFINITESCROLL_Position, &trackListTimeproj._timeAtLeft,
+        TAG_END);
+
 }
 
 
@@ -487,19 +494,18 @@ void TrackListView_ListenScrollHMessage(TrackListView *pm, struct opUpdate *M)
         ULONG scrollerTop = ptag->ti_Data;
         ULONG timePerPixLo = 0, timePerPixHi = 0;
         ULONG headerWidth = 0;
-        long long timePerPixelWidth;
-        long long timeLeft, timeRight;
+      //  long long timePerPixelWidth;
+      //  long long timeLeft;
         ULONG visibleWidth;
         struct Gadget *trackListGad;
         TimeProjection trackListTimeproj;
 
         GetAttr(TRACKLIST_TimeProjection, pm->trackList, &trackListTimeproj);
-
         GetAttr(TRACKLIST_HeaderWidth, pm->trackList, &headerWidth);
-        timePerPixelWidth = trackListTimeproj._timePerPixelWidth; // ((long long)timePerPixHi << 32) | timePerPixLo;
+       // timePerPixelWidth = trackListTimeproj._timePerPixelWidth; // ((long long)timePerPixHi << 32) | timePerPixLo;
 
         /* scrollX = scrollerTop * timePerPixelWidth (in fixed-point) */
-        trackListTimeproj._timeAtLeft = (long long)scrollerTop * timePerPixelWidth;
+        trackListTimeproj._timeAtLeft = (long long)scrollerTop * trackListTimeproj._timePerPixelWidth;
 
         SetGadgetAttrs((struct Gadget *)pm->trackList, pm->window, NULL,
                     TRACKLIST_TimeProjection,(ULONG *) &trackListTimeproj,
@@ -507,18 +513,16 @@ void TrackListView_ListenScrollHMessage(TrackListView *pm, struct opUpdate *M)
                 );
 
         /* Update TimeRule time borders to match new scroll position */
-        if(pm->timerule)
-        {
-            trackListGad = (struct Gadget *)pm->trackList;
+    // TimeRule left time coord is <header width pixels> behind the tracks.
+        trackListTimeproj._timeAtLeft =  (long long)(scrollerTop-headerWidth)*trackListTimeproj._timePerPixelWidth;
+// bdbprintf("ListenScrollHMessage _timeAtLeft:%08x.%08x\n",(int)(trackListTimeproj._timeAtLeft>>32),(int)trackListTimeproj._timeAtLeft);
 
-            trackListTimeproj._timeAtLeft =  (long long)(scrollerTop-headerWidth)* timePerPixelWidth;
+        SetGadgetAttrs((struct Gadget *)pm->timerule, pm->window, NULL,
+            TIMERULE_TimePerPixelWidth,&trackListTimeproj._timePerPixelWidth,
+            INFINITESCROLL_Position, &trackListTimeproj._timeAtLeft,
+            TAG_END);
 
-            SetGadgetAttrs((struct Gadget *)pm->timerule, pm->window, NULL,
-                TIMERULE_TimePerPixelWidth,&trackListTimeproj._timePerPixelWidth,
-                INFINITESCROLL_Position, &trackListTimeproj._timeAtLeft,
-                TAG_END);
 
-        }
     }
 }
 
@@ -555,8 +559,12 @@ void TrackListView_CheckUpdates(TrackListView *pm)
     if(pm->updateBits & TLVB_UPDATE_FULLREDRAW)
     {
         SetGadgetAttrs(pm->trackList, pm->window, NULL,TRACKLIST_Refresh,TRUE,TAG_END);
-
     }
+    if(pm->updateBits & TLVB_UPDATE_REDRAW_TIMERULE)
+    {
+        SetGadgetAttrs(pm->timerule, pm->window, NULL,TIMERULE_Refresh,TRUE,TAG_END);
+    }
+
 
     pm->updateBits = 0;
 }

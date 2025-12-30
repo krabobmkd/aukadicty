@@ -26,7 +26,7 @@
 #include "../InfiniteScroll/class_infinitescroll_private.h"
 
 #include "bdbprintf.h"
-
+extern struct IClass   *TimeRuleClassPtr;
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 /* GM_DOMAIN */
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
@@ -233,108 +233,119 @@ void TimeRule_RenderDelegate(InfiniteScrollRenderParams *p)
     LONG pixelX;
     char timeBuf[16];
 
-    Class *C = p->C;
     struct Gadget *Gad = p->Gad;
     struct RastPort *rp = p->rp;
+    bdbprintf("TimeRule_RenderDelegate %08x %08x\n",(int)Gad,(int)rp);
+    if( !Gad || !rp) return ;
 
-    if(!C || !Gad || !rp) return ;
-    if(!gdata->minorTickInterval ==0 || gdata->majorTickInterval==0 ) return;
+    gdata = INST_DATA(TimeRuleClassPtr, Gad); // note superclass can't send C
 
-    gdata = INST_DATA(C, Gad);
+
+
+    bdbprintf("render gdata: %08x\n",(int)gdata);
+
+     /* Get time range from TimeRule attributes */
+     timePerPixel = gdata->_timePerPixelWidth;
+
+bdbprintf("render timePerPixel: %08x.%08x\n",(int)(timePerPixel>>32),(int)timePerPixel);
+bdbprintf("render minorTickInterval: %08x.%08x\n",(int)(gdata->minorTickInterval>>32),(int)gdata->minorTickInterval);
+bdbprintf("render majorTickInterval: %08x.%08x\n",(int)(gdata->majorTickInterval>>32),(int)gdata->majorTickInterval);
+
+    if( timePerPixel == 0 ||
+       gdata->minorTickInterval ==0 || gdata->majorTickInterval==0 ) return;
+
     /* Clear tile to background (pen 0 = typically grey) */
-    SetAPen(rp, 0);
+    SetAPen(rp, 0+ ((int)p->_start._scrollx)/128);
     SetBPen(rp, 0);
     RectFill(rp, p->destX, p->destY, p->destWidth - 1, p->destHeight - 1);
 
-    // /* Get time range from TimeRule attributes */
-    // timePerPixel = gdata->_timePerPixelWidth;
-    // if(timePerPixel == 0) return;
 
-    // timeLeft = timePerPixel * p->_start._scrollx;
-    // timeRange = timePerPixel * Gad->Width;
-    // timeRight = timeLeft + timeRange;
+ return;
+     timeLeft = timePerPixel * p->_start._scrollx;
+     timeRange = timePerPixel * Gad->Width;
+     timeRight = timeLeft + timeRange;
 
-    // /* Now, Abstract InfiniteScroll only give a pixel offset position for the left border of this tile.
+     /* Now, Abstract InfiniteScroll only give a pixel offset position for the left border of this tile.
 
-    // */
-    // tileAbstractPos = p->_start._scrollx;
+     */
+     tileAbstractPos = p->_start._scrollx;
 
 
-    // /* Draw ticks within this tile */
-    // /* Find first minor tick at or after tileAbstractPos */
-    // currentTime = (tileAbstractPos / minorTickInterval) * minorTickInterval;
-    // if(currentTime < tileAbstractPos) currentTime += minorTickInterval;
+     /* Draw ticks within this tile */
+     /* Find first minor tick at or after tileAbstractPos */
+     currentTime = (tileAbstractPos / gdata->minorTickInterval) * gdata->minorTickInterval;
+     if(currentTime < tileAbstractPos) currentTime += gdata->minorTickInterval;
 
-    // /* Set pen for tick marks (pen 1 = typically dark) */
-    // SetAPen(rp, 1);
+     /* Set pen for tick marks (pen 1 = typically dark) */
+     SetAPen(rp, 1);
 
-    // while(1)
-    // {
-    //     long long relTime = currentTime - tileAbstractPos;
-    //     LONG px;
+     while(1)
+     {
+         long long relTime = currentTime - tileAbstractPos;
+         LONG px;
 
-    //     /* Convert time offset to pixel position within tile */
-    //     if(timePerPixel > 0)
-    //     {
-    //         px = (LONG)(relTime / timePerPixel);
-    //     }
-    //     else
-    //     {
-    //         px = 0;
-    //     }
+         /* Convert time offset to pixel position within tile */
+         if(timePerPixel > 0)
+         {
+             px = (LONG)(relTime / timePerPixel);
+         }
+         else
+         {
+             px = 0;
+         }
 
-    //     if(px >= (tileWidth+64)) break;  /* Past end of tile */
+         if(px >= (tileWidth+64)) break;  /* Past end of tile */
 
-    //     if(px >= 0)
-    //     {
-    //         BOOL isMajor = ((currentTime % majorTickInterval) == 0);
+         if(px >= 0)
+         {
+             BOOL isMajor = ((currentTime % gdata->majorTickInterval) == 0);
 
-    //         if(isMajor)
-    //         {
-    //             /* Major tick - draw full height line */
-    //             Move(rp, px, tileHeight - majorTickHeight);
-    //             Draw(rp, px, tileHeight - 1);
+             if(isMajor)
+             {
+                 /* Major tick - draw full height line */
+                 Move(rp, px, tileHeight - gdata->majorTickHeight);
+                 Draw(rp, px, tileHeight - 1);
 
-    //             /* Draw time text near bottom of tile */
-    //             {
-    //                 LONG seconds = (LONG)(currentTime >> 32);
-    //                 LONG timeLo = (LONG)(currentTime & 0xFFFFFFFF);
-    //                 BOOL showMs = (majorTickInterval < SEC_FP);
-    //                 UWORD textY;
+                 /* Draw time text near bottom of tile */
+                 {
+                     LONG seconds = (LONG)(currentTime >> 32);
+                     LONG timeLo = (LONG)(currentTime & 0xFFFFFFFF);
+                     BOOL showMs = (gdata->majorTickInterval < SEC_FP);
+                     UWORD textY;
 
-    //                 TimeRule_FormatTime(seconds, timeLo, timeBuf, showMs);
+                     TimeRule_FormatTime(seconds, timeLo, timeBuf, showMs);
 
-    //                 /* Use fontTiny if available from stylesheet */
-    //                 if(gdata->_styleSheet && gdata->_styleSheet->fontTiny)
-    //                 {
-    //                     SetFont(rp, gdata->_styleSheet->fontTiny);
-    //                     /* Position text close to bottom - baseline at tileHeight - 2 */
-    //                     textY = tileHeight - 2;
-    //                 }
-    //                 else
-    //                 {
-    //                     /* Fallback: position based on default font */
-    //                     textY = tileHeight - 2;
-    //                 }
+                     /* Use fontTiny if available from stylesheet */
+                     if(gdata->_styleSheet && gdata->_styleSheet->fontTiny)
+                     {
+                         SetFont(rp, gdata->_styleSheet->fontTiny);
+                         /* Position text close to bottom - baseline at tileHeight - 2 */
+                         textY = tileHeight - 2;
+                     }
+                     else
+                     {
+                         /* Fallback: position based on default font */
+                         textY = tileHeight - 2;
+                     }
 
-    //                 /* Draw text - position adjusted for text width */
-    //                 Move(rp, px + 2, textY);
-    //                 Text(rp, timeBuf, strlen(timeBuf));
-    //             }
-    //         }
-    //         else
-    //         {
-    //             /* Minor tick - draw shorter line */
-    //             Move(rp, px, tileHeight - minorTickHeight);
-    //             Draw(rp, px, tileHeight - 1);
-    //         }
-    //     }
+                     /* Draw text - position adjusted for text width */
+                     Move(rp, px + 2, textY);
+                     Text(rp, timeBuf, strlen(timeBuf));
+                 }
+             }
+             else
+             {
+                 /* Minor tick - draw shorter line */
+                 Move(rp, px, tileHeight - gdata->minorTickHeight);
+                 Draw(rp, px, tileHeight - 1);
+             }
+         }
 
-    //     currentTime += minorTickInterval;
+         currentTime += gdata->minorTickInterval;
 
-    //     /* Safety limit */
-    //     if(currentTime < 0) break;
-    // }
+         /* Safety limit */
+         if(currentTime < 0) break;
+     }
 
 }
 

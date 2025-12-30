@@ -206,12 +206,9 @@ ULONG InfiniteScroll_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layou
 
   bdbprintf("InfiniteScroll_Layout %d\n",(int)neededTileCount);
 
-
-
     /* Check if we need to reallocate tiles */
     if(neededTileCount != gdata->_tileCount || gdata->_tileHeight != height)
     {
-        int bmdepth=8;
         /* Dispose old tiles */
        InfiniteScroll_DisposeTiles(gdata);
 
@@ -236,26 +233,21 @@ ULONG InfiniteScroll_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layou
             /* Get friend bitmap from screen for correct display mode */
             if(layout->gpl_GInfo && layout->gpl_GInfo->gi_Screen)
             {
-                gdata->_friendBitmap = &layout->gpl_GInfo->gi_Screen->RastPort.BitMap;
+                gdata->_friendBitmap = layout->gpl_GInfo->gi_Screen->RastPort.BitMap;
             }
-  bdbprintf("_friendBitmap %08x\n",(int)gdata->_friendBitmap);
-  if(gdata->_friendBitmap)
-  {
-  bdbprintf("_friendBitmap depth %d\n",(int)gdata->_friendBitmap->Depth);
-  }
-
             /* Initialize each tile */
             for(i = 0; i < gdata->_tileCount; i++)
             {
                 /* Allocate offscreen bitmap for this tile */
-                // OffscreenBitMap_Init(&gdata->_tiles[i].bitmap,
-                //                      gdata->_tileWidth,
-                //                      gdata->_tileHeight,
-                //                      bmdepth, /* depth from friend */
-                //                      BMF_CLEAR,
-                //                      gdata->_friendBitmap);
+                 OffscreenBitMap_Init(&gdata->_tiles[i].bitmap,
+                                      gdata->_tileWidth,
+                                      gdata->_tileHeight,
+                                      0, /* depth from friend */
+                                      BMF_CLEAR,
+                                      gdata->_friendBitmap);
                 // valid if gdata->_tiles[i].bitmap._rp is there
                 //if(gdata->_tiles[i].bitmap._rp)
+                 bdbprintf("OffscreenBitMap_Init rp :%08x\n",gdata->_tiles[i].bitmap._rp);
 
                 gdata->_tiles[i].isRendered = FALSE;
                 gdata->_tiles[i].position._scrollx = 0;
@@ -286,8 +278,8 @@ static void InfiniteScroll_RenderTilesRow(
     renderParams->destX=0;
     renderParams->destY=0;
     renderParams->destWidth=gdata->_tileWidth;
-    renderParams->destY=gdata->_tileHeight;
-
+    renderParams->destHeight=gdata->_tileHeight;
+ bdbprintf("gdata->_renderFunction:%08x\n",(int)gdata->_renderFunction);
     InfiniteScrollPosition pos = *startpos;
     for(i=0;i<nbTiles;i++)
     {
@@ -315,8 +307,10 @@ static void InfiniteScroll_FullRedraw(
         InfiniteScrollRenderParams *renderParams
      )
 {
+
     // need full redraw...
     int nbTilesX = (Gad->Width / gdata->_tileWidth)+1;
+    bdbprintf("InfiniteScroll_FullRedraw: %d\n",nbTilesX);
     InfiniteScroll_RenderTilesRow(renderParams, gdata,0,nbTilesX,&gdata->_position);
     gdata->_currentLeftBorderTileIndex = 0;
     gdata->_renderedTilesCount =  (WORD)nbTilesX;
@@ -340,16 +334,14 @@ ULONG InfiniteScroll_Render(Class *C, struct Gadget *Gad, struct gpRender *Rende
 
     if( !gdata->_tiles) return retval;
     // common params for tile rendering
-    renderParams.C = C;
     renderParams.Gad = Gad;
-//test
-    return 1;
 
     if(gdata->_currentLeftBorderTileIndex<0)
     {
         InfiniteScroll_FullRedraw(Gad,gdata,&renderParams);
 
-    } else
+    }
+    else
     {
         int lastPrevTileIndex = gdata->_currentLeftBorderTileIndex +gdata->_renderedTilesCount  -1;
         // get [prevStart,prevEnd] span already rendered in previous draw:
@@ -370,7 +362,7 @@ ULONG InfiniteScroll_Render(Class *C, struct Gadget *Gad, struct gpRender *Rende
 
             /* Ranges intersect if:  */
             if( newStart >= oldStart && newStart < oldEnd )
-            {               
+            {
                 InfiniteScrollTile *tile;
                 /* Scroll to right, need render at right */
                 int firstInvalidTileIndex = gdata->_currentLeftBorderTileIndex +gdata->_renderedTilesCount;
@@ -407,7 +399,7 @@ ULONG InfiniteScroll_Render(Class *C, struct Gadget *Gad, struct gpRender *Rende
                 /* Scroll
                  can reuse tiles by shifting, then need re-using tiles at right.*/
                 // can reuse tiles, and add some at right
-
+ InfiniteScroll_FullRedraw(Gad,gdata,&renderParams);
             } else
             {   // doesn't intersect, need full redraw
                 InfiniteScroll_FullRedraw(Gad,gdata,&renderParams);
@@ -415,7 +407,6 @@ ULONG InfiniteScroll_Render(Class *C, struct Gadget *Gad, struct gpRender *Rende
         }
 
     } // end if test for tile updates
-
 
     /* Get RastPort */
     rp=Render->gpr_RPort;
@@ -448,6 +439,7 @@ ULONG InfiniteScroll_Render(Class *C, struct Gadget *Gad, struct gpRender *Rende
             {
                 width = Gad->Width-dx;
             }
+            bdbprintf("BltBitMapRastPort:%d\n",Gad->LeftEdge+ dx);
             BltBitMapRastPort(tile->bitmap._bm,
                               sourcex, 0,  /* source x, y */
                               rp,

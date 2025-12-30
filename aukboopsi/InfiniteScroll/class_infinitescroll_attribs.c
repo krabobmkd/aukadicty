@@ -45,9 +45,16 @@ ULONG InfiniteScroll_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
     InfiniteScroll *gdata;
     struct TagItem *tags, *tag;
     BOOL needsRefresh = FALSE;
-    gdata = INST_DATA(C, Gad);
-    tags = Set->ops_AttrList;
 
+    gdata = INST_DATA(C, Gad);
+//    tags = Set->ops_AttrList;
+//bdbprintf("  *** trytofoolme? %08x\n",Set->MethodID);
+//   while(tags->ti_Tag !=0)
+//   {
+//    bdbprintf("   %08x %08x\n",(int)tags->ti_Tag ,(int)tags->ti_Data);
+//    tags++;
+//   }
+        tags = Set->ops_AttrList;
     while(tag = NextTagItem(&tags))
     {
         switch(tag->ti_Tag)
@@ -72,7 +79,8 @@ ULONG InfiniteScroll_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
             break;
             case INFINITESCROLL_RenderFunction:
             {
-                InfiniteScrollRenderf f = (InfiniteScrollRenderf)tag->ti_Data;
+                ULONG f = (ULONG)tag->ti_Data;
+                bdbprintf(" //// set INFINITESCROLL_RenderFunction:%08x\n",(int)f);
                 if(f !=  gdata->_renderFunction)
                 {
                    gdata->_renderFunction = f;
