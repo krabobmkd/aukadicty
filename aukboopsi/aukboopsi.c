@@ -351,13 +351,14 @@ int main(int argc, char **argv)
             "topaz.font",   /* Font name */
             8,              /* YSize - small font */
             FS_NORMAL,      /* Style */
-            FPF_ROMFONT     /* Flags - prefer ROM font for speed */
+            /*FPF_ROMFONT*/FPF_DISKFONT
         };
         app->tracksListView.styleSheet.fontTiny = OpenDiskFont(&tinyFontAttr);
+        printf(" * * * fontTiny:%08x\n",(int)app->tracksListView.styleSheet.fontTiny);
         /* fontNormal and fontBig can use screen font or be opened similarly */
-        app->tracksListView.styleSheet.fontNormal = app->drawInfo ? app->drawInfo->dri_Font : NULL;
-        app->tracksListView.styleSheet.fontBig = NULL; /* TODO: open larger font if needed */
-        app->tracksListView.styleSheet.fontHeight = app->fontHeight;
+//        app->tracksListView.styleSheet.fontNormal = app->drawInfo ? app->drawInfo->dri_Font : NULL;
+//        app->tracksListView.styleSheet.fontBig = NULL; /* TODO: open larger font if needed */
+//        app->tracksListView.styleSheet.fontHeight = app->fontHeight;
     }
 
     {

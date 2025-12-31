@@ -1,6 +1,12 @@
 cmake_minimum_required(VERSION 3.10)
 project(AukProject C)
 
+option(AMIGA_USE_FLOAT "use any float or double" OFF)
+option(AMIGA_USE_HARDFLOAT "compile using direct 68882 FPU, will not work on economic 060, off means soft float" OFF)
+option(AMIGA_USE_68030 " use 68030" ON)
+option(AMIGA_USE_68040 " use 68040" OFF)
+option(AMIGA_USE_68060 " use 68060" OFF)
+
 # Set C standard
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)
@@ -9,6 +15,25 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra")
 set(CMAKE_C_FLAGS_DEBUG "-g -O0")
 set(CMAKE_C_FLAGS_RELEASE "-O2")
+
+	list(APPEND AMIGA_COMPILER_OPTIONS -save-temps )
+
+	if(AMIGA_USE_68030)
+		list(APPEND AMIGA_COMPILER_OPTIONS -m68030)
+	elseif(AMIGA_USE_68040)
+		list(APPEND AMIGA_COMPILER_OPTIONS -m68040)
+	elseif(AMIGA_USE_68060)
+		list(APPEND AMIGA_COMPILER_OPTIONS -m68060)
+	else()
+		list(APPEND AMIGA_COMPILER_OPTIONS -m68020)
+	endif()
+	if(AMIGA_USE_FLOAT)
+		if(AMIGA_USE_HARDFLOAT)
+			list(APPEND AMIGA_COMPILER_OPTIONS -mhard-float -ffast-math)
+		else()
+			list(APPEND AMIGA_COMPILER_OPTIONS -msoft-float)
+		endif()
+	endif()
 
 # Detect platform and set AmigaStack for non-Amiga builds
 if(NOT AMIGA)
@@ -108,6 +133,10 @@ if(USE_AMIGA_STACK)
     add_library(aukproject STATIC ${AUKADICTY_SOURCES} ${AMIGASTACK_SOURCES})
 else()
     add_library(aukproject STATIC ${AUKADICTY_SOURCES})
+    target_compile_options(aukproject PRIVATE
+            $<$<CONFIG:RELEASE>:-O2 -Wno-narrowing -DNDEBUG>
+             ${AMIGA_COMPILER_OPTIONS} )
+
 endif()
 set_target_properties(aukproject PROPERTIES
     ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib

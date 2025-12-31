@@ -115,22 +115,23 @@ ULONG TimeRule_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
             if( gdata->_timePerPixelWidth != *pv) fullRedraw=1;
             gdata->_timePerPixelWidth = *pv;
 
-        bdbprintf("gdata %08x TIMERULE_TimePerPixelWidth set %08x.%08x\n",
-            (int)gdata,
-         (int)(gdata->_timePerPixelWidth>>32),(int)gdata->_timePerPixelWidth);
+//        bdbprintf("gdata %08x TIMERULE_TimePerPixelWidth set %08x.%08x\n",
+//            (int)gdata,
+//         (int)(gdata->_timePerPixelWidth>>32),(int)gdata->_timePerPixelWidth);
 
             TimeRule_UpdateTimeInterval(gdata);
             used=1;
         }
       case TIMERULE_StyleSheet:
+      {
         if((struct AukStyleSheet *)data != gdata->_styleSheet)
         {
             gdata->_styleSheet = (struct AukStyleSheet *)data;
             fullRedraw=1;
             used=1;
-        }
-        break;
+        }        
 
+       }break;
       /* GA_XXX attribs with struct Gadget members... */
       case GA_Disabled:
         {

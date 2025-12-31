@@ -73,6 +73,7 @@ void CreateTrackListView(TrackListView *pm,struct DrawInfo *drawInfo,
 
     // - - - - - A
     pm->timerule = (Object *)NewObject( TIMERULE_GetClass(), NULL,
+                            TIMERULE_StyleSheet,(ULONG)&pm->styleSheet,
                             ICA_TARGET,appModel,
                             TAG_END);
 
@@ -396,7 +397,6 @@ void updateHorizontalScrollDomain(TrackListView *pm)
         SCROLLER_Total, totalScroll,
         SCROLLER_Visible, visibleScroll,
         TAG_END);
-
 
     SetGadgetAttrs((struct Gadget *)pm->timerule, pm->window, NULL,
         TIMERULE_TimePerPixelWidth,&timePerPixelWidth,

@@ -142,7 +142,7 @@ void TimeRule_UpdateTimeInterval(TimeRule *gdata)
     /* computed for a tppw  */
   long long majorTickInterval;  /* Time between major ticks */
   long long minorTickInterval;  /* Time between minor ticks */
-
+    int nbsubdiv=1;
     const long long minMajorPixels = 64;  /* Minimum pixels between major ticks */
     long long minMajorTime = gdata->_timePerPixelWidth * minMajorPixels;
 
@@ -159,6 +159,7 @@ void TimeRule_UpdateTimeInterval(TimeRule *gdata)
     {
         majorTickInterval = SEC_FP / 2;    /* 0.5 second */
         minorTickInterval = SEC_FP / 10;   /* 0.1 second */
+
     }
     else if(minMajorTime <= SEC_FP)        /* <= 1s */
     {
@@ -198,7 +199,7 @@ void TimeRule_UpdateTimeInterval(TimeRule *gdata)
 
     gdata->majorTickInterval = majorTickInterval;
     gdata->minorTickInterval = minorTickInterval;
-
+    gdata->tickSubDiv = majorTickInterval/minorTickInterval;
 }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
@@ -220,22 +221,23 @@ void TimeRule_UpdateTimeInterval(TimeRule *gdata)
 void TimeRule_RenderDelegate(InfiniteScrollRenderParams *p)
 {
     int iloop=0;
+    LONG px;
     TimeRule *gdata;
-
+     struct TextFont *font=NULL;
     /* Time range for this TimeRule (from attributes) */
     long long timeLeft;
     /* Drawing parameters */
     long long timePerPixel;
-    long long currentTime;
-
+    long long currentTime,currentTimeMin;
     char timeBuf[16];
+//    return;
 
     struct Gadget *Gad = p->Gad;
     struct RastPort *rp = p->rp;
     bdbprintf("TimeRule_RenderDelegate %08x %08x\n",(int)Gad,(int)rp);
     if( !Gad || !rp) return ;
 
-    gdata = INST_DATA(TimeRuleClassPtr, Gad); // note superclass can't send C
+    gdata = INST_DATA(TimeRuleClassPtr, Gad); // note superclass can't send final class pointer implementation
 
 //    bdbprintf("render gdata: %08x\n",(int)gdata);
 
@@ -266,70 +268,76 @@ bdbprintf("render majorTickInterval: %08x.%08x\n",(int)(gdata->majorTickInterval
 
      /* Draw ticks within this tile */
      /* Find first minor tick at or after tileAbstractPos */
-     currentTime = (timeLeft / gdata->minorTickInterval) * gdata->minorTickInterval;
-     currentTime -= gdata->minorTickInterval; // because may draw text of last tick, it may overdrop
+//     currentTime = (timeLeft / gdata->minorTickInterval) * gdata->minorTickInterval;
+//     currentTime -= gdata->minorTickInterval; // because may draw text of last tick, it may overdrop
 
+     currentTime = (timeLeft / gdata->majorTickInterval) * gdata->majorTickInterval;
+     if(timeLeft<0) currentTime -=  gdata->majorTickInterval;
+     currentTime -= gdata->majorTickInterval; // because may draw text of last tick, it may overdrop
 
      /* Set pen for tick marks (pen 1 = typically dark) */
      SetAPen(rp, 1);
 
+     /* Use fontTiny if available from stylesheet */
+     bdbprintf("render f stylesheet:%08x\n",(int)gdata->_styleSheet);
+     if(gdata->_styleSheet && gdata->_styleSheet->fontTiny)
+     {
+     //re    font = gdata->_styleSheet->fontTiny;
+      // bdbprintf("render f fontTiny:%08x\n",(int)font);
+     }
+     if(font) SetFont(rp, font);
+
+    /* Convert time offset to pixel position within tile */
+    px = (LONG)((currentTime / timePerPixel) -p->_start._scrollx);
+
      while(1)
      {
-         LONG px;
-
-         /* Convert time offset to pixel position within tile */
-          px = (LONG)((currentTime / timePerPixel) -p->_start._scrollx);
-
-         if(px >= (p->destWidth+32)) break;  /* Past end of tile */
+         int iminortick;
+         if(px >= (p->destWidth)) break;  /* Past end of tile  */
 
          if(px >= 0)
          {
-//             BOOL isMajor = ((currentTime % gdata->majorTickInterval) == 0);
-
-//             if(isMajor)
-//             {
-//                 /* Major tick - draw full height line */
-//                 Move(rp, px, tileHeight - gdata->majorTickHeight);
-//                 Draw(rp, px, tileHeight - 1);
-
-//                 /* Draw time text near bottom of tile */
-//                 {
-//                     LONG seconds = (LONG)(currentTime >> 32);
-//                     LONG timeLo = (LONG)(currentTime & 0xFFFFFFFF);
-//                     BOOL showMs = (gdata->majorTickInterval < SEC_FP);
-//                     UWORD textY;
-
-//                     TimeRule_FormatTime(seconds, timeLo, timeBuf, showMs);
-
-//                     /* Use fontTiny if available from stylesheet */
-//                     if(gdata->_styleSheet && gdata->_styleSheet->fontTiny)
-//                     {
-//                         SetFont(rp, gdata->_styleSheet->fontTiny);
-//                         /* Position text close to bottom - baseline at tileHeight - 2 */
-//                         textY = tileHeight - 2;
-//                     }
-//                     else
-//                     {
-//                         /* Fallback: position based on default font */
-//                         textY = tileHeight - 2;
-//                     }
-
-//                     /* Draw text - position adjusted for text width */
-//                     Move(rp, px + 2, textY);
-//                     Text(rp, timeBuf, strlen(timeBuf));
-//                 }
-//             }
-//             else
-             {
-                 /* Minor tick - draw shorter line */
-                 Move(rp, px, p->destHeight - gdata->minorTickHeight);
-                 Draw(rp, px, p->destHeight - 1);
-             }
+             /* Major tick - draw full height line */
+             Move(rp, px, p->destHeight - gdata->majorTickHeight);
+             Draw(rp, px, p->destHeight - 1);
          }
 
-         currentTime += gdata->minorTickInterval;
+         /* Draw time text near bottom of tile */
+         /* IMPORTANT RP with no SetFont() would crash when Text() used.  */
+        if(font) {
+             LONG seconds = (LONG)(currentTime >> 32);
+             LONG timeLo = (LONG)(currentTime & 0xFFFFFFFF);
+             BOOL showMs = (gdata->majorTickInterval < SEC_FP);
+             UWORD textY;
+
+             TimeRule_FormatTime(seconds, timeLo, timeBuf, showMs);
+
+            textY = p->destHeight - 2;
+
+             /* Draw text - position adjusted for text width */
+            Move(rp, px + 2, textY);
+            Text(rp, timeBuf, strlen(timeBuf));
+
+         }
+
+
+         // loop per subtick
+         currentTimeMin = currentTime + gdata->minorTickInterval;
+        for(iminortick=1 ; iminortick < gdata->tickSubDiv ; iminortick++ )
+        {
+            px = (LONG)(((currentTimeMin) / timePerPixel) - p->_start._scrollx);
+            if(px >= (p->destWidth)) break;
+             /* Minor tick - draw shorter line */
+             Move(rp, px, p->destHeight - gdata->minorTickHeight);
+             Draw(rp, px, p->destHeight - 1);
+             currentTimeMin += gdata->minorTickInterval;
+        }
+
+        currentTime += gdata->majorTickInterval;
         iloop++;
-        if(iloop>32) break; // safety
+        if(iloop>8) break; // safety
+        /* Convert time offset to pixel position within tile */
+        px = (LONG)((currentTime / timePerPixel) - p->_start._scrollx);
 
        // break;
      }

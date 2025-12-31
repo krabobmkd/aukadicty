@@ -6,6 +6,37 @@ project(AukBoopsi C)
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
+option(AMIGA_USE_FLOAT "use any float or double" OFF)
+option(AMIGA_USE_HARDFLOAT "compile using direct 68882 FPU, will not work on economic 060, off means soft float" OFF)
+option(AMIGA_USE_68030 " use 68030" ON)
+option(AMIGA_USE_68040 " use 68040" OFF)
+option(AMIGA_USE_68060 " use 68060" OFF)
+
+
+#  -fno-rtti -fno-exceptions -fno-strict-aliasing
+	# add your generic options here:
+	#add_compile_options( -save-temps )
+	# this is to have assember .s files in the build.
+	list(APPEND AMIGA_COMPILER_OPTIONS -save-temps )
+
+	if(AMIGA_USE_68030)
+		list(APPEND AMIGA_COMPILER_OPTIONS -m68030)
+	elseif(AMIGA_USE_68040)
+		list(APPEND AMIGA_COMPILER_OPTIONS -m68040)
+	elseif(AMIGA_USE_68060)
+		list(APPEND AMIGA_COMPILER_OPTIONS -m68060)
+	else()
+		list(APPEND AMIGA_COMPILER_OPTIONS -m68020)
+	endif()
+	if(AMIGA_USE_FLOAT)
+		if(AMIGA_USE_HARDFLOAT)
+			list(APPEND AMIGA_COMPILER_OPTIONS -mhard-float -ffast-math)
+		else()
+			list(APPEND AMIGA_COMPILER_OPTIONS -msoft-float)
+		endif()
+	endif()
+
+
 # Compiler flags
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra")
 set(CMAKE_C_FLAGS_DEBUG "-g -O0")
@@ -94,6 +125,9 @@ target_compile_definitions(aukadicty PRIVATE
 			TRACKLIST_STATICLINK=1
 			INFINITESCROLL_STATICLINK=1
 			USE_DEBUG_BDBPRINT=1)
+target_compile_options(aukadicty PRIVATE
+		$<$<CONFIG:RELEASE>:-O2 -Wno-narrowing -DNDEBUG>
+		 ${AMIGA_COMPILER_OPTIONS} )
 
 
 # Optional: Build examples

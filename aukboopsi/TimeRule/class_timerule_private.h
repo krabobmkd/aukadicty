@@ -40,9 +40,10 @@ typedef struct ITimeRule {
     /* Pointer to AukStyleSheet for visual styling (fonts, colors) */
     struct AukStyleSheet *_styleSheet;
 
-    /* computed for a tppw  */
+    /* computed for a _timePerPixelWidth value  */
     long long majorTickInterval;  /* Time between major ticks */
     long long minorTickInterval;  /* Time between minor ticks */
+    int  tickSubDiv; /* basically  majorTickInterval/minorTickInterval */
 
     UWORD majorTickHeight, minorTickHeight;
 } TimeRule;
