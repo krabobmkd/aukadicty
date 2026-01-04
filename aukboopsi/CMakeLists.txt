@@ -58,6 +58,7 @@ set(AUKBOOPSI_SOURCES
     TrackListView.c
     TrackListView.h
 
+    aukstylesheet.c
     aukstylesheet.h
     gadgetid.h
 

@@ -32,7 +32,7 @@ typedef struct TrackListView
     struct Window *window;
 
     /* Visual style configuration */
-    AukStyleSheet styleSheet;
+    AukStyleSheet *pstyleSheet;
 
     // kind of easy message update to delay, def below. If zero, nothing to do
     ULONG updateBits;
@@ -47,8 +47,7 @@ typedef struct TrackListView
 
 void CreateTrackListView(TrackListView *pm,struct DrawInfo *drawInfo,
                 Object *appModel,
-                int headerwidth,
-                int fontheight);
+                AukStyleSheet *stylesheet);
 
 typedef struct AukAProject AukAProject;
 typedef struct sAukTrack AukTrack;

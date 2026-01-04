@@ -140,7 +140,7 @@ struct App
     struct Screen *lockedscreen;
     struct DrawInfo *drawInfo; // informations on how to draw on the screen, passed to gagdets.
 
-    ULONG   fontHeight; // some stat to size according to current font.
+    AukStyleSheet styleSheet; /* shared stylesheet instance is now here */
 
     Object *mainvlayout;
         Object *horizontallayoutA;
@@ -342,8 +342,9 @@ int main(int argc, char **argv)
 
     app->drawInfo = GetScreenDrawInfo(app->lockedscreen);
     // let's size according to font height.
-    app->fontHeight = 8+4; // default;
-    if(app->drawInfo && app->drawInfo->dri_Font) app->fontHeight =app->drawInfo->dri_Font->tf_YSize + 4;
+    app->styleSheet.fontHeight = 8+6; // default;
+    if(app->drawInfo && app->drawInfo->dri_Font)
+            app->styleSheet.fontHeight =app->drawInfo->dri_Font->tf_YSize + 4;
 
     /* Initialize stylesheet fonts using OpenDiskFont */
     {
@@ -353,8 +354,8 @@ int main(int argc, char **argv)
             FS_NORMAL,      /* Style */
             /*FPF_ROMFONT*/FPF_DISKFONT
         };
-        app->tracksListView.styleSheet.fontTiny = OpenDiskFont(&tinyFontAttr);
-        printf(" * * * fontTiny:%08x\n",(int)app->tracksListView.styleSheet.fontTiny);
+        app->styleSheet.fontTiny = OpenDiskFont(&tinyFontAttr);
+        printf(" * * * fontTiny:%08x\n",(int)app->styleSheet.fontTiny);
         /* fontNormal and fontBig can use screen font or be opened similarly */
 //        app->tracksListView.styleSheet.fontNormal = app->drawInfo ? app->drawInfo->dri_Font : NULL;
 //        app->tracksListView.styleSheet.fontBig = NULL; /* TODO: open larger font if needed */
@@ -416,7 +417,7 @@ int main(int argc, char **argv)
     }
 
 
-    CreateTrackListView(&app->tracksListView,app->drawInfo, AppInstance, 64,app->fontHeight);
+    CreateTrackListView(&app->tracksListView,app->drawInfo, AppInstance,&app->styleSheet);
 
     {
         app->statusbarlabel = (Object *)NewObject( BUTTON_GetClass(),NULL,
@@ -654,9 +655,9 @@ void exitclose(void)
 //        }
 
         /* Close fonts opened with OpenDiskFont before closing library */
-        if(app->tracksListView.styleSheet.fontTiny) {
-            CloseFont(app->tracksListView.styleSheet.fontTiny);
-            app->tracksListView.styleSheet.fontTiny = NULL;
+        if(app->styleSheet.fontTiny) {
+            CloseFont(app->styleSheet.fontTiny);
+            app->styleSheet.fontTiny = NULL;
         }
         /* Note: fontNormal points to drawInfo->dri_Font, don't close it separately */
 

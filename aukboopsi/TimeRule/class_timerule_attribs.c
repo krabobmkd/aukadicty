@@ -73,6 +73,7 @@ ULONG TimeRule_GetAttr(Class *C, struct Gadget *Gad, struct opGet *Get)
         long long *pv = (long long *)data;
         *pv = gdata->_timePerPixelWidth;
     }
+    break;
     case TIMERULE_StyleSheet:
         *data = (ULONG)gdata->_styleSheet;
         break;
@@ -122,11 +123,14 @@ ULONG TimeRule_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
             TimeRule_UpdateTimeInterval(gdata);
             used=1;
         }
+        break;
       case TIMERULE_StyleSheet:
       {
         if((struct AukStyleSheet *)data != gdata->_styleSheet)
         {
             gdata->_styleSheet = (struct AukStyleSheet *)data;
+            bdbprintf("");
+
             fullRedraw=1;
             used=1;
         }        

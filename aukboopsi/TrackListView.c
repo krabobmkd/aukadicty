@@ -61,7 +61,7 @@ void cleanexit(const char *pmessage);
 
 void CreateTrackListView(TrackListView *pm,struct DrawInfo *drawInfo,
                 Object *appModel,
-    int headerwidth, int fontheight)
+                AukStyleSheet *stylesheet)
 {
     // init private boopsi gadget & layout classes.
 
@@ -71,16 +71,25 @@ void CreateTrackListView(TrackListView *pm,struct DrawInfo *drawInfo,
     if(!TrackHeaderStaticInit()) cleanexit("TrackLayout init failed");
     if(!TrackListStaticInit()) cleanexit("TrackLayout init failed");
 
+    pm->pstyleSheet = stylesheet;
+
+ printf(" ---*-*-* stylesheet:%08x\n",(int)stylesheet);
+    if(stylesheet)
+    {
+    printf(" ---*-*-* stylesheet h:%d\n",(int)stylesheet->fontHeight);
+
+
+    }
     // - - - - - A
     pm->timerule = (Object *)NewObject( TIMERULE_GetClass(), NULL,
-                            TIMERULE_StyleSheet,(ULONG)&pm->styleSheet,
+                            TIMERULE_StyleSheet,(ULONG)stylesheet,
                             ICA_TARGET,appModel,
                             TAG_END);
 
 
     // - - - - - B
         pm->trackList = (Object *)NewObject( TRACKLIST_GetClass(), NULL,
-                                TRACKLIST_StyleSheet, (ULONG)&pm->styleSheet,
+                                TRACKLIST_StyleSheet, (ULONG)stylesheet,
                                 GA_ID,GAD_TRACKLIST, /* allows to redirect notify messages */
                                 ICA_TARGET,appModel, /* will send messages, that will be received by the main app boopsi object model */
                                 TAG_END);
@@ -151,7 +160,7 @@ void CreateTrackListView(TrackListView *pm,struct DrawInfo *drawInfo,
 
                     LAYOUT_AddChild,pm->timerule /*pm->subAHl*/,
                 CHILD_WeightedHeight,0,
-                CHILD_MaxHeight,(fontheight*3)/2,
+                CHILD_MaxHeight,(stylesheet->fontHeight*3)/2,
                     LAYOUT_AddChild, pm->subBHl,
                 CHILD_WeightedHeight,1,
                     LAYOUT_AddChild, pm->scrollerH,
