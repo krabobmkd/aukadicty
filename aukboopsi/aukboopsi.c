@@ -94,7 +94,7 @@ struct Library *LayoutBase=NULL;
 struct Library *BitMapBase=NULL;
 struct Library *ButtonBase=NULL;
 struct Library *LabelBase=NULL;
-struct Library *VirtualBase=NULL;
+//struct Library *VirtualBase=NULL;
 
 struct Library *CheckBoxBase=NULL;
 struct Library *StringBase=NULL;
@@ -119,16 +119,19 @@ static LibraryEntry libraryTable[] = {
     {"asl.library", 39, &AslBase},
     {"diskfont.library", 39, &DiskfontBase},
     /* BOOPSI class libraries - version 45 for OS3.9 */
+    /* class */
     {"window.class", 45, &WindowBase},
-    {"gadgets/layout.gadget", 45, &LayoutBase},
+    {"requester.class", 45, &RequesterBase},
+    /* images */
     {"images/bitmap.image", 45, &BitMapBase},
-    {"gadgets/button.gadget", 45, &ButtonBase},
     {"images/label.image", 45, &LabelBase},
-    {"gadgets/virtual.gadget", 45, &VirtualBase},
+    /* gadgets */
+    {"gadgets/layout.gadget", 45, &LayoutBase},
+    {"gadgets/button.gadget", 45, &ButtonBase},
+//    {"virtual.gadget", 45, &VirtualBase},
     {"gadgets/checkbox.gadget", 45, &CheckBoxBase},
     {"gadgets/string.gadget", 45, &StringBase},
     {"gadgets/texteditor.gadget", 45, &TextFieldBase},
-    {"requester.class", 45, &RequesterBase},
     {"gadgets/scroller.gadget", 45, &ScrollerBase},
     {NULL, 0, NULL} /* Terminator */
 };
@@ -176,8 +179,7 @@ struct App
     AukStyleSheet styleSheet; /* shared stylesheet instance is now here */
 
     Object *mainvlayout;
-        Object *horizontallayoutA;
-         //   Object *titlelabel;
+
             Object* btAbout;
 
         HeaderView headerView;
@@ -364,8 +366,9 @@ int main(int argc, char **argv)
     CreateHeaderView(&app->headerView, app->drawInfo, AppInstance, &app->styleSheet);
 
     {
-        extern unsigned char bpwizard_png[];
-        extern unsigned int bpwizard_png_size;
+    // paragraph to test image gadget, kept for information, experimental.
+        // extern unsigned char bpwizard_png[];
+        // extern unsigned int bpwizard_png_size;
 
         // BitMap class can load from file datatype, but not from memory. We just do this:
 //        int isok = LoadDataTypeToBm(&bpwizard_png[0],bpwizard_png_size,
@@ -380,13 +383,6 @@ int main(int argc, char **argv)
 //                                    GA_Text, " ",BUTTON_BevelStyle,BVS_NONE,BUTTON_Transparent, TRUE,TAG_END);
 
 
-        Object* label1 = (Object *)NewObject( LABEL_GetClass(), NULL,
-                        LABEL_DrawInfo, app->drawInfo,
-                        //IA_Font, &helvetica15bu,
-                        //LABEL_SoftStyle, FSF_BOLD | FSF_ITALIC,
-                        LABEL_Justification, LABEL_CENTRE,
-                        LABEL_Text,(ULONG)"0.01",
-                    TAG_END);
 
         // app->btAbout = NewObject( BUTTON_GetClass(),NULL,
         //                             GA_Text, "About...",
@@ -397,24 +393,6 @@ int main(int argc, char **argv)
         //                 // BUTTON_Transparent, TRUE,
         //                         TAG_END);
 
-        app->horizontallayoutA =
-             (Object *)NewObject( LAYOUT_GetClass(), NULL,
-                    LAYOUT_Orientation, LAYOUT_ORIENT_HORIZ,
-                    LAYOUT_EvenSize, TRUE,
-                    LAYOUT_HorizAlignment, LALIGN_CENTER,
-                    LAYOUT_BevelStyle, /*BVS_GROUP*/BVS_NONE,
-                    //CHILD_WeightedWidth,0,
-                     //CHILD_MaxWidth,dtbmLogo.width+2,
-                    LAYOUT_AddImage, label1,
-                     //CHILD_WeightedWidth,1,
-                    //LAYOUT_AddImage, filler,
-                    // CHILD_WeightedWidth,1,
-                    CHILD_MaxWidth,2560,
-                   // LAYOUT_AddChild, app->btAbout,
-                    // CHILD_WeightedWidth,0,
-                   //  CHILD_MinWidth,32,
-                   //  CHILD_MaxWidth,32,
-                    TAG_DONE);
     }
 
 
@@ -437,8 +415,7 @@ int main(int argc, char **argv)
             LAYOUT_InnerSpacing,0,
          //   LAYOUT_HorizAlignment, LALIGN_RIGHT,
             LAYOUT_Orientation, LAYOUT_ORIENT_VERT,
-            LAYOUT_AddChild, app->horizontallayoutA,
-                CHILD_WeightedHeight,0,
+
             LAYOUT_AddChild, app->headerView.mainHl,
                 CHILD_WeightedHeight,0,
             LAYOUT_AddChild, app->tracksListView.mainVl,
