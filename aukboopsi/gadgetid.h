@@ -21,7 +21,20 @@
 /* Time rule gadget (horizontal timeline) */
 #define GAD_TIMERULE            4
 
+/* Header view transport control buttons */
+#define GAD_HEADER_REWIND       5
+#define GAD_HEADER_STOP         6
+#define GAD_HEADER_PLAY         7
+#define GAD_HEADER_PAUSE        8
+#define GAD_HEADER_FORWARD      9
 
+/* Header view edit mode buttons (3x2 grid) */
+#define GAD_HEADER_EDITMODE1    10
+#define GAD_HEADER_EDITMODE2    11
+#define GAD_HEADER_EDITMODE3    12
+#define GAD_HEADER_EDITMODE4    13
+#define GAD_HEADER_EDITMODE5    14
+#define GAD_HEADER_EDITMODE6    15
 
 #define GAD_BUTTON_ABOUT 16
 

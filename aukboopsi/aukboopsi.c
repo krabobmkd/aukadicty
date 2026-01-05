@@ -58,6 +58,8 @@
 
 #include "gadgetid.h"
 #include "TrackListView.h"
+#include "HeaderView.h"
+#include "FooterView.h"
 
 //#include "aukaproject.h"
 #include <aukadicty.h>
@@ -99,6 +101,37 @@ struct Library *StringBase=NULL;
 struct Library *TextFieldBase=NULL;
 struct Library *RequesterBase=NULL;
 struct Library *ScrollerBase=NULL;
+
+/* Library table for automated opening/closing */
+typedef struct {
+    const char *name;
+    ULONG version;
+    struct Library **base;
+} LibraryEntry;
+
+static LibraryEntry libraryTable[] = {
+    /* System libraries */
+    {"intuition.library", 39, (struct Library **)&IntuitionBase},
+    {"graphics.library", 39, (struct Library **)&GfxBase},
+    {"utility.library", 39, &UtilityBase},
+    {"layers.library", 39, &LayersBase},
+    {"icon.library", 39, &IconBase},
+    {"asl.library", 39, &AslBase},
+    {"diskfont.library", 39, &DiskfontBase},
+    /* BOOPSI class libraries - version 45 for OS3.9 */
+    {"window.class", 45, &WindowBase},
+    {"gadgets/layout.gadget", 45, &LayoutBase},
+    {"images/bitmap.image", 45, &BitMapBase},
+    {"gadgets/button.gadget", 45, &ButtonBase},
+    {"images/label.image", 45, &LabelBase},
+    {"gadgets/virtual.gadget", 45, &VirtualBase},
+    {"gadgets/checkbox.gadget", 45, &CheckBoxBase},
+    {"gadgets/string.gadget", 45, &StringBase},
+    {"gadgets/texteditor.gadget", 45, &TextFieldBase},
+    {"requester.class", 45, &RequesterBase},
+    {"gadgets/scroller.gadget", 45, &ScrollerBase},
+    {NULL, 0, NULL} /* Terminator */
+};
 
 void cleanexit(const char *pmessage)
 {
@@ -147,12 +180,9 @@ struct App
          //   Object *titlelabel;
             Object* btAbout;
 
+        HeaderView headerView;
         TrackListView tracksListView;
-
-            // status bar
-        Object *horizontallayoutC;
-            Object *bottombarlayout;
-            Object* statusbarlabel;
+        FooterView footerView;
 
      Object *reportReq;
 
@@ -198,6 +228,20 @@ ULONG ASM SAVEDS AppModelDispatch(
             // our gadget is notifying new clicked coordinates!
             // note any button action is either managed here or in more generic main loop
 
+            /* Handle HeaderView transport control buttons */
+            if (sender_ID >= GAD_HEADER_REWIND && sender_ID <= GAD_HEADER_FORWARD)
+            {
+                bdbprintf("Transport button pressed: %d\n", sender_ID);
+                /* TODO: Implement transport control actions */
+                retval = 1;
+            } else
+            /* Handle HeaderView edit mode buttons */
+            if (sender_ID >= GAD_HEADER_EDITMODE1 && sender_ID <= GAD_HEADER_EDITMODE6)
+            {
+                bdbprintf("Edit mode button pressed: %d\n", sender_ID);
+                /* TODO: Implement edit mode switching */
+                retval = 1;
+            } else
             if( sender_ID == GAD_TRACKLIST )
             {
                 //   bdbprintf(" ( sender_ID == GAD_TRACKLIST )\n");
@@ -273,64 +317,19 @@ int main(int argc, char **argv)
     myTask = FindTask(NULL);
     atexit(&exitclose);
 
-    // - - - - open libraries...
+    /* Open all libraries via table */
+    {
+        LibraryEntry *entry;
+        char errorMsg[80];
 
-    if ( ! (IntuitionBase = (struct IntuitionBase*)OpenLibrary("intuition.library",39)))
-        cleanexit("Can't open intuition.library");
-
-    if ( ! (GfxBase = (struct GfxBase *)OpenLibrary("graphics.library",39)))
-        cleanexit("Can't open graphics.library");
-
-    if ( ! (UtilityBase = OpenLibrary("utility.library",39)))
-        cleanexit("Can't open utility.library");
-
-    if ( ! (LayersBase = OpenLibrary("layers.library",39)))
-        cleanexit("Can't open layers.library");
-
-    if ( ! (IconBase = OpenLibrary("icon.library",39)))
-        cleanexit("Can't open icon.library");
-
-    if ( ! (AslBase = OpenLibrary("asl.library",39)))
-        cleanexit("Can't open asl.library");
-
-    if ( ! (DiskfontBase = OpenLibrary("diskfont.library",39)))
-        cleanexit("Can't open diskfont.library");
-    // note: DOSBase is opened by C startup.
-
-    // - - - - open boopsi classes...
-    int mingadgetversion=45; // OS3.9, needed for virtual.
-    if ( ! (WindowBase = OpenLibrary("window.class",mingadgetversion)))
-        cleanexit("Can't open window.class");
-
-    if ( ! (LayoutBase = OpenLibrary("gadgets/layout.gadget",mingadgetversion)))
-        cleanexit("Can't open layout.gadget");
-
-    if ( ! (BitMapBase = OpenLibrary("images/bitmap.image",mingadgetversion)))
-        cleanexit("Can't open bitmap.image");
-
-    if ( ! (ButtonBase = OpenLibrary("gadgets/button.gadget",mingadgetversion)))
-        cleanexit("Can't open button.gadget");
-
-    if ( ! (LabelBase = OpenLibrary("images/label.image",mingadgetversion)))
-        cleanexit("Can't open label.image");
-
-    if ( ! (VirtualBase = OpenLibrary("gadgets/virtual.gadget",mingadgetversion)))
-        cleanexit("Can't open virtual.gadget");
-
-   if ( ! (CheckBoxBase = OpenLibrary("gadgets/checkbox.gadget",mingadgetversion)))
-       cleanexit("Can't open checkbox.gadget");
-
-    if ( ! (StringBase = OpenLibrary("gadgets/string.gadget",mingadgetversion)))
-        cleanexit("Can't open string.gadget");
-
-    if ( ! (TextFieldBase = OpenLibrary("gadgets/texteditor.gadget",mingadgetversion)))
-        cleanexit("Can't open texteditor.gadget");
-
-    if ( ! (RequesterBase = OpenLibrary("requester.class",mingadgetversion)))
-        cleanexit("Can't open requester.class");
-
-   if ( ! (ScrollerBase = OpenLibrary("gadgets/scroller.gadget",mingadgetversion)))
-       cleanexit("Can't open scroller.gadget");
+        for (entry = libraryTable; entry->name != NULL; entry++) {
+            *(entry->base) = OpenLibrary(entry->name, entry->version);
+            if (!*(entry->base)) {
+                snprintf(errorMsg, 79, "Can't open %s", entry->name);
+                cleanexit(errorMsg);
+            }
+        }
+    }
 
     if(!initAppModel())  cleanexit("Can't create app");
 
@@ -361,6 +360,8 @@ int main(int argc, char **argv)
 //        app->tracksListView.styleSheet.fontBig = NULL; /* TODO: open larger font if needed */
 //        app->tracksListView.styleSheet.fontHeight = app->fontHeight;
     }
+
+    CreateHeaderView(&app->headerView, app->drawInfo, AppInstance, &app->styleSheet);
 
     {
         extern unsigned char bpwizard_png[];
@@ -419,32 +420,7 @@ int main(int argc, char **argv)
 
     CreateTrackListView(&app->tracksListView,app->drawInfo, AppInstance,&app->styleSheet);
 
-    {
-        app->statusbarlabel = (Object *)NewObject( BUTTON_GetClass(),NULL,
-                        GA_DrawInfo,(ULONG) app->drawInfo,
-                        BUTTON_BevelStyle,BVS_NONE,
-                        BUTTON_Transparent, TRUE,
-						GA_ReadOnly, TRUE,
-                        BUTTON_Justification, BCJ_CENTER,
-                        GA_Text,(ULONG)"...",
-                    TAG_END);
-
-
-        app->bottombarlayout =
-             (Object *)NewObject( LAYOUT_GetClass(), NULL,
-                    LAYOUT_Orientation, LAYOUT_ORIENT_HORIZ,
-                    LAYOUT_EvenSize, TRUE,
-                    LAYOUT_HorizAlignment, LALIGN_RIGHT,
-                  //  CHILD_ScaleHeight,1, //%
-                   // CHILD_MaxHeight,app->fontHeight,
-                   // LAYOUT_SpaceInner, FALSE,
-                    LAYOUT_AddChild, app->statusbarlabel,
-                  //  LAYOUT_AddChild, app->labelValues,
-                   // LAYOUT_AddChild, app->disablecheckbox,
-                  //  GA_Height,app->fontHeight,
-                    TAG_DONE);
-        if(!app->bottombarlayout) cleanexit("Can't layout 2");
-    }
+    CreateFooterView(&app->footerView, app->drawInfo, AppInstance, &app->styleSheet);
 
 
 
@@ -463,9 +439,11 @@ int main(int argc, char **argv)
             LAYOUT_Orientation, LAYOUT_ORIENT_VERT,
             LAYOUT_AddChild, app->horizontallayoutA,
                 CHILD_WeightedHeight,0,
+            LAYOUT_AddChild, app->headerView.mainHl,
+                CHILD_WeightedHeight,0,
             LAYOUT_AddChild, app->tracksListView.mainVl,
                 CHILD_WeightedHeight,4,
-            LAYOUT_AddChild, app->bottombarlayout,
+            LAYOUT_AddChild, app->footerView.mainHl,
                 CHILD_WeightedHeight,0,
             TAG_END);
         if (!app->mainvlayout) cleanexit("layout error 3");
@@ -598,17 +576,12 @@ int main(int argc, char **argv)
 
 void guiNotifier(int loglevel, const char *log)
 {
-    if(!app || !app->statusbarlabel) return;
+    if(!app || !app->footerView.labelPlayPos) return;
 
-// todo errors in red/ warning in orange
-//re    int textpen = -1; // default text pen
-    SetGadgetAttrs((struct Gadget *)app->statusbarlabel,app->win,NULL,
-    //    BUTTON_TextPen,(ULONG)textpen,
-        GA_Text,(ULONG)log,
+    /* Use the play position label for status messages */
+    SetGadgetAttrs((struct Gadget *)app->footerView.labelPlayPos, app->win, NULL,
+        GA_Text, (ULONG)log,
         TAG_END);
-
-
-
 }
 
 void exitclose(void)
@@ -618,7 +591,9 @@ void exitclose(void)
     if(app)
     {
         /* just release data listener and object retained */
+        CloseHeaderView(&app->headerView);
         CloseTrackListView(&app->tracksListView);
+        CloseFooterView(&app->footerView);
 
         /* Disposing of the window object will also close the
          * window if it is already opened and it will dispose of
@@ -670,28 +645,23 @@ void exitclose(void)
 
     CloseTrackListView_StaticClasses();
 
-    if(ScrollerBase) CloseLibrary(ScrollerBase);
-    if(RequesterBase) CloseLibrary(RequesterBase);
-    if(TextFieldBase) CloseLibrary(TextFieldBase);
-    if(StringBase) CloseLibrary(StringBase);
-    if(CheckBoxBase) CloseLibrary(CheckBoxBase);
-    if(VirtualBase) CloseLibrary(VirtualBase);
-    if(LabelBase) CloseLibrary(LabelBase);
-    if(ButtonBase) CloseLibrary(ButtonBase);
-    if(BitMapBase) CloseLibrary(BitMapBase);
-    if(LayoutBase) CloseLibrary(LayoutBase);
-    if(WindowBase) CloseLibrary(WindowBase);
+    /* Close all libraries via table (in reverse order) */
+    {
+        LibraryEntry *entry;
+        int i;
 
+        /* Find last entry */
+        for (i = 0; libraryTable[i].name != NULL; i++);
 
-    if(GfxBase) CloseLibrary((struct Library*)GfxBase);
-    if(IntuitionBase) CloseLibrary((struct Library*)IntuitionBase);
-    if(LayersBase) CloseLibrary(LayersBase);
-    if (UtilityBase) CloseLibrary(UtilityBase);
-
-    //if(DOSBase) CloseLibrary((struct Library*)DOSBase);
-    if(IconBase) CloseLibrary(IconBase);
-    if(AslBase) CloseLibrary(AslBase);
-    if(DiskfontBase) CloseLibrary(DiskfontBase);
+        /* Close in reverse order */
+        for (i = i - 1; i >= 0; i--) {
+            entry = &libraryTable[i];
+            if (*(entry->base)) {
+                CloseLibrary(*(entry->base));
+                *(entry->base) = NULL;
+            }
+        }
+    }
 
 }
 // synchronize greying buttons...
@@ -748,6 +718,9 @@ int initProject()
     project->base.SetName(&project->base, "My First Project");
     project->base.SetPath(&project->base, "Work:");
     AukAProject_SetPreferences(project, 44100, 16);
+
+    /* Update footer with project frequency */
+    FooterView_UpdateFrequency(&app->footerView, 44100);
 
     /* Create tracks in the project */
     track1 = project->CreateTrack(project);

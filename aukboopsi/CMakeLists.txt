@@ -57,6 +57,10 @@ set(AUKBOOPSI_SOURCES
     aukboopsi.c
     TrackListView.c
     TrackListView.h
+    HeaderView.c
+    HeaderView.h
+    FooterView.c
+    FooterView.h
 
     aukstylesheet.c
     aukstylesheet.h
