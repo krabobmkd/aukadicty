@@ -3,39 +3,13 @@
 
 #include <exec/types.h>
 #include <intuition/intuition.h>
+#include "aukaction.h"
 
 /*
     Menu management for Aukadicty using GadTools library
     Creates and manages the application menu bar
+    Menu items are linked to actions defined in aukaction.h
 */
-
-/* Menu item IDs for identifying menu selections */
-enum {
-    /* Project menu */
-    MENU_PROJECT_OPEN = 1,
-    MENU_PROJECT_SAVE,
-    MENU_PROJECT_SAVEAS,
-    MENU_PROJECT_EXPORT,
-    MENU_PROJECT_ABOUT,
-    MENU_PROJECT_QUIT,
-
-    /* Edition menu */
-    MENU_EDIT_SELECTALL,
-    MENU_EDIT_SELECTNONE,
-    MENU_EDIT_COPY,
-    MENU_EDIT_PASTE,
-
-    /* Settings menu */
-    MENU_SETTINGS_PREFERENCES,
-
-    /* Plugins menu */
-    MENU_PLUGINS_EFFECT,
-    MENU_PLUGINS_GENERATE,
-
-    /* Help menu */
-    MENU_HELP_HELP,
-    MENU_HELP_ABOUT
-};
 
 /* Menu state structure */
 typedef struct AukMenu {
@@ -49,7 +23,7 @@ BOOL AukMenu_Create(AukMenu *am, struct Screen *screen, struct Window *window);
 /* Close and free menus */
 void AukMenu_Close(AukMenu *am, struct Window *window);
 
-/* Process menu selection - returns menu item ID or 0 */
-ULONG AukMenu_HandleEvent(AukMenu *am, UWORD menuNumber);
+/* Process menu selection - returns action ID or -1 if none */
+LONG AukMenu_HandleEvent(AukMenu *am, UWORD menuNumber);
 
 #endif /* AUKMENU_H */

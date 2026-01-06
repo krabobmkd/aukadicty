@@ -65,6 +65,9 @@ set(AUKBOOPSI_SOURCES
     auklocale.c
     auklocale.h
 
+    aukaction.c
+    aukaction.h
+
     aukmenu.c
     aukmenu.h
 

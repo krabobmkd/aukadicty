@@ -63,6 +63,7 @@
 #include "HeaderView.h"
 #include "FooterView.h"
 #include "auklocale.h"
+#include "aukaction.h"
 #include "aukmenu.h"
 
 //#include "aukaproject.h"
@@ -244,20 +245,22 @@ ULONG ASM SAVEDS AppModelDispatch(
             /* Handle HeaderView transport control buttons */
             if (sender_ID >= GAD_HEADER_REWIND && sender_ID <= GAD_HEADER_FORWARD)
             {
-                bdbprintf("Transport button pressed: %d\n", sender_ID);
+                //TOO MUCH MESSAGES !!!
+              //  bdbprintf("Transport button pressed: %d\n", sender_ID);
                 /* TODO: Implement transport control actions */
                 retval = 1;
             } else
             /* Handle HeaderView edit mode buttons */
             if (sender_ID >= GAD_HEADER_EDITMODE1 && sender_ID <= GAD_HEADER_EDITMODE6)
             {
-                bdbprintf("Edit mode button pressed: %d\n", sender_ID);
-                ptag = M->opUpdate.opu_AttrList;
-                while(ptag->ti_Tag)
-                {
-                    bdbprintf("    tag:%08x %08x\n", (int)ptag->ti_Tag, (int)ptag->ti_Data);
-                    ptag++;
-                }
+                //bdbprintf("Edit mode button pressed: %d\n", sender_ID);
+                // receive GA_ID, GA_SELECTED, GA_DISABLED  , GA_SELECTED=1 when clicked, but manyyyy times with the moves (relverify?).
+//                ptag = M->opUpdate.opu_AttrList;
+//                while(ptag->ti_Tag)
+//                {
+//                    bdbprintf("    tag:%08x %08x\n", (int)ptag->ti_Tag, (int)ptag->ti_Data);
+//                    ptag++;
+//                }
 
 
                 /* TODO: Implement edit mode switching */
@@ -354,6 +357,9 @@ int main(int argc, char **argv)
 
     /* Initialize localization system */
     AukLocale_Init("aukadicty.catalog", 1);
+
+    /* Initialize action system (after locale init) */
+    AukAction_Init();
 
     if(!initAppModel())  cleanexit("Can't create app");
 
@@ -469,7 +475,7 @@ int main(int argc, char **argv)
         WA_Width,320,
         WA_Height,240,
         WA_CustomScreen, (ULONG) app->lockedscreen,
-        WA_IDCMP, IDCMP_CLOSEWINDOW | IDCMP_RAWKEY ,
+        WA_IDCMP, IDCMP_CLOSEWINDOW | IDCMP_MENUPICK | IDCMP_RAWKEY ,
         WA_Flags, WFLG_DRAGBAR | WFLG_DEPTHGADGET | WFLG_CLOSEGADGET | WFLG_SIZEGADGET | WFLG_ACTIVATE | WFLG_SMART_REFRESH,
         WA_Title,(ULONG) "Aukadicty",
         WINDOW_ParentGroup,(ULONG) app->mainvlayout,
@@ -514,7 +520,8 @@ int main(int argc, char **argv)
         {
             ULONG result,currentSignal;
 
-            currentSignal = Wait(winsignal | (1L << app->app_port->mp_SigBit) | SIGBREAKF_CTRL_F);
+            currentSignal = Wait(winsignal | (1L << app->app_port->mp_SigBit) | SIGBREAKF_CTRL_C | SIGBREAKF_CTRL_F);
+            if(currentSignal & SIGBREAKF_CTRL_C) exit(0);
 
            flushbdbprint();
             /* CA_HandleInput() returns the gadget ID of a clicked
@@ -546,7 +553,6 @@ int main(int argc, char **argv)
                         break;
                     }
                     case WMHI_ICONIFY:
-                        //if (RA_Iconify(window_obj)) win = NULL;
                         {
                             AukMenu_Close(&app->appMenu, app->win);
                             if(DoMethod(app->window_obj, WM_ICONIFY, NULL)) app->win = NULL;
@@ -562,6 +568,12 @@ int main(int argc, char **argv)
                             if (!AukMenu_Create(&app->appMenu, app->lockedscreen, app->win)) {
                                 cleanexit("Warning: Could not re-create menus\n");
                             }
+                        }
+                        break;
+                    case WMHI_MENUPICK: // and not WMHI_POPUPMENU:
+                        {
+                            //noway int imenu = (result>>6) & 0x1f;
+                            printf("menu:%08x\n",(int)result);
                         }
                         break;
 
