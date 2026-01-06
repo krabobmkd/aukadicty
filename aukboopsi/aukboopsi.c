@@ -15,6 +15,8 @@
 #include <proto/intuition.h>
 #include <proto/utility.h>
 #include <proto/diskfont.h>
+#include <proto/locale.h>
+
 #include <proto/dos.h>
 #include <proto/icon.h>
 #include <exec/alerts.h>
@@ -60,6 +62,8 @@
 #include "TrackListView.h"
 #include "HeaderView.h"
 #include "FooterView.h"
+#include "auklocale.h"
+#include "aukmenu.h"
 
 //#include "aukaproject.h"
 #include <aukadicty.h>
@@ -87,6 +91,7 @@ struct Library *LayersBase=NULL; // only used by gadgets drawing in static link 
 struct Library *IconBase=NULL;
 struct Library *AslBase=NULL;
 struct Library *DiskfontBase=NULL;
+struct Library *GadToolsBase=NULL;
 
 // boopsi classes bases:
 struct Library *WindowBase=NULL;
@@ -101,6 +106,7 @@ struct Library *StringBase=NULL;
 struct Library *TextFieldBase=NULL;
 struct Library *RequesterBase=NULL;
 struct Library *ScrollerBase=NULL;
+struct LocaleBase *LocaleBase=NULL;
 
 /* Library table for automated opening/closing */
 typedef struct {
@@ -118,6 +124,8 @@ static LibraryEntry libraryTable[] = {
     {"icon.library", 39, &IconBase},
     {"asl.library", 39, &AslBase},
     {"diskfont.library", 39, &DiskfontBase},
+    {"gadtools.library", 39, &GadToolsBase},
+    {"locale.library", 38, &LocaleBase},
     /* BOOPSI class libraries - version 45 for OS3.9 */
     /* class */
     {"window.class", 45, &WindowBase},
@@ -133,6 +141,7 @@ static LibraryEntry libraryTable[] = {
     {"gadgets/string.gadget", 45, &StringBase},
     {"gadgets/texteditor.gadget", 45, &TextFieldBase},
     {"gadgets/scroller.gadget", 45, &ScrollerBase},
+
     {NULL, 0, NULL} /* Terminator */
 };
 
@@ -177,6 +186,8 @@ struct App
     struct DrawInfo *drawInfo; // informations on how to draw on the screen, passed to gagdets.
 
     AukStyleSheet styleSheet; /* shared stylesheet instance is now here */
+
+    AukMenu appMenu; /* GadTools menu */
 
     Object *mainvlayout;
 
@@ -241,6 +252,14 @@ ULONG ASM SAVEDS AppModelDispatch(
             if (sender_ID >= GAD_HEADER_EDITMODE1 && sender_ID <= GAD_HEADER_EDITMODE6)
             {
                 bdbprintf("Edit mode button pressed: %d\n", sender_ID);
+                ptag = M->opUpdate.opu_AttrList;
+                while(ptag->ti_Tag)
+                {
+                    bdbprintf("    tag:%08x %08x\n", (int)ptag->ti_Tag, (int)ptag->ti_Data);
+                    ptag++;
+                }
+
+
                 /* TODO: Implement edit mode switching */
                 retval = 1;
             } else
@@ -332,6 +351,9 @@ int main(int argc, char **argv)
             }
         }
     }
+
+    /* Initialize localization system */
+    AukLocale_Init("aukadicty.catalog", 1);
 
     if(!initAppModel())  cleanexit("Can't create app");
 
@@ -463,6 +485,11 @@ int main(int argc, char **argv)
     if(!app->win) cleanexit("can't open window");
     app->tracksListView.window = app->win;
 
+    /* Create and attach menus */
+    if (!AukMenu_Create(&app->appMenu, app->lockedscreen, app->win)) {
+        printf("Warning: Could not create menus\n");
+    }
+
     updateUIToStates();
 
     initProject();
@@ -520,14 +547,22 @@ int main(int argc, char **argv)
                     }
                     case WMHI_ICONIFY:
                         //if (RA_Iconify(window_obj)) win = NULL;
-                        if(DoMethod(app->window_obj, WM_ICONIFY, NULL)) app->win = NULL;
+                        {
+                            AukMenu_Close(&app->appMenu, app->win);
+                            if(DoMethod(app->window_obj, WM_ICONIFY, NULL)) app->win = NULL;
+                        }
                         break;
 
                     case WMHI_UNICONIFY:
-                        app->win = boopsi_OpenWindow(app->window_obj);
-                        app->tracksListView.window = app->win;
-                        if (!app->win) cleanexit("can't open window");
-
+                        {
+                            app->win = boopsi_OpenWindow(app->window_obj);
+                            app->tracksListView.window = app->win;
+                            if (!app->win) cleanexit("can't re-open window");
+                            /* re-Create and attach menus */
+                            if (!AukMenu_Create(&app->appMenu, app->lockedscreen, app->win)) {
+                                cleanexit("Warning: Could not re-create menus\n");
+                            }
+                        }
                         break;
 
                     default:
@@ -571,6 +606,9 @@ void exitclose(void)
         CloseHeaderView(&app->headerView);
         CloseTrackListView(&app->tracksListView);
         CloseFooterView(&app->footerView);
+
+        /* Close menus before closing window */
+        AukMenu_Close(&app->appMenu, app->win);
 
         /* Disposing of the window object will also close the
          * window if it is already opened and it will dispose of
@@ -639,6 +677,9 @@ void exitclose(void)
             }
         }
     }
+
+    /* Close localization system */
+    AukLocale_Close();
 
 }
 // synchronize greying buttons...

@@ -62,6 +62,12 @@ set(AUKBOOPSI_SOURCES
     FooterView.c
     FooterView.h
 
+    auklocale.c
+    auklocale.h
+
+    aukmenu.c
+    aukmenu.h
+
     aukstylesheet.c
     aukstylesheet.h
     gadgetid.h

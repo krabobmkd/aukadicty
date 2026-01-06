@@ -1,0 +1,181 @@
+## version $VER: aukadicty.catalog 0.1 (06.01.2026)
+## language french
+## codeset 0
+;
+; French translation for Aukadicty
+; Traduction française pour Aukadicty
+;
+;
+; === Window and general UI ===
+;
+MSG_WINDOW_TITLE
+Aukadicty
+;
+MSG_ABOUT_TITLE
+À propos d'Aukadicty
+;
+MSG_ABOUT_TEXT
+Éditeur Audio Aukadicty\nVersion 0.1
+;
+; === Transport controls ===
+;
+MSG_TRANSPORT_REWIND
+|<<
+;
+MSG_TRANSPORT_STOP
+[]
+;
+MSG_TRANSPORT_PLAY
+>
+;
+MSG_TRANSPORT_PAUSE
+||
+;
+MSG_TRANSPORT_FORWARD
+>>|
+;
+; === Edit mode buttons ===
+;
+MSG_EDITMODE_1
+1
+;
+MSG_EDITMODE_2
+2
+;
+MSG_EDITMODE_3
+3
+;
+MSG_EDITMODE_4
+4
+;
+MSG_EDITMODE_5
+5
+;
+MSG_EDITMODE_6
+6
+;
+; === Footer view ===
+;
+MSG_FOOTER_FREQUENCY
+%lu Hz
+;
+MSG_FOOTER_SELECTION_START
+Début : %s
+;
+MSG_FOOTER_SELECTION_END
+Fin : %s
+;
+MSG_FOOTER_PLAYPOSITION
+Pos : %s
+;
+; === Track operations ===
+;
+MSG_TRACK_NAME
+Piste
+;
+MSG_TRACK_VOCALS
+Voix
+;
+MSG_TRACK_MUSIC
+Musique
+;
+; === Menu: Project ===
+;
+MSG_MENU_PROJECT
+Projet
+;
+MSG_FILE_OPEN
+Ouvrir
+;
+MSG_FILE_SAVEAS
+Enregistrer sous
+;
+MSG_FILE_SAVE
+Enregistrer
+;
+MSG_FILE_EXPORT
+Exporter
+;
+MSG_MENU_ABOUT
+À propos
+;
+MSG_MENU_QUIT
+Quitter
+;
+; === Menu: Edition ===
+;
+MSG_MENU_EDITION
+Édition
+;
+MSG_EDIT_SELECTALL
+Tout sélectionner
+;
+MSG_EDIT_SELECTNONE
+Tout désélectionner
+;
+MSG_EDIT_COPY
+Copier
+;
+MSG_EDIT_CUT
+Couper
+;
+MSG_EDIT_PASTE
+Coller
+;
+; === Menu: Tracks ===
+;
+MSG_MENU_TRACKS
+Pistes
+;
+MSG_TRACKS_ADD
+Ajouter
+;
+; === Menu: Generate ===
+;
+MSG_MENU_GENERATE
+Générer
+;
+; === Menu: Settings ===
+;
+MSG_MENU_SETTINGS
+Réglages
+;
+MSG_SETTINGS_PROJECT
+Paramètres du projet
+;
+MSG_SETTINGS_VIEW
+Paramètres de l'affichage
+;
+; === Menu: Help ===
+;
+MSG_MENU_HELP
+Aide
+;
+; === Status messages ===
+;
+MSG_STATUS_READY
+Prêt
+;
+MSG_STATUS_LOADING
+Chargement...
+;
+MSG_STATUS_SAVING
+Enregistrement...
+;
+MSG_STATUS_ERROR
+Erreur
+;
+; === Error messages ===
+;
+MSG_ERROR_OPENFILE
+Impossible d'ouvrir le fichier
+;
+MSG_ERROR_SAVEFILE
+Impossible d'enregistrer le fichier
+;
+MSG_ERROR_NOMEMORY
+Mémoire insuffisante
+;
+MSG_ERROR_INVALIDFILE
+Format de fichier invalide
+;
