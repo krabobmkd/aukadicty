@@ -7,9 +7,7 @@
 #include <exec/types.h>
 #include <intuition/gadgetclass.h>
 #include <intuition/classes.h>
-            #include <inline/macros.h>
-#define VERSION_TRACKHEADER 1
-#define TrackHeader_SUPERCLASS_ID "layout.gadget"
+#include <inline/macros.h>
 
 #ifdef TRACKHEADER_STATICLINK
     extern int TrackHeaderStaticInit();
@@ -76,6 +74,8 @@
 /* Pointer to AukStyleSheet for visual styling */
 #define	TRACKHEADER_StyleSheet		(TRACKHEADER_Dummy+5)
 
+// just Get
+#define	TRACKHEADER_MainLayout		(TRACKHEADER_Dummy+6)
 
 /** DEVTODO: adds attributes definitions here and
  * manage them in class_trackheader_attribs.c

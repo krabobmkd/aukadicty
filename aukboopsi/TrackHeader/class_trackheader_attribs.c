@@ -44,6 +44,9 @@ ULONG TrackHeader_GetAttr(Class *C, struct Gadget *Gad, struct opGet *Get)
 
   switch(Get->opg_AttrID)
   {
+    case TRACKHEADER_MainLayout:
+        *data = (ULONG)gdata->mainlayout;
+    break;
     // case TRACKHEADER_CenterX:
     //     *data = (LONG)gdata->_circleCenterX;
     // break;

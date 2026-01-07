@@ -434,7 +434,7 @@ int main(int argc, char **argv)
      //   struct DrawInfo *drinfo = GetScreenDrawInfo(screen);
         app->mainvlayout = (Object *)NewObject( LAYOUT_GetClass(), NULL,
             GA_DrawInfo, app->drawInfo,
-            LAYOUT_DeferLayout, TRUE, // Layout refreshes done on task's context (by thewindow class)
+            LAYOUT_DeferLayout, TRUE, // Layout refreshes done on task's context (by thewindow class) ONLY HERE
             LAYOUT_SpaceOuter, TRUE,
             LAYOUT_BottomSpacing, 2,
             LAYOUT_TopSpacing,0,
@@ -475,7 +475,7 @@ int main(int argc, char **argv)
         WA_Width,320,
         WA_Height,240,
         WA_CustomScreen, (ULONG) app->lockedscreen,
-        WA_IDCMP, IDCMP_CLOSEWINDOW | IDCMP_MENUPICK | IDCMP_RAWKEY ,
+        WA_IDCMP, IDCMP_CLOSEWINDOW /*| IDCMP_MENUPICK*/ | IDCMP_RAWKEY ,
         WA_Flags, WFLG_DRAGBAR | WFLG_DEPTHGADGET | WFLG_CLOSEGADGET | WFLG_SIZEGADGET | WFLG_ACTIVATE | WFLG_SMART_REFRESH,
         WA_Title,(ULONG) "Aukadicty",
         WINDOW_ParentGroup,(ULONG) app->mainvlayout,
@@ -498,7 +498,7 @@ int main(int argc, char **argv)
 
     updateUIToStates();
 
-    initProject();
+  //  initProject();
     TrackListView_UpdateTrackList(&app->tracksListView);
 //    // gui inited here.
 //    {
@@ -630,7 +630,12 @@ void exitclose(void)
             printf("app->window_obj:%08x\n",(int)app->window_obj);
 
         // this should cascade all OM_DISPOSE:
-        if(app->window_obj) DisposeObject(app->window_obj);
+
+        if(app->window_obj)
+        {
+            DoMethod( app->window_obj, WM_CLOSE );
+            DisposeObject(app->window_obj);
+        }
         else {
         // not sure about mid-failure boopsies
 //            // but if not attached because mid-init fail, has to be manual.

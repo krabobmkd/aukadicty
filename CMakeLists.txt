@@ -14,7 +14,7 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 # Compiler flags
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra")
 set(CMAKE_C_FLAGS_DEBUG "-g -O0")
-set(CMAKE_C_FLAGS_RELEASE "-O2")
+set(CMAKE_C_FLAGS_RELEASE "-O1")
 
 	list(APPEND AMIGA_COMPILER_OPTIONS -save-temps )
 
@@ -134,7 +134,7 @@ if(USE_AMIGA_STACK)
 else()
     add_library(aukproject STATIC ${AUKADICTY_SOURCES})
     target_compile_options(aukproject PRIVATE
-            $<$<CONFIG:RELEASE>:-O2 -Wno-narrowing -DNDEBUG>
+            $<$<CONFIG:RELEASE>:-O1 -Wno-narrowing -DNDEBUG>
              ${AMIGA_COMPILER_OPTIONS} )
 
 endif()

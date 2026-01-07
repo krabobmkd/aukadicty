@@ -26,10 +26,12 @@ extern "C" {
 /** retain gadget children for a given data track */
 typedef struct TrackChild{
     AukTrack *_dataTrack; // corresponding data
-    Object *_trackHeader; // TrackHeader gadget
+    Object *_trackHeaderObj; // TrackHeader object
+    Object *_trackHeaderLayout; // TrackHeader layout
     Object *_trackArea; // TrackArea gadget
     /* configurable height for this track, pixel. */
     UWORD _prefHeight;
+    UWORD _isLayouted;
 } TrackChild;
 
 /**

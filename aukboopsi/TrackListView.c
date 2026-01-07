@@ -111,7 +111,7 @@ void CreateTrackListView(TrackListView *pm,struct DrawInfo *drawInfo,
 
     pm->subBHl = (Object *)NewObject( LAYOUT_GetClass(), NULL,
                 LAYOUT_Orientation, LAYOUT_ORIENT_HORIZ,
-                LAYOUT_DeferLayout,TRUE,
+                //LAYOUT_DeferLayout,TRUE,
                 LAYOUT_BevelStyle, /*BVS_GROUP*/BVS_NONE,
 
          LAYOUT_SpaceOuter, FALSE,
@@ -147,7 +147,7 @@ void CreateTrackListView(TrackListView *pm,struct DrawInfo *drawInfo,
 
     pm->mainVl = (Object *)NewObject( LAYOUT_GetClass(), NULL,
                     LAYOUT_Orientation, LAYOUT_ORIENT_VERT,
-                    LAYOUT_DeferLayout,TRUE,
+                    //LAYOUT_DeferLayout,TRUE,
                     LAYOUT_BevelStyle, /*BVS_GROUP*/BVS_NONE,
 
              LAYOUT_SpaceOuter, FALSE,

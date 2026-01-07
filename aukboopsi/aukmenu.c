@@ -14,6 +14,7 @@
 #include "auklocale.h"
 
 extern struct Library *GadToolsBase;
+extern void cleanexit(const char *pmessage);
 /*
 struct NewMenu
 {
@@ -77,7 +78,6 @@ static struct NewMenu menuTemplate[] = {
 BOOL AukMenu_Create(AukMenu *am, struct Screen *screen, struct Window *window)
 {
     int i;
- printf(" ////////////AukMenu_Create1\n");
     if (!am || !screen || !window || !GadToolsBase) {
         return FALSE;
     }
@@ -85,7 +85,7 @@ BOOL AukMenu_Create(AukMenu *am, struct Screen *screen, struct Window *window)
     /* Get visual info for the screen */
     am->visualInfo = GetVisualInfo(screen, TAG_END);
     if (!am->visualInfo) {
-        printf("Failed to get visual info for menus\n");
+        cleanexit("Failed to get visual info for menus\n");
         return FALSE;
     }
 
@@ -106,14 +106,12 @@ BOOL AukMenu_Create(AukMenu *am, struct Screen *screen, struct Window *window)
                     menuTemplate[i].nm_Label = (STRPTR)"???";
                 }
             }
-            printf("Menu: %s\n", menuTemplate[i].nm_Label);
         }
     }
- printf(" ////////////AukMenu_Create4\n");
     /* Create the menus */
     am->menu = CreateMenus(menuTemplate, TAG_END);
     if (!am->menu) {
-        printf("Failed to create menus\n");
+        cleanexit("Failed to create menus\n");
         FreeVisualInfo(am->visualInfo);
         am->visualInfo = NULL;
         return FALSE;
@@ -123,7 +121,7 @@ BOOL AukMenu_Create(AukMenu *am, struct Screen *screen, struct Window *window)
     if (!LayoutMenus(am->menu, am->visualInfo,
                      GTMN_NewLookMenus, TRUE,
                      TAG_END)) {
-        printf("Failed to layout menus\n");
+        cleanexit("Failed to layout menus\n");
         FreeMenus(am->menu);
         FreeVisualInfo(am->visualInfo);
         am->menu = NULL;
@@ -134,7 +132,6 @@ BOOL AukMenu_Create(AukMenu *am, struct Screen *screen, struct Window *window)
     /* Attach menus to window */
     SetMenuStrip(window, am->menu);
 
-    printf("Menus created successfully\n");
     return TRUE;
 }
 

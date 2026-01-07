@@ -137,4 +137,6 @@ void CloseFooterView(FooterView *fv)
 {
     /* Disposing mainHl will cascade to all child objects */
     /* Note: Actually handled by main window disposal */
+
+    // just for aukObject release & removelisteners
 }

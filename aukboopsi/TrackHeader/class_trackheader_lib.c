@@ -23,9 +23,6 @@
 
 #include "class_trackheader_private.h"
 
-#ifdef USE_BEVEL_FRAME
-    #include <proto/bevel.h>
-#endif
 
 /* Most of the calls to boopsi methods are not done from the App's context,
  * but from a specific intuition context, and because of that we can't use DOS calls
@@ -58,9 +55,7 @@ struct Library        *UtilityBase=NULL;
     #endif
 #endif
 
-#ifdef USE_BEVEL_FRAME
-struct Library        *BevelBase=NULL;
-#endif
+
 // this is the only global writtable we should see in the whole class binary !
 struct IClass   *TrackHeaderClassPtr=NULL;
 struct IClass   *HeaderButtonClassPtr=NULL;
@@ -70,9 +65,6 @@ struct IClass   *HeaderButtonClassPtr=NULL;
 const char Class_ID[]= TrackHeader_CLASS_ID;
 const char *VersionString = "trackheader.gadget 1.0 "; // add date
 #endif
-const char TrackHeaderSuperClassID[]=TrackHeader_SUPERCLASS_ID;
-
-
 
 
 // note: if other boopsi classes are dependences, they need to be opened here.
@@ -102,22 +94,16 @@ const char TrackHeaderSuperClassID[]=TrackHeader_SUPERCLASS_ID;
     }
 
 #endif
-BOOL TrackHeader_OpenLibs_Dependencies(void)
-{
-#ifdef USE_BEVEL_FRAME
-    if(!BevelBase) BevelBase = OpenLibrary("images/bevel.image",44);
-    if(!BevelBase) return FALSE;
-#endif
-    return TRUE;
-}
+//BOOL TrackHeader_OpenLibs_Dependencies(void)
+//{
 
-void TrackHeader_CloseLibs_Dependencies(void)
-{
-#ifdef USE_BEVEL_FRAME
-    if(BevelBase) CloseLibrary(BevelBase);
-    BevelBase = NULL;
-#endif
-}
+//    return TRUE;
+//}
+
+//void TrackHeader_CloseLibs_Dependencies(void)
+//{
+
+//}
 //==========================================================================================
 // does not need to be exact, we just want the function pointer:
 ULONG ASM SAVEDS TrackHeader_Dispatcher(
@@ -130,50 +116,7 @@ ULONG ASM SAVEDS HeaderButton_Dispatcher(
                     REG(a2,struct Gadget *Gad),
                     REG(a1,union MsgUnion *M));
 
-#ifndef TRACKHEADER_STATICLINK
-// called by shared Lib init to create class.
 
-int ASM CreateClass(REG(a6,struct ExtClassLib *LibBase))
-{
-  if(LibBase) SysBase = LibBase->cb_SysBase;
-  if(TrackHeader_OpenLibs() && TrackHeader_OpenLibs_Dependencies())
-  {
-    if(TrackHeaderClassPtr=MakeClass(TrackHeader_CLASS_ID,TrackHeaderSuperClassID,0,sizeof(TrackHeader),0))
-    {
-     if(LibBase) LibBase->cb_ClassLibrary.cl_Class = TrackHeaderClassPtr;
-      TrackHeaderClassPtr->cl_Dispatcher.h_Data=LibBase;
-      TrackHeaderClassPtr->cl_Dispatcher.h_Entry=(REHOOKFUNC)TrackHeader_Dispatcher;
-
-      AddClass(TrackHeaderClassPtr);
-      /* Success */
-      return(0);
-    }
-    TrackHeader_CloseLibs_Dependencies();
-    TrackHeader_CloseLibs();
-  }
-  /* Fail */
-  return(-1);
-}
-// called by shared Lib expunge to dispose class.
-void ASM DestroyClass(REG(a6,struct ExtClassLib *LibBase))
-{
-    // note LibBase and TrackHeaderClassPtr should be the same
-    if(TrackHeaderClassPtr)
-    {
-      RemoveClass(TrackHeaderClassPtr);
-      FreeClass(TrackHeaderClassPtr);
-      TrackHeaderClassPtr = NULL;
-    }
-  TrackHeader_CloseLibs_Dependencies();
-  TrackHeader_CloseLibs();
-}
-// first public lib function for boopsi classes
-Class * ASM GetClass(void)
-{
-    return (Class *)TrackHeaderClassPtr;
-}
-// end if shared class
-#else
 // static version:
 struct IClass   *TRACKHEADER_GetClass()
 {
@@ -183,7 +126,7 @@ struct IClass   *HEADERBUTTON_GetClass()
 {
     return HeaderButtonClassPtr;
 }
-#endif
+
 
 //====================================================================================
 
@@ -192,12 +135,13 @@ struct IClass   *HEADERBUTTON_GetClass()
 // just use this one once when static link
 int TrackHeaderStaticInit()
 { 
-   if(!TrackHeader_OpenLibs_Dependencies()) return 0;
+ //  if(!TrackHeader_OpenLibs_Dependencies()) return 0;
     //if(TrackHeaderClassPtr=MakeClass(NULL,TrackHeaderSuperClassID,0,sizeof(TrackHeader),0))
     // MakeClass( ClassID, SuperClassID, SuperClassPtr,InstanceSize, Flags )
 
 
-    if(TrackHeaderClassPtr=MakeClass(NULL,NULL,LAYOUT_GetClass(),sizeof(TrackHeader),0))
+//    if(TrackHeaderClassPtr=MakeClass(NULL,NULL,LAYOUT_GetClass(),sizeof(TrackHeader),0))
+    if(TrackHeaderClassPtr=MakeClass(NULL,"modelclass",NULL,sizeof(TrackHeader),0))
     {
       TrackHeaderClassPtr->cl_Dispatcher.h_Entry=(REHOOKFUNC)TrackHeader_Dispatcher;
      // do not AddClass() when static, no need to publish, TrackHeaderClassPtr will be enough.
@@ -215,7 +159,7 @@ int TrackHeaderStaticInit()
 
 void TrackHeaderStaticClose()
 {
-    TrackHeader_CloseLibs_Dependencies();
+//    TrackHeader_CloseLibs_Dependencies();
     if(TrackHeaderClassPtr)
     {
       FreeClass(TrackHeaderClassPtr);

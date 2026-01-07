@@ -45,7 +45,7 @@ ULONG TrackListArea_HandleHitTest(Class *C, struct Gadget *Gad,struct gpHitTest 
             struct Gadget *headerGad;
             struct Gadget *trackGad;
             strack = &gdata->_tracks[i];
-            headerGad = (struct Gadget*)strack->_trackHeader;
+            headerGad = (struct Gadget*)strack->_trackHeaderLayout;
             trackGad = (struct Gadget*)strack->_trackArea;
             if(!headerGad || !trackGad) continue;
 
@@ -141,7 +141,7 @@ ULONG TrackListArea_HandleInput(Class *C, struct Gadget *Gad,struct gpInput *M, 
             struct Gadget *headerGad;
             struct Gadget *trackGad;
             strack = &gdata->_tracks[i];
-            headerGad = (struct Gadget*)strack->_trackHeader;
+            headerGad = (struct Gadget*)strack->_trackHeaderLayout;
             trackGad = (struct Gadget*)strack->_trackArea;
             if(!headerGad || !trackGad) continue;
             /* Skip tracks that are scrolled out of view (above visible area) */
@@ -227,7 +227,7 @@ window or screen, an application removed the active gadget with RemoveGList(),
             struct Gadget *headerGad;
             struct Gadget *trackGad;
             strack = &gdata->_tracks[i];
-            headerGad = (struct Gadget*)strack->_trackHeader;
+            headerGad = (struct Gadget*)strack->_trackHeaderLayout;
             trackGad = (struct Gadget*)strack->_trackArea;
             if(!headerGad || !trackGad) continue;
             /* Skip tracks that are scrolled out of view (above visible area) */

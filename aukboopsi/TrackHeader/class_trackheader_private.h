@@ -35,8 +35,12 @@ extern "C" {
 #define THS_VolumeRule  4
 #define THS_Total  5
 
+/*
+    This is now a modelclass, not a gadget.
+*/
 typedef struct ITrackHeader {
-
+    ULONG GadgetID;
+    Object *mainlayout;
     Object *subs[THS_Total];
 
     /* Pointer to AukStyleSheet for visual styling */

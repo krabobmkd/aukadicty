@@ -40,7 +40,7 @@ option(AMIGA_USE_68060 " use 68060" OFF)
 # Compiler flags
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra")
 set(CMAKE_C_FLAGS_DEBUG "-g -O0")
-set(CMAKE_C_FLAGS_RELEASE "-Os")
+set(CMAKE_C_FLAGS_RELEASE "-O1")
 
 add_subdirectory(../ AukProject)
 
@@ -140,9 +140,20 @@ target_compile_definitions(aukadicty PRIVATE
 			INFINITESCROLL_STATICLINK=1
 			USE_DEBUG_BDBPRINT=1)
 target_compile_options(aukadicty PRIVATE
-		$<$<CONFIG:RELEASE>:-O2 -Wno-narrowing -DNDEBUG>
+		$<$<CONFIG:RELEASE>:-O1 -Wno-narrowing -DNDEBUG>
 		 ${AMIGA_COMPILER_OPTIONS} )
 
+
+# Test window executable
+add_executable(testsimplewindow testsimplewindow.c)
+target_compile_options(testsimplewindow PRIVATE
+    $<$<CONFIG:RELEASE>:-O1 -DNDEBUG>
+    ${AMIGA_COMPILER_OPTIONS})
+
+# Install test window
+install(TARGETS testsimplewindow
+    RUNTIME DESTINATION bin
+)
 
 # Optional: Build examples
 option(BUILD_EXAMPLES "Build example programs" ON)

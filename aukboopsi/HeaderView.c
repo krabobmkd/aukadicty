@@ -210,9 +210,5 @@ void CloseHeaderView(HeaderView *hv)
 {
     // note: no need, it's done by the main dispose.
 
-    /* Disposing mainHl will cascade to all child objects */
-//    if (hv->mainHl) {
-//        DisposeObject(hv->mainHl);
-//        hv->mainHl = NULL;
-//    }
+    // it's just for removeListeners here.
 }

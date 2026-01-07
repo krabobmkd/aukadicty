@@ -227,8 +227,10 @@ ULONG TrackListArea_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout
             UWORD trackHeight=0;
 
             strack = &gdata->_tracks[i];
-            headerGad = (struct Gadget *) strack->_trackHeader;
+            headerGad = (struct Gadget *) strack->_trackHeaderLayout;
             trackGad = (struct Gadget *) strack->_trackArea;
+
+            strack->_isLayouted = 0; // default.
 
             if(trackGad)
             {
@@ -247,8 +249,6 @@ ULONG TrackListArea_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout
                 (trackTop > topedge + height)
                  )
             {
-                headerGad->Width = 0; // how we say it's not layouted.
-                trackGad->Width = 0;
                 trackTop += trackHeight ;
                 continue;
             }
@@ -279,7 +279,8 @@ ULONG TrackListArea_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout
               // DoMethodA((Object*)trackGad, (Msg)&childLayout);
            //    DoGadgetMethodA(trackGad,gdata->window,NULL,(Msg)&childLayout);
             }
-// _defaulTrackHeight
+            strack->_isLayouted = 1; // can be visible
+
             trackTop += trackHeight;
         }
 
@@ -365,9 +366,10 @@ ULONG TrackListArea_Render(Class *C, struct Gadget *Gad, struct gpRender *Render
             struct Gadget *headerGad;
             struct Gadget *trackGad;
             strack = &gdata->_tracks[i];
-            headerGad = (struct Gadget*)strack->_trackHeader;
+            headerGad = (struct Gadget*)strack->_trackHeaderLayout;
             trackGad = (struct Gadget*)strack->_trackArea;
             if(!headerGad || !trackGad) continue;
+            if( !strack->_isLayouted ) continue;
             /* Skip tracks that are scrolled out of view (above visible area) */
             if( ( headerGad->TopEdge + headerGad->Height) < topedge)
             {
@@ -431,9 +433,9 @@ void TrackListArea_DisposeGadgets(TrackListArea *gdata)
     {
         for(i = 0; i < gdata->_trackCount; i++)
         {
-            if(gdata->_tracks[i]._trackHeader)
+            if(gdata->_tracks[i]._trackHeaderObj)
             {
-                DisposeObject(gdata->_tracks[i]._trackHeader);
+                DisposeObject(gdata->_tracks[i]._trackHeaderObj);
             }
             if(gdata->_tracks[i]._trackArea)
             {
@@ -451,12 +453,23 @@ extern Class *AppModelClass;
 static int TrackListArea_CreateTrackLine(TrackChild *strack, AukTrack *dataTrack, struct AukStyleSheet *styleSheet, int iTrack)
 {
     /* Create TrackHeader gadget */
-    strack->_trackHeader = NewObject(TRACKHEADER_GetClass(), NULL,
+    Forbid();
+    strack->_trackHeaderObj = NewObject(TRACKHEADER_GetClass(), NULL,
                                      TRACKHEADER_StyleSheet, (ULONG)styleSheet,
                                      TRACKHEADER_TrackIndex,iTrack,
                                      ICA_TARGET,AppModelClass,
                                      TAG_END);
-    if(!strack->_trackHeader ) return 0;
+    Permit();
+    if(!strack->_trackHeaderObj ) return 0;
+
+    strack->_trackHeaderLayout = NULL;
+    GetAttr( TRACKHEADER_MainLayout, strack->_trackHeaderObj, (ULONG *) &strack->_trackHeaderLayout );
+    if(!strack->_trackHeaderLayout )
+    {
+        DisposeObject(strack->_trackHeaderObj);
+        strack->_trackHeaderObj  = NULL;
+        return 0;
+    }
     /* Create TrackArea */
     strack->_trackArea = NewObject(TRACKAREA_GetClass(), NULL,
                                    TRACKAREA_StyleSheet, (ULONG)styleSheet,
@@ -464,6 +477,8 @@ static int TrackListArea_CreateTrackLine(TrackChild *strack, AukTrack *dataTrack
     if(!strack->_trackArea ) return 0;
     /* data we sync: */
     strack->_dataTrack = dataTrack;
+
+
     // default value
     strack->_prefHeight = 96;
 

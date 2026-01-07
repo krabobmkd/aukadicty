@@ -28,6 +28,8 @@
 
 #include "gadgetid.h"
 
+#include <stdio.h>
+
 typedef union MsgUnion
 {
   ULONG  MethodID;
@@ -61,7 +63,7 @@ typedef union MsgUnion
 */
 ULONG ASM SAVEDS TrackHeader_Dispatcher(
                     REG(a0,struct IClass *C),
-                    REG(a2,struct Gadget *Gad),
+                    REG(a2,Object *obj),
                     REG(a1,union MsgUnion *M))
 {
   TrackHeader *gdata;
@@ -72,136 +74,19 @@ ULONG ASM SAVEDS TrackHeader_Dispatcher(
   {
     case OM_NEW:
       {
-        struct TagItem *ptag;
-        ULONG iTrack=0;
-        ULONG target=0;
-        Object *VolumeRule,*CloseButton,*NameButton,*VolumeSlider,*PanSlider,
-                *LeftVertlayout,*CloseAndNameHl;
-        //
-        if((ptag = FindTagItem( TRACKHEADER_TrackIndex,M->opSet.ops_AttrList ))!=NULL)
-        {
-            iTrack = ptag->ti_Data;
-        }
-        if((ptag = FindTagItem( ICA_TARGET,M->opSet.ops_AttrList ))!=NULL)
-        {
-            target = ptag->ti_Data;
-            bdbprintf("header target:%08x\n",target);
-        }
-
-        CloseButton = NewObject( /*BUTTON_GetClass()*/HEADERBUTTON_GetClass(),NULL,
-                                    GA_Text, "X",
-                                    GA_ID,GAD_TRACKHEADER_BASE|GAD_TRACKHEADER_CLOSE|(iTrack<<4),
-                                    ICA_TARGET,target,
-                                    GA_RelVerify, TRUE,
-                         //           GA_Disabled,TRUE,
-                        // BUTTON_BevelStyle,BVS_NONE,
-                        // BUTTON_Transparent, TRUE,
-                                TAG_END);
-        NameButton = NewObject( HEADERBUTTON_GetClass(),NULL,
-                                    GA_Text, "Name",
-                                    GA_ID,GAD_TRACKHEADER_BASE|GAD_TRACKHEADER_NAME|(iTrack<<4),
-                                    ICA_TARGET,target,
-                                    GA_RelVerify, TRUE,
-                         //           GA_Disabled,TRUE,
-                        // BUTTON_BevelStyle,BVS_NONE,
-                        // BUTTON_Transparent, TRUE,
-                                TAG_END);
-
-
-        CloseAndNameHl  = (Object *)NewObject( LAYOUT_GetClass(), NULL,
-                    LAYOUT_Orientation, LAYOUT_ORIENT_HORIZ,
-            LAYOUT_DeferLayout, TRUE, // Layout refreshes done on task's context (by thewindow class)
-            LAYOUT_BottomSpacing, 0,
-            LAYOUT_TopSpacing,0,
-            LAYOUT_LeftSpacing,0,
-            LAYOUT_RightSpacing,0,
-            LAYOUT_InnerSpacing,1,
-                    LAYOUT_AddChild, CloseButton,
-                     CHILD_WeightedWidth,0,
-                    LAYOUT_AddChild, NameButton,
-                     CHILD_WeightedWidth,1,
-                    TAG_DONE);
-
-        VolumeSlider = NewObject( HEADERBUTTON_GetClass(),NULL,
-                                    GA_Text, "VolSlider",
-                                    ICA_TARGET,target,
-                                    GA_ID,GAD_TRACKHEADER_BASE|GAD_TRACKHEADER_VOL|(iTrack<<4),
-                                  //  GA_ID,GAD_BUTTON_ABOUT,
-                                    GA_RelVerify, TRUE,
-                         //           GA_Disabled,TRUE,
-                        // BUTTON_BevelStyle,BVS_NONE,
-                        // BUTTON_Transparent, TRUE,
-                                TAG_END);
-
-        // in this paragraph we create the layout hierarchy
-        LeftVertlayout  = (Object *)NewObject( LAYOUT_GetClass(), NULL,
-                    LAYOUT_Orientation, LAYOUT_ORIENT_VERT,
-            LAYOUT_BevelStyle,BVS_NONE,
-            LAYOUT_DeferLayout, TRUE, // Layout refreshes done on task's context (by thewindow class)
-            LAYOUT_BottomSpacing, 0,
-            LAYOUT_TopSpacing,0,
-            LAYOUT_LeftSpacing,0,
-            LAYOUT_RightSpacing,0,
-            LAYOUT_InnerSpacing,1,
-
-//                    LAYOUT_BevelStyle, /*BVS_GROUP*/BVS_NONE,
-                    LAYOUT_AddChild, CloseAndNameHl,
-                     CHILD_WeightedHeight,0,
-
-                    LAYOUT_AddChild, VolumeSlider,
-                     CHILD_WeightedHeight,1,
-
-                    TAG_DONE);
-
-        VolumeRule = NewObject( HEADERBUTTON_GetClass(),NULL,
-                                    GA_Text, "VR",
-                                  //  GA_ID,GAD_BUTTON_ABOUT,
-                                    GA_RelVerify, TRUE,
-                         //           GA_Disabled,TRUE,
-                        // BUTTON_BevelStyle,BVS_NONE,
-                        // BUTTON_Transparent, TRUE,
-                                TAG_END);
-
-/*
-    Object *CloseButton;
-    Object *NameLabel;
-
-    Object  *VolumeSlider;
-    Object  *PanSlider;
-
-    // ------------- H
-    Object *VolumeRule;
-
-*/
-        {
-
-        // we are a layout that forces its parameter...
-        ULONG tags[]={
-            LAYOUT_Orientation, LAYOUT_ORIENT_HORIZ,
-            LAYOUT_DeferLayout, TRUE, // Layout refreshes done on task's context (by thewindow class)
-            LAYOUT_BottomSpacing, 0,
-            LAYOUT_TopSpacing,0,
-            LAYOUT_LeftSpacing,0,
-            LAYOUT_RightSpacing,0,
-            LAYOUT_InnerSpacing,0,
-
-                    LAYOUT_BevelStyle, /*BVS_GROUP*/BVS_NONE,
-                    LAYOUT_AddChild, LeftVertlayout,
-                     CHILD_WeightedWidth,1,
-                    LAYOUT_AddChild, VolumeRule,
-                     CHILD_WeightedWidth,0,
-                    TAG_DONE
-        };
-        struct opSet opset;
-        opset.MethodID = OM_NEW;
-        opset.ops_GInfo = M->opSet.ops_GInfo;
-        opset.ops_AttrList = &tags[0];
-
-          if(Gad=(struct Gadget *)DoSuperMethodA(C,(Object *)Gad,&opset))
+          /* this now creates a modelclass, not a gadget */
+          if(obj=(struct Gadget *)DoSuperMethodA(C,(Object *)obj,(Msg)M))
           {
-            gdata=INST_DATA(C, Gad);
-            bdbprintf_new("TrackHeader", Gad);
-            Gad->GadgetID = GAD_TRACKHEADER_BASE+(iTrack<<4);
+                struct TagItem *ptag;
+                ULONG iTrack=0;
+                ULONG target=0;
+                Object *VolumeRule,*CloseButton,*NameButton,*VolumeSlider,*PanSlider,
+                        *LeftVertlayout,*CloseAndNameHl;
+
+
+            gdata=INST_DATA(C, obj);
+            bdbprintf_new("TrackHeader", obj);
+            gdata->GadgetID = GAD_TRACKHEADER_BASE+(iTrack<<4);
 
             gdata->subs[THS_CloseButton] = CloseButton;
             gdata->subs[THS_NameButton] = NameButton;
@@ -209,32 +94,146 @@ ULONG ASM SAVEDS TrackHeader_Dispatcher(
             gdata->subs[THS_PanSlider] = NULL ; //TODO
             gdata->subs[THS_VolumeRule] = VolumeRule;
 
+            /* create layout here */
+
+            //
+            if((ptag = FindTagItem( TRACKHEADER_TrackIndex,M->opSet.ops_AttrList ))!=NULL)
+            {
+                iTrack = ptag->ti_Data;
+            }
+            if((ptag = FindTagItem( ICA_TARGET,M->opSet.ops_AttrList ))!=NULL)
+            {
+                target = ptag->ti_Data;
+                bdbprintf("header target:%08x\n",target);
+            }
+ printf("trackheader b1\n");
+            CloseButton = NewObject( /*BUTTON_GetClass()*/BUTTON_GetClass(),NULL,
+                                        GA_Text, "X",
+                                        GA_ID,GAD_TRACKHEADER_BASE|GAD_TRACKHEADER_CLOSE|(iTrack<<4),
+                                        ICA_TARGET,target,
+                                        GA_RelVerify, TRUE,
+                             //           GA_Disabled,TRUE,
+                            // BUTTON_BevelStyle,BVS_NONE,
+                            // BUTTON_Transparent, TRUE,
+                                    TAG_END);
+            NameButton = NewObject( BUTTON_GetClass(),NULL,
+                                        GA_Text, "Name",
+                                        GA_ID,GAD_TRACKHEADER_BASE|GAD_TRACKHEADER_NAME|(iTrack<<4),
+                                        ICA_TARGET,target,
+                                        GA_RelVerify, TRUE,
+                             //           GA_Disabled,TRUE,
+                            // BUTTON_BevelStyle,BVS_NONE,
+                            // BUTTON_Transparent, TRUE,
+                                    TAG_END);
+ printf("trackheader b2 %08x %08x layoutclass:%08x\n",(int)CloseButton,(int)NameButton,(int)LAYOUT_GetClass());
+            CloseAndNameHl  = (Object *)NewObject( LAYOUT_GetClass(), NULL,
+                        LAYOUT_Orientation, LAYOUT_ORIENT_HORIZ,
+              //  LAYOUT_DeferLayout, TRUE, // Layout refreshes done on task's context (by thewindow class)
+                LAYOUT_BottomSpacing, 0,
+                LAYOUT_TopSpacing,0,
+                LAYOUT_LeftSpacing,0,
+                LAYOUT_RightSpacing,0,
+                LAYOUT_InnerSpacing,1,
+                        LAYOUT_AddChild, CloseButton,
+                         CHILD_WeightedWidth,0,
+                        LAYOUT_AddChild, NameButton,
+                         CHILD_WeightedWidth,1,
+                        TAG_DONE);
+ printf("trackheader b3\n");
+            VolumeSlider = NewObject( BUTTON_GetClass(),NULL,
+                                        GA_Text, "VolSlider",
+                                        ICA_TARGET,target,
+                                        GA_ID,GAD_TRACKHEADER_BASE|GAD_TRACKHEADER_VOL|(iTrack<<4),
+                                      //  GA_ID,GAD_BUTTON_ABOUT,
+                                        GA_RelVerify, TRUE,
+                             //           GA_Disabled,TRUE,
+                            // BUTTON_BevelStyle,BVS_NONE,
+                            // BUTTON_Transparent, TRUE,
+                                    TAG_END);
+
+            // in this paragraph we create the layout hierarchy
+            LeftVertlayout  = (Object *)NewObject( LAYOUT_GetClass(), NULL,
+                        LAYOUT_Orientation, LAYOUT_ORIENT_VERT,
+                LAYOUT_BevelStyle,BVS_NONE,
+              //  LAYOUT_DeferLayout, TRUE, // Layout refreshes done on task's context (by thewindow class)
+                LAYOUT_BottomSpacing, 0,
+                LAYOUT_TopSpacing,0,
+                LAYOUT_LeftSpacing,0,
+                LAYOUT_RightSpacing,0,
+                LAYOUT_InnerSpacing,1,
+
+            //                    LAYOUT_BevelStyle, /*BVS_GROUP*/BVS_NONE,
+                        LAYOUT_AddChild, CloseAndNameHl,
+                         CHILD_WeightedHeight,0,
+
+                        LAYOUT_AddChild, VolumeSlider,
+                         CHILD_WeightedHeight,1,
+
+                        TAG_DONE);
+ printf("trackheader b4\n");
+            VolumeRule = NewObject( BUTTON_GetClass(),NULL,
+                                        GA_Text, "VR",
+                                      //  GA_ID,GAD_BUTTON_ABOUT,
+                                        GA_RelVerify, TRUE,
+                             //           GA_Disabled,TRUE,
+                            // BUTTON_BevelStyle,BVS_NONE,
+                            // BUTTON_Transparent, TRUE,
+                                    TAG_END);
+ printf("trackheader b5\n");
+            gdata->mainlayout  = (Object *)NewObject( LAYOUT_GetClass(), NULL,
+                LAYOUT_Orientation, LAYOUT_ORIENT_HORIZ,
+             //   LAYOUT_DeferLayout, TRUE, // Layout refreshes done on task's context (by thewindow class)
+                LAYOUT_BottomSpacing, 0,
+                LAYOUT_TopSpacing,0,
+                LAYOUT_LeftSpacing,0,
+                LAYOUT_RightSpacing,0,
+                LAYOUT_InnerSpacing,0,
+
+                        LAYOUT_BevelStyle, /*BVS_GROUP*/BVS_NONE,
+                        LAYOUT_AddChild, LeftVertlayout,
+                         CHILD_WeightedWidth,1,
+                        LAYOUT_AddChild, VolumeRule,
+                         CHILD_WeightedWidth,0,
+                        TAG_DONE);
+ printf("trackheader b6\n");
+            gdata->subs[THS_CloseButton] = CloseButton;
+            gdata->subs[THS_NameButton] = NameButton;
+            gdata->subs[THS_VolumeSlider] = VolumeSlider;
+            gdata->subs[THS_PanSlider] = NULL ; //TODO
+            gdata->subs[THS_VolumeRule] = VolumeRule;
+
+            /* end create layouts */
             /* means new object OK so far: */
-            retval=(ULONG)Gad;
-          }
-        }
-      }
+            retval=(ULONG)obj;
+          } // end if new obj ok
+      } // end case OM_NEW
       break;
     case OM_DISPOSE:
-        bdbprintf_dispose("TrackHeader", Gad);
-      retval=DoSuperMethodA(C,(Object *)Gad,(Msg)M);
+    {
+        gdata=INST_DATA(C, obj);
+        bdbprintf_dispose("TrackHeader", obj);
+        if(gdata->mainlayout)
+        {
+            DisposeObject(gdata->mainlayout);
+        }
+        retval=DoSuperMethodA(C,(Object *)obj,(Msg)M);
+      }
       break;
 
     case OM_UPDATE:
     case OM_SET:
-      retval=DoSuperMethodA(C,(Object *)Gad,(Msg)M);
-      TrackHeader_SetAttrs(C,Gad,(struct opSet *)M);
+     // retval=DoSuperMethodA(C,(Object *)obj,(Msg)M);
+      retval = TrackHeader_SetAttrs(C,obj,(struct opSet *)M);
      break;
 
     case OM_GET:
-      retval=DoSuperMethodA(C,(Object *)Gad,(Msg)M);
-      //TrackHeader_GetAttr(C,Gad,(struct opGet *)M);
+      //retval=DoSuperMethodA(C,(Object *)obj,(Msg)M);
+      retval = TrackHeader_GetAttr(C,obj,(struct opGet *)M);
      break;
-
 
     default:
       // for anything, use default layout behaviour.
-      retval=DoSuperMethodA(C,(Object *)Gad,(Msg)M);
+      retval=DoSuperMethodA(C,(Object *)obj,(Msg)M);
       break;
   }
   return(retval);
