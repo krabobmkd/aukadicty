@@ -672,6 +672,9 @@ void exitclose(void)
 
     CloseTrackListView_StaticClasses();
 
+    /* Close localization system */
+    AukLocale_Close();
+
     /* Close all libraries via table (in reverse order) */
     {
         LibraryEntry *entry;
@@ -690,8 +693,7 @@ void exitclose(void)
         }
     }
 
-    /* Close localization system */
-    AukLocale_Close();
+
 
 }
 // synchronize greying buttons...
