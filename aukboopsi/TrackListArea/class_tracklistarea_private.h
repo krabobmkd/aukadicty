@@ -30,6 +30,10 @@ typedef struct TrackChild{
     Object *_trackArea; // TrackArea gadget
     /* configurable height for this track, pixel. */
     UWORD _prefHeight;
+    UWORD _layouted;
+    /* when layouted */
+    int _top,_bottom,_xmid;
+
 } TrackChild;
 
 /**

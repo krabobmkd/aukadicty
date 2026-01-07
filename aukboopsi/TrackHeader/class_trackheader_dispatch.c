@@ -110,16 +110,15 @@ ULONG ASM SAVEDS TrackHeader_Dispatcher(
 
         CloseAndNameHl  = (Object *)NewObject( LAYOUT_GetClass(), NULL,
                     LAYOUT_Orientation, LAYOUT_ORIENT_HORIZ,
-            LAYOUT_DeferLayout, TRUE, // Layout refreshes done on task's context (by thewindow class)
-            LAYOUT_BottomSpacing, 0,
-            LAYOUT_TopSpacing,0,
-            LAYOUT_LeftSpacing,0,
-            LAYOUT_RightSpacing,0,
+             LAYOUT_BottomSpacing, 1,
+            LAYOUT_TopSpacing,1,
+            LAYOUT_LeftSpacing,1,
+            LAYOUT_RightSpacing,1,
             LAYOUT_InnerSpacing,1,
                     LAYOUT_AddChild, CloseButton,
-                     CHILD_WeightedWidth,0,
+                    // CHILD_WeightedWidth,0,
                     LAYOUT_AddChild, NameButton,
-                     CHILD_WeightedWidth,1,
+                    // CHILD_WeightedWidth,1,
                     TAG_DONE);
 
         VolumeSlider = NewObject( HEADERBUTTON_GetClass(),NULL,
@@ -137,7 +136,6 @@ ULONG ASM SAVEDS TrackHeader_Dispatcher(
         LeftVertlayout  = (Object *)NewObject( LAYOUT_GetClass(), NULL,
                     LAYOUT_Orientation, LAYOUT_ORIENT_VERT,
             LAYOUT_BevelStyle,BVS_NONE,
-            LAYOUT_DeferLayout, TRUE, // Layout refreshes done on task's context (by thewindow class)
             LAYOUT_BottomSpacing, 0,
             LAYOUT_TopSpacing,0,
             LAYOUT_LeftSpacing,0,
@@ -178,7 +176,7 @@ ULONG ASM SAVEDS TrackHeader_Dispatcher(
         // we are a layout that forces its parameter...
         ULONG tags[]={
             LAYOUT_Orientation, LAYOUT_ORIENT_HORIZ,
-            LAYOUT_DeferLayout, TRUE, // Layout refreshes done on task's context (by thewindow class)
+           // / LAYOUT_DeferLayout, TRUE, // because not added to main layout directly ?
             LAYOUT_BottomSpacing, 0,
             LAYOUT_TopSpacing,0,
             LAYOUT_LeftSpacing,0,

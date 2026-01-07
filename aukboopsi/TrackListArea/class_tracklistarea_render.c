@@ -229,6 +229,7 @@ ULONG TrackListArea_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout
             strack = &gdata->_tracks[i];
             headerGad = (struct Gadget *) strack->_trackHeader;
             trackGad = (struct Gadget *) strack->_trackArea;
+            strack->_layouted = 0;
 
             if(trackGad)
             {
@@ -247,8 +248,8 @@ ULONG TrackListArea_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout
                 (trackTop > topedge + height)
                  )
             {
-                headerGad->Width = 0; // how we say it's not layouted.
-                trackGad->Width = 0;
+                headerGad->Width = 4; // how we say it's not layouted.
+                trackGad->Width = 4;
                 trackTop += trackHeight ;
                 continue;
             }
@@ -279,6 +280,10 @@ ULONG TrackListArea_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout
               // DoMethodA((Object*)trackGad, (Msg)&childLayout);
            //    DoGadgetMethodA(trackGad,gdata->window,NULL,(Msg)&childLayout);
             }
+            strack->_layouted = 1;
+            strack->_top = trackTop;
+            strack->_bottom = trackTop+trackHeight;
+            strack->_xmid = leftedge+ gdata->_headerWidth;
 // _defaulTrackHeight
             trackTop += trackHeight;
         }
@@ -367,33 +372,18 @@ ULONG TrackListArea_Render(Class *C, struct Gadget *Gad, struct gpRender *Render
             strack = &gdata->_tracks[i];
             headerGad = (struct Gadget*)strack->_trackHeader;
             trackGad = (struct Gadget*)strack->_trackArea;
-            if(!headerGad || !trackGad) continue;
-            /* Skip tracks that are scrolled out of view (above visible area) */
-            if( ( headerGad->TopEdge + headerGad->Height) < topedge)
-            {
-                continue;
-            }
 
-            /* Stop if track is below visible area */
-            if(headerGad->TopEdge > topedge + height)
-            {
-                break;
-            }
-// bdbprintf(" **would draw\n");
-            /* Call child's GM_RENDER */
-          //  DoMethodA((Object*)headerGad, (Msg)Render);
-            // C,Gad,(struct gpRender *)M
-            // ULONG TrackListArea_Render(Class *C, struct Gadget *Gad, struct gpRender *Render, ULONG update)
+            // if layouted
+            if(!strack->_layouted) continue;
 
             /* Call child's GM_RENDER */
 
           // recurse
-         // note wouldn't work for GM_GOINACTIVE redirected to GM_RENDER
-         if(headerGad->Width>0) // if layouted
+         if(headerGad) // if layouted
          {
             DoMethodA((Object*)headerGad, (Msg)Render); // not DoGadgetMethodA in that case
          }
-         if(trackGad->Width>0) // if layouted
+         if(trackGad) // if layouted
          {
             DoMethodA((Object*)trackGad, (Msg)Render); // not DoGadgetMethodA in that case
          }
@@ -451,12 +441,13 @@ extern Class *AppModelClass;
 static int TrackListArea_CreateTrackLine(TrackChild *strack, AukTrack *dataTrack, struct AukStyleSheet *styleSheet, int iTrack)
 {
     /* Create TrackHeader gadget */
-    strack->_trackHeader = NewObject(TRACKHEADER_GetClass(), NULL,
+    strack->_trackHeader = //NULL;
+        NewObject(TRACKHEADER_GetClass(), NULL,
                                      TRACKHEADER_StyleSheet, (ULONG)styleSheet,
                                      TRACKHEADER_TrackIndex,iTrack,
                                      ICA_TARGET,AppModelClass,
                                      TAG_END);
-    if(!strack->_trackHeader ) return 0;
+    //if(!strack->_trackHeader ) return 0;
     /* Create TrackArea */
     strack->_trackArea = NewObject(TRACKAREA_GetClass(), NULL,
                                    TRACKAREA_StyleSheet, (ULONG)styleSheet,

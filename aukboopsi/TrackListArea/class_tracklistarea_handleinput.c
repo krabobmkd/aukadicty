@@ -47,28 +47,11 @@ ULONG TrackListArea_HandleHitTest(Class *C, struct Gadget *Gad,struct gpHitTest 
             strack = &gdata->_tracks[i];
             headerGad = (struct Gadget*)strack->_trackHeader;
             trackGad = (struct Gadget*)strack->_trackArea;
-            if(!headerGad || !trackGad) continue;
+            if(!strack->_layouted) continue;
 
-    // bdbprintf("i:%d headerGad id %08x \n",i,headerGad->GadgetID);
-
-            /* Skip tracks that are scrolled out of view (above visible area) */
-            if( ( headerGad->TopEdge + headerGad->Height) < topedge)
-            {
-                continue;
-            }
-            /* Stop if track is below visible area */
-            if(headerGad->TopEdge > topedge + height)
-            {
-                break;
-            }
-            // not even layouted
-            if(headerGad->Width==0 ||trackGad->Width==0) continue;
-
-   //     bdbprintf("t:%d y:%d hg Top %d bt: %d \n",y,headerGad->TopEdge,(headerGad->TopEdge+headerGad->Height));
-        if(y>=headerGad->TopEdge && y<=(headerGad->TopEdge+headerGad->Height) &&
-          x>=headerGad->LeftEdge && x<= (trackGad->LeftEdge+trackGad->Width))
+        if(y>=strack->_top && y< strack->_bottom )
         {
-            if(x<(headerGad->LeftEdge+headerGad->Width))
+            if(headerGad && x<strack->_xmid )
             {
 
                 struct gpHitTest n;
@@ -80,6 +63,7 @@ ULONG TrackListArea_HandleHitTest(Class *C, struct Gadget *Gad,struct gpHitTest 
                  r = DoMethodA((Object*)headerGad, (Msg)&n);
                 return r;
             } else
+            if(trackGad && x>=strack->_xmid)
             {
                 struct gpHitTest n;
                 n.MethodID = GM_HITTEST;
@@ -120,16 +104,6 @@ ULONG TrackListArea_HandleInput(Class *C, struct Gadget *Gad,struct gpInput *M, 
 
     x += leftedge;
     y += topedge;
-// bdbprintf("HandleInput xy  x:%d y:%d\n",x,y);
-
-//  bdbprintf(" gi->ly %08x gi->rp-ly:%08x \n",M->gpi_GInfo->gi_Layer,M->gpi_GInfo->gi_RastPort->Layer);
-
-    // if(M->gpi_GInfo && M->gpi_GInfo->gi_Window && gdata->_clipRegion)
-    // {
-    //     oldClipRegion = InstallClipRegion(  M->gpi_GInfo->gi_Window->RPort->Layer, gdata->_clipRegion);
-    // }
-
-
 
     if(gdata->_tracks && gdata->_trackCount > 0)
     {
@@ -143,25 +117,11 @@ ULONG TrackListArea_HandleInput(Class *C, struct Gadget *Gad,struct gpInput *M, 
             strack = &gdata->_tracks[i];
             headerGad = (struct Gadget*)strack->_trackHeader;
             trackGad = (struct Gadget*)strack->_trackArea;
-            if(!headerGad || !trackGad) continue;
-            /* Skip tracks that are scrolled out of view (above visible area) */
-            if( ( headerGad->TopEdge + headerGad->Height) < topedge)
-            {
-                continue;
-            }
-            /* Stop if track is below visible area */
-            if(headerGad->TopEdge > topedge + height)
-            {
-                break;
-            }
-            if(headerGad->Width==0 ||trackGad->Width==0) continue;
+            if(!strack->_layouted) continue;
 
-//bdbprintf("i:%d top:%d bt:%d\n",i,headerGad->TopEdge,headerGad->TopEdge+headerGad->Height);
-
-        if(y>=headerGad->TopEdge && y<=(headerGad->TopEdge+headerGad->Height) &&
-          x>=headerGad->LeftEdge && x<= (trackGad->LeftEdge+trackGad->Width))
+        if(y>=strack->_top && y< strack->_bottom )
         {
-            if(x<(headerGad->LeftEdge+headerGad->Width))
+            if(headerGad && x<strack->_xmid)
             {
                 M->gpi_Mouse.X -= headerGad->LeftEdge -leftedge ;
                 M->gpi_Mouse.Y -= headerGad->TopEdge  - topedge;
@@ -170,6 +130,7 @@ ULONG TrackListArea_HandleInput(Class *C, struct Gadget *Gad,struct gpInput *M, 
                 M->gpi_Mouse.Y += headerGad->TopEdge- topedge;
                 break;
             } else
+            if(trackGad && x>=strack->_xmid )
             {
                 M->gpi_Mouse.X -= trackGad->LeftEdge;
                 M->gpi_Mouse.Y -= trackGad->TopEdge;
@@ -229,25 +190,14 @@ window or screen, an application removed the active gadget with RemoveGList(),
             strack = &gdata->_tracks[i];
             headerGad = (struct Gadget*)strack->_trackHeader;
             trackGad = (struct Gadget*)strack->_trackArea;
-            if(!headerGad || !trackGad) continue;
-            /* Skip tracks that are scrolled out of view (above visible area) */
-            if( ( headerGad->TopEdge + headerGad->Height) < topedge)
-            {
-                continue;
-            }
-            /* Stop if track is below visible area */
-            if(headerGad->TopEdge > topedge + height)
-            {
-                break;
-            }
-            if(headerGad->Width==0 ||trackGad->Width==0) continue;
+           if(!strack->_layouted) continue;
 
-            if(headerGad->Activation & GACT_ACTIVEGADGET)
+            if(headerGad && headerGad->Activation & GACT_ACTIVEGADGET)
             {
                 //headerGad->Activation &= ~GACT_ACTIVEGADGET;
                 DoMethodA((Object*)headerGad, (Msg)M);
             }
-            if(trackGad->Activation & GACT_ACTIVEGADGET)
+            if(trackGad && trackGad->Activation & GACT_ACTIVEGADGET)
             {
                 DoMethodA((Object*)trackGad, (Msg)M);
             }

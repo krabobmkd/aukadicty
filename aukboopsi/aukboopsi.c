@@ -155,10 +155,6 @@ void cleanexit(const char *pmessage)
 }
 void exitclose(void);
 
-void guiNotifier(int loglevel, const char *log);
-// synchronize greying buttons...
-void updateUIToStates();
-
 void openAboutReq();
 // usefull union for dispatchers. Each structs also starts with MethodID.
 typedef union MsgUnion
@@ -496,16 +492,6 @@ int main(int argc, char **argv)
         printf("Warning: Could not create menus\n");
     }
 
-    updateUIToStates();
-
-    initProject();
-    TrackListView_UpdateTrackList(&app->tracksListView);
-//    // gui inited here.
-//    {
-//        char temp[64];
-//        snprintf(temp,63,"Found %d templates", getNbTemplates());
-//        guiNotifier(0,temp);
-//    }
 
 
     {
@@ -583,6 +569,13 @@ int main(int argc, char **argv)
 
 
             } // end while messages
+ static int testprojectinited=0;
+ if(!testprojectinited)
+ {
+    initProject();
+    TrackListView_UpdateTrackList(&app->tracksListView);
+    testprojectinited = 1;
+ }
 
             // delay some messages to avoid big graphic update recursion
             if(app->tracksListView.updateBits)
@@ -596,16 +589,6 @@ int main(int argc, char **argv)
 
     // all close done in exitclose().
     return 0;
-}
-
-void guiNotifier(int loglevel, const char *log)
-{
-    if(!app || !app->footerView.labelPlayPos) return;
-
-    /* Use the play position label for status messages */
-    SetGadgetAttrs((struct Gadget *)app->footerView.labelPlayPos, app->win, NULL,
-        GA_Text, (ULONG)log,
-        TAG_END);
 }
 
 void exitclose(void)
@@ -631,30 +614,9 @@ void exitclose(void)
 
         // this should cascade all OM_DISPOSE:
         if(app->window_obj) DisposeObject(app->window_obj);
-        else {
-        // not sure about mid-failure boopsies
-//            // but if not attached because mid-init fail, has to be manual.
-//            if(app->mainvlayout)  DisposeObject(app->mainvlayout);
-//            else {
-//                if(app->horizontallayout) DisposeObject(app->horizontallayout);
-//                else {
-//                    if(app->testbt) DisposeObject(app->testbt);
-//                    if(app->kbdview) DisposeObject(app->kbdview);
-//                }
-//                if(app->bottombarlayout) DisposeObject(app->bottombarlayout);
-//                else {
-//                    if(app->label1) DisposeObject(app->label1);
-//                    if(app->labelValues) DisposeObject(app->labelValues);
-//                    if(app->disablecheckbox) DisposeObject(app->disablecheckbox);
-//                }
-//            }
-        }
+
         // debug mode, check private class gadgets instance areall closed.
         bdbprintf_report_leaks();
-
-//        if(dtbmLogo.bm) {
-//            closeDataTypeBm(&dtbmLogo);
-//        }
 
         /* Close fonts opened with OpenDiskFont before closing library */
         if(app->styleSheet.fontTiny) {
@@ -667,6 +629,8 @@ void exitclose(void)
         if(app->lockedscreen) UnlockPubScreen(0, app->lockedscreen);
 
     }
+    /* Delete message port */
+    if (app->app_port) DeleteMsgPort(app->app_port);
 
     closeAppModel(); // thi is meant to close app implicitely, If i'm correct...
 
@@ -693,21 +657,8 @@ void exitclose(void)
         }
     }
 
-
-
 }
-// synchronize greying buttons...
-int CurrentTemplate = -1;
-void updateUIToStates()
-{
-    if(!app) return;
-// GA_Disabled
-//    ULONG generateBtDisabled = (CurrentTemplate<0);
 
-   // SetGadgetAttrs((struct Gadget *) app->btGenerate,app->win,NULL,
-   //     GA_DISABLED,generateBtDisabled,
-   //     TAG_END);
-}
 
 void openAboutReq()
 {
