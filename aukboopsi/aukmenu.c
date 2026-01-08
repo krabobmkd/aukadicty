@@ -159,12 +159,12 @@ void AukMenu_Close(AukMenu *am, struct Window *window)
     }
 }
 
-LONG AukMenu_HandleEvent(AukMenu *am, UWORD menuNumber)
+AukAction *AukMenu_ToAction(AukMenu *am, UWORD menuNumber)
 {
     struct MenuItem *item;
     LONG actionID = -1;
 
-    if (!am || !am->menu) return -1;
+    if (!am || !am->menu) return NULL;
 
     /* Get the selected menu item */
     if (menuNumber != MENUNULL) {
@@ -172,10 +172,9 @@ LONG AukMenu_HandleEvent(AukMenu *am, UWORD menuNumber)
         if (item) {
             /* Get the action ID from UserData */
             actionID = (LONG)GTMENUITEM_USERDATA(item);
-            printf("Menu selected, action ID: %ld\n", actionID);
-            return actionID;
+            return AukAction_Get(actionID);
         }
     }
 
-    return -1;
+    return NULL;
 }

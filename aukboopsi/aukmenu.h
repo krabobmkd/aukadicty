@@ -24,6 +24,6 @@ BOOL AukMenu_Create(AukMenu *am, struct Screen *screen, struct Window *window);
 void AukMenu_Close(AukMenu *am, struct Window *window);
 
 /* Process menu selection - returns action ID or -1 if none */
-LONG AukMenu_HandleEvent(AukMenu *am, UWORD menuNumber);
-
+//LONG AukMenu_HandleEvent(AukMenu *am, UWORD menuNumber);
+AukAction *AukMenu_ToAction(AukMenu *am, UWORD menuNumber);
 #endif /* AUKMENU_H */

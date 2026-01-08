@@ -557,9 +557,16 @@ int main(int argc, char **argv)
                         }
                         break;
                     case WMHI_MENUPICK: // and not WMHI_POPUPMENU:
-                        {
-                            //noway int imenu = (result>>6) & 0x1f;
-                            printf("menu:%08x\n",(int)result);
+                        {    
+                            AukAction *action = AukMenu_ToAction(&app->appMenu,result & WMHI_MENUMASK);
+                            if(action)
+                            {
+                                struct AukActionContext actionContext;
+                                actionContext.project = app->_project;
+                                actionContext.appWindow = app->win;
+                                actionContext.appData = AppInstance;
+                                action->func(&actionContext);
+                            }
                         }
                         break;
 
