@@ -20,7 +20,7 @@
 
 #include "class_timerule.h"
 #include "class_timerule_private.h"
-#include "../aukstylesheet.h"
+#include "../aukstyle.h"
 
 /* Include InfiniteScroll private for access to superclass data */
 #include "../InfiniteScroll/class_infinitescroll_private.h"
@@ -278,11 +278,11 @@ bdbprintf("render majorTickInterval: %08x.%08x\n",(int)(gdata->majorTickInterval
      /* Set pen for tick marks (pen 1 = typically dark) */
      SetAPen(rp, 1);
 
-     /* Use fontTiny if available from stylesheet */
-     bdbprintf("render f stylesheet:%08x\n",(int)gdata->_styleSheet);
-     if(gdata->_styleSheet && gdata->_styleSheet->fontTiny)
+     /* Use fontTiny if available from style */
+     bdbprintf("render f style:%08x\n",(int)gdata->_style);
+     if(gdata->_style && gdata->_style->fontTiny)
      {
-     //re    font = gdata->_styleSheet->fontTiny;
+     //re    font = gdata->_style->fontTiny;
       // bdbprintf("render f fontTiny:%08x\n",(int)font);
      }
      if(font) SetFont(rp, font);

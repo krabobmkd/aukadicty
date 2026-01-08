@@ -64,6 +64,7 @@
 #include "FooterView.h"
 #include "auklocale.h"
 #include "aukaction.h"
+#include "aukstylesheet.h"
 #include "aukmenu.h"
 
 //#include "aukaproject.h"
@@ -182,7 +183,7 @@ struct App
     struct Screen *lockedscreen;
     struct DrawInfo *drawInfo; // informations on how to draw on the screen, passed to gagdets.
 
-    AukStyleSheet styleSheet; /* shared stylesheet instance is now here */
+    AukStyleSheetPtr styleSheet; /* shared stylesheet instance pointer */
 
     AukMenu appMenu; /* GadTools menu */
 
@@ -359,75 +360,30 @@ int main(int argc, char **argv)
 
     if(!initAppModel())  cleanexit("Can't create app");
 
-    // = = = = = now that needed classes are loaded
-    // = = = = = creates the instances...
-
+    /* BOOPSI needs */
     app->lockedscreen = LockPubScreen(NULL);
     if (!app->lockedscreen) cleanexit("Can't lock screen");
 
     app->drawInfo = GetScreenDrawInfo(app->lockedscreen);
-    // let's size according to font height.
-    app->styleSheet.fontHeight = 8+6; // default;
-    if(app->drawInfo && app->drawInfo->dri_Font)
-            app->styleSheet.fontHeight =app->drawInfo->dri_Font->tf_YSize + 4;
 
-    /* Initialize stylesheet fonts using OpenDiskFont */
+    /* Create AukStyleSheet object */
+    AukStyleSheet_New(&app->styleSheet);
+    if (!app->styleSheet) cleanexit("Can't create stylesheet");
+
+    /* Set stylesheet font specifications */
+    app->styleSheet->SetFontTiny(app->styleSheet, "SevenAlone", 7);
+
+    /* Open fonts from specifications */
+    app->styleSheet->ApplyStyle( app->styleSheet );
+
+    CreateHeaderView(&app->headerView, app->drawInfo, AppInstance, &app->styleSheet->style);
+
+    CreateTrackListView(&app->tracksListView,app->drawInfo, AppInstance,&app->styleSheet->style);
+
+    CreateFooterView(&app->footerView, app->drawInfo, AppInstance, &app->styleSheet->style);
+
+    /* create final layout */
     {
-        static struct TextAttr tinyFontAttr = {
-            "topaz.font",   /* Font name */
-            8,              /* YSize - small font */
-            FS_NORMAL,      /* Style */
-            /*FPF_ROMFONT*/FPF_DISKFONT
-        };
-        app->styleSheet.fontTiny = OpenDiskFont(&tinyFontAttr);
-        printf(" * * * fontTiny:%08x\n",(int)app->styleSheet.fontTiny);
-        /* fontNormal and fontBig can use screen font or be opened similarly */
-//        app->tracksListView.styleSheet.fontNormal = app->drawInfo ? app->drawInfo->dri_Font : NULL;
-//        app->tracksListView.styleSheet.fontBig = NULL; /* TODO: open larger font if needed */
-//        app->tracksListView.styleSheet.fontHeight = app->fontHeight;
-    }
-
-    CreateHeaderView(&app->headerView, app->drawInfo, AppInstance, &app->styleSheet);
-
-    {
-    // paragraph to test image gadget, kept for information, experimental.
-        // extern unsigned char bpwizard_png[];
-        // extern unsigned int bpwizard_png_size;
-
-        // BitMap class can load from file datatype, but not from memory. We just do this:
-//        int isok = LoadDataTypeToBm(&bpwizard_png[0],bpwizard_png_size,
-//                        &dtbmLogo,&dtbmLogo_mask, app->lockedscreen);
-/*
-        int isok = LoadDataTypeToBm("bpwizard.png",0,
-                        &dtbmLogo,&dtbmLogo_mask, app->lockedscreen);
-*/
-  
-
-//        Object* filler =  NewObject( BUTTON_GetClass(),NULL,
-//                                    GA_Text, " ",BUTTON_BevelStyle,BVS_NONE,BUTTON_Transparent, TRUE,TAG_END);
-
-
-
-        // app->btAbout = NewObject( BUTTON_GetClass(),NULL,
-        //                             GA_Text, "About...",
-        //                             GA_ID,GAD_BUTTON_ABOUT,
-        //                             GA_RelVerify, TRUE,
-        //                  //           GA_Disabled,TRUE,
-        //                 // BUTTON_BevelStyle,BVS_NONE,
-        //                 // BUTTON_Transparent, TRUE,
-        //                         TAG_END);
-
-    }
-
-
-    CreateTrackListView(&app->tracksListView,app->drawInfo, AppInstance,&app->styleSheet);
-
-    CreateFooterView(&app->footerView, app->drawInfo, AppInstance, &app->styleSheet);
-
-
-
-    {
-     //   struct DrawInfo *drinfo = GetScreenDrawInfo(screen);
         app->mainvlayout = (Object *)NewObject( LAYOUT_GetClass(), NULL,
             GA_DrawInfo, app->drawInfo,
             LAYOUT_DeferLayout, TRUE, // Layout refreshes done on task's context (by thewindow class)
@@ -437,7 +393,6 @@ int main(int argc, char **argv)
             LAYOUT_LeftSpacing,0,
             LAYOUT_RightSpacing,0,
             LAYOUT_InnerSpacing,0,
-         //   LAYOUT_HorizAlignment, LALIGN_RIGHT,
             LAYOUT_Orientation, LAYOUT_ORIENT_VERT,
 
             LAYOUT_AddChild, app->headerView.mainHl,
@@ -456,11 +411,7 @@ int main(int argc, char **argv)
 			REQ_GadgetText,(ULONG)"_Ok", //
             TAG_END);
 
-    } //end if screen
-
-
-
-
+    }
 
     app->app_port = CreateMsgPort();
 
@@ -625,12 +576,10 @@ void exitclose(void)
         // debug mode, check private class gadgets instance areall closed.
         bdbprintf_report_leaks();
 
-        /* Close fonts opened with OpenDiskFont before closing library */
-        if(app->styleSheet.fontTiny) {
-            CloseFont(app->styleSheet.fontTiny);
-            app->styleSheet.fontTiny = NULL;
+        /* Release stylesheet object (will close fonts automatically) */
+        if (app->styleSheet) {
+            AukObjectPtr_Release((AukObjectPtr*)&app->styleSheet);
         }
-        /* Note: fontNormal points to drawInfo->dri_Font, don't close it separately */
 
         if(app->drawInfo) FreeScreenDrawInfo(app->lockedscreen, app->drawInfo);
         if(app->lockedscreen) UnlockPubScreen(0, app->lockedscreen);

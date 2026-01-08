@@ -24,9 +24,9 @@ void cleanexit(const char *pmessage);
 
 void CreateFooterView(FooterView *fv, struct DrawInfo *drawInfo,
                       Object *appModel,
-                      AukStyleSheet *stylesheet)
+                      AukStyle *style)
 {
-    fv->pstyleSheet = stylesheet;
+    fv->pstyleSheet = style;
     fv->appModel = appModel;
     fv->window = NULL;
 

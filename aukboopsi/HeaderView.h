@@ -2,7 +2,7 @@
 #define HeaderView_H
 
 #include <intuition/classusr.h>
-#include "aukstylesheet.h"
+#include "aukstyle.h"
 
 /*
     Manages the top toolbar section of the GUI.
@@ -36,13 +36,13 @@ typedef struct HeaderView
     struct Window *window;      /* Reference to main window */
 
     /* Visual style configuration */
-    AukStyleSheet *pstyleSheet;
+    AukStyle *pstyleSheet;
 
 } HeaderView;
 
 void CreateHeaderView(HeaderView *hv, struct DrawInfo *drawInfo,
                       Object *appModel,
-                      AukStyleSheet *stylesheet);
+                       AukStyle *stylesheet);
 
 void CloseHeaderView(HeaderView *hv);
 

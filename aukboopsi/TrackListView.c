@@ -61,7 +61,7 @@ void cleanexit(const char *pmessage);
 
 void CreateTrackListView(TrackListView *pm,struct DrawInfo *drawInfo,
                 Object *appModel,
-                AukStyleSheet *stylesheet)
+                AukStyle *stylesheet)
 {
     // init private boopsi gadget & layout classes.
 

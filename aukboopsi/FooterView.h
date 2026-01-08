@@ -2,7 +2,7 @@
 #define FooterView_H
 
 #include <intuition/classusr.h>
-#include "aukstylesheet.h"
+#include "aukstyle.h"
 
 /*
     Manages the bottom status bar section of the GUI.
@@ -23,13 +23,13 @@ typedef struct FooterView
     struct Window *window;      /* Reference to main window */
 
     /* Visual style configuration */
-    AukStyleSheet *pstyleSheet;
+    AukStyle *pstyleSheet;
 
 } FooterView;
 
 void CreateFooterView(FooterView *fv, struct DrawInfo *drawInfo,
                       Object *appModel,
-                      AukStyleSheet *stylesheet);
+                      AukStyle *style);
 
 void FooterView_UpdateFrequency(FooterView *fv, ULONG frequency);
 void FooterView_UpdateSelection(FooterView *fv, const char *startTime, const char *endTime);

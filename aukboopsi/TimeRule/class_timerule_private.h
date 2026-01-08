@@ -3,6 +3,7 @@
 
 #include "compilers.h"
 #include "class_timerule.h"
+#include "aukstyle.h"
 
 // not much sense because c++ static runtime are hard to link.
 #ifdef __cplusplus
@@ -37,8 +38,8 @@ typedef struct ITimeRule {
     /* next GM_RENDER will do accoringly */
     WORD _justScroll,_fullRedraw;
 
-    /* Pointer to AukStyleSheet for visual styling (fonts, colors) */
-    struct AukStyleSheet *_styleSheet;
+    /* Pointer to AukStyle for visual styling (fonts, colors) */
+    AukStyle *_style;
 
     /* computed for a _timePerPixelWidth value  */
     long long majorTickInterval;  /* Time between major ticks */

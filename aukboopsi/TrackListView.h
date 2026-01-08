@@ -4,7 +4,7 @@
 #include <intuition/classusr.h>
 
 #include <aukobject.h>
-#include "aukstylesheet.h"
+#include "aukstyle.h"
 
 
 
@@ -32,7 +32,7 @@ typedef struct TrackListView
     struct Window *window;
 
     /* Visual style configuration */
-    AukStyleSheet *pstyleSheet;
+    AukStyle *pstyleSheet;
 
     // kind of easy message update to delay, def below. If zero, nothing to do
     ULONG updateBits;
@@ -47,7 +47,7 @@ typedef struct TrackListView
 
 void CreateTrackListView(TrackListView *pm,struct DrawInfo *drawInfo,
                 Object *appModel,
-                AukStyleSheet *stylesheet);
+                AukStyle *stylesheet);
 
 typedef struct AukAProject AukAProject;
 typedef struct sAukTrack AukTrack;

@@ -70,7 +70,7 @@
 /* pointer to a long long. Note scroll poistion per pixel is at InfiniteScroll level  */
 #define	TIMERULE_TimePerPixelWidth	(TIMERULE_Dummy+1)
 
-/* Pointer to AukStyleSheet for visual styling (fonts, colors) */
+/* Pointer to AukStyle for visual styling (fonts, colors) */
 #define TIMERULE_StyleSheet (TIMERULE_Dummy+2)
 
 #define TIMERULE_Refresh (TIMERULE_Dummy+3)

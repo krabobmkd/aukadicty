@@ -79,7 +79,7 @@ ULONG ASM SAVEDS TimeRule_Dispatcher(
         gdata->_timePerPixelWidth = 0; // 0 means not inited, important.
         gdata->majorTickInterval = 0;
         gdata->minorTickInterval = 0;
-        gdata->_styleSheet = NULL;
+        gdata->_style = NULL;
         gdata->_justScroll = gdata->_fullRedraw = 0;
 
         /* Process TimeRule-specific attributes from creation tags */

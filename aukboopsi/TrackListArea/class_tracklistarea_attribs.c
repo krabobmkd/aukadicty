@@ -146,7 +146,7 @@ ULONG TrackListArea_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
 
       case TRACKLIST_StyleSheet:
       used = 1;
-        gdata->_styleSheet = (struct AukStyleSheet *)data;
+        gdata->_styleSheet = (struct AukStyle *)data;
         break;
 
      // - - - actually we have to manage super class attribs:

@@ -73,7 +73,7 @@
 /* */
 #define TRACKHEADER_Volume (TRACKHEADER_Dummy+4)
 
-/* Pointer to AukStyleSheet for visual styling */
+/* Pointer to AukStyle for visual styling */
 #define	TRACKHEADER_StyleSheet		(TRACKHEADER_Dummy+5)
 
 

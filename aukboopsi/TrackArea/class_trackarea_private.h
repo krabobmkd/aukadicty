@@ -3,6 +3,7 @@
 
 #include "compilers.h"
 #include "class_trackarea.h"
+#include "aukstyle.h"
 
 /* not much sense because c++ static runtime are hard to link. */
 #ifdef __cplusplus
@@ -42,8 +43,8 @@ typedef struct ITrackArea {
     struct Region *_clipRegion;
 #endif
 
-    /* Pointer to AukStyleSheet for visual styling */
-    struct AukStyleSheet *_styleSheet;
+    /* Pointer to AukStyle for visual styling */
+    AukStyle *_style;
 
 } TrackArea;
 

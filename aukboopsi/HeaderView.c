@@ -25,7 +25,7 @@ void cleanexit(const char *pmessage);
 
 void CreateHeaderView(HeaderView *hv, struct DrawInfo *drawInfo,
                       Object *appModel,
-                      AukStyleSheet *stylesheet)
+                       AukStyle *stylesheet)
 {
     hv->pstyleSheet = stylesheet;
     hv->appModel = appModel;

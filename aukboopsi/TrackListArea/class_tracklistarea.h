@@ -83,7 +83,7 @@ typedef struct TimeProjection {
 /* Domain height - total pixel height of all tracks (GetAttr only) */
 #define	TRACKLIST_DomainHeight		(TRACKLIST_Dummy+5)
 
-/* Pointer to AukStyleSheet for visual styling */
+/* Pointer to AukStyle for visual styling */
 #define	TRACKLIST_StyleSheet		(TRACKLIST_Dummy+6)
 
 /* force redraw trick */

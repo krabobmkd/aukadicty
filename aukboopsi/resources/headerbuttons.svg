@@ -1,0 +1,263 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   width="400"
+   height="200"
+   viewBox="0 0 400 200"
+   version="1.1">
+  <defs>
+    <style>
+      .button-bg { fill: #cccccc; stroke: #333333; stroke-width: 1; }
+      .button-selected { fill: #8888ff; stroke: #333333; stroke-width: 1; }
+      .icon-color { fill: #000000; stroke: none; }
+      .icon-selected { fill: #ffffff; stroke: none; }
+      .icon-record { fill: #cc0000; stroke: none; }
+      .icon-record-selected { fill: #ff3333; stroke: none; }
+    </style>
+  </defs>
+
+  <!-- ========================================
+       TRANSPORT CONTROLS - Large buttons (44pt square - 2.2x bigger than 20pt)
+       Top section: Normal state
+       Bottom section: Selected state
+       ======================================== -->
+
+  <!-- Normal Transport Buttons (Y=10) -->
+  <g id="transport-normal" transform="translate(10, 10)">
+
+    <!-- Rewind Button (Back to start |<) -->
+    <g id="button-rewind-normal">
+      <rect class="button-bg" x="0" y="0" width="44" height="44" rx="4.4"/>
+      <!-- Bar on left, triangle pointing left -->
+      <rect class="icon-color" x="12" y="14" width="2.5" height="16"/>
+      <path class="icon-color" d="M 31 14 L 16 22 L 31 30 Z"/>
+    </g>
+
+    <!-- Stop Button -->
+    <g id="button-stop-normal" transform="translate(50, 0)">
+      <rect class="button-bg" x="0" y="0" width="44" height="44" rx="4.4"/>
+      <!-- Square - 2.2x scaled from 20pt base -->
+      <rect class="icon-color" x="14.6" y="14.6" width="14.8" height="14.8"/>
+    </g>
+
+    <!-- Play Button -->
+    <g id="button-play-normal" transform="translate(100, 0)">
+      <rect class="button-bg" x="0" y="0" width="44" height="44" rx="4.4"/>
+      <!-- Right triangle - 2.2x scaled from 20pt base -->
+      <path class="icon-color" d="M 15 15 L 15 29 L 28.4 22 Z"/>
+    </g>
+
+    <!-- Pause Button -->
+    <g id="button-pause-normal" transform="translate(150, 0)">
+      <rect class="button-bg" x="0" y="0" width="44" height="44" rx="4.4"/>
+      <!-- Double vertical bars - 2.2x scaled from 20pt base -->
+      <rect class="icon-color" x="15" y="15" width="3.6" height="14"/>
+      <rect class="icon-color" x="25.4" y="15" width="3.6" height="14"/>
+    </g>
+
+    <!-- Forward Button (To end >|) -->
+    <g id="button-forward-normal" transform="translate(200, 0)">
+      <rect class="button-bg" x="0" y="0" width="44" height="44" rx="4.4"/>
+      <!-- Triangle pointing right, bar on right -->
+      <path class="icon-color" d="M 13 14 L 28 22 L 13 30 Z"/>
+      <rect class="icon-color" x="29.5" y="14" width="2.5" height="16"/>
+    </g>
+
+    <!-- Record Button (for future use) -->
+    <g id="button-record-normal" transform="translate(250, 0)">
+      <rect class="button-bg" x="0" y="0" width="44" height="44" rx="4.4"/>
+      <!-- Red circle - 2.2x scaled from 20pt base -->
+      <circle class="icon-record" cx="22" cy="22" r="7.3"/>
+    </g>
+
+  </g>
+
+  <!-- Selected Transport Buttons (Y=60) -->
+  <g id="transport-selected" transform="translate(10, 60)">
+
+    <!-- Rewind Button Selected (Back to start |<) -->
+    <g id="button-rewind-selected">
+      <rect class="button-selected" x="0" y="0" width="44" height="44" rx="4.4"/>
+      <!-- Bar on left, triangle pointing left -->
+      <rect class="icon-selected" x="12" y="14" width="2.5" height="16"/>
+      <path class="icon-selected" d="M 31 14 L 16 22 L 31 30 Z"/>
+    </g>
+
+    <!-- Stop Button Selected -->
+    <g id="button-stop-selected" transform="translate(50, 0)">
+      <rect class="button-selected" x="0" y="0" width="44" height="44" rx="4.4"/>
+      <!-- Square - 2.2x scaled from 20pt base -->
+      <rect class="icon-selected" x="14.6" y="14.6" width="14.8" height="14.8"/>
+    </g>
+
+    <!-- Play Button Selected -->
+    <g id="button-play-selected" transform="translate(100, 0)">
+      <rect class="button-selected" x="0" y="0" width="44" height="44" rx="4.4"/>
+      <!-- Right triangle - 2.2x scaled from 20pt base -->
+      <path class="icon-selected" d="M 15 15 L 15 29 L 28.4 22 Z"/>
+    </g>
+
+    <!-- Pause Button Selected -->
+    <g id="button-pause-selected" transform="translate(150, 0)">
+      <rect class="button-selected" x="0" y="0" width="44" height="44" rx="4.4"/>
+      <!-- Double vertical bars - 2.2x scaled from 20pt base -->
+      <rect class="icon-selected" x="15" y="15" width="3.6" height="14"/>
+      <rect class="icon-selected" x="25.4" y="15" width="3.6" height="14"/>
+    </g>
+
+    <!-- Forward Button Selected (To end >|) -->
+    <g id="button-forward-selected" transform="translate(200, 0)">
+      <rect class="button-selected" x="0" y="0" width="44" height="44" rx="4.4"/>
+      <!-- Triangle pointing right, bar on right -->
+      <path class="icon-selected" d="M 13 14 L 28 22 L 13 30 Z"/>
+      <rect class="icon-selected" x="29.5" y="14" width="2.5" height="16"/>
+    </g>
+
+    <!-- Record Button Selected (for future use) -->
+    <g id="button-record-selected" transform="translate(250, 0)">
+      <rect class="button-selected" x="0" y="0" width="44" height="44" rx="4.4"/>
+      <!-- Brighter red circle when selected - 2.2x scaled from 20pt base -->
+      <circle class="icon-record-selected" cx="22" cy="22" r="7.3"/>
+    </g>
+
+  </g>
+
+  <!-- ========================================
+       EDIT MODE BUTTONS - 20pt buttons (base size for edit tools)
+       Render at different DPIs to get 12pt/16pt/20pt variants
+       Top: Normal state, Bottom: Selected state
+       ======================================== -->
+
+  <!-- Edit Mode Buttons - Normal State -->
+  <g id="editmode-normal" transform="translate(10, 120)">
+
+    <!-- Selection Tool (Text cursor / I-beam) -->
+    <g id="button-selection-normal">
+      <rect class="button-bg" x="0" y="0" width="20" height="20" rx="2"/>
+      <!-- Simple text cursor I-beam using filled rectangles -->
+      <rect class="icon-color" x="7" y="5" width="6" height="1.5"/>
+      <rect class="icon-color" x="9.25" y="5" width="1.5" height="10"/>
+      <rect class="icon-color" x="7" y="13.5" width="6" height="1.5"/>
+    </g>
+
+    <!-- Envelope Tool (volume envelope with control points) -->
+    <g id="button-envelope-normal" transform="translate(26, 0)">
+      <rect class="button-bg" x="0" y="0" width="20" height="20" rx="2"/>
+      <!-- Horizontal baseline representing 0 volume -->
+      <line class="icon-color" x1="3" y1="15" x2="17" y2="15" stroke="#888" stroke-width="0.8"/>
+      <!-- Volume envelope curve -->
+      <path class="icon-color" d="M 3 15 L 6 8 L 10 11 L 14 6 L 17 12" fill="none" stroke="#000" stroke-width="1.5"/>
+      <!-- Control points -->
+      <circle class="icon-color" cx="6" cy="8" r="1.3"/>
+      <circle class="icon-color" cx="10" cy="11" r="1.3"/>
+      <circle class="icon-color" cx="14" cy="6" r="1.3"/>
+      <!-- Triangle pointer at middle control point -->
+      <path class="icon-color" d="M 10 8.5 L 9 10.5 L 11 10.5 Z"/>
+    </g>
+
+    <!-- Draw Tool (pencil) -->
+    <g id="button-draw-normal" transform="translate(52, 0)">
+      <rect class="button-bg" x="0" y="0" width="20" height="20" rx="2"/>
+      <!-- Pencil shape -->
+      <path class="icon-color" d="M 6 14 L 5 15 L 6 16 L 7 15 Z M 6.5 14.5 L 14 7 L 13 6 L 5.5 13.5 Z"/>
+      <rect class="icon-color" x="13" y="5" width="2" height="3" transform="rotate(45 14 6.5)"/>
+    </g>
+
+    <!-- Zoom Tool (magnifying glass) -->
+    <g id="button-zoom-normal" transform="translate(78, 0)">
+      <rect class="button-bg" x="0" y="0" width="20" height="20" rx="2"/>
+      <!-- Magnifying glass with handle -->
+      <circle class="icon-color" cx="8.5" cy="8.5" r="4" fill="none" stroke="#000" stroke-width="1.5"/>
+      <line class="icon-color" x1="11.5" y1="11.5" x2="15.5" y2="15.5" stroke="#000" stroke-width="2" stroke-linecap="round"/>
+    </g>
+
+    <!-- Time Shift Tool (left-right arrows) -->
+    <g id="button-timeshift-normal" transform="translate(104, 0)">
+      <rect class="button-bg" x="0" y="0" width="20" height="20" rx="2"/>
+      <!-- Horizontal double arrow -->
+      <path class="icon-color" d="M 4 10 L 7 7 L 7 9 L 13 9 L 13 7 L 16 10 L 13 13 L 13 11 L 7 11 L 7 13 Z"/>
+    </g>
+
+    <!-- Multi-tool (combined icon) -->
+    <g id="button-multi-normal" transform="translate(130, 0)">
+      <rect class="button-bg" x="0" y="0" width="20" height="20" rx="2"/>
+      <!-- Four quadrants with mini icons -->
+      <rect class="icon-color" x="9.5" y="3" width="1" height="14"/>
+      <rect class="icon-color" x="3" y="9.5" width="14" height="1"/>
+      <!-- Mini I-beam top-left -->
+      <rect class="icon-color" x="5" y="5" width="3" height="0.8"/>
+      <rect class="icon-color" x="6.1" y="5" width="0.8" height="3"/>
+      <!-- Mini curve top-right -->
+      <path class="icon-color" d="M 12 6 Q 14 5, 15 7" fill="none" stroke="#000" stroke-width="0.8"/>
+      <!-- Mini pencil bottom-left -->
+      <line class="icon-color" x1="5" y1="14" x2="7" y2="12" stroke="#000" stroke-width="0.8"/>
+      <!-- Mini zoom bottom-right -->
+      <circle class="icon-color" cx="14" cy="14" r="1.5" fill="none" stroke="#000" stroke-width="0.8"/>
+    </g>
+
+  </g>
+
+  <!-- Edit Mode Buttons - Selected State -->
+  <g id="editmode-selected" transform="translate(10, 150)">
+
+    <!-- Selection Tool Selected (Text cursor) -->
+    <g id="button-selection-selected">
+      <rect class="button-selected" x="0" y="0" width="20" height="20" rx="2"/>
+      <!-- Simple text cursor I-beam using filled rectangles -->
+      <rect class="icon-selected" x="7" y="5" width="6" height="1.5"/>
+      <rect class="icon-selected" x="9.25" y="5" width="1.5" height="10"/>
+      <rect class="icon-selected" x="7" y="13.5" width="6" height="1.5"/>
+    </g>
+
+    <!-- Envelope Tool Selected -->
+    <g id="button-envelope-selected" transform="translate(26, 0)">
+      <rect class="button-selected" x="0" y="0" width="20" height="20" rx="2"/>
+      <!-- Horizontal baseline representing 0 volume -->
+      <line class="icon-selected" x1="3" y1="15" x2="17" y2="15" stroke="#ccc" stroke-width="0.8"/>
+      <!-- Volume envelope curve -->
+      <path class="icon-selected" d="M 3 15 L 6 8 L 10 11 L 14 6 L 17 12" fill="none" stroke="#fff" stroke-width="1.5"/>
+      <!-- Control points -->
+      <circle class="icon-selected" cx="6" cy="8" r="1.3"/>
+      <circle class="icon-selected" cx="10" cy="11" r="1.3"/>
+      <circle class="icon-selected" cx="14" cy="6" r="1.3"/>
+      <!-- Triangle pointer at middle control point -->
+      <path class="icon-selected" d="M 10 8.5 L 9 10.5 L 11 10.5 Z"/>
+    </g>
+
+    <!-- Draw Tool Selected -->
+    <g id="button-draw-selected" transform="translate(52, 0)">
+      <rect class="button-selected" x="0" y="0" width="20" height="20" rx="2"/>
+      <path class="icon-selected" d="M 6 14 L 5 15 L 6 16 L 7 15 Z M 6.5 14.5 L 14 7 L 13 6 L 5.5 13.5 Z"/>
+      <rect class="icon-selected" x="13" y="5" width="2" height="3" transform="rotate(45 14 6.5)"/>
+    </g>
+
+    <!-- Zoom Tool Selected -->
+    <g id="button-zoom-selected" transform="translate(78, 0)">
+      <rect class="button-selected" x="0" y="0" width="20" height="20" rx="2"/>
+      <!-- Magnifying glass with handle -->
+      <circle class="icon-selected" cx="8.5" cy="8.5" r="4" fill="none" stroke="#fff" stroke-width="1.5"/>
+      <line class="icon-selected" x1="11.5" y1="11.5" x2="15.5" y2="15.5" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+    </g>
+
+    <!-- Time Shift Tool Selected -->
+    <g id="button-timeshift-selected" transform="translate(104, 0)">
+      <rect class="button-selected" x="0" y="0" width="20" height="20" rx="2"/>
+      <path class="icon-selected" d="M 4 10 L 7 7 L 7 9 L 13 9 L 13 7 L 16 10 L 13 13 L 13 11 L 7 11 L 7 13 Z"/>
+    </g>
+
+    <!-- Multi-tool Selected -->
+    <g id="button-multi-selected" transform="translate(130, 0)">
+      <rect class="button-selected" x="0" y="0" width="20" height="20" rx="2"/>
+      <rect class="icon-selected" x="9.5" y="3" width="1" height="14"/>
+      <rect class="icon-selected" x="3" y="9.5" width="14" height="1"/>
+      <rect class="icon-selected" x="5" y="5" width="3" height="0.8"/>
+      <rect class="icon-selected" x="6.1" y="5" width="0.8" height="3"/>
+      <path class="icon-selected" d="M 12 6 Q 14 5, 15 7" fill="none" stroke="#fff" stroke-width="0.8"/>
+      <line class="icon-selected" x1="5" y1="14" x2="7" y2="12" stroke="#fff" stroke-width="0.8"/>
+      <circle class="icon-selected" cx="14" cy="14" r="1.5" fill="none" stroke="#fff" stroke-width="0.8"/>
+    </g>
+
+  </g>
+
+</svg>

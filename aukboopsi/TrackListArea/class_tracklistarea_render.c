@@ -438,7 +438,7 @@ void TrackListArea_DisposeGadgets(TrackListArea *gdata)
 
 }
 extern Class *AppModelClass;
-static int TrackListArea_CreateTrackLine(TrackChild *strack, AukTrack *dataTrack, struct AukStyleSheet *styleSheet, int iTrack)
+static int TrackListArea_CreateTrackLine(TrackChild *strack, AukTrack *dataTrack, struct AukStyle *styleSheet, int iTrack)
 {
     /* Create TrackHeader gadget */
     strack->_trackHeader = //NULL;

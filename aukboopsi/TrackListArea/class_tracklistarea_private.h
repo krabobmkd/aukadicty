@@ -3,6 +3,7 @@
 
 #include "compilers.h"
 #include "class_tracklistarea.h"
+#include "aukstyle.h"
 
 // not much sense because c++ static runtime are hard to link.
 #ifdef __cplusplus
@@ -89,8 +90,8 @@ typedef struct TrackListArea {
 
     /* check for change at layout*/
     ULONG _prevHeight;
-    /* Pointer to AukStyleSheet for visual styling */
-    struct AukStyleSheet *_styleSheet;
+    /* Pointer to AukStyleSheet to pass to child gadgets */
+    struct AukStyle *_styleSheet;
 
     /* allow our scroll strategy */
     struct Region *_clipRegion;

@@ -3,6 +3,7 @@
 
 #include "compilers.h"
 #include "class_trackheader.h"
+#include "aukstyle.h"
 
 // not much sense because c++ static runtime are hard to link.
 #ifdef __cplusplus
@@ -39,8 +40,8 @@ typedef struct ITrackHeader {
 
     Object *subs[THS_Total];
 
-    /* Pointer to AukStyleSheet for visual styling */
-    struct AukStyleSheet *_styleSheet;
+    /* Pointer to AukStyle for visual styling */
+    AukStyle *_style;
 
 } TrackHeader;
 

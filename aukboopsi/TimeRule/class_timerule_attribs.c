@@ -17,7 +17,7 @@
 
 #include "class_timerule.h"
 #include "class_timerule_private.h"
-#include "../aukstylesheet.h"
+#include "../aukstyle.h"
 
 #include <utility/tagitem.h>
 
@@ -75,7 +75,7 @@ ULONG TimeRule_GetAttr(Class *C, struct Gadget *Gad, struct opGet *Get)
     }
     break;
     case TIMERULE_StyleSheet:
-        *data = (ULONG)gdata->_styleSheet;
+        *data = (ULONG)gdata->_style;
         break;
 
     /* super class gadget things. would manage attribs selected/highlighted, ... */
@@ -126,14 +126,16 @@ ULONG TimeRule_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
         break;
       case TIMERULE_StyleSheet:
       {
-        if((struct AukStyleSheet *)data != gdata->_styleSheet)
+        /* data points to AukStyleSheet, extract the style member */
+        AukStyle *newStyle = (struct AukStyle *)data;
+        if(newStyle != gdata->_style)
         {
-            gdata->_styleSheet = (struct AukStyleSheet *)data;
+            gdata->_style = newStyle;
             bdbprintf("");
 
             fullRedraw=1;
             used=1;
-        }        
+        }
 
        }break;
       /* GA_XXX attribs with struct Gadget members... */

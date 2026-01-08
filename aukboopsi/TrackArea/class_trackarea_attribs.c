@@ -72,7 +72,8 @@ ULONG TrackArea_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
     switch(tag->ti_Tag)
     {
       case TRACKAREA_StyleSheet:
-        gdata->_styleSheet = (struct AukStyleSheet *)data;
+        /* data points to AukStyle, extract the style member */
+        gdata->_style = (struct AukStyle *)data;
         break;
 
      // case TRACKAREA_CenterX:

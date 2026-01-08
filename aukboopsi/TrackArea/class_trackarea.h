@@ -64,7 +64,7 @@
 /* abstract coordinate from 0 to 65535, whatever height is. */
 #define	TRACKAREA_CenterY		(TRACKAREA_Dummy+2)
 
-/* Pointer to AukStyleSheet for visual styling */
+/* Pointer to AukStyle for visual styling */
 #define	TRACKAREA_StyleSheet		(TRACKAREA_Dummy+3)
 
 /** DEVTODO: adds attributes definitions here and
