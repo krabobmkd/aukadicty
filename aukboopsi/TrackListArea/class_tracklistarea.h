@@ -55,7 +55,7 @@
 #endif
 
 typedef struct TimeProjection {
-    long long _timeAtLeft,_timePerPixelWidth;
+    long long _pixAtLeft,_timePerPixelWidth;
 } TimeProjection;
 
 /**  Attributes defined by the gadget class,

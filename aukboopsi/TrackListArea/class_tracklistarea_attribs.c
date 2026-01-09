@@ -77,7 +77,7 @@ ULONG TrackListArea_GetAttr(Class *C, struct Gadget *Gad, struct opGet *Get)
 
     case TRACKLIST_TimeProjection:
     {
-        ((TimeProjection *)data)->_timeAtLeft = gdata->_scrollX;
+        ((TimeProjection *)data)->_pixAtLeft = gdata->_scrollX;
         ((TimeProjection *)data)->_timePerPixelWidth = gdata->_timePerPixelWidth;
       }
       break;
@@ -134,10 +134,10 @@ ULONG TrackListArea_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
     {
        TimeProjection *pproj = (TimeProjection *)data;
         used = 1;
-        if(pproj->_timeAtLeft != gdata->_scrollX ||
+        if(pproj->_pixAtLeft != gdata->_scrollX ||
            pproj->_timePerPixelWidth != gdata->_timePerPixelWidth )
            {
-                gdata->_scrollX = pproj->_timeAtLeft;
+                gdata->_scrollX = pproj->_pixAtLeft;
                 gdata->_timePerPixelWidth = gdata->_timePerPixelWidth;
                 TrackListArea_NotifyAttribValue(Gad, Set->ops_GInfo, TRACKLIST_TimeProjection, (ULONG)data);
            }

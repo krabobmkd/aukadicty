@@ -46,7 +46,7 @@ ULONG TimeRule_Domain(Class *C, struct Gadget *Gad, struct gpDomain *D)
      if(gdata)
      {
        D->gpd_Domain.Width = 200;
-       D->gpd_Domain.Height = 12; // gdata->_defaultHeight;
+       D->gpd_Domain.Height = 14; // gdata->_defaultHeight;
      }
      else
      {
@@ -75,7 +75,7 @@ ULONG TimeRule_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout)
 {
   TimeRule *gdata=0;
   gdata=INST_DATA(C, Gad);
-  bdbprintf("TimeRule_Layout\n");
+//  bdbprintf("TimeRule_Layout\n");
   /* Lines are drawn from bottom - make them short */
   gdata->majorTickHeight = Gad->Height/3;
   gdata->minorTickHeight = Gad->Height/6;
@@ -92,26 +92,30 @@ ULONG TimeRule_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout)
  * Outputs format like "0:00", "1:23", "12:34" etc.
  * For sub-second graduations, adds milliseconds: "0:00.1", "0:00.5"
  *
- * @param timeHi   High 32 bits of time value
- * @param timeLo   Low 32 bits of time value (fractional part in upper bits)
+ * @param stime   time value
  * @param buffer   Output buffer (must be at least 12 chars)
  * @param showMs   If TRUE, show one decimal for sub-second
  */
-void TimeRule_FormatTime(LONG timeHi, LONG timeLo, char *buffer, BOOL showMs)
+void TimeRule_FormatTime(long long stime, char *buffer, BOOL showMs)
 {
-    LONG seconds;
-    LONG minutes;
+    ULONG seconds;
+    ULONG minutes;
     LONG ms;
     char *p = buffer;
 
     /* Get integer seconds from fixed-point */
     /* timeHi contains the integer part for values >= 0 */
     /* For negative values, we would need special handling */
-    seconds = timeHi;
-    if(seconds < 0) seconds = 0;  /* Don't display negative times for now */
+
+    if(stime < 0)
+    {
+        *p++ = '-';
+        stime = -stime;
+    }
+    seconds = (ULONG)(stime>>32);
 
     minutes = seconds / 60;
-    seconds = seconds % 60;
+    seconds = seconds -(minutes*60);
 
     /* Format minutes:seconds */
     if(minutes >= 10)
@@ -127,7 +131,7 @@ void TimeRule_FormatTime(LONG timeHi, LONG timeLo, char *buffer, BOOL showMs)
     {
         /* Get first decimal from fractional part */
         /* timeLo upper bits are fraction, scale to get 0-9 */
-        ms = ((ULONG)timeLo >> 28) & 0xF;  /* Get top 4 bits */
+        ms = ((ULONG)stime >> 28) & 0xF;  /* Get top 4 bits */
         if(ms > 9) ms = 9;
         *p++ = '.';
         *p++ = '0' + ms;
@@ -223,18 +227,18 @@ void TimeRule_RenderDelegate(InfiniteScrollRenderParams *p)
     int iloop=0;
     LONG px;
     TimeRule *gdata;
-     struct TextFont *font=NULL;
+     struct TextFont *font=NULL; /* consider can fail with NULL, ony draw texts if present. */
     /* Time range for this TimeRule (from attributes) */
     long long timeLeft;
     /* Drawing parameters */
     long long timePerPixel;
     long long currentTime,currentTimeMin;
-    char timeBuf[16];
+    char timeBuf[32];
 //    return;
 
     struct Gadget *Gad = p->Gad;
     struct RastPort *rp = p->rp;
-    bdbprintf("TimeRule_RenderDelegate %08x %08x\n",(int)Gad,(int)rp);
+//    bdbprintf("TimeRule_RenderDelegate %08x %08x\n",(int)Gad,(int)rp);
     if( !Gad || !rp) return ;
 
     gdata = INST_DATA(TimeRuleClassPtr, Gad); // note superclass can't send final class pointer implementation
@@ -244,22 +248,27 @@ void TimeRule_RenderDelegate(InfiniteScrollRenderParams *p)
      /* Get time range from TimeRule attributes */
      timePerPixel = gdata->_timePerPixelWidth;
 
-bdbprintf("render timePerPixel: %08x.%08x\n",(int)(timePerPixel>>32),(int)timePerPixel);
-bdbprintf("render minorTickInterval: %08x.%08x\n",(int)(gdata->minorTickInterval>>32),(int)gdata->minorTickInterval);
-bdbprintf("render majorTickInterval: %08x.%08x\n",(int)(gdata->majorTickInterval>>32),(int)gdata->majorTickInterval);
+//bdbprintf("render timePerPixel: %08x.%08x\n",(int)(timePerPixel>>32),(int)timePerPixel);
+//bdbprintf("render minorTickInterval: %08x.%08x\n",(int)(gdata->minorTickInterval>>32),(int)gdata->minorTickInterval);
+//bdbprintf("render majorTickInterval: %08x.%08x\n",(int)(gdata->majorTickInterval>>32),(int)gdata->majorTickInterval);
+//bdbprintf("render minorTickInterval: %08x.%08x\n",(int)(gdata->minorTickInterval>>32),(int)gdata->minorTickInterval);
+//bdbprintf("render majorTickInterval: %08x.%08x\n",(int)(gdata->majorTickInterval>>32),(int)gdata->majorTickInterval);
  // 0.33
  // 1.00
 
     if( timePerPixel == 0 ||
-       gdata->minorTickInterval ==0 || gdata->majorTickInterval==0 ) return;
-
+       gdata->minorTickInterval ==0 || gdata->majorTickInterval==0 )
+    {
+       // bdbprintf("render minorTickInterval/majorTickInterval not layouted???\n");
+        return;
+    }
     /* Clear tile to background (pen 0 = typically grey) */
     SetAPen(rp, 0 /*+ ((int)p->_start._scrollx)/128*/);
     SetBPen(rp, 0);
     RectFill(rp, p->destX, p->destY, p->destWidth - 1, p->destHeight - 1);
 
      timeLeft = timePerPixel * p->_start._scrollx;
-
+//bdbprintf("render timeLeft: %08x.%08x\n",(int)(timeLeft>>32),(int)timeLeft);
      /* Now, Abstract InfiniteScroll only give a pixel offset position for the left border of this tile.
 
      */
@@ -279,11 +288,10 @@ bdbprintf("render majorTickInterval: %08x.%08x\n",(int)(gdata->majorTickInterval
      SetAPen(rp, 1);
 
      /* Use fontTiny if available from style */
-     bdbprintf("render f style:%08x\n",(int)gdata->_style);
+
      if(gdata->_style && gdata->_style->fontTiny)
      {
-     //re    font = gdata->_style->fontTiny;
-      // bdbprintf("render f fontTiny:%08x\n",(int)font);
+       font = gdata->_style->fontTiny;
      }
      if(font) SetFont(rp, font);
 
@@ -305,14 +313,12 @@ bdbprintf("render majorTickInterval: %08x.%08x\n",(int)(gdata->majorTickInterval
          /* Draw time text near bottom of tile */
          /* IMPORTANT RP with no SetFont() would crash when Text() used.  */
         if(font) {
-             LONG seconds = (LONG)(currentTime >> 32);
-             LONG timeLo = (LONG)(currentTime & 0xFFFFFFFF);
              BOOL showMs = (gdata->majorTickInterval < SEC_FP);
              UWORD textY;
 
-             TimeRule_FormatTime(seconds, timeLo, timeBuf, showMs);
+             TimeRule_FormatTime(currentTime, timeBuf, showMs);
 
-            textY = p->destHeight - 2;
+            textY = p->destHeight - 4;
 
              /* Draw text - position adjusted for text width */
             Move(rp, px + 2, textY);

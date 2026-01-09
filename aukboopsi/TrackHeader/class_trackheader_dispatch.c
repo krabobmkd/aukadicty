@@ -85,7 +85,7 @@ ULONG ASM SAVEDS TrackHeader_Dispatcher(
         if((ptag = FindTagItem( ICA_TARGET,M->opSet.ops_AttrList ))!=NULL)
         {
             target = ptag->ti_Data;
-            bdbprintf("header target:%08x\n",target);
+          //  bdbprintf("header target:%08x\n",target);
         }
 
         CloseButton = NewObject( /*BUTTON_GetClass()*/HEADERBUTTON_GetClass(),NULL,

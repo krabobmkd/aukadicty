@@ -277,7 +277,7 @@ ULONG ASM SAVEDS AppModelDispatch(
             } else
             if( sender_ID == GAD_SCROLLER_H )
             {
-            // bdbprintf(" ( sender_ID == GAD_SCROLLER_H )\n");
+             bdbprintf(" ( sender_ID == GAD_SCROLLER_H )\n");
                 TrackListView_ListenScrollHMessage( &app->tracksListView, &M->opUpdate );
                 retval=1;
             } else
@@ -371,10 +371,11 @@ int main(int argc, char **argv)
     if (!app->styleSheet) cleanexit("Can't create stylesheet");
 
     /* Set stylesheet font specifications */
-    app->styleSheet->SetFontTiny(app->styleSheet, "SevenAlone", 7);
+    app->styleSheet->SetFontTiny(app->styleSheet, "SevenAlone.font", 7);
 
     /* Open fonts from specifications */
     app->styleSheet->ApplyStyle( app->styleSheet );
+   bdbprintf(" **** main init style:%08x fontTiny:%08x \n",(int)&app->styleSheet->style,(int)app->styleSheet->style.fontTiny);
 
     CreateHeaderView(&app->headerView, app->drawInfo, AppInstance, &app->styleSheet->style);
 
@@ -748,6 +749,6 @@ void TrackListView_UpdateTrackList_Generic()
 {
     if(!app) return;
     //TrackListView_UpdateTrackList(&app->tracksListView);
-        app->tracksListView.updateBits |= TLVB_UPDATE_FULLREDRAW;
+        app->tracksListView.updateBits |= TLVB_UPDATE_REDRAW_TRACKLIST;
         if(myTask) Signal(myTask,SIGBREAKF_CTRL_F);
 }

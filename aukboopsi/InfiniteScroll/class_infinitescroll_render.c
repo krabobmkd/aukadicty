@@ -279,16 +279,18 @@ static void InfiniteScroll_RenderTilesRow(
     renderParams->destY=0;
     renderParams->destWidth=gdata->_tileWidth;
     renderParams->destHeight=gdata->_tileHeight;
- bdbprintf("gdata->_renderFunction:%08x\n",(int)gdata->_renderFunction);
+// bdbprintf("gdata->_renderFunction:%08x\n",(int)gdata->_renderFunction);
     InfiniteScrollPosition pos = *startpos;
+
     for(i=0;i<nbTiles;i++)
     {
         int iTile = i+itileStart;
         if(iTile>=gdata->_tileCount) iTile -=gdata->_tileCount;
         InfiniteScrollTile *tile = &gdata->_tiles[iTile];
-
+ //    bdbprintf(" ask render tile %d -> %d _tileCount:%d nbTilesAsked:%d  scrollpos:%lld\n",i,iTile,gdata->_tileCount,nbTiles,pos._scrollx );
         if(gdata->_renderFunction)
         {
+
             renderParams->_start = pos;
             renderParams->rp = tile->bitmap._rp;
             gdata->_renderFunction(renderParams);
@@ -298,7 +300,6 @@ static void InfiniteScroll_RenderTilesRow(
         tile->isRendered = TRUE;
 
         pos._scrollx += gdata->_tileWidth;
-        itileStart++;
     }
 }
 static void InfiniteScroll_FullRedraw(
@@ -441,7 +442,6 @@ ULONG InfiniteScroll_Render(Class *C, struct Gadget *Gad, struct gpRender *Rende
             {
                 width = Gad->Width-dx;
             }
-            bdbprintf("BltBitMapRastPort:%d\n",Gad->LeftEdge+ dx);
             BltBitMapRastPort(tile->bitmap._bm,
                               sourcex, 0,  /* source x, y */
                               rp,

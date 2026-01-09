@@ -102,7 +102,7 @@ ULONG TrackArea_Render_rp( struct RastPort *rp,Class *C, struct Gadget *Gad, str
 {
   LONG topedge,leftedge,width,height;
   TrackArea *gdata;
-   int penbg=5,penb=2,penc=3;
+   int penbg=1,penb=2,penc=3;
   gdata=INST_DATA(C, Gad);
 
     topedge = Gad->TopEdge;

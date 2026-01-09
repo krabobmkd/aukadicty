@@ -138,6 +138,24 @@ ULONG TimeRule_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
         }
 
        }break;
+       case TIMERULE_Refresh:
+       {
+            // layout should be ok
+            // goes render...
+            {
+                struct gpRender gpr;
+                gpr.MethodID = GM_RENDER;
+                gpr.gpr_GInfo = Set->ops_GInfo;
+                gpr.gpr_RPort = ObtainGIRPort(gpr.gpr_GInfo);
+                if(gpr.gpr_RPort)
+                {
+                    gpr.gpr_Redraw = 1;
+                   // supercall
+                   DoSuperMethodA(C,(APTR)Gad,(Msg)&gpr );
+                    ReleaseGIRPort(gpr.gpr_RPort);
+                }
+            }
+       } break;
       /* GA_XXX attribs with struct Gadget members... */
       case GA_Disabled:
         {

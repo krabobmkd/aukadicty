@@ -226,9 +226,9 @@ int AukStyleSheet_ApplyStyle(void* This) {
     if (styleSheet->fontTinyName && styleSheet->fontTinyHeight > 0) {
         styleSheet->style.fontTiny = OpenFontBySpec(styleSheet->fontTinyName, styleSheet->fontTinyHeight);
         // this is a minimal font installed by OS3.2
-        if(!styleSheet->style.fontTiny)  styleSheet->style.fontTiny = OpenFontBySpec("SevenAlone", 7);
+        if(!styleSheet->style.fontTiny)  styleSheet->style.fontTiny = OpenFontBySpec("SevenAlone.font", 7);
         // this is the historic default minimal font
-        if(!styleSheet->style.fontTiny)  styleSheet->style.fontTiny = OpenFontBySpec("Topaz", 8);
+        if(!styleSheet->style.fontTiny)  styleSheet->style.fontTiny = OpenFontBySpec("Topaz.font", 8);
         if (!styleSheet->style.fontTiny) success = 0;
     }
 
@@ -236,7 +236,7 @@ int AukStyleSheet_ApplyStyle(void* This) {
         /*  */
 
         styleSheet->style.fontNormal = OpenFontBySpec(styleSheet->fontNormalName, styleSheet->fontNormalHeight);
-        if(!styleSheet->style.fontNormal)  styleSheet->style.fontNormal = OpenFontBySpec("Topaz", 9);
+        if(!styleSheet->style.fontNormal)  styleSheet->style.fontNormal = OpenFontBySpec("Topaz.font", 9);
 
         if (!styleSheet->style.fontNormal) success = 0;
         // this is the historic default minimal font

@@ -42,7 +42,7 @@ typedef struct TrackListView
 
 #define TLVB_UPDATE_VERTSCROLLDOMAIN 1
 #define TLVB_UPDATE_HORIZSCROLLDOMAIN 2
-#define TLVB_UPDATE_FULLREDRAW 4
+#define TLVB_UPDATE_REDRAW_TRACKLIST 4
 #define TLVB_UPDATE_REDRAW_TIMERULE 8
 
 void CreateTrackListView(TrackListView *pm,struct DrawInfo *drawInfo,

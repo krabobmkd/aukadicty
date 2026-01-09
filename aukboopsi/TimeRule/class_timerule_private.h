@@ -63,7 +63,7 @@ void TimeRule_RenderDelegate(InfiniteScrollRenderParams *p);
 
 
 /* Helper to format time value as text */
-void TimeRule_FormatTime(LONG timeHi, LONG timeLo, char *buffer, BOOL showMs);
+void TimeRule_FormatTime(long long stime, char *buffer, BOOL showMs);
 
 // - - - - -- -
 
