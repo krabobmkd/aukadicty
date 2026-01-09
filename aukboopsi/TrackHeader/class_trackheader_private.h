@@ -42,6 +42,8 @@ typedef struct ITrackHeader {
 
     /* Pointer to AukStyle for visual styling */
     AukStyle *_style;
+    /* track */
+    int _trackIndex;
 
 } TrackHeader;
 

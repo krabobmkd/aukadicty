@@ -115,7 +115,7 @@ int AukTrack_SetName(AukTrack* track, const char* name) {
     if (track->name) {
         /* Send update notification */
         AukMessage msg;
-        msg.type = AUK_MSG_MODIFY;
+        msg.type = AUK_MSG_TRACKMODIFIED_NAMECHANGE;
         track->base.SendUpdate(&track->base, &msg);
     }
 

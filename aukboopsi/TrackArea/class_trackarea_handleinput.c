@@ -179,8 +179,8 @@ ULONG TrackArea_HandleInput(Class *C, struct Gadget *Gad, struct gpInput *Input)
          {
 
           case SELECTUP:
- bdbprintf("SELECTUP: %d %d\n",(int)(Input->gpi_Mouse).X,(int)(Input->gpi_Mouse).Y);
-             gdata->_MouseMode=0;
+// bdbprintf("SELECTUP: %d %d\n",(int)(Input->gpi_Mouse).X,(int)(Input->gpi_Mouse).Y);
+//             gdata->_MouseMode=0;
 /*
 
             {// inside gadget
@@ -278,11 +278,11 @@ ULONG TrackArea_HandleInput(Class *C, struct Gadget *Gad, struct gpInput *Input)
                   )
             {// outside gadget or disabled.
 
-              if(gdata->_EditMode)
-              {
-                gdata->_EditMode=0;
-                TrackArea_Render(C,Gad,(APTR)Input,GREDRAW_UPDATE);
-              }
+//              if(gdata->_EditMode)
+//              {
+//                gdata->_EditMode=0;
+//                TrackArea_Render(C,Gad,(APTR)Input,GREDRAW_UPDATE);
+//              }
 //              retval = GMR_NOREUSE | GMR_VERIFY;
               retval = GMR_REUSE;
             }

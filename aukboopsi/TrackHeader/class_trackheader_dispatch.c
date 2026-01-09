@@ -75,6 +75,7 @@ ULONG ASM SAVEDS TrackHeader_Dispatcher(
         struct TagItem *ptag;
         ULONG iTrack=0;
         ULONG target=0;
+        char *trackname=NULL;
         Object *VolumeRule,*CloseButton,*NameButton,*VolumeSlider,*PanSlider,
                 *LeftVertlayout,*CloseAndNameHl;
         //
@@ -82,6 +83,12 @@ ULONG ASM SAVEDS TrackHeader_Dispatcher(
         {
             iTrack = ptag->ti_Data;
         }
+        if((ptag = FindTagItem( TRACKHEADER_Name,M->opSet.ops_AttrList ))!=NULL)
+        {
+            trackname = (char *)ptag->ti_Data;
+        }
+        if(trackname == NULL) trackname="-";
+
         if((ptag = FindTagItem( ICA_TARGET,M->opSet.ops_AttrList ))!=NULL)
         {
             target = ptag->ti_Data;
@@ -98,7 +105,7 @@ ULONG ASM SAVEDS TrackHeader_Dispatcher(
                         // BUTTON_Transparent, TRUE,
                                 TAG_END);
         NameButton = NewObject( HEADERBUTTON_GetClass(),NULL,
-                                    GA_Text, "Name",
+                                    GA_Text,trackname,
                                     GA_ID,GAD_TRACKHEADER_BASE|GAD_TRACKHEADER_NAME|(iTrack<<4),
                                     ICA_TARGET,target,
                                     GA_RelVerify, TRUE,
@@ -206,6 +213,7 @@ ULONG ASM SAVEDS TrackHeader_Dispatcher(
             gdata->subs[THS_VolumeSlider] = VolumeSlider;
             gdata->subs[THS_PanSlider] = NULL ; //TODO
             gdata->subs[THS_VolumeRule] = VolumeRule;
+            gdata->_trackIndex = iTrack;
 
             /* means new object OK so far: */
             retval=(ULONG)Gad;
@@ -220,13 +228,13 @@ ULONG ASM SAVEDS TrackHeader_Dispatcher(
 
     case OM_UPDATE:
     case OM_SET:
-      retval=DoSuperMethodA(C,(Object *)Gad,(Msg)M);
-      TrackHeader_SetAttrs(C,Gad,(struct opSet *)M);
+      retval = TrackHeader_SetAttrs(C,Gad,(struct opSet *)M);
+      if(!retval) retval = DoSuperMethodA(C,(Object *)Gad,(Msg)M);
+
      break;
 
     case OM_GET:
-      retval=DoSuperMethodA(C,(Object *)Gad,(Msg)M);
-      //TrackHeader_GetAttr(C,Gad,(struct opGet *)M);
+      retval= TrackHeader_GetAttr(C,Gad,(struct opGet *)M); // supercall done inside
      break;
 
 

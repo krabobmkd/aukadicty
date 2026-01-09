@@ -186,6 +186,7 @@ static void AukUpdate_Track(AukObject* listenerObject, AukObject* modifiedObject
             if(myTask) Signal(myTask, SIGBREAKF_CTRL_F);
         }
         break;
+
         case AUK_MSG_TRACKMODIFIED_SOUNDADDED:
         {
             /* Sound added to track, may affect project duration.
@@ -204,7 +205,13 @@ static void AukUpdate_Track(AukObject* listenerObject, AukObject* modifiedObject
             if(myTask) Signal(myTask, SIGBREAKF_CTRL_F);
         }
         break;
+        case AUK_MSG_TRACKMODIFIED_NAMECHANGE:
+        {
 
+//            pm->updateBits |= TLVB_UPDATE_HORIZSCROLLDOMAIN;
+//            if(myTask) Signal(myTask, SIGBREAKF_CTRL_F);
+        }
+        break;
         default:
         break;
     }

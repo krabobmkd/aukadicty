@@ -32,19 +32,12 @@ extern "C" {
 */
 typedef struct ITrackArea {
 
-    UWORD _dum;
-
-    /* DEVTODO: we could manage the mouse interaction current state.... */
-    ULONG _MouseMode;
-    ULONG _EditMode;
-
     struct Rectangle _framerec;
-#ifdef USE_REGION_CLIPPING
-    struct Region *_clipRegion;
-#endif
 
     /* Pointer to AukStyle for visual styling */
     AukStyle *_style;
+
+
 
 } TrackArea;
 

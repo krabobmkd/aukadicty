@@ -31,6 +31,8 @@
  */
 #include "bdbprintf.h"
 
+void HeaderButton_Notify(Class *C, struct Gadget *Gad, struct GadgetInfo *ginfo);
+
 ULONG TrackHeader_GetAttr(Class *C, struct Gadget *Gad, struct opGet *Get)
 {
   ULONG retval=1;
@@ -44,12 +46,19 @@ ULONG TrackHeader_GetAttr(Class *C, struct Gadget *Gad, struct opGet *Get)
 
   switch(Get->opg_AttrID)
   {
-    // case TRACKHEADER_CenterX:
-    //     *data = (LONG)gdata->_circleCenterX;
-    // break;
-    // case TRACKHEADER_CenterY:
-    //     *data = (LONG)gdata->_circleCenterY;
-    // break;
+//     case TRACKHEADER_TrackIndex:
+//         *data = (LONG)gdata->_trackIndex;
+//     break;
+//     case TRACKHEADER_Name:
+//         *data = (LONG)0;
+//     break;
+//     case TRACKHEADER_Pan:
+//         *data = (LONG)0;
+//     break;
+//     case TRACKHEADER_Volume:
+//         *data = (LONG)0;
+//     break;
+
     // super class gadget things. would manage attribs selected/hightlighted, ...
     default:
         DoSuperCall = 1;
@@ -60,13 +69,12 @@ ULONG TrackHeader_GetAttr(Class *C, struct Gadget *Gad, struct opGet *Get)
   return(retval);
 }
 
-
 ULONG TrackHeader_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
 {
   struct TagItem *tag;
   ULONG data; // for SetAttribs, retval means if anything needed redraw.
   TrackHeader *gdata;
-  ULONG redraw=0, update=0, notifCoords=0;
+  ULONG actuallydone=0;
 
   gdata=INST_DATA(C, Gad);
 
@@ -84,58 +92,27 @@ ULONG TrackHeader_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
       case TRACKHEADER_StyleSheet:
         /* data points to AukStyle, extract the style member */
         gdata->_style = (struct AukStyle *)data;
+        actuallydone = 1;
         break;
+       case  TRACKHEADER_Name:
+       {
+          struct Gadget *btname =   gdata->subs[THS_NameButton];
+          if(btname && data!=0)
+          {
+            SetAttrs(btname,GA_Text,data,TAG_END);
+            HeaderButton_Notify(OCLASS(btname),btname,Set->ops_GInfo);
+          }
+          actuallydone = 1;
+       }
+       break;
 
-     // case TRACKHEADER_CenterX:
-     //    if((UWORD)data != gdata->_circleCenterX )
-     //    {
-     //        gdata->_circleCenterX = (UWORD)data ;
-     //        redraw=1;
-     //        notifCoords = 1;
-     //    }
-     //    break;
-     // case TRACKHEADER_CenterY:
-     //    if((UWORD)data != gdata->_circleCenterY )
-     //    {
-     //        gdata->_circleCenterY = (UWORD)data ;
-
-     //        redraw=1;
-     //        notifCoords = 1;
-     //    }
-     //    break;
-     // - - - actually we have to manage super class attribs:
-     // with GA_XXX and struct Gadget members...
-     // is there  a way to super call this ? DoSuperMethodA() deosn't seems to manage these attribs.
-      case GA_Disabled:
-        {
-            if(data) Gad->Flags |= GFLG_DISABLED; // set bit
-            else Gad->Flags &= ~GFLG_DISABLED; // remove bit.
-            redraw=1;
-        }
-        break;
-      case GA_Highlight:
-        {
-            if(data) Gad->Flags |= GFLG_GADGHBOX; // set bit
-            else Gad->Flags &= ~GFLG_GADGHBOX; // remove bit.
-            redraw=1;
-        }
-        break;
-      case GA_Selected:
-        {
-            if(data) Gad->Flags |= GFLG_SELECTED; // set bit
-            else Gad->Flags &= ~GFLG_SELECTED; // remove bit.
-            redraw=1;
-        }
-        break;
     default:
-        //does not seems to do anything for gadgets.... DoSuperMethodA(C,(APTR)Gad,(Msg)Set);
-        //note: apparently super call is not to be managed here (not sure !!!)
         break;
 
     } // end switch
   } // end for
 
-  return(redraw| update);
+  return(actuallydone);
 }
 
 

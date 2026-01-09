@@ -34,6 +34,7 @@
 #include <gadgets/button.h>
 
 #include <aukarray.h>
+#include <auktrack.h>
 
 /* Most of the calls to boopsi methods are not done from the App's context,
  * but from a specific intuition context, and because of that we can't use DOS calls
@@ -440,11 +441,17 @@ void TrackListArea_DisposeGadgets(TrackListArea *gdata)
 extern Class *AppModelClass;
 static int TrackListArea_CreateTrackLine(TrackChild *strack, AukTrack *dataTrack, struct AukStyle *styleSheet, int iTrack)
 {
+    char *trackname=NULL;
+
+    if(dataTrack && dataTrack->name) trackname = dataTrack->name;
+    if(!trackname) trackname=(char*)"-";
+    bdbprintf("TrackListArea_CreateTrackLine name:%s\n",trackname);
     /* Create TrackHeader gadget */
     strack->_trackHeader = //NULL;
         NewObject(TRACKHEADER_GetClass(), NULL,
                                      TRACKHEADER_StyleSheet, (ULONG)styleSheet,
                                      TRACKHEADER_TrackIndex,iTrack,
+                                     TRACKHEADER_Name,trackname,
                                      ICA_TARGET,AppModelClass,
                                      TAG_END);
     //if(!strack->_trackHeader ) return 0;
