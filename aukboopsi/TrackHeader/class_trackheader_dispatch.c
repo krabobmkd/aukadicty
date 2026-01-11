@@ -14,12 +14,16 @@
 #include <intuition/icclass.h>
 #include "class_trackheader.h"
 #include "class_trackheader_private.h"
+#include "../VolumeRule/class_volumerule.h"
 
 #include <proto/layout.h>
 #include <gadgets/layout.h>
 
 #include <proto/button.h>
 #include <gadgets/button.h>
+
+#include <proto/slider.h>
+#include <gadgets/slider.h>
 
 #include <proto/exec.h>
 #include <proto/intuition.h>
@@ -76,6 +80,7 @@ ULONG ASM SAVEDS TrackHeader_Dispatcher(
         ULONG iTrack=0;
         ULONG target=0;
         char *trackname=NULL;
+        AukStyle *style=NULL;
         char tname[32];
         Object *VolumeRule,*CloseButton,*NameButton,*VolumeSlider,*PanSlider,
                 *LeftVertlayout,*CloseAndNameHl;
@@ -88,6 +93,11 @@ ULONG ASM SAVEDS TrackHeader_Dispatcher(
         {
             trackname = (char *)ptag->ti_Data;
         }
+        if((ptag = FindTagItem( TRACKHEADER_StyleSheet,M->opSet.ops_AttrList ))!=NULL)
+        {
+            style = (AukStyle *)ptag->ti_Data;
+        }
+ bdbprintf("OM_NEW trackheader style %08x\n",(int)style);
         if(!trackname)
         {
             snprintf(tname,31,"Track %d",iTrack);
@@ -139,16 +149,27 @@ ULONG ASM SAVEDS TrackHeader_Dispatcher(
                  //  CHILD_MaxWidth,64,
                     TAG_DONE);
 
-        VolumeSlider = NewObject( HEADERBUTTON_GetClass(),NULL,
-                                    GA_Text, "VolSlider",
+        VolumeSlider =NewObject( HEADERBUTTON_GetClass(),NULL,
+                                    GA_Text,(ULONG)"Vol",
+                                  //  GA_ID,GAD_TRACKHEADER_BASE|GAD_TRACKHEADER_NAME|(iTrack<<4),
+                                  GA_ID,GAD_TRACKHEADER_BASE|GAD_TRACKHEADER_VOL|(iTrack<<4),
                                     ICA_TARGET,target,
-                                    GA_ID,GAD_TRACKHEADER_BASE|GAD_TRACKHEADER_VOL|(iTrack<<4),
-                                  //  GA_ID,GAD_BUTTON_ABOUT,
                                     GA_RelVerify, TRUE,
                          //           GA_Disabled,TRUE,
                         // BUTTON_BevelStyle,BVS_NONE,
                         // BUTTON_Transparent, TRUE,
                                 TAG_END);
+
+
+        /*...testlater NewObject( HEADERSLIDER_GetClass(),NULL,
+                                    SLIDER_Orientation, SLIDER_VERTICAL,
+                                    SLIDER_Min, 0,
+                                    SLIDER_Max, 100,
+                                    SLIDER_Level, 80,
+                                    ICA_TARGET,target,
+                                    GA_ID,GAD_TRACKHEADER_BASE|GAD_TRACKHEADER_VOL|(iTrack<<4),
+                                    GA_RelVerify, TRUE,
+                                TAG_END);*/
 
         // in this paragraph we create the layout hierarchy
         LeftVertlayout  = (Object *)NewObject( LAYOUT_GetClass(), NULL,
@@ -169,14 +190,9 @@ ULONG ASM SAVEDS TrackHeader_Dispatcher(
 
                     TAG_DONE);
 
-        VolumeRule = NewObject( HEADERBUTTON_GetClass(),NULL,
-                                    GA_Text, "VR",
-                                  //  GA_ID,GAD_BUTTON_ABOUT,
-                                    GA_RelVerify, TRUE,
-                         //           GA_Disabled,TRUE,
-                        // BUTTON_BevelStyle,BVS_NONE,
-                        // BUTTON_Transparent, TRUE,
-                                TAG_END);
+        VolumeRule = NewObject( VOLUMERULE_GetClass(),NULL,
+                                    VOLUMERULE_StyleSheet,(ULONG)style,
+                                    TAG_END);
 
 /*
     Object *CloseButton;
@@ -276,7 +292,7 @@ void HeaderButton_Notify(Class *C, struct Gadget *Gad, struct GadgetInfo *ginfo)
    // ICA_TARGET,0,
     TAG_DONE
    };
-    bdbprintf("HeaderButton_Notify:%08x\n", Gad->GadgetID);
+    //bdbprintf("HeaderButton_Notify:%08x\n", Gad->GadgetID);
     tags[1] = Gad->GadgetID;
     notifymsg.MethodID = OM_UPDATE;
     notifymsg.opu_AttrList = (struct TagItem *)&tags[0];
@@ -416,4 +432,115 @@ ULONG ASM SAVEDS HeaderButton_Dispatcher(
   return(retval);
 
 
+}
+
+/*
+ * Extend Slider class to prevent it from drawing from input events
+ * like GM_GOACTIVE/GM_HANDLEINPUT/GM_GOINACTIVE.
+ * In our TrackListArea layout logic, rendering should only be done during GM_RENDER,
+ * and GM_RENDER sent from TrackListArea, so the correct Clipping region
+ * is always applied.
+ * Same pattern as HeaderButton_Dispatcher.
+ */
+ULONG ASM SAVEDS HeaderSlider_Dispatcher(
+                    REG(a0,struct IClass *C),
+                    REG(a2,struct Gadget *Gad),
+                    REG(a1,union MsgUnion *M))
+{
+  TrackHeaderSlider *gdata;
+  ULONG retval=0;
+  gdata=INST_DATA(C, Gad);
+
+  switch(M->MethodID)
+  {
+      case OM_NEW:
+      if(Gad=(struct Gadget *)DoSuperMethodA(C,(Object *)Gad,(Msg)M))
+      {
+        gdata=INST_DATA(C, Gad);
+        bdbprintf_new("HeaderSlider", Gad);
+        /* means new object OK so far: */
+        retval=(ULONG)Gad;
+      }
+      break;
+    case OM_DISPOSE:
+        bdbprintf_dispose("HeaderSlider", Gad);
+      retval=DoSuperMethodA(C,(Object *)Gad,(Msg)M);
+      break;
+    case GM_GOACTIVE:
+
+        /* Only become active if the GM_GOACTIVE   */
+        /* was triggered by direct user input.     */
+        if (((struct gpInput *)M)->gpi_IEvent)
+        {
+            /* This gadget is now active, change    */
+            /* visual state to selected and render. */
+            Gad->Flags |= GFLG_SELECTED;
+            /* modified to delay drawing */
+           TrackListView_UpdateTrackList_Generic();
+            retval = GMR_MEACTIVE;
+        }
+        else            /* The GM_GOACTIVE was not         */
+            /* triggered by direct user input. */
+            retval = GMR_NOREUSE;
+        break;
+    case GM_HANDLEINPUT:
+    {
+        struct gpInput *gpi = (struct gpInput *)M;
+        struct InputEvent *ie = gpi->gpi_IEvent;
+
+        retval = GMR_MEACTIVE;
+
+        if (ie->ie_Class == IECLASS_RAWMOUSE)
+        {
+            switch (ie->ie_Code)
+            {
+            case SELECTUP: /* The user let go of the gadget so return GMR_NOREUSE    */
+                /* to deactivate and to tell Intuition not to reuse       */
+                /* this Input Event as we have already processed it.      */
+
+                /*If the user let go of the gadget while the mouse was    */
+                /*over it, mask GMR_VERIFY into the return value so       */
+                /*Intuition will send a Release Verify (GADGETUP).        */
+                if ( ((gpi->gpi_Mouse).X < Gad->LeftEdge) ||
+                    ((gpi->gpi_Mouse).X > Gad->LeftEdge + Gad->Width) ||
+                    ((gpi->gpi_Mouse).Y < Gad->TopEdge) ||
+                    ((gpi->gpi_Mouse).Y > Gad->TopEdge + Gad->Height) )
+                    retval = GMR_NOREUSE | GMR_VERIFY;
+                else
+                    retval = GMR_NOREUSE;
+
+                /* Since the gadget is going inactive, send a final   */
+                /* notification to the ICA_TARGET.                    */
+               HeaderButton_Notify(C ,Gad,gpi->gpi_GInfo);
+                break;
+            default:
+                retval = GMR_MEACTIVE;
+            }
+
+        }
+        else if (ie->ie_Class == IECLASS_TIMER)
+        {
+            /* If the gadget gets a timer event, it sends an interim OM_NOTIFY */
+            /* For sliders, we might want to handle continuous updates here */
+        }
+    }
+    break;
+    case GM_GOINACTIVE:           /* Intuition said to go inactive.  Clear the GFLG_SELECTED */
+        Gad->Flags &= ~GFLG_SELECTED;
+        /* modified to delay drawing */
+        TrackListView_UpdateTrackList_Generic();
+        retval = 1;
+        break;
+    case GM_RENDER:
+        retval=DoSuperMethodA(C,(Object *)Gad,(Msg)M);
+    break;
+
+    default:
+    {
+      // for anything, use default slider behaviour.
+      retval=DoSuperMethodA(C,(Object *)Gad,(Msg)M);
+      }
+      break;
+  }
+  return(retval);
 }

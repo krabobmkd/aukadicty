@@ -16,6 +16,7 @@
     extern void TrackHeaderStaticClose();
     extern Class *TRACKHEADER_GetClass();
     extern Class *HEADERBUTTON_GetClass();
+    extern Class *HEADERSLIDER_GetClass();
 #else
     // TrackHeader_CLASS_ID is the identifier for this class, when shared.
     // NewObject() can use either TRACKHEADER_GetClass() or TrackHeader_CLASS_ID.

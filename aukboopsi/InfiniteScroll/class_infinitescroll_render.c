@@ -446,11 +446,15 @@ ULONG InfiniteScroll_Render(Class *C, struct Gadget *Gad, struct gpRender *Rende
                               sourcex, 0,  /* source x, y */
                               rp,
                               Gad->LeftEdge+ dx, Gad->TopEdge,  /* dest x, y */
-                              width, gdata->_tileHeight,  /* width, height */
+                              width, gdata->_tileHeight - gdata->_bottomMarge,  /* width, height */
                               0xC0);  /* minterm: straight copy */
         }
     }
 
+    /* Also need bottom marge */
+    SetAPen(rp, 1);
+    Move(rp, Gad->LeftEdge, Gad->TopEdge + Gad->Height -1);
+    Draw(rp, Gad->LeftEdge+Gad->Width-1, Gad->TopEdge + Gad->Height -1);
 
   return(retval);
 }

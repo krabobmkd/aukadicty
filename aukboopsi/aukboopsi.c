@@ -54,6 +54,8 @@
 #include <proto/scroller.h>
 #include <gadgets/scroller.h>
 
+#include <proto/slider.h>
+#include <gadgets/slider.h>
 
 #include <proto/asl.h>
 #include <libraries/asl.h>
@@ -108,6 +110,7 @@ struct Library *StringBase=NULL;
 struct Library *TextFieldBase=NULL;
 struct Library *RequesterBase=NULL;
 struct Library *ScrollerBase=NULL;
+struct Library *SliderBase=NULL;
 struct LocaleBase *LocaleBase=NULL;
 
 /* Library table for automated opening/closing */
@@ -143,7 +146,7 @@ static LibraryEntry libraryTable[] = {
     {"gadgets/string.gadget", 45, &StringBase},
     {"gadgets/texteditor.gadget", 45, &TextFieldBase},
     {"gadgets/scroller.gadget", 45, &ScrollerBase},
-
+    {"gadgets/slider.gadget", 45, &SliderBase},
     {NULL, 0, NULL} /* Terminator */
 };
 

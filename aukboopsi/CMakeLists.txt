@@ -121,6 +121,13 @@ set(AUKBOOPSI_SOURCES
     TrackHeader/class_trackheader_private.h
     TrackHeader/class_trackheader.h
 
+    VolumeRule/class_volumerule_attribs.c
+    VolumeRule/class_volumerule_dispatch.c
+    VolumeRule/class_volumerule_lib.c
+    VolumeRule/class_volumerule_render.c
+    VolumeRule/class_volumerule_private.h
+    VolumeRule/class_volumerule.h
+
 )
 
 # Create app
@@ -138,6 +145,7 @@ target_compile_definitions(aukadicty PRIVATE
 			TIMERULE_STATICLINK=1
 			TRACKLIST_STATICLINK=1
 			INFINITESCROLL_STATICLINK=1
+			VOLUMERULE_STATICLINK=1
 			USE_DEBUG_BDBPRINT=1)
 target_compile_options(aukadicty PRIVATE
 		$<$<CONFIG:RELEASE>:-O2 -Wno-narrowing -DNDEBUG>

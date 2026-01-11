@@ -75,6 +75,7 @@ ULONG ASM SAVEDS InfiniteScroll_Dispatcher(
         gdata->_tileCount = 0;
         gdata->_tileWidth = 128;  /* default tile width */
         gdata->_tileHeight = 0;   /* will be set at layout */
+        gdata->_bottomMarge = 1; /* default */
 
         gdata->_renderFunction = NULL;
 

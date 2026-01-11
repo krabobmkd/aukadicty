@@ -51,6 +51,10 @@ typedef struct TrackHeaderButton {
     int _d;
 } TrackHeaderButton;
 
+typedef struct TrackHeaderSlider {
+    int _d;
+} TrackHeaderSlider;
+
 #ifdef __cplusplus
 }
 #endif

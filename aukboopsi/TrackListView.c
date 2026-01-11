@@ -33,6 +33,7 @@
 #include "TrackArea/class_trackarea.h"
 #include "TrackHeader/class_trackheader.h"
 #include "TrackListArea/class_tracklistarea.h"
+#include "VolumeRule/class_volumerule.h"
 
 #include "gadgetid.h"
 
@@ -71,8 +72,9 @@ void CreateTrackListView(TrackListView *pm,struct DrawInfo *drawInfo,
     if(!InfiniteScrollStaticInit()) cleanexit("InfiniteScroll failed");
     if(!TimeRuleStaticInit()) cleanexit("TimeRule failed");
     if(!TrackAreaStaticInit()) cleanexit("TrackLayout init failed");
-    if(!TrackHeaderStaticInit()) cleanexit("TrackLayout init failed");
-    if(!TrackListStaticInit()) cleanexit("TrackLayout init failed");
+    if(!VolumeRuleStaticInit()) cleanexit("VolumeRule init failed");
+    if(!TrackHeaderStaticInit()) cleanexit("TrackHeader init failed");
+    if(!TrackListStaticInit()) cleanexit("TrackList init failed");
 
     pm->pstyleSheet = stylesheet;
 

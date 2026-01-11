@@ -445,7 +445,7 @@ static int TrackListArea_CreateTrackLine(TrackChild *strack, AukTrack *dataTrack
     ULONG TRACKHEADER_Nametag =TAG_END;
     if(dataTrack && dataTrack->name) trackname = dataTrack->name;
     if(trackname) TRACKHEADER_Nametag = TRACKHEADER_Name;
-    bdbprintf("TrackListArea_CreateTrackLine name:%s\n",trackname);
+    bdbprintf("TrackListArea_CreateTrackLine styleSheet:%08x\n",(int)styleSheet);
     /* Create TrackHeader gadget */
     strack->_trackHeader = //NULL;
         NewObject(TRACKHEADER_GetClass(), NULL,

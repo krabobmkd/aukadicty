@@ -60,6 +60,8 @@ typedef struct IInfiniteScroll {
     InfiniteScrollTile *_tiles;        /* Array of tiles */
     ULONG _tileCount;                  /* Number of allocated tiles */
 
+    ULONG _bottomMarge; /* nb pixels to draw black at bottom */
+
     /* current index of tile used for the current leftmost tile in _tiles table,
       for which last rendered position fits between tile->position and tile->position+_tileWidth.
       Important: if <0, means no tile used yet, they need to be reattributed to some location.

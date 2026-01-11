@@ -150,6 +150,7 @@ ULONG TrackListArea_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
       break;
 
       case TRACKLIST_StyleSheet:
+      bdbprintf("TRACKLIST_StyleSheet set:%08x\n",(int)data);
       used = 1;
         gdata->_styleSheet = (struct AukStyle *)data;
         break;

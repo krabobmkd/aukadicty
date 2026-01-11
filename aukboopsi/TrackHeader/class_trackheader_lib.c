@@ -21,6 +21,9 @@
 #include <proto/button.h>
 #include <gadgets/button.h>
 
+#include <proto/slider.h>
+#include <gadgets/slider.h>
+
 #include "class_trackheader_private.h"
 
 #ifdef USE_BEVEL_FRAME
@@ -64,6 +67,7 @@ struct Library        *BevelBase=NULL;
 // this is the only global writtable we should see in the whole class binary !
 struct IClass   *TrackHeaderClassPtr=NULL;
 struct IClass   *HeaderButtonClassPtr=NULL;
+struct IClass   *HeaderSliderClassPtr=NULL;
 // this 2 strings are also linked to the asm startup header ( in .gadget mode)
 // note: (const char *str="") would make str be a (char **) to the linker. so char str[] is linkable to asm startup
 #ifndef TRACKHEADER_STATICLINK
@@ -124,6 +128,11 @@ ULONG ASM SAVEDS HeaderButton_Dispatcher(
                     REG(a2,struct Gadget *Gad),
                     REG(a1,union MsgUnion *M));
 
+ULONG ASM SAVEDS HeaderSlider_Dispatcher(
+                    REG(a0,struct IClass *C),
+                    REG(a2,struct Gadget *Gad),
+                    REG(a1,union MsgUnion *M));
+
 #ifndef TRACKHEADER_STATICLINK
 // called by shared Lib init to create class.
 
@@ -177,6 +186,10 @@ struct IClass   *HEADERBUTTON_GetClass()
 {
     return HeaderButtonClassPtr;
 }
+struct IClass   *HEADERSLIDER_GetClass()
+{
+    return HeaderSliderClassPtr;
+}
 #endif
 
 //====================================================================================
@@ -201,6 +214,12 @@ int TrackHeaderStaticInit()
         {
             HeaderButtonClassPtr->cl_Dispatcher.h_Entry=(REHOOKFUNC)HeaderButton_Dispatcher;
         }
+
+        HeaderSliderClassPtr=MakeClass(NULL,NULL,SLIDER_GetClass(),sizeof(TrackHeaderSlider),0);
+        if(HeaderSliderClassPtr)
+        {
+            HeaderSliderClassPtr->cl_Dispatcher.h_Entry=(REHOOKFUNC)HeaderSlider_Dispatcher;
+        }
       /* Success */
       return(1);
     }
@@ -210,12 +229,21 @@ int TrackHeaderStaticInit()
 void TrackHeaderStaticClose()
 {
     TrackHeader_CloseLibs_Dependencies();
+    if(HeaderSliderClassPtr)
+    {
+      FreeClass(HeaderSliderClassPtr);
+      HeaderSliderClassPtr = NULL;
+    }
+    if(HeaderButtonClassPtr)
+    {
+      FreeClass(HeaderButtonClassPtr);
+      HeaderButtonClassPtr = NULL;
+    }
     if(TrackHeaderClassPtr)
     {
       FreeClass(TrackHeaderClassPtr);
       TrackHeaderClassPtr = NULL;
     }
-
 }
 
 #endif

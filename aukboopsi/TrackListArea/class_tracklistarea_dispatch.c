@@ -105,6 +105,7 @@ ULONG ASM SAVEDS TrackListArea_Dispatcher(
         gdata->_clipRegion = NewRegion();
 
         bdbprintf_new("TrackListArea", Gad);
+        TrackListArea_SetAttrs(C,Gad,(struct opSet *)M);
 
         /* means new object OK so far: */
         retval=(ULONG)Gad;
