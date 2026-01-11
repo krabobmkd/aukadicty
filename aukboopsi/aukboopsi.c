@@ -377,7 +377,7 @@ int main(int argc, char **argv)
     app->styleSheet->SetFontTiny(app->styleSheet, "SevenAlone.font", 7);
 
     /* Open fonts from specifications */
-    app->styleSheet->ApplyStyle( app->styleSheet );
+    app->styleSheet->ApplyStyle( app->styleSheet,app->lockedscreen );
    bdbprintf(" **** main init style:%08x fontTiny:%08x \n",(int)&app->styleSheet->style,(int)app->styleSheet->style.fontTiny);
 
     CreateHeaderView(&app->headerView, app->drawInfo, AppInstance, &app->styleSheet->style);
@@ -536,6 +536,7 @@ int main(int argc, char **argv)
  {
     initProject();
     TrackListView_UpdateTrackList(&app->tracksListView);
+    TrackListView_UpdateTimeRule(&app->tracksListView);
     testprojectinited = 1;
  }
 

@@ -75,11 +75,11 @@ ULONG VolumeRule_Render(Class *C, struct Gadget *Gad, struct gpRender *R)
         int valueTimes2;  /* -2 = -1.0, -1 = -0.5, 0 = 0, 1 = 0.5, 2 = 1.0 */
         const char *label;
     } marks[] = {
-        {  2, "1" },
-        {  1, ".5" },
-        {  0, "0" },
-        { -1, "-.5" },
-        { -2, "-1" }
+        {  2, " 1.0" },
+        {  1, " 0.5" },
+        {  0, "  0" },
+        { -1, "-0.5" },
+        { -2, "-1.0" }
     };
     int numMarks = 5;
     int i;

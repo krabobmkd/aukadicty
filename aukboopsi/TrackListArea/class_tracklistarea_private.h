@@ -77,16 +77,12 @@ typedef struct TrackListArea {
 
     /* Total domain width in pixels, computed from project duration / timePerPixelWidth */
     unsigned long long _domainWidth;
-    /* Amount of seconds for a pixel width in fixed 32.32 value, aka the time zoom rate.
-     * Lower value = more zoomed in. Must not be zero.
-     * Minimum allowed: 1/(44100*2) to ensure 44kHz sample gets at least 2 pixels.
-     */
-    AukFixed _timePerPixelWidth;
 
-    /* Horizontal scroll position: time at the left border of scroll area.
-     * Signed 64-bit AukFixed value - can be negative for time before zero.
+    /* Time projection - aggregated struct containing scroll position and zoom.
+     * _pixAtLeft: Horizontal scroll position (time at left border, can be negative)
+     * _timePerPixelWidth: Amount of seconds per pixel in fixed 32.32 format (zoom rate)
      */
-    long long _scrollX;
+    TimeProjection _timeProjection;
 
     /* check for change at layout*/
     ULONG _prevHeight;
@@ -104,8 +100,8 @@ ULONG TrackListArea_NotifyAttribValue(struct Gadget *Gad, struct GadgetInfo	*GIn
 /* internal use */
 ULONG TrackListArea_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set);
 ULONG TrackListArea_GetAttr(Class *C, struct Gadget *Gad, struct opGet *Get);
-ULONG TrackListArea_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout);
-ULONG TrackListArea_Render(Class *C, struct Gadget *Gad, struct gpRender *Render);
+ULONG TrackListArea_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout,int filter);
+ULONG TrackListArea_Render(Class *C, struct Gadget *Gad, struct gpRender *Render,int filter);
 ULONG TrackListArea_HandleInput(Class *C, struct Gadget *Gad,struct gpInput *M, int x, int y);
 ULONG TrackListArea_GoInactive(Class *C, struct Gadget *Gad,struct gpGoInactive *M);
 ULONG TrackListArea_HandleHitTest(Class *C, struct Gadget *Gad, struct gpHitTest *m);

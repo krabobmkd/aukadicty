@@ -195,6 +195,8 @@ ULONG InfiniteScroll_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layou
     width = Gad->Width;
     height = Gad->Height;
 
+// bdbprintf("InfiniteScroll_Layout renderf: %08x\n",(int)gdata->_renderFunction);
+
 
     /* Calculate needed tile count: (width / tileWidth) + 2 */
     /* +2 for smooth scrolling (one tile on each side can be pre-rendered) */
@@ -204,7 +206,7 @@ ULONG InfiniteScroll_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layou
 
     neededTileCount = (width / gdata->_tileWidth) + 2;
 
-  bdbprintf("InfiniteScroll_Layout %d\n",(int)neededTileCount);
+//  bdbprintf("InfiniteScroll_Layout %d\n",(int)neededTileCount);
 
     /* Check if we need to reallocate tiles */
     if(neededTileCount != gdata->_tileCount || gdata->_tileHeight != height)
@@ -247,13 +249,13 @@ ULONG InfiniteScroll_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layou
                                       gdata->_friendBitmap);
                 // valid if gdata->_tiles[i].bitmap._rp is there
                 //if(gdata->_tiles[i].bitmap._rp)
-                 bdbprintf("OffscreenBitMap_Init rp :%08x\n",gdata->_tiles[i].bitmap._rp);
+//                 bdbprintf("OffscreenBitMap_Init rp :%08x\n",gdata->_tiles[i].bitmap._rp);
 
                 gdata->_tiles[i].isRendered = FALSE;
                 gdata->_tiles[i].position._scrollx = 0;
             }
             gdata->_currentLeftBorderTileIndex = -1; // means, no tile affected yet.
-            bdbprintf("allocated tiles:%d\n",gdata->_tileCount);
+ //           bdbprintf("allocated tiles:%d\n",gdata->_tileCount);
         }
     }
 
@@ -311,8 +313,9 @@ static void InfiniteScroll_FullRedraw(
 
     // need full redraw...
     int nbTilesX = (Gad->Width / gdata->_tileWidth)+1;
-    bdbprintf("InfiniteScroll_FullRedraw: %d\n",nbTilesX);
-    InfiniteScroll_RenderTilesRow(renderParams, gdata,0,nbTilesX,&gdata->_position);
+ //   bdbprintf("InfiniteScroll_FullRedraw: %d\n",nbTilesX);
+    InfiniteScroll_RenderTilesRow(renderParams, gdata,0,nbTilesX,
+    gdata->_pposition);
     gdata->_currentLeftBorderTileIndex = 0;
     gdata->_renderedTilesCount =  (WORD)nbTilesX;
 }
@@ -332,6 +335,10 @@ ULONG InfiniteScroll_Render(Class *C, struct Gadget *Gad, struct gpRender *Rende
     if(!Render->MethodID==GM_RENDER) return retval;
 
     gdata=INST_DATA(C, Gad);
+
+ bdbprintf("InfiniteScroll_Render renderf: %08x\n",(int)gdata->_renderFunction);
+
+
 
     if( !gdata->_tiles) return retval;
     // common params for tile rendering
@@ -426,7 +433,7 @@ ULONG InfiniteScroll_Render(Class *C, struct Gadget *Gad, struct gpRender *Rende
 
         tile = &gdata->_tiles[j];
         if(!tile->isRendered) continue;
-        dx = (int)(tile->position._scrollx - gdata->_position._scrollx);
+        dx = (int)(tile->position._scrollx - gdata->_pposition->_scrollx);
         if(dx+gdata->_tileWidth <=0 || dx>Gad->Width) continue;
 
         /* we have to do a bit of clipping ourselves */

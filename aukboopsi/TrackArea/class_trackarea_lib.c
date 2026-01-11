@@ -43,15 +43,16 @@ struct Library        *UtilityBase=NULL;
 #ifdef USE_BEVEL_FRAME
 struct Library        *BevelBase=NULL;
 #endif
-// this is the only global writtable we should see in the whole class binary !
+/* this is the only global writable we should see in the whole class binary ! */
 struct IClass   *TrackAreaClassPtr=NULL;
-// this 2 strings are also linked to the asm startup header ( in .gadget mode)
-// note: (const char *str="") would make str be a (char **) to the linker. so char str[] is linkable to asm startup
+/* this 2 strings are also linked to the asm startup header ( in .gadget mode) */
+/* note: (const char *str="") would make str be a (char **) to the linker. so char str[] is linkable to asm startup */
 #ifndef TRACKAREA_STATICLINK
 const char Class_ID[]= TrackArea_CLASS_ID;
-const char *VersionString = "track.gadget 1.0 "; // add date
+const char *VersionString = "track.gadget 1.0 "; /* add date */
 #endif
-const char TrackAreaSuperClassID[]=TrackArea_SUPERCLASS_ID;
+/* TrackArea uses InfiniteScroll as superclass (class pointer, not string) */
+/* const char TrackAreaSuperClassID[]=TrackArea_SUPERCLASS_ID; -- not used, we use class pointer */
 
 
 
@@ -161,16 +162,25 @@ Class *TRACKAREA_GetClass()
 
 #ifdef TRACKAREA_STATICLINK
 
-// just use this one once when static link
+/* just use this one once when static link */
+/* TrackArea inherits from InfiniteScroll - must be initialized first */
 int TrackAreaStaticInit()
-{ 
-   if(!TrackArea_OpenLibs_Dependencies()) return 0;
-    if(TrackAreaClassPtr=MakeClass(NULL,TrackAreaSuperClassID,0,sizeof(TrackArea),0))
+{
+    struct IClass *superClass;
+
+    if(!TrackArea_OpenLibs_Dependencies()) return 0;
+
+    /* Get InfiniteScroll class - it must be initialized before TrackArea */
+    superClass = INFINITESCROLL_GetClass();
+    if(!superClass) return 0;
+
+    /* MakeClass with class pointer (not string) as superclass */
+    if(TrackAreaClassPtr = MakeClass(NULL, NULL, superClass, sizeof(TrackArea), 0))
     {
-      TrackAreaClassPtr->cl_Dispatcher.h_Entry=(REHOOKFUNC)TrackArea_Dispatcher;
-     // do not AddClass() when static, no need to publish, TrackAreaClassPtr will be enough.
-      /* Success */
-      return(1);
+        TrackAreaClassPtr->cl_Dispatcher.h_Entry = (REHOOKFUNC)TrackArea_Dispatcher;
+        /* do not AddClass() when static, no need to publish, TrackAreaClassPtr will be enough. */
+        /* Success */
+        return(1);
     }
     return 0;
 }

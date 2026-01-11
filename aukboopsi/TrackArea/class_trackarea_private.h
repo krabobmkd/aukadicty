@@ -5,6 +5,12 @@
 #include "class_trackarea.h"
 #include "aukstyle.h"
 
+/* Include InfiniteScroll for superclass */
+#include "../InfiniteScroll/class_infinitescroll.h"
+
+/* Include auktrack for AukTrackPtr and AukObjectPtr_Set/Release */
+#include "auktrack.h"
+
 /* not much sense because c++ static runtime are hard to link. */
 #ifdef __cplusplus
 extern "C" {
@@ -19,34 +25,45 @@ extern "C" {
 #include <graphics/gfx.h>
 #include <graphics/regions.h>
 
-/* enable or not some parts of code... */
-/*#define USE_REGION_CLIPPING 1*/
-
 /**
-*  this is the internal private gadget struct that own the data of the object instances.
-* an important principle of BOOPSI is that structure for the class is hidden to the consumers.
-* the consumers will only see the public header, and will do SetAttribs()/GetAttribs()/DoMethod().
-* Also: for the same Gadget, superclass members are in struct Gadget * passed to functions.
-* (These are just concatenated structs in a system private way.)
-* DEVTODO: make this class evolve to retain the data needed to draw and interact with your gadget.
-*/
+ * This is the internal private gadget struct that owns the data of the object instances.
+ * An important principle of BOOPSI is that structure for the class is hidden to the consumers.
+ * The consumers will only see the public header, and will do SetAttribs()/GetAttribs()/DoMethod().
+ * Also: for the same Gadget, superclass members are in struct Gadget * passed to functions.
+ * (These are just concatenated structs in a system private way.)
+ *
+ * TrackArea inherits from InfiniteScroll - the superclass manages:
+ * - Horizontal scroll position (_position) and tile caching
+ * - GM_LAYOUT, GM_RENDER for tile-based rendering
+ */
 typedef struct ITrackArea {
-
-    struct Rectangle _framerec;
 
     /* Pointer to AukStyle for visual styling */
     AukStyle *_style;
 
+    /* Pointer to TimeProjection in TrackListArea for time/pixel mapping.
+     * This allows TrackArea to know horizontal scroll position and zoom level.
+     */
+    TimeProjection *_pTimeProjection;
 
+    /* Pointer to the data track this gadget reflects.
+     * Retained via AukObjectPtr_Set/Release for proper reference counting.
+     */
+    AukTrackPtr _dataTrack;
+
+    /* next GM_RENDER will do accordingly */
+    WORD _justScroll, _fullRedraw;
 
 } TrackArea;
 
 ULONG TrackArea_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set);
 ULONG TrackArea_GetAttr(Class *C, struct Gadget *Gad, struct opGet *Get);
 ULONG TrackArea_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout);
-ULONG TrackArea_Render(Class *C, struct Gadget *Gad, struct gpRender *Render, ULONG update);
 ULONG TrackArea_HandleInput(Class *C, struct Gadget *Gad, struct gpInput *Input);
 ULONG TrackArea_Domain(Class *C, struct Gadget *Gad, struct gpDomain *D);
+
+/* TrackArea overrides InfiniteScroll tile rendering to draw track content */
+void TrackArea_RenderDelegate(InfiniteScrollRenderParams *p);
 
 /* - - - - -- - */
 

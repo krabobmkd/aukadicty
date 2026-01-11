@@ -51,6 +51,8 @@ typedef struct IInfiniteScroll {
 
     /* Scrollable position in pixel */
     InfiniteScrollPosition _position;
+    /* pointer to _position, or elsewhere if defered */
+    InfiniteScrollPosition *_pposition;
 
     /* Tile configuration */
     UWORD _tileWidth;                  /* Width of each tile in pixels (default 128) */

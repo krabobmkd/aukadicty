@@ -82,8 +82,8 @@ ULONG TrackListArea_GetAttr(Class *C, struct Gadget *Gad, struct opGet *Get)
 
     case TRACKLIST_TimeProjection:
     {
-        ((TimeProjection *)data)->_pixAtLeft = gdata->_scrollX;
-        ((TimeProjection *)data)->_timePerPixelWidth = gdata->_timePerPixelWidth;
+        ((TimeProjection *)data)->_pixAtLeft = gdata->_timeProjection._pixAtLeft;
+        ((TimeProjection *)data)->_timePerPixelWidth = gdata->_timeProjection._timePerPixelWidth;
       }
       break;
 
@@ -139,11 +139,12 @@ ULONG TrackListArea_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
     {
        TimeProjection *pproj = (TimeProjection *)data;
         used = 1;
-        if(pproj->_pixAtLeft != gdata->_scrollX ||
-           pproj->_timePerPixelWidth != gdata->_timePerPixelWidth )
+
+        if(pproj->_pixAtLeft != gdata->_timeProjection._pixAtLeft ||
+           pproj->_timePerPixelWidth != gdata->_timeProjection._timePerPixelWidth )
            {
-                gdata->_scrollX = pproj->_pixAtLeft;
-                gdata->_timePerPixelWidth = gdata->_timePerPixelWidth;
+                gdata->_timeProjection._pixAtLeft = pproj->_pixAtLeft;
+                gdata->_timeProjection._timePerPixelWidth = pproj->_timePerPixelWidth;
                 TrackListArea_NotifyAttribValue(Gad, Set->ops_GInfo, TRACKLIST_TimeProjection, (ULONG)data);
            }
       }
@@ -179,8 +180,10 @@ ULONG TrackListArea_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
             else Gad->Flags &= ~GFLG_SELECTED; // remove bit.
         }
         break;
+    case TRACKLIST_JustTracksRefresh:
     case TRACKLIST_Refresh:
     {
+        int filter=(tag->ti_Tag==TRACKLIST_JustTracksRefresh)?1:3;
         //bdbprintf("TrackListArea_SetAttrs TRACKLIST_Refresh:%08x\n",(int)Set->ops_GInfo);
         // goes layout...
         {
@@ -188,7 +191,7 @@ ULONG TrackListArea_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
             gpl.MethodID = GM_LAYOUT;
             gpl.gpl_GInfo = Set->ops_GInfo;
             gpl.gpl_Initial = 0;
-            TrackListArea_Layout(C,Gad,&gpl);
+            TrackListArea_Layout(C,Gad,&gpl,filter);
         }
         // goes render...
         {
@@ -199,13 +202,12 @@ ULONG TrackListArea_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
             if(gpr.gpr_RPort)
             {
                 gpr.gpr_Redraw = 1;
-                TrackListArea_Render(C,Gad,&gpr);
+                TrackListArea_Render(C,Gad,&gpr,filter);
                 ReleaseGIRPort(gpr.gpr_RPort);
             }
         }
     }
     break;
-
     default:
         //does not seems to do anything for gadgets.... DoSuperMethodA(C,(APTR)Gad,(Msg)Set);
         //note: apparently super call is not to be managed here (not sure !!!)

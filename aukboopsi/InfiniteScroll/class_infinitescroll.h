@@ -107,6 +107,13 @@ typedef void (*InfiniteScrollRenderf)(InfiniteScrollRenderParams *p);
 */
 #define	INFINITESCROLL_Position		(INFINITESCROLL_Dummy+1)
 
+/**
+    defer position variable to external source via pointer.
+    default point to own Position. If PPosition is set elsewhere, internal position becomes obsolete.
+*/
+
+#define	INFINITESCROLL_PPosition		(INFINITESCROLL_Dummy+2)
+
 /* This abstract class need a Render function to actually draw,
   of type InfiniteScrollRenderf.
   Implementer will use InfiniteScrollRenderParams._start
@@ -114,10 +121,10 @@ typedef void (*InfiniteScrollRenderf)(InfiniteScrollRenderParams *p);
 
     Apply to OM_NEW OM_SET OM_GET.
 */
-#define	INFINITESCROLL_RenderFunction		(INFINITESCROLL_Dummy+2)
+#define	INFINITESCROLL_RenderFunction		(INFINITESCROLL_Dummy+3)
 
 /* external layout to render us, as notify message. */
-#define	INFINITESCROLL_Redraw		(INFINITESCROLL_Dummy+3)
+#define	INFINITESCROLL_Redraw		(INFINITESCROLL_Dummy+4)
 
 /* Methods */
 #define INFINITESCROLL_GMDummy			(INFINITESCROLL_Dummy+0x100)

@@ -42,8 +42,10 @@ typedef struct TrackListView
 
 #define TLVB_UPDATE_VERTSCROLLDOMAIN 1
 #define TLVB_UPDATE_HORIZSCROLLDOMAIN 2
-#define TLVB_UPDATE_REDRAW_TRACKLIST 4
-#define TLVB_UPDATE_REDRAW_TIMERULE 8
+#define TLVB_UPDATE_REDRAW_JUSTHEADERS 4
+#define TLVB_UPDATE_REDRAW_JUSTTRACKS 8
+#define TLVB_UPDATE_REDRAW_TRACKLIST (4+8)
+#define TLVB_UPDATE_REDRAW_TIMERULE 16
 
 void CreateTrackListView(TrackListView *pm,struct DrawInfo *drawInfo,
                 Object *appModel,
@@ -62,6 +64,7 @@ void TrackListView_ListenScrollHMessage(TrackListView *pm,struct opUpdate *M);
 void TrackListView_ListenTrackHeaderMessage(TrackListView *pm,struct opUpdate *M, ULONG gadId);
 void TrackListView_CheckUpdates(TrackListView *pm);
 void TrackListView_UpdateTrackList(TrackListView *pm);
+void TrackListView_UpdateTimeRule(TrackListView *pm);
 void CloseTrackListView(TrackListView *pm);
 void CloseTrackListView_StaticClasses();
 #endif

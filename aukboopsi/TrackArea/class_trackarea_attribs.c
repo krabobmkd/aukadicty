@@ -34,16 +34,22 @@ ULONG TrackArea_GetAttr(Class *C, struct Gadget *Gad, struct opGet *Get)
 
   switch(Get->opg_AttrID)
   {
-    // case TRACKAREA_CenterX:
-    //     *data = (LONG)gdata->_circleCenterX;
-    // break;
-    // case TRACKAREA_CenterY:
-    //     *data = (LONG)gdata->_circleCenterY;
-    // break;
-    // super class gadget things. would manage attribs selected/hightlighted, ...
+    case TRACKAREA_PTimeProjection:
+        *data = (ULONG)gdata->_pTimeProjection;
+        break;
+
+    case TRACKAREA_StyleSheet:
+        *data = (ULONG)gdata->_style;
+        break;
+
+    case TRACKAREA_DataTrack:
+        *data = (ULONG)gdata->_dataTrack;
+        break;
+
+    /* super class gadget things. would manage attribs selected/highlighted, ... */
     default:
         DoSuperCall = 1;
-      // everything we don't manage directly is managed by supercall.
+      /* everything we don't manage directly is managed by supercall. */
   }
   if(DoSuperCall)  retval=DoSuperMethodA(C, (APTR)Gad, (APTR)Get);
 
@@ -54,14 +60,17 @@ ULONG TrackArea_GetAttr(Class *C, struct Gadget *Gad, struct opGet *Get)
 ULONG TrackArea_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
 {
   struct TagItem *tag;
-  ULONG data; // for SetAttribs, retval means if anything needed redraw.
+  ULONG data; /* for SetAttribs, retval means if anything needed redraw. */
   TrackArea *gdata;
-  ULONG redraw=0, update=0, notifCoords=0;
+  ULONG redraw=0, update=0;
 
   gdata=INST_DATA(C, Gad);
 
- // set can use a list of attribs to change, so we manage this with a loop.
- // this also allows to have just one draw refresh for a set of change.
+ bdbprintf(" **** TrackArea_SetAttrs\n");
+
+  /* set can use a list of attribs to change, so we manage this with a loop.
+   * this also allows to have just one draw refresh for a set of change.
+   */
   for( tag = Set->ops_AttrList ;
         tag->ti_Tag != TAG_END ;
         tag++
@@ -72,61 +81,56 @@ ULONG TrackArea_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
     switch(tag->ti_Tag)
     {
       case TRACKAREA_StyleSheet:
-        /* data points to AukStyle, extract the style member */
+        /* data points to AukStyle */
+         bdbprintf(" **** _style %08x\n",data);
         gdata->_style = (struct AukStyle *)data;
         break;
 
-     // case TRACKAREA_CenterX:
-     //    if((UWORD)data != gdata->_circleCenterX )
-     //    {
-     //        gdata->_circleCenterX = (UWORD)data ;
-     //        redraw=1;
-     //        notifCoords = 1;
-     //    }
-     //    break;
-     // case TRACKAREA_CenterY:
-     //    if((UWORD)data != gdata->_circleCenterY )
-     //    {
-     //        gdata->_circleCenterY = (UWORD)data ;
+      case TRACKAREA_PTimeProjection:
+        /* data is a pointer to TimeProjection in TrackListArea */
+         bdbprintf(" **** TimeProjection %08x\n",data);
+        gdata->_pTimeProjection = (TimeProjection *)data;
+        break;
 
-     //        redraw=1;
-     //        notifCoords = 1;
-     //    }
-     //    break;
-     // - - - actually we have to manage super class attribs:
-     // with GA_XXX and struct Gadget members...
-     // is there  a way to super call this ? DoSuperMethodA() deosn't seems to manage these attribs.
+      case TRACKAREA_DataTrack:
+        /* data is a pointer to AukTrack - use AukObjectPtr_Set for reference counting */
+         bdbprintf(" **** TRACKAREA_DataTrack %08x\n",data);
+        AukObjectPtr_Set((AukObjectPtr*)&gdata->_dataTrack, (AukObject*)data);
+        break;
+
+      /* - - - actually we have to manage super class attribs:
+       * with GA_XXX and struct Gadget members...
+       */
       case GA_Disabled:
         {
-            if(data) Gad->Flags |= GFLG_DISABLED; // set bit
-            else Gad->Flags &= ~GFLG_DISABLED; // remove bit.
+            if(data) Gad->Flags |= GFLG_DISABLED; /* set bit */
+            else Gad->Flags &= ~GFLG_DISABLED; /* remove bit. */
             redraw=1;
         }
         break;
       case GA_Highlight:
         {
-            if(data) Gad->Flags |= GFLG_GADGHBOX; // set bit
-            else Gad->Flags &= ~GFLG_GADGHBOX; // remove bit.
+            if(data) Gad->Flags |= GFLG_GADGHBOX; /* set bit */
+            else Gad->Flags &= ~GFLG_GADGHBOX; /* remove bit. */
             redraw=1;
         }
         break;
       case GA_Selected:
         {
-            if(data) Gad->Flags |= GFLG_SELECTED; // set bit
-            else Gad->Flags &= ~GFLG_SELECTED; // remove bit.
+            if(data) Gad->Flags |= GFLG_SELECTED; /* set bit */
+            else Gad->Flags &= ~GFLG_SELECTED; /* remove bit. */
             redraw=1;
         }
         break;
     default:
-        //does not seems to do anything for gadgets.... DoSuperMethodA(C,(APTR)Gad,(Msg)Set);
-        //note: apparently super call is not to be managed here (not sure !!!)
+        /* other attribs handled by InfiniteScroll superclass */
         break;
 
-    } // end switch
-  } // end for
+    } /* end switch */
+  } /* end for */
 
 
-  return(redraw| update);
+  return(redraw | update);
 }
 
 

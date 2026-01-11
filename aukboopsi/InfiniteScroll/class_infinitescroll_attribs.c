@@ -61,7 +61,7 @@ ULONG InfiniteScroll_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
         {
             case INFINITESCROLL_Position:
             {
-                bdbprintf(" //// set INFINITESCROLL_Position\n");
+             //   bdbprintf(" //// set INFINITESCROLL_Position\n");
                 InfiniteScrollPosition *pp = (InfiniteScrollPosition*)tag->ti_Data;
                 if(!pp)
                 {
@@ -75,9 +75,15 @@ ULONG InfiniteScroll_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
 
                         gdata->_position = *pp;
                         needsRefresh = TRUE;
-                bdbprintf(" //// set %08x.%08x\n",(ULONG)(gdata->_position._scrollx>>32) ,(ULONG)gdata->_position._scrollx);
+            //    bdbprintf(" //// set %08x.%08x\n",(ULONG)(gdata->_position._scrollx>>32) ,(ULONG)gdata->_position._scrollx);
                     }
                 }
+            }
+            break;
+            case INFINITESCROLL_PPosition:
+            {
+                gdata->_pposition = (InfiniteScrollPosition *)tag->ti_Data;
+                needsRefresh = TRUE;
             }
             break;
             case INFINITESCROLL_RenderFunction:

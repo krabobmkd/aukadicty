@@ -34,7 +34,13 @@ extern "C" {
 #define THS_VolumeSlider  2
 #define THS_PanSlider  3
 #define THS_VolumeRule  4
-#define THS_Total  5
+
+#define THS_SilencerBt 5
+#define THS_SoloBt 6
+#define THS_SelectBt 7
+#define THS_InfoLabel 8
+
+#define THS_Total  9
 
 typedef struct ITrackHeader {
 

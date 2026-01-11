@@ -500,12 +500,13 @@ static void TrackListView_SetHScrollPos(TrackListView *pm,TimeProjection *timepr
 
     timeproj->_pixAtLeft -= (long long)headerWidth;
 
-
-    pm->updateBits |= TLVB_UPDATE_REDRAW_TIMERULE;
     SetGadgetAttrs((struct Gadget *)pm->timerule, pm->window, NULL,
         TIMERULE_TimePerPixelWidth,&timeproj->_timePerPixelWidth,
         INFINITESCROLL_Position, &timeproj->_pixAtLeft,
         TAG_END);
+
+    pm->updateBits |= TLVB_UPDATE_REDRAW_TIMERULE | TLVB_UPDATE_REDRAW_JUSTTRACKS;
+    if(myTask) Signal(myTask,SIGBREAKF_CTRL_F);
 
 }
 
@@ -541,7 +542,7 @@ void TrackListView_ListenScrollHMessage(TrackListView *pm, struct opUpdate *M)
 
         /* scrollX = value in pixel 64b, not in time */
         trackListTimeproj._pixAtLeft = ((long long)scrollerTop * duration) / (trackListTimeproj._timePerPixelWidth *SCROLLERH_FIXEDTOTAL);
-  bdbprintf("trackListTimeproj._pixAtLeft:%lld",trackListTimeproj._pixAtLeft);
+//  bdbprintf("trackListTimeproj._pixAtLeft:%lld",trackListTimeproj._pixAtLeft);
         TrackListView_SetHScrollPos(pm,&trackListTimeproj);
 
     }
@@ -579,8 +580,15 @@ void TrackListView_CheckUpdates(TrackListView *pm)
 
     if(pm->updateBits & TLVB_UPDATE_REDRAW_TRACKLIST)
     {
+        // also apply
         SetGadgetAttrs(pm->trackList, pm->window, NULL,TRACKLIST_Refresh,TRUE,TAG_END);
+    } else
+    if(pm->updateBits & TLVB_UPDATE_REDRAW_JUSTTRACKS)
+    {
+        // same as TLVB_UPDATE_REDRAW_TRACKLIST, but do not redraw headers
+        SetGadgetAttrs(pm->trackList, pm->window, NULL,TRACKLIST_JustTracksRefresh,TRUE,TAG_END);
     }
+
     if(pm->updateBits & TLVB_UPDATE_REDRAW_TIMERULE)
     {
         SetGadgetAttrs(pm->timerule, pm->window, NULL,TIMERULE_Refresh,TRUE,TAG_END);
@@ -594,6 +602,23 @@ void TrackListView_UpdateTrackList(TrackListView *pm)
 {
     if(!pm->trackList) return;
     SetGadgetAttrs(pm->trackList, pm->window, NULL,TRACKLIST_Refresh,TRUE,TAG_END);
+}
+void TrackListView_UpdateTimeRule(TrackListView *pm)
+{
+    struct opUpdate m;
+    ULONG scrollH=0;
+    if(!pm || !pm->trackList || !pm->scrollerH) return;
+ // send message like HScrooller would do
+
+    GetAttr(SCROLLER_Top, pm->scrollerH,&scrollH);
+
+    m.MethodID = OM_UPDATE;
+    {
+        ULONG tags[]={SCROLLER_Top,scrollH,TAG_END};
+        m.opu_AttrList = (struct TagItem *)&tags[0];
+        TrackListView_ListenScrollHMessage(pm,&m);
+    }
+
 }
 
 // public close, free objects

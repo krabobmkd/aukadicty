@@ -83,7 +83,10 @@ ULONG ASM SAVEDS TrackHeader_Dispatcher(
         AukStyle *style=NULL;
         char tname[32];
         Object *VolumeRule,*CloseButton,*NameButton,*VolumeSlider,*PanSlider,
-                *LeftVertlayout,*CloseAndNameHl;
+                *LeftVertlayout,*CloseAndNameHl,*SilAndSoloHl,
+                *SilencerBt,*SoloBt,*SelectBt,*volLabel,*panLabel,
+                *volHl,*panHl,*LeftVertlayout2,*infoBt
+                ;
         //
         if((ptag = FindTagItem( TRACKHEADER_TrackIndex,M->opSet.ops_AttrList ))!=NULL)
         {
@@ -148,51 +151,150 @@ ULONG ASM SAVEDS TrackHeader_Dispatcher(
                    // CHILD_WeightedWidth,1,
                  //  CHILD_MaxWidth,64,
                     TAG_DONE);
+    // - - - - - -
+    // SilAndSoloHl
+       SilencerBt = NewObject( /*BUTTON_GetClass()*/HEADERBUTTON_GetClass(),NULL,
+                                    GA_Text, "Sil.",
+                                    GA_TextAttr,(ULONG) &style->fontTiny_TA,
+                                    GA_ID,GAD_TRACKHEADER_BASE|GAD_TRACKHEADER_SILENCER|(iTrack<<4),
+                                    ICA_TARGET,target,
 
-        VolumeSlider =NewObject( HEADERBUTTON_GetClass(),NULL,
-                                    GA_Text,(ULONG)"Vol",
-                                  //  GA_ID,GAD_TRACKHEADER_BASE|GAD_TRACKHEADER_NAME|(iTrack<<4),
-                                  GA_ID,GAD_TRACKHEADER_BASE|GAD_TRACKHEADER_VOL|(iTrack<<4),
+                                    GA_RelVerify, TRUE,
+                                    BUTTON_BevelStyle, BVS_THIN,
+                         //           GA_Disabled,TRUE,
+                        // BUTTON_BevelStyle,BVS_NONE,
+                        // BUTTON_Transparent, TRUE,
+                                TAG_END);
+        SoloBt = NewObject( HEADERBUTTON_GetClass(),NULL,
+                                    GA_Text,"Solo",
+                                    GA_TextAttr,(ULONG) &style->fontTiny_TA,
+                                    GA_ID,GAD_TRACKHEADER_BASE|GAD_TRACKHEADER_SOLO|(iTrack<<4),
                                     ICA_TARGET,target,
                                     GA_RelVerify, TRUE,
+                                    BUTTON_BevelStyle, BVS_THIN,
                          //           GA_Disabled,TRUE,
                         // BUTTON_BevelStyle,BVS_NONE,
                         // BUTTON_Transparent, TRUE,
                                 TAG_END);
 
 
-        /*...testlater NewObject( HEADERSLIDER_GetClass(),NULL,
-                                    SLIDER_Orientation, SLIDER_VERTICAL,
+        SilAndSoloHl  = (Object *)NewObject( LAYOUT_GetClass(), NULL,
+                    LAYOUT_Orientation, LAYOUT_ORIENT_HORIZ,
+               LAYOUT_BevelStyle, BVS_NONE,
+             LAYOUT_BottomSpacing, 0,
+            LAYOUT_TopSpacing,0,
+            LAYOUT_LeftSpacing,0,
+            LAYOUT_RightSpacing,0,
+            LAYOUT_InnerSpacing,0,
+                    LAYOUT_AddChild, SilencerBt,
+                  //  CHILD_MaxWidth,18,CHILD_MinWidth,18,
+                   // CHILD_WeightedWidth,0,
+                    LAYOUT_AddChild, SoloBt,
+                 //    CHILD_MaxWidth,96-22,CHILD_MinWidth,96-22,
+                   // CHILD_WeightedWidth,1,
+                 //  CHILD_MaxWidth,64,
+                    TAG_DONE);
+
+// - - - - -
+
+        infoBt = NewObject( HEADERBUTTON_GetClass(),NULL,
+                                    GA_Text,(ULONG)"Mono 22050Hz",
+                                     GA_TextAttr,(ULONG) &style->fontTiny_TA,
+                                GA_ReadOnly,TRUE,BUTTON_BevelStyle,BVS_NONE,BUTTON_Transparent, TRUE,
+                                TAG_END);
+        volLabel = NewObject( HEADERBUTTON_GetClass(),NULL,
+                                    GA_Text,(ULONG)"Vol.",
+                                GA_ReadOnly,TRUE,BUTTON_BevelStyle,BVS_NONE,BUTTON_Transparent, TRUE,
+                                TAG_END);
+
+        VolumeSlider = NewObject( HEADERSLIDER_GetClass(),NULL,
+                                    SLIDER_Orientation, SLIDER_HORIZONTAL,
                                     SLIDER_Min, 0,
-                                    SLIDER_Max, 100,
-                                    SLIDER_Level, 80,
+                                    SLIDER_Max, 128,
+                                    SLIDER_Level, 128,
                                     ICA_TARGET,target,
                                     GA_ID,GAD_TRACKHEADER_BASE|GAD_TRACKHEADER_VOL|(iTrack<<4),
                                     GA_RelVerify, TRUE,
-                                TAG_END);*/
+                                TAG_END);
+        volHl  = (Object *)NewObject( LAYOUT_GetClass(), NULL,
+                    LAYOUT_Orientation, LAYOUT_ORIENT_HORIZ,
+               LAYOUT_BevelStyle, BVS_NONE,
+             LAYOUT_BottomSpacing, 0,LAYOUT_TopSpacing,0,
+            LAYOUT_LeftSpacing,0, LAYOUT_RightSpacing,0,
+            LAYOUT_InnerSpacing,0,
+                    LAYOUT_AddChild, volLabel,
+                   CHILD_WeightedWidth,0,
+                    LAYOUT_AddChild, VolumeSlider,
+                   CHILD_WeightedWidth,1,
+                    TAG_DONE);
+        panLabel = NewObject( HEADERBUTTON_GetClass(),NULL,
+                                    GA_Text,(ULONG)"Pan",
+                                GA_ReadOnly,TRUE,BUTTON_BevelStyle,BVS_NONE,BUTTON_Transparent, TRUE,
+                                TAG_END);
+
+        PanSlider = NewObject( HEADERSLIDER_GetClass(),NULL,
+                                    SLIDER_Orientation, SLIDER_HORIZONTAL,
+                                    SLIDER_Min, 0,
+                                    SLIDER_Max, 128,
+                                    SLIDER_Level, 128,
+                                    ICA_TARGET,target,
+                                    GA_ID,GAD_TRACKHEADER_BASE|GAD_TRACKHEADER_PAN|(iTrack<<4),
+                                    GA_RelVerify, TRUE,
+                                TAG_END);
+        panHl  = (Object *)NewObject( LAYOUT_GetClass(), NULL,
+                    LAYOUT_Orientation, LAYOUT_ORIENT_HORIZ,
+               LAYOUT_BevelStyle, BVS_NONE,
+             LAYOUT_BottomSpacing, 0,LAYOUT_TopSpacing,0,
+            LAYOUT_LeftSpacing,0, LAYOUT_RightSpacing,0,
+            LAYOUT_InnerSpacing,0,
+                    LAYOUT_AddChild, panLabel,
+                   CHILD_WeightedWidth,0,
+                    LAYOUT_AddChild, PanSlider,
+                   CHILD_WeightedWidth,1,
+                    TAG_DONE);
 
         // in this paragraph we create the layout hierarchy
-        LeftVertlayout  = (Object *)NewObject( LAYOUT_GetClass(), NULL,
+        LeftVertlayout2  = (Object *)NewObject( LAYOUT_GetClass(), NULL,
                     LAYOUT_Orientation, LAYOUT_ORIENT_VERT,
             LAYOUT_BevelStyle,BVS_NONE,
             LAYOUT_BottomSpacing, 0,
             LAYOUT_TopSpacing,0,
             LAYOUT_LeftSpacing,0,
             LAYOUT_RightSpacing,0,
-            LAYOUT_InnerSpacing,1,
+            LAYOUT_InnerSpacing,0,
 
-//                    LAYOUT_BevelStyle, /*BVS_GROUP*/BVS_NONE,
+                    // LAYOUT_AddChild, spacer1,
+                    //  CHILD_WeightedHeight,1,
+                    LAYOUT_AddChild, volHl,
+                     CHILD_WeightedHeight,0,
+                      LAYOUT_AddChild, panHl,
+                     CHILD_WeightedHeight,0,
+                    LAYOUT_AddChild, infoBt,
+                     CHILD_WeightedHeight,1,
+                    TAG_DONE);
+
+
+        // in this paragraph we create the layout hierarchy
+        LeftVertlayout  = (Object *)NewObject( LAYOUT_GetClass(), NULL,
+                    LAYOUT_Orientation, LAYOUT_ORIENT_VERT,
+            LAYOUT_BevelStyle,BVS_NONE,
+            LAYOUT_BottomSpacing, 1,
+            LAYOUT_TopSpacing,0,
+            LAYOUT_LeftSpacing,0,
+            LAYOUT_RightSpacing,0,
+            LAYOUT_InnerSpacing,0,
+
                     LAYOUT_AddChild, CloseAndNameHl,
                      CHILD_WeightedHeight,0,
-
-                    LAYOUT_AddChild, VolumeSlider,
+                    LAYOUT_AddChild, SilAndSoloHl,
+                     CHILD_WeightedHeight,0,
+                      LAYOUT_AddChild, LeftVertlayout2,
                      CHILD_WeightedHeight,1,
-
                     TAG_DONE);
 
         VolumeRule = NewObject( VOLUMERULE_GetClass(),NULL,
                                     VOLUMERULE_StyleSheet,(ULONG)style,
-                                    TAG_END);
+                                    TAG_END );
 
 /*
     Object *CloseButton;

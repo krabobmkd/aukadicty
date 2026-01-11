@@ -11,6 +11,7 @@
  */
 
 #include <exec/types.h>
+#include <intuition/screens.h>
 #include "aukobject.h"
 #include "aukstyle.h"
 
@@ -38,11 +39,15 @@ struct AukStyleSheet
     char *fontBigName;            /* Font name for big font */
     int fontBigHeight;            /* Pixel height for big font */
 
+    /* Screen reference for pen allocation - NOT serialized */
+    struct Screen *screen;        /* Screen used for ObtainBestPenA */
+
     /* Virtual methods specific to AukStyleSheet */
     int (*SetFontTiny)(void* This, const char* name, int height);
     int (*SetFontNormal)(void* This, const char* name, int height);
     int (*SetFontBig)(void* This, const char* name, int height);
-    int (*ApplyStyle)(void* This);         /* Open/update fonts from specifications */
+    int (*ApplyStyle)(void* This, struct Screen *scr);  /* Obtain pens and open fonts */
+    void (*ReleasePens)(void* This);   /* Release obtained pens */
     void (*CloseFonts)(void* This);    /* Close opened fonts */
 };
 
@@ -61,13 +66,17 @@ void AukStyleSheet_Serialize(void* This, ISerializer* ser, const char* pName);
 int AukStyleSheet_SetFontTiny(void* This, const char* name, int height);
 int AukStyleSheet_SetFontNormal(void* This, const char* name, int height);
 int AukStyleSheet_SetFontBig(void* This, const char* name, int height);
-int AukStyleSheet_ApplyStyle(void* This);      /* Open/update fonts from specifications */
+int AukStyleSheet_ApplyStyle(void* This, struct Screen *scr);  /* Obtain pens and open fonts */
+void AukStyleSheet_ReleasePens(void* This);    /* Release obtained pens */
 void AukStyleSheet_CloseFonts(void* This);
 
 /* Color setters */
 int AukStyleSheet_SetBackground(AukStyleSheet* This, ULONG color);
 int AukStyleSheet_SetTrackBackground(AukStyleSheet* This, ULONG color);
-int AukStyleSheet_SetWaveShape(AukStyleSheet* This, ULONG color);
+int AukStyleSheet_SetSoundBackground(AukStyleSheet* This, ULONG color);
+int AukStyleSheet_SetSelectedBackground(AukStyleSheet* This, ULONG color);
+int AukStyleSheet_SetWaveformDark(AukStyleSheet* This, ULONG color);
+int AukStyleSheet_SetWaveformLight(AukStyleSheet* This, ULONG color);
 int AukStyleSheet_SetTextColor(AukStyleSheet* This, ULONG color);
 
 #ifdef __cplusplus

@@ -164,7 +164,7 @@ ULONG TrackListArea_Domain(Class *C, struct Gadget *Gad, struct gpDomain *D)
  * The gadget knows its final coordinates,
  * So we may have to resize what's inside our gadget.
  */
-ULONG TrackListArea_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout)
+ULONG TrackListArea_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout,int filter)
 {
   TrackListArea *gdata;
   LONG topedge,leftedge,width,height;
@@ -255,7 +255,7 @@ ULONG TrackListArea_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout
                 continue;
             }
 
-            if(headerGad)
+            if(headerGad )
             {
                 /* Position TrackHeader on the left */
                 headerGad->LeftEdge = leftedge;
@@ -265,7 +265,6 @@ ULONG TrackListArea_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout
 
                 /* Call child's GM_LAYOUT */
                 DoMethodA((Object*)headerGad, (Msg)layout);
-            //   DoGadgetMethodA(headerGad,gdata->window,NULL,(Msg)&childLayout);
             }
 
             if(trackGad)
@@ -278,8 +277,7 @@ ULONG TrackListArea_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout
                 trackGad->Height = trackHeight;
 
                 /* Call child's GM_LAYOUT */
-              // DoMethodA((Object*)trackGad, (Msg)&childLayout);
-           //    DoGadgetMethodA(trackGad,gdata->window,NULL,(Msg)&childLayout);
+               DoMethodA((Object*)trackGad, (Msg)layout);
             }
             strack->_layouted = 1;
             strack->_top = trackTop;
@@ -322,7 +320,7 @@ ULONG TrackListArea_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout
 // ULONG TrackHeader_Render_rp( struct RastPort *rp,Class *C, struct Gadget *Gad, struct gpRender *Render);
 
 /* draw yourself, in the appropriate state */
-ULONG TrackListArea_Render(Class *C, struct Gadget *Gad, struct gpRender *Render)
+ULONG TrackListArea_Render(Class *C, struct Gadget *Gad, struct gpRender *Render,int filter)
 {
   TrackListArea *gdata;
   struct RastPort *rp;
@@ -380,11 +378,11 @@ ULONG TrackListArea_Render(Class *C, struct Gadget *Gad, struct gpRender *Render
             /* Call child's GM_RENDER */
 
           // recurse
-         if(headerGad) // if layouted
+         if(headerGad && ((filter & 2)!=0)) // if layouted && selected fore refresh
          {
             DoMethodA((Object*)headerGad, (Msg)Render); // not DoGadgetMethodA in that case
          }
-         if(trackGad) // if layouted
+         if(trackGad && ((filter & 1)!=0)) // if layouted && selected fore refresh
          {
             DoMethodA((Object*)trackGad, (Msg)Render); // not DoGadgetMethodA in that case
          }
@@ -439,10 +437,15 @@ void TrackListArea_DisposeGadgets(TrackListArea *gdata)
 
 }
 extern Class *AppModelClass;
-static int TrackListArea_CreateTrackLine(TrackChild *strack, AukTrack *dataTrack, struct AukStyle *styleSheet, int iTrack)
+static int TrackListArea_CreateTrackLine(
+            TrackListArea *gdata,
+            TrackChild *strack, AukTrack *dataTrack, int iTrack)
 {
     char *trackname=NULL;
     ULONG TRACKHEADER_Nametag =TAG_END;
+
+    struct AukStyle *styleSheet = gdata->_styleSheet;
+
     if(dataTrack && dataTrack->name) trackname = dataTrack->name;
     if(trackname) TRACKHEADER_Nametag = TRACKHEADER_Name;
     bdbprintf("TrackListArea_CreateTrackLine styleSheet:%08x\n",(int)styleSheet);
@@ -455,12 +458,15 @@ static int TrackListArea_CreateTrackLine(TrackChild *strack, AukTrack *dataTrack
                                      TRACKHEADER_Nametag,trackname, // optional, must be last
                                      TAG_END);
     //if(!strack->_trackHeader ) return 0;
-    /* Create TrackArea */
+    /* Create TrackArea - pass data track for reference counted retention */
     strack->_trackArea = NewObject(TRACKAREA_GetClass(), NULL,
+                                   INFINITESCROLL_PPosition,(ULONG) &gdata->_timeProjection._pixAtLeft,
                                    TRACKAREA_StyleSheet, (ULONG)styleSheet,
+                                   TRACKAREA_PTimeProjection,(ULONG)&gdata->_timeProjection,
+                                   TRACKAREA_DataTrack,(ULONG)dataTrack,
                                    TAG_END);
     if(!strack->_trackArea ) return 0;
-    /* data we sync: */
+    /* data we sync (weak reference for quick access): */
     strack->_dataTrack = dataTrack;
     // default value
     strack->_prefHeight = 96;
@@ -527,7 +533,7 @@ static void TrackListArea_updateTrackListUiToData(struct Gadget *Gad)
             /* Create gadgets for each track */
             for(i = 0; i < dataTrackCount; i++)
             {
-                if(!TrackListArea_CreateTrackLine( &gdata->_tracks[i], project->tracks->items[i], gdata->_styleSheet,i ))
+                if(!TrackListArea_CreateTrackLine(gdata, &gdata->_tracks[i], project->tracks->items[i],i ))
                 {
                     /* Failed to create gadgets, cleanup and abort */
                     TrackListArea_DisposeGadgets(gdata);
@@ -605,7 +611,7 @@ void TrackListArea_addTrack( struct Gadget *Gad,AukTrack *track)
 
     /* Create gadgets for this track */
     i =  gdata->_trackCount;
-    if(!TrackListArea_CreateTrackLine( &gdata->_tracks[i], project->tracks->items[i], gdata->_styleSheet, i ))
+    if(!TrackListArea_CreateTrackLine(gdata, &gdata->_tracks[i], project->tracks->items[i], i ))
     {
         /* Failed to create gadgets, cleanup and abort */
         TrackListArea_DisposeGadgets(gdata);
