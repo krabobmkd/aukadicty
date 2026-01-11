@@ -2,7 +2,8 @@
 #include <proto/exec.h>
 #include <proto/intuition.h>
 #include <proto/dos.h>
-
+#include <stdio.h>
+#include <string.h>
 #ifdef __SASC
 //    #include "minialib.h"
     #include <clib/alib_protos.h>
@@ -99,7 +100,16 @@ ULONG TrackHeader_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
           struct Gadget *btname =   gdata->subs[THS_NameButton];
           if(btname && data!=0)
           {
-            SetAttrs(btname,GA_Text,data,TAG_END);
+            char tname[32];
+            char *name= (char *)data;
+            if(strlen(name)>7)
+            {
+                snprintf(tname,7,"%s",name);
+                strcat(tname,"..");
+                name = &tname[0];
+            }
+
+            SetAttrs(btname,GA_Text,(ULONG)name,TAG_END);
             HeaderButton_Notify(OCLASS(btname),btname,Set->ops_GInfo);
           }
           actuallydone = 1;
@@ -114,5 +124,4 @@ ULONG TrackHeader_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
 
   return(actuallydone);
 }
-
 

@@ -678,7 +678,7 @@ project->CreateTrack(project);
         AukObjectPtr_Release((AukObjectPtr*)&app->_project);
         return 1;
     }
-    AukTrack_SetName(track1, "Vocals");
+    AukTrack_SetName(track1, "Vocals, like that");
     AukTrack_SetName(track2, "Music");
 
 

@@ -117,6 +117,9 @@ ULONG TrackListArea_Domain(Class *C, struct Gadget *Gad, struct gpDomain *D);
 /* Helper to dispose all gadget arrays */
 void TrackListArea_DisposeGadgets(TrackListArea *gdata);
 
+
+void TrackListArea_SetTrackName( struct Gadget *Gad,struct Window *window,int itrack,const char *name);
+
 /* - - - - -- - */
 
 /** for dispatcher, very wise use of union.

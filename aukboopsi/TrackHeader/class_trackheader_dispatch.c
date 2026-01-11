@@ -76,6 +76,7 @@ ULONG ASM SAVEDS TrackHeader_Dispatcher(
         ULONG iTrack=0;
         ULONG target=0;
         char *trackname=NULL;
+        char tname[32];
         Object *VolumeRule,*CloseButton,*NameButton,*VolumeSlider,*PanSlider,
                 *LeftVertlayout,*CloseAndNameHl;
         //
@@ -87,8 +88,15 @@ ULONG ASM SAVEDS TrackHeader_Dispatcher(
         {
             trackname = (char *)ptag->ti_Data;
         }
-        if(trackname == NULL) trackname="-";
-
+        if(!trackname)
+        {
+            snprintf(tname,31,"Track %d",iTrack);
+            trackname = &tname[0];
+        } else if(strlen(trackname)>9)
+        {
+            snprintf(tname,31,"%9s...",trackname);
+            trackname = &tname[0];
+        }
         if((ptag = FindTagItem( ICA_TARGET,M->opSet.ops_AttrList ))!=NULL)
         {
             target = ptag->ti_Data;
@@ -123,9 +131,12 @@ ULONG ASM SAVEDS TrackHeader_Dispatcher(
             LAYOUT_RightSpacing,1,
             LAYOUT_InnerSpacing,1,
                     LAYOUT_AddChild, CloseButton,
-                    // CHILD_WeightedWidth,0,
+                    CHILD_MaxWidth,18,CHILD_MinWidth,18,
+                   // CHILD_WeightedWidth,0,
                     LAYOUT_AddChild, NameButton,
-                    // CHILD_WeightedWidth,1,
+                     CHILD_MaxWidth,96-22,CHILD_MinWidth,96-22,
+                   // CHILD_WeightedWidth,1,
+                 //  CHILD_MaxWidth,64,
                     TAG_DONE);
 
         VolumeSlider = NewObject( HEADERBUTTON_GetClass(),NULL,
@@ -192,9 +203,11 @@ ULONG ASM SAVEDS TrackHeader_Dispatcher(
 
                     LAYOUT_BevelStyle, /*BVS_GROUP*/BVS_NONE,
                     LAYOUT_AddChild, LeftVertlayout,
-                     CHILD_WeightedWidth,1,
+                    CHILD_MaxWidth,128-32,CHILD_MinWidth,128-32,
+                    // CHILD_WeightedWidth,7,
                     LAYOUT_AddChild, VolumeRule,
-                     CHILD_WeightedWidth,0,
+                   CHILD_MaxWidth,32,CHILD_MinWidth,32,
+                    // CHILD_WeightedWidth,1,
                     TAG_DONE
         };
         struct opSet opset;

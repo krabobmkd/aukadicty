@@ -17,6 +17,11 @@
 
 #include "class_tracklistarea.h"
 #include "class_tracklistarea_private.h"
+#include "../TrackHeader/class_trackheader_private.h"
+
+#include <proto/layout.h>
+#include <gadgets/layout.h>
+
 
 #include <utility/tagitem.h>
 
@@ -211,4 +216,25 @@ ULONG TrackListArea_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
   return(used);
 }
 
+
+void TrackListArea_SetTrackName(struct Gadget *Gad,struct Window *window,int itrack, const char *name)
+{
+    TrackListArea *gdata;
+    TrackChild *strack;
+    if(!Gad) return;
+    gdata=INST_DATA(OCLASS(Gad), Gad);
+
+
+    if(itrack>= gdata->_trackCount) return;
+
+    strack = &gdata->_tracks[itrack];
+    if(!strack->_trackHeader) return;
+
+    // could be SetGadgetAttrs(), but it's better for header layout component so they don't render under SetAttrs().
+    SetAttrs(strack->_trackHeader,TRACKHEADER_Name,(ULONG)name,TAG_END);
+    // test
+  //  SetGadgetAttrs(strack->_trackHeader,window,NULL, TRACKHEADER_Name,(ULONG)name,TAG_END);
+  //  RethinkLayout(strack->_trackHeader,window,NULL,0);
+
+}
 

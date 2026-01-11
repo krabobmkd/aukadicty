@@ -72,7 +72,6 @@ unsigned int AukAProject_GetTrackCount(void* This);
 AukFixed AukAProject_GetDuration(void* This);
 
 
-
 /* Message type enumeration that are AukAProject specific  */
 typedef enum {
     AUK_MSG_TRACKADDED = AUKPROJECT_MSG_STARTLOAD,

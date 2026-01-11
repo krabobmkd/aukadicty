@@ -7,6 +7,8 @@
 #include <proto/exec.h>
 #include <string.h>
 
+#include "aukaproject.h"
+
 // resolve some amiga os include collisions
 #ifdef Remove
 #undef Remove
@@ -114,8 +116,12 @@ int AukTrack_SetName(AukTrack* track, const char* name) {
 
     if (track->name) {
         /* Send update notification */
-        AukMessage msg;
+        AukMessage_AProject msg;
+
         msg.type = AUK_MSG_TRACKMODIFIED_NAMECHANGE;
+        msg._track_id = track->trackIndex;
+        msg._track = track;
+        msg._timeStart = 0;
         track->base.SendUpdate(&track->base, &msg);
     }
 

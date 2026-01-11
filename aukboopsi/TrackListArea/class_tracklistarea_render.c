@@ -442,17 +442,17 @@ extern Class *AppModelClass;
 static int TrackListArea_CreateTrackLine(TrackChild *strack, AukTrack *dataTrack, struct AukStyle *styleSheet, int iTrack)
 {
     char *trackname=NULL;
-
+    ULONG TRACKHEADER_Nametag =TAG_END;
     if(dataTrack && dataTrack->name) trackname = dataTrack->name;
-    if(!trackname) trackname=(char*)"-";
+    if(trackname) TRACKHEADER_Nametag = TRACKHEADER_Name;
     bdbprintf("TrackListArea_CreateTrackLine name:%s\n",trackname);
     /* Create TrackHeader gadget */
     strack->_trackHeader = //NULL;
         NewObject(TRACKHEADER_GetClass(), NULL,
                                      TRACKHEADER_StyleSheet, (ULONG)styleSheet,
                                      TRACKHEADER_TrackIndex,iTrack,
-                                     TRACKHEADER_Name,trackname,
                                      ICA_TARGET,AppModelClass,
+                                     TRACKHEADER_Nametag,trackname, // optional, must be last
                                      TAG_END);
     //if(!strack->_trackHeader ) return 0;
     /* Create TrackArea */

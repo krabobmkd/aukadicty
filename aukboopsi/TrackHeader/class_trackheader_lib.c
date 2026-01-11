@@ -104,19 +104,13 @@ const char TrackHeaderSuperClassID[]=TrackHeader_SUPERCLASS_ID;
 #endif
 BOOL TrackHeader_OpenLibs_Dependencies(void)
 {
-#ifdef USE_BEVEL_FRAME
-    if(!BevelBase) BevelBase = OpenLibrary("images/bevel.image",44);
-    if(!BevelBase) return FALSE;
-#endif
+
     return TRUE;
 }
 
 void TrackHeader_CloseLibs_Dependencies(void)
 {
-#ifdef USE_BEVEL_FRAME
-    if(BevelBase) CloseLibrary(BevelBase);
-    BevelBase = NULL;
-#endif
+
 }
 //==========================================================================================
 // does not need to be exact, we just want the function pointer:

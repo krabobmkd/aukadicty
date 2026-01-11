@@ -173,8 +173,9 @@ static void AukUpdate_Track(AukObject* listenerObject, AukObject* modifiedObject
 {
     TrackListView *pm = (TrackListView *)userData;
     AukTrack *track = (AukTrack*)modifiedObject;
+    AukMessage_AProject *projmess;
     if(!pm || !track) return;
-   // bdbprintf(" **** AukUpdate_Track ! \n");
+    bdbprintf(" **** AukUpdate_Track ! \n");
     switch(message->type)
     {
         case AUK_MSG_TRACKMODIFIED_TIMECHANGE:
@@ -207,9 +208,9 @@ static void AukUpdate_Track(AukObject* listenerObject, AukObject* modifiedObject
         break;
         case AUK_MSG_TRACKMODIFIED_NAMECHANGE:
         {
-
-//            pm->updateBits |= TLVB_UPDATE_HORIZSCROLLDOMAIN;
-//            if(myTask) Signal(myTask, SIGBREAKF_CTRL_F);
+            const char *name;
+            projmess = (AukMessage_AProject *)message;
+            TrackListArea_SetTrackName(pm->trackList, pm->window, projmess->_track_id,projmess->_track->name);
         }
         break;
         default:
@@ -224,7 +225,7 @@ static void AukUpdate_TrackList(AukObject* listenerObject, AukObject* modifiedOb
     AukAProject *tracklist = (AukAProject*)modifiedObject;
     TrackListView *pm = (TrackListView *)userData;
 
- //   bdbprintf(" **** AukUpdate_TrackList ! \n");
+    bdbprintf(" **** AukUpdate_TrackList ! \n");
     if(!pm || !tracklist || !message) return;
 
     trackListAreaUi = (struct Gadget *)pm->trackList;
