@@ -101,6 +101,8 @@ typedef struct TimeProjection {
 /* Header width in pixels (read-only, set internally based on TrackHeader width) */
 #define	TRACKLIST_HeaderWidth		(TRACKLIST_Dummy+10)
 
+#define	TRACKLIST_TrackAreaWidth		(TRACKLIST_Dummy+11)
+
 // GM_METHODS
 //
 #define TRACKLIST_GMDummy			(TRACKLIST_Dummy+0x100)

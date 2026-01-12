@@ -90,6 +90,13 @@ ULONG TrackListArea_GetAttr(Class *C, struct Gadget *Gad, struct opGet *Get)
     case TRACKLIST_HeaderWidth:
       *data = (ULONG)gdata->_headerWidth;
       break;
+     case TRACKLIST_TrackAreaWidth:
+     {
+        LONG w = (LONG)Gad->Width - (WORD)gdata->_headerWidth;
+        if(w<0) w=0;
+        *data = w;
+      }
+      break;
 
     // super class gadget things. would manage attribs selected/hightlighted, ...
     default:

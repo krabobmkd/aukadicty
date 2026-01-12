@@ -280,7 +280,7 @@ ULONG ASM SAVEDS AppModelDispatch(
             } else
             if( sender_ID == GAD_SCROLLER_H )
             {
-             bdbprintf(" ( sender_ID == GAD_SCROLLER_H )\n");
+             // bdbprintf(" ( sender_ID == GAD_SCROLLER_H )\n");
                 TrackListView_ListenScrollHMessage( &app->tracksListView, &M->opUpdate );
                 retval=1;
             } else
