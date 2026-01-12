@@ -100,36 +100,177 @@ ULONG TrackHeader_Domain(Class *C, struct Gadget *Gad, struct gpDomain *D)
 
 /**
  * method GM_LAYOUT
- * The gadget knows its final coordinates,
- * So we may have to resize what's inside our gadget.
+ * Manually position all child gadgets by setting TopEdge, LeftEdge, Width, Height.
+ * This replaces the nested layout approach that caused bugs.
+ *
+ * Layout structure:
+ * +-------------------------------------------+--------+
+ * | [X] [Track Name                         ] |        |
+ * +-------------------------------------------+ Volume |
+ * | [Sil.]  [Solo]                            |  Rule  |
+ * +-------------------------------------------+        |
+ * | Vol. [==========slider==============]     |        |
+ * +-------------------------------------------+        |
+ * | Pan  [==========slider==============]     |        |
+ * +-------------------------------------------+        |
+ * | Mono 22050Hz                              |        |
+ * +-------------------------------------------+--------+
  */
-//ULONG TrackHeader_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout)
-//{
-//  TrackHeader *gdata;
-//  LONG topedge,leftedge,width,height;
+ULONG TrackHeader_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout)
+{
+  TrackHeader *gdata;
+  LONG topedge,leftedge,width,height;
+  LONG leftPartWidth, volumeRuleWidth;
+  LONG rowHeight;
+  LONG curY;
+  LONG closeW, labelW, sliderX, sliderW;
+  struct Gadget *sub;
 
-//    gdata=INST_DATA(C, Gad);
+    gdata=INST_DATA(C, Gad);
 
-//    bdbprintf(" $$$ TrackHeader_Layout\n");
+    bdbprintf(" $$$ TrackHeader_Layout\n");
 
-//    topedge = Gad->TopEdge;
-//    leftedge = Gad->LeftEdge;
-//    width = Gad->Width;
-//    height = Gad->Height;
+    topedge = Gad->TopEdge;
+    leftedge = Gad->LeftEdge;
+    width = Gad->Width;
+    height = Gad->Height;
 
-//    gdata->_framerec.MinX = leftedge+1;
-//    gdata->_framerec.MinY = topedge+1;
-//    gdata->_framerec.MaxX = leftedge + width  -2;
-//    gdata->_framerec.MaxY = topedge  + height -2;
+    /* Store frame rectangle */
+    gdata->_framerec.MinX = leftedge+1;
+    gdata->_framerec.MinY = topedge+1;
+    gdata->_framerec.MaxX = leftedge + width  -2;
+    gdata->_framerec.MaxY = topedge  + height -2;
 
-//  return(1);
-//}
+    /* Layout constants */
+    volumeRuleWidth = 32;
+    leftPartWidth = width - volumeRuleWidth;
+    rowHeight = height / 5;  /* 5 rows */
+    closeW = 18;
+    labelW = 28;  /* Width for "Vol." and "Pan" labels */
+    sliderX = leftedge + labelW;
+    sliderW = leftPartWidth - labelW - 2;
+
+    curY = topedge;
+
+    /* Row 1: Close button and Name button */
+    sub = (struct Gadget *)gdata->subs[THS_CloseButton];
+    if(sub)
+    {
+        sub->LeftEdge = leftedge + 1;
+        sub->TopEdge = curY;
+        sub->Width = closeW;
+        sub->Height = rowHeight;
+        DoMethodA((Object*)sub, (Msg)layout);
+    }
+
+    sub = (struct Gadget *)gdata->subs[THS_NameButton];
+    if(sub)
+    {
+        sub->LeftEdge = leftedge + closeW + 2;
+        sub->TopEdge = curY;
+        sub->Width = leftPartWidth - closeW - 3;
+        sub->Height = rowHeight;
+        DoMethodA((Object*)sub, (Msg)layout);
+    }
+    curY += rowHeight;
+
+    /* Row 2: Silencer and Solo buttons */
+    sub = (struct Gadget *)gdata->subs[THS_SilencerBt];
+    if(sub)
+    {
+        sub->LeftEdge = leftedge + 1;
+        sub->TopEdge = curY;
+        sub->Width = (leftPartWidth - 3) / 2;
+        sub->Height = rowHeight;
+        DoMethodA((Object*)sub, (Msg)layout);
+    }
+
+    sub = (struct Gadget *)gdata->subs[THS_SoloBt];
+    if(sub)
+    {
+        sub->LeftEdge = leftedge + 1 + (leftPartWidth - 3) / 2 + 1;
+        sub->TopEdge = curY;
+        sub->Width = (leftPartWidth - 3) / 2;
+        sub->Height = rowHeight;
+        DoMethodA((Object*)sub, (Msg)layout);
+    }
+    curY += rowHeight;
+
+    /* Row 3: Vol label and slider */
+    sub = (struct Gadget *)gdata->subs[THS_VolLabel];
+    if(sub)
+    {
+        sub->LeftEdge = leftedge + 1;
+        sub->TopEdge = curY;
+        sub->Width = labelW;
+        sub->Height = rowHeight;
+        DoMethodA((Object*)sub, (Msg)layout);
+    }
+
+    sub = (struct Gadget *)gdata->subs[THS_VolumeSlider];
+    if(sub)
+    {
+        sub->LeftEdge = sliderX;
+        sub->TopEdge = curY;
+        sub->Width = sliderW;
+        sub->Height = rowHeight;
+        DoMethodA((Object*)sub, (Msg)layout);
+    }
+    curY += rowHeight;
+
+    /* Row 4: Pan label and slider */
+    sub = (struct Gadget *)gdata->subs[THS_PanLabel];
+    if(sub)
+    {
+        sub->LeftEdge = leftedge + 1;
+        sub->TopEdge = curY;
+        sub->Width = labelW;
+        sub->Height = rowHeight;
+        DoMethodA((Object*)sub, (Msg)layout);
+    }
+
+    sub = (struct Gadget *)gdata->subs[THS_PanSlider];
+    if(sub)
+    {
+        sub->LeftEdge = sliderX;
+        sub->TopEdge = curY;
+        sub->Width = sliderW;
+        sub->Height = rowHeight;
+        DoMethodA((Object*)sub, (Msg)layout);
+    }
+    curY += rowHeight;
+
+    /* Row 5: Info label (takes remaining height) */
+    sub = (struct Gadget *)gdata->subs[THS_InfoLabel];
+    if(sub)
+    {
+        sub->LeftEdge = leftedge + 1;
+        sub->TopEdge = curY;
+        sub->Width = leftPartWidth - 2;
+        sub->Height = topedge + height - curY;
+        DoMethodA((Object*)sub, (Msg)layout);
+    }
+
+    /* Right side: VolumeRule (full height) */
+    sub = (struct Gadget *)gdata->subs[THS_VolumeRule];
+    if(sub)
+    {
+        sub->LeftEdge = leftedge + leftPartWidth;
+        sub->TopEdge = topedge;
+        sub->Width = volumeRuleWidth;
+        sub->Height = height;
+        DoMethodA((Object*)sub, (Msg)layout);
+    }
+
+  return(1);
+}
 ULONG TrackHeader_Render_rp( struct RastPort *rp,Class *C, struct Gadget *Gad, struct gpRender *Render)
 {
   LONG topedge,leftedge,width,height;
   TrackHeader *gdata;
     int penbg=4,penb=2,penc=3;
   ULONG retval=1;
+  int i;
 
   gdata=INST_DATA(C, Gad);
 
@@ -150,6 +291,16 @@ ULONG TrackHeader_Render_rp( struct RastPort *rp,Class *C, struct Gadget *Gad, s
                   gdata->_framerec.MaxX,
                   gdata->_framerec.MaxY) ;
 
+    /* Forward GM_RENDER to all child gadgets */
+    for(i=0; i<THS_Total; i++)
+    {
+        if(gdata->subs[i])
+        {
+            DoMethodA((Object*)gdata->subs[i], (Msg)Render);
+        }
+    }
+
+    return retval;
 }
 
 /* draw yourself, in the appropriate state */

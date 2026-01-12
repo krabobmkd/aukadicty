@@ -378,12 +378,11 @@ ULONG TrackListArea_Render(Class *C, struct Gadget *Gad, struct gpRender *Render
             /* Call child's GM_RENDER */
 
           // recurse
-//re, test
-//         if(headerGad && ((filter & 2)!=0)) // if layouted && selected fore refresh
-//         {
-//            DoMethodA((Object*)headerGad, (Msg)Render); // not DoGadgetMethodA in that case
-//         }
-         if(trackGad && ((filter & 1)!=0)) // if layouted && selected fore refresh
+        if(headerGad && ((filter & 2)!=0)) // if layouted && selected for refresh
+        {
+           DoMethodA((Object*)headerGad, (Msg)Render); // not DoGadgetMethodA in that case
+        }
+         if(trackGad && ((filter & 1)!=0)) // if layouted && selected for refresh
          {
             DoMethodA((Object*)trackGad, (Msg)Render); // not DoGadgetMethodA in that case
          }
@@ -451,13 +450,13 @@ static int TrackListArea_CreateTrackLine(
     if(trackname) TRACKHEADER_Nametag = TRACKHEADER_Name;
  //   bdbprintf("TrackListArea_CreateTrackLine styleSheet:%08x\n",(int)styleSheet);
     /* Create TrackHeader gadget */
-    strack->_trackHeader = NULL;
-//        NewObject(TRACKHEADER_GetClass(), NULL,
-//                                     TRACKHEADER_StyleSheet, (ULONG)styleSheet,
-//                                     TRACKHEADER_TrackIndex,iTrack,
-//                                     ICA_TARGET,AppModelClass,
-//                                     TRACKHEADER_Nametag,trackname, // optional, must be last
-//                                     TAG_END);
+    strack->_trackHeader =
+       NewObject(TRACKHEADER_GetClass(), NULL,
+                                    TRACKHEADER_StyleSheet, (ULONG)styleSheet,
+                                    TRACKHEADER_TrackIndex,iTrack,
+                                    ICA_TARGET,AppModelClass,
+                                    TRACKHEADER_Nametag,trackname, // optional, must be last
+                                    TAG_END);
     //if(!strack->_trackHeader ) return 0;
     /* Create TrackArea - pass data track for reference counted retention */
     strack->_trackArea = NewObject(TRACKAREA_GetClass(), NULL,

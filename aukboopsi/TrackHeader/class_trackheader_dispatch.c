@@ -57,6 +57,10 @@ typedef union MsgUnion
  */
 #include "bdbprintf.h"
 
+/* Forward declaration for layout function */
+ULONG TrackHeader_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout);
+ULONG TrackHeader_Render(Class *C, struct Gadget *Gad, struct gpRender *Render, ULONG update);
+
 /** WATCH OUT ! boopsi docs says:
 *  "the rkmmodelclass dispatcher must be able to run on Intuition's context,
 *  which puts some limitations on what the dispatcher is permitted to do:
@@ -82,12 +86,9 @@ ULONG ASM SAVEDS TrackHeader_Dispatcher(
         char *trackname=NULL;
         AukStyle *style=NULL;
         char tname[32];
-        Object *VolumeRule,*CloseButton,*NameButton,*VolumeSlider,*PanSlider,
-                *LeftVertlayout,*CloseAndNameHl,*SilAndSoloHl,
-                *SilencerBt,*SoloBt,*SelectBt,*volLabel,*panLabel,
-                *volHl,*panHl,*LeftVertlayout2,*infoBt
-                ;
-        //
+        int i;
+
+        /* Parse OM_NEW tags */
         if((ptag = FindTagItem( TRACKHEADER_TrackIndex,M->opSet.ops_AttrList ))!=NULL)
         {
             iTrack = ptag->ti_Data;
@@ -100,7 +101,7 @@ ULONG ASM SAVEDS TrackHeader_Dispatcher(
         {
             style = (AukStyle *)ptag->ti_Data;
         }
- bdbprintf("OM_NEW trackheader style %08x\n",(int)style);
+        bdbprintf("OM_NEW trackheader style %08x\n",(int)style);
         if(!trackname)
         {
             snprintf(tname,31,"Track %d",iTrack);
@@ -113,220 +114,19 @@ ULONG ASM SAVEDS TrackHeader_Dispatcher(
         if((ptag = FindTagItem( ICA_TARGET,M->opSet.ops_AttrList ))!=NULL)
         {
             target = ptag->ti_Data;
-          //  bdbprintf("header target:%08x\n",target);
         }
 
-        CloseButton = NewObject( /*BUTTON_GetClass()*/HEADERBUTTON_GetClass(),NULL,
-                                    GA_Text, "X",
-                                    GA_ID,GAD_TRACKHEADER_BASE|GAD_TRACKHEADER_CLOSE|(iTrack<<4),
-                                    ICA_TARGET,target,
-                                    GA_RelVerify, TRUE,
-                         //           GA_Disabled,TRUE,
-                        // BUTTON_BevelStyle,BVS_NONE,
-                        // BUTTON_Transparent, TRUE,
-                                TAG_END);
-        NameButton = NewObject( HEADERBUTTON_GetClass(),NULL,
-                                    GA_Text,trackname,
-                                    GA_ID,GAD_TRACKHEADER_BASE|GAD_TRACKHEADER_NAME|(iTrack<<4),
-                                    ICA_TARGET,target,
-                                    GA_RelVerify, TRUE,
-                         //           GA_Disabled,TRUE,
-                        // BUTTON_BevelStyle,BVS_NONE,
-                        // BUTTON_Transparent, TRUE,
-                                TAG_END);
-
-
-        CloseAndNameHl  = (Object *)NewObject( LAYOUT_GetClass(), NULL,
-                    LAYOUT_Orientation, LAYOUT_ORIENT_HORIZ,
-             LAYOUT_BottomSpacing, 1,
-            LAYOUT_TopSpacing,1,
-            LAYOUT_LeftSpacing,1,
-            LAYOUT_RightSpacing,1,
-            LAYOUT_InnerSpacing,1,
-                    LAYOUT_AddChild, CloseButton,
-                    CHILD_MaxWidth,18,CHILD_MinWidth,18,
-                   // CHILD_WeightedWidth,0,
-                    LAYOUT_AddChild, NameButton,
-                     CHILD_MaxWidth,96-22,CHILD_MinWidth,96-22,
-                   // CHILD_WeightedWidth,1,
-                 //  CHILD_MaxWidth,64,
-                    TAG_DONE);
-    // - - - - - -
-    // SilAndSoloHl
-       SilencerBt = NewObject( /*BUTTON_GetClass()*/HEADERBUTTON_GetClass(),NULL,
-                                    GA_Text, "Sil.",
-                                    GA_TextAttr,(ULONG) &style->fontTiny_TA,
-                                    GA_ID,GAD_TRACKHEADER_BASE|GAD_TRACKHEADER_SILENCER|(iTrack<<4),
-                                    ICA_TARGET,target,
-
-                                    GA_RelVerify, TRUE,
-                                    BUTTON_BevelStyle, BVS_THIN,
-                         //           GA_Disabled,TRUE,
-                        // BUTTON_BevelStyle,BVS_NONE,
-                        // BUTTON_Transparent, TRUE,
-                                TAG_END);
-        SoloBt = NewObject( HEADERBUTTON_GetClass(),NULL,
-                                    GA_Text,"Solo",
-                                    GA_TextAttr,(ULONG) &style->fontTiny_TA,
-                                    GA_ID,GAD_TRACKHEADER_BASE|GAD_TRACKHEADER_SOLO|(iTrack<<4),
-                                    ICA_TARGET,target,
-                                    GA_RelVerify, TRUE,
-                                    BUTTON_BevelStyle, BVS_THIN,
-                         //           GA_Disabled,TRUE,
-                        // BUTTON_BevelStyle,BVS_NONE,
-                        // BUTTON_Transparent, TRUE,
-                                TAG_END);
-
-
-        SilAndSoloHl  = (Object *)NewObject( LAYOUT_GetClass(), NULL,
-                    LAYOUT_Orientation, LAYOUT_ORIENT_HORIZ,
-               LAYOUT_BevelStyle, BVS_NONE,
-             LAYOUT_BottomSpacing, 0,
-            LAYOUT_TopSpacing,0,
-            LAYOUT_LeftSpacing,0,
-            LAYOUT_RightSpacing,0,
-            LAYOUT_InnerSpacing,0,
-                    LAYOUT_AddChild, SilencerBt,
-                  //  CHILD_MaxWidth,18,CHILD_MinWidth,18,
-                   // CHILD_WeightedWidth,0,
-                    LAYOUT_AddChild, SoloBt,
-                 //    CHILD_MaxWidth,96-22,CHILD_MinWidth,96-22,
-                   // CHILD_WeightedWidth,1,
-                 //  CHILD_MaxWidth,64,
-                    TAG_DONE);
-
-// - - - - -
-
-        infoBt = NewObject( HEADERBUTTON_GetClass(),NULL,
-                                    GA_Text,(ULONG)"Mono 22050Hz",
-                                     GA_TextAttr,(ULONG) &style->fontTiny_TA,
-                                GA_ReadOnly,TRUE,BUTTON_BevelStyle,BVS_NONE,BUTTON_Transparent, TRUE,
-                                TAG_END);
-        volLabel = NewObject( HEADERBUTTON_GetClass(),NULL,
-                                    GA_Text,(ULONG)"Vol.",
-                                GA_ReadOnly,TRUE,BUTTON_BevelStyle,BVS_NONE,BUTTON_Transparent, TRUE,
-                                TAG_END);
-
-        VolumeSlider = NewObject( HEADERSLIDER_GetClass(),NULL,
-                                    SLIDER_Orientation, SLIDER_HORIZONTAL,
-                                    SLIDER_Min, 0,
-                                    SLIDER_Max, 128,
-                                    SLIDER_Level, 128,
-                                    ICA_TARGET,target,
-                                    GA_ID,GAD_TRACKHEADER_BASE|GAD_TRACKHEADER_VOL|(iTrack<<4),
-                                    GA_RelVerify, TRUE,
-                                TAG_END);
-        volHl  = (Object *)NewObject( LAYOUT_GetClass(), NULL,
-                    LAYOUT_Orientation, LAYOUT_ORIENT_HORIZ,
-               LAYOUT_BevelStyle, BVS_NONE,
-             LAYOUT_BottomSpacing, 0,LAYOUT_TopSpacing,0,
-            LAYOUT_LeftSpacing,0, LAYOUT_RightSpacing,0,
-            LAYOUT_InnerSpacing,0,
-                    LAYOUT_AddChild, volLabel,
-                   CHILD_WeightedWidth,0,
-                    LAYOUT_AddChild, VolumeSlider,
-                   CHILD_WeightedWidth,1,
-                    TAG_DONE);
-        panLabel = NewObject( HEADERBUTTON_GetClass(),NULL,
-                                    GA_Text,(ULONG)"Pan",
-                                GA_ReadOnly,TRUE,BUTTON_BevelStyle,BVS_NONE,BUTTON_Transparent, TRUE,
-                                TAG_END);
-
-        PanSlider = NewObject( HEADERSLIDER_GetClass(),NULL,
-                                    SLIDER_Orientation, SLIDER_HORIZONTAL,
-                                    SLIDER_Min, 0,
-                                    SLIDER_Max, 128,
-                                    SLIDER_Level, 128,
-                                    ICA_TARGET,target,
-                                    GA_ID,GAD_TRACKHEADER_BASE|GAD_TRACKHEADER_PAN|(iTrack<<4),
-                                    GA_RelVerify, TRUE,
-                                TAG_END);
-        panHl  = (Object *)NewObject( LAYOUT_GetClass(), NULL,
-                    LAYOUT_Orientation, LAYOUT_ORIENT_HORIZ,
-               LAYOUT_BevelStyle, BVS_NONE,
-             LAYOUT_BottomSpacing, 0,LAYOUT_TopSpacing,0,
-            LAYOUT_LeftSpacing,0, LAYOUT_RightSpacing,0,
-            LAYOUT_InnerSpacing,0,
-                    LAYOUT_AddChild, panLabel,
-                   CHILD_WeightedWidth,0,
-                    LAYOUT_AddChild, PanSlider,
-                   CHILD_WeightedWidth,1,
-                    TAG_DONE);
-
-        // in this paragraph we create the layout hierarchy
-        LeftVertlayout2  = (Object *)NewObject( LAYOUT_GetClass(), NULL,
-                    LAYOUT_Orientation, LAYOUT_ORIENT_VERT,
-            LAYOUT_BevelStyle,BVS_NONE,
-            LAYOUT_BottomSpacing, 0,
-            LAYOUT_TopSpacing,0,
-            LAYOUT_LeftSpacing,0,
-            LAYOUT_RightSpacing,0,
-            LAYOUT_InnerSpacing,0,
-
-                    // LAYOUT_AddChild, spacer1,
-                    //  CHILD_WeightedHeight,1,
-                    LAYOUT_AddChild, volHl,
-                     CHILD_WeightedHeight,0,
-                      LAYOUT_AddChild, panHl,
-                     CHILD_WeightedHeight,0,
-                    LAYOUT_AddChild, infoBt,
-                     CHILD_WeightedHeight,1,
-                    TAG_DONE);
-
-
-        // in this paragraph we create the layout hierarchy
-        LeftVertlayout  = (Object *)NewObject( LAYOUT_GetClass(), NULL,
-                    LAYOUT_Orientation, LAYOUT_ORIENT_VERT,
-            LAYOUT_BevelStyle,BVS_NONE,
-            LAYOUT_BottomSpacing, 1,
-            LAYOUT_TopSpacing,0,
-            LAYOUT_LeftSpacing,0,
-            LAYOUT_RightSpacing,0,
-            LAYOUT_InnerSpacing,0,
-
-                    LAYOUT_AddChild, CloseAndNameHl,
-                     CHILD_WeightedHeight,0,
-                    LAYOUT_AddChild, SilAndSoloHl,
-                     CHILD_WeightedHeight,0,
-                      LAYOUT_AddChild, LeftVertlayout2,
-                     CHILD_WeightedHeight,1,
-                    TAG_DONE);
-
-        VolumeRule = NewObject( VOLUMERULE_GetClass(),NULL,
-                                    VOLUMERULE_StyleSheet,(ULONG)style,
-                                    TAG_END );
-
-/*
-    Object *CloseButton;
-    Object *NameLabel;
-
-    Object  *VolumeSlider;
-    Object  *PanSlider;
-
-    // ------------- H
-    Object *VolumeRule;
-
-*/
+        /* Call superclass OM_NEW with minimal tags - no LAYOUT_AddChild */
         {
-
-        // we are a layout that forces its parameter...
         ULONG tags[]={
             LAYOUT_Orientation, LAYOUT_ORIENT_HORIZ,
-           // / LAYOUT_DeferLayout, TRUE, // because not added to main layout directly ?
             LAYOUT_BottomSpacing, 0,
             LAYOUT_TopSpacing,0,
             LAYOUT_LeftSpacing,0,
             LAYOUT_RightSpacing,0,
             LAYOUT_InnerSpacing,0,
-
-                    LAYOUT_BevelStyle, /*BVS_GROUP*/BVS_NONE,
-                    LAYOUT_AddChild, LeftVertlayout,
-                    CHILD_MaxWidth,128-32,CHILD_MinWidth,128-32,
-                    // CHILD_WeightedWidth,7,
-                    LAYOUT_AddChild, VolumeRule,
-                   CHILD_MaxWidth,32,CHILD_MinWidth,32,
-                    // CHILD_WeightedWidth,1,
-                    TAG_DONE
+            LAYOUT_BevelStyle, BVS_NONE,
+            TAG_DONE
         };
         struct opSet opset;
         opset.MethodID = OM_NEW;
@@ -339,12 +139,99 @@ ULONG ASM SAVEDS TrackHeader_Dispatcher(
             bdbprintf_new("TrackHeader", Gad);
             Gad->GadgetID = GAD_TRACKHEADER_BASE+(iTrack<<4);
 
-            gdata->subs[THS_CloseButton] = CloseButton;
-            gdata->subs[THS_NameButton] = NameButton;
-            gdata->subs[THS_VolumeSlider] = VolumeSlider;
-            gdata->subs[THS_PanSlider] = NULL ; //TODO
-            gdata->subs[THS_VolumeRule] = VolumeRule;
+            /* Initialize all child pointers to NULL */
+            for(i=0; i<THS_Total; i++) gdata->subs[i] = NULL;
+
+            gdata->_style = style;
             gdata->_trackIndex = iTrack;
+            gdata->_minimalWidth = 100;
+            gdata->_minimalHeight = 50;
+
+            /* Create all child gadgets directly - no nested layouts */
+
+            /* Row 1: Close button and Name button */
+            gdata->subs[THS_CloseButton] = NewObject( HEADERBUTTON_GetClass(),NULL,
+                                        GA_Text, "X",
+                                        GA_ID,GAD_TRACKHEADER_BASE|GAD_TRACKHEADER_CLOSE|(iTrack<<4),
+                                        ICA_TARGET,target,
+                                        GA_RelVerify, TRUE,
+                                    TAG_END);
+
+            gdata->subs[THS_NameButton] = NewObject( HEADERBUTTON_GetClass(),NULL,
+                                        GA_Text,trackname,
+                                        GA_ID,GAD_TRACKHEADER_BASE|GAD_TRACKHEADER_NAME|(iTrack<<4),
+                                        ICA_TARGET,target,
+                                        GA_RelVerify, TRUE,
+                                    TAG_END);
+
+            /* Row 2: Silencer and Solo buttons */
+            gdata->subs[THS_SilencerBt] = NewObject( HEADERBUTTON_GetClass(),NULL,
+                                        GA_Text, "Sil.",
+                                        GA_TextAttr,(ULONG) &style->fontTiny_TA,
+                                        GA_ID,GAD_TRACKHEADER_BASE|GAD_TRACKHEADER_SILENCER|(iTrack<<4),
+                                        ICA_TARGET,target,
+                                        GA_RelVerify, TRUE,
+                                        BUTTON_BevelStyle, BVS_THIN,
+                                    TAG_END);
+
+            gdata->subs[THS_SoloBt] = NewObject( HEADERBUTTON_GetClass(),NULL,
+                                        GA_Text,"Solo",
+                                        GA_TextAttr,(ULONG) &style->fontTiny_TA,
+                                        GA_ID,GAD_TRACKHEADER_BASE|GAD_TRACKHEADER_SOLO|(iTrack<<4),
+                                        ICA_TARGET,target,
+                                        GA_RelVerify, TRUE,
+                                        BUTTON_BevelStyle, BVS_THIN,
+                                    TAG_END);
+
+            /* Row 3: Vol label and slider */
+            gdata->subs[THS_VolLabel] = NewObject( HEADERBUTTON_GetClass(),NULL,
+                                        GA_Text,(ULONG)"Vol.",
+                                        GA_ReadOnly,TRUE,
+                                        BUTTON_BevelStyle,BVS_NONE,
+                                        BUTTON_Transparent, TRUE,
+                                    TAG_END);
+
+            gdata->subs[THS_VolumeSlider] = NewObject( HEADERSLIDER_GetClass(),NULL,
+                                        SLIDER_Orientation, SLIDER_HORIZONTAL,
+                                        SLIDER_Min, 0,
+                                        SLIDER_Max, 128,
+                                        SLIDER_Level, 128,
+                                        ICA_TARGET,target,
+                                        GA_ID,GAD_TRACKHEADER_BASE|GAD_TRACKHEADER_VOL|(iTrack<<4),
+                                        GA_RelVerify, TRUE,
+                                    TAG_END);
+
+            /* Row 4: Pan label and slider */
+            gdata->subs[THS_PanLabel] = NewObject( HEADERBUTTON_GetClass(),NULL,
+                                        GA_Text,(ULONG)"Pan",
+                                        GA_ReadOnly,TRUE,
+                                        BUTTON_BevelStyle,BVS_NONE,
+                                        BUTTON_Transparent, TRUE,
+                                    TAG_END);
+
+            gdata->subs[THS_PanSlider] = NewObject( HEADERSLIDER_GetClass(),NULL,
+                                        SLIDER_Orientation, SLIDER_HORIZONTAL,
+                                        SLIDER_Min, 0,
+                                        SLIDER_Max, 128,
+                                        SLIDER_Level, 64,
+                                        ICA_TARGET,target,
+                                        GA_ID,GAD_TRACKHEADER_BASE|GAD_TRACKHEADER_PAN|(iTrack<<4),
+                                        GA_RelVerify, TRUE,
+                                    TAG_END);
+
+            /* Row 5: Info label */
+            gdata->subs[THS_InfoLabel] = NewObject( HEADERBUTTON_GetClass(),NULL,
+                                        GA_Text,(ULONG)"Mono 22050Hz",
+                                        GA_TextAttr,(ULONG) &style->fontTiny_TA,
+                                        GA_ReadOnly,TRUE,
+                                        BUTTON_BevelStyle,BVS_NONE,
+                                        BUTTON_Transparent, TRUE,
+                                    TAG_END);
+
+            /* Right side: VolumeRule */
+            gdata->subs[THS_VolumeRule] = NewObject( VOLUMERULE_GetClass(),NULL,
+                                        VOLUMERULE_StyleSheet,(ULONG)style,
+                                    TAG_END );
 
             /* means new object OK so far: */
             retval=(ULONG)Gad;
@@ -353,9 +240,37 @@ ULONG ASM SAVEDS TrackHeader_Dispatcher(
       }
       break;
     case OM_DISPOSE:
+      {
+        int i;
         bdbprintf_dispose("TrackHeader", Gad);
-      retval=DoSuperMethodA(C,(Object *)Gad,(Msg)M);
+        gdata=INST_DATA(C, Gad);
+
+        /* Dispose all child gadgets manually since we don't use LAYOUT_AddChild */
+        for(i=0; i<THS_Total; i++)
+        {
+            if(gdata->subs[i])
+            {
+                DisposeObject(gdata->subs[i]);
+                gdata->subs[i] = NULL;
+            }
+        }
+        retval=DoSuperMethodA(C,(Object *)Gad,(Msg)M);
+      }
       break;
+
+    case GM_LAYOUT:
+      {
+        gdata=INST_DATA(C, Gad);
+        retval = TrackHeader_Layout(C, Gad, (struct gpLayout *)M);
+      }
+      break;
+    case GM_RENDER:
+      {
+        gdata=INST_DATA(C, Gad);
+        retval = TrackHeader_Render(C, Gad, (struct gpLayout *)M,1);
+      }
+      break;
+
 
     case OM_UPDATE:
     case OM_SET:
@@ -368,6 +283,100 @@ ULONG ASM SAVEDS TrackHeader_Dispatcher(
       retval= TrackHeader_GetAttr(C,Gad,(struct opGet *)M); // supercall done inside
      break;
 
+    case GM_HITTEST:
+      {
+        /* Forward hit test to child gadgets */
+        struct gpHitTest *ht = (struct gpHitTest *)M;
+        WORD mx = ht->gpht_Mouse.X;
+        WORD my = ht->gpht_Mouse.Y;
+        int i;
+
+        gdata=INST_DATA(C, Gad);
+        retval = 0; /* default: not hit */
+
+        /* Check all child gadgets for hit */
+        for(i=0; i<THS_Total; i++)
+        {
+            struct Gadget *sub = (struct Gadget *)gdata->subs[i];
+            if(sub)
+            {
+                /* Convert mouse coords relative to child gadget */
+                WORD childX = mx + Gad->LeftEdge - sub->LeftEdge;
+                WORD childY = my + Gad->TopEdge - sub->TopEdge;
+
+                /* Check if inside child bounds */
+                if(childX >= 0 && childX < sub->Width &&
+                   childY >= 0 && childY < sub->Height)
+                {
+                    /* Forward to child's GM_HITTEST */
+                    struct gpHitTest childHt;
+                    childHt.MethodID = GM_HITTEST;
+                    childHt.gpht_GInfo = ht->gpht_GInfo;
+                    childHt.gpht_Mouse.X = childX;
+                    childHt.gpht_Mouse.Y = childY;
+
+                    if(DoMethodA((Object*)sub, (Msg)&childHt))
+                    {
+                        retval = GMR_GADGETHIT;
+                        break;
+                    }
+                }
+            }
+        }
+        /* If no child hit, check if we are hit */
+        if(!retval)
+        {
+            if(mx >= 0 && mx < Gad->Width && my >= 0 && my < Gad->Height)
+            {
+                retval = GMR_GADGETHIT;
+            }
+        }
+      }
+      break;
+
+    case GM_GOACTIVE:
+    case GM_HANDLEINPUT:
+      {
+        /* Forward to child gadget that was hit */
+        struct gpInput *gpi = (struct gpInput *)M;
+        WORD mx = gpi->gpi_Mouse.X;
+        WORD my = gpi->gpi_Mouse.Y;
+        int i;
+
+        gdata=INST_DATA(C, Gad);
+        retval = GMR_NOREUSE;
+
+        /* Find which child gadget was clicked */
+        for(i=0; i<THS_Total; i++)
+        {
+            struct Gadget *sub = (struct Gadget *)gdata->subs[i];
+            if(sub)
+            {
+                /* Convert mouse coords relative to child gadget */
+                WORD childX = mx + Gad->LeftEdge - sub->LeftEdge;
+                WORD childY = my + Gad->TopEdge - sub->TopEdge;
+
+                /* Check if inside child bounds */
+                if(childX >= 0 && childX < sub->Width &&
+                   childY >= 0 && childY < sub->Height)
+                {
+                    /* Forward to child */
+                    struct gpInput childGpi;
+                    childGpi.MethodID = M->MethodID;
+                    childGpi.gpi_GInfo = gpi->gpi_GInfo;
+                    childGpi.gpi_IEvent = gpi->gpi_IEvent;
+                    childGpi.gpi_Termination = gpi->gpi_Termination;
+                    childGpi.gpi_Mouse.X = childX;
+                    childGpi.gpi_Mouse.Y = childY;
+                    childGpi.gpi_TabletData = gpi->gpi_TabletData;
+
+                    retval = DoMethodA((Object*)sub, (Msg)&childGpi);
+                    break;
+                }
+            }
+        }
+      }
+      break;
 
     default:
       // for anything, use default layout behaviour.

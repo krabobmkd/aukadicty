@@ -15,8 +15,8 @@
 #include <intuition/classes.h>
 #include <intuition/classusr.h>
 
-#include <proto/layout.h>
-#include <gadgets/layout.h>
+// #include <proto/layout.h>
+// #include <gadgets/layout.h>
 
 #include <proto/button.h>
 #include <gadgets/button.h>
@@ -204,7 +204,8 @@ int TrackHeaderStaticInit()
     // MakeClass( ClassID, SuperClassID, SuperClassPtr,InstanceSize, Flags )
 
 
-    if(TrackHeaderClassPtr=MakeClass(NULL,NULL,LAYOUT_GetClass(),sizeof(TrackHeader),0))
+//    if(TrackHeaderClassPtr=MakeClass(NULL,NULL,LAYOUT_GetClass(),sizeof(TrackHeader),0))
+    if(TrackHeaderClassPtr=MakeClass(NULL,"gadgetclass",0,sizeof(TrackHeader),0))
     {
       TrackHeaderClassPtr->cl_Dispatcher.h_Entry=(REHOOKFUNC)TrackHeader_Dispatcher;
      // do not AddClass() when static, no need to publish, TrackHeaderClassPtr will be enough.

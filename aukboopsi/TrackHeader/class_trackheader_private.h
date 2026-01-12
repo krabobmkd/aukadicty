@@ -28,23 +28,30 @@ extern "C" {
 * DEVTODO: make this class evolve to retain the data needed to draw and interact with your gadget.
 */
 
-/* subs gadget in our layout */
-#define THS_CloseButton 0
-#define THS_NameButton  1
-#define THS_VolumeSlider  2
-#define THS_PanSlider  3
-#define THS_VolumeRule  4
+/* subs gadget indices - direct children, no nested layouts */
+#define THS_CloseButton   0
+#define THS_NameButton    1
+#define THS_SilencerBt    2
+#define THS_SoloBt        3
+#define THS_VolLabel      4
+#define THS_VolumeSlider  5
+#define THS_PanLabel      6
+#define THS_PanSlider     7
+#define THS_InfoLabel     8
+#define THS_VolumeRule    9
 
-#define THS_SilencerBt 5
-#define THS_SoloBt 6
-#define THS_SelectBt 7
-#define THS_InfoLabel 8
-
-#define THS_Total  9
+#define THS_Total  10
 
 typedef struct ITrackHeader {
 
     Object *subs[THS_Total];
+
+    /* frame rectangle for clipping */
+    struct Rectangle _framerec;
+
+    /* minimal dimensions */
+    UWORD _minimalWidth;
+    UWORD _minimalHeight;
 
     /* Pointer to AukStyle for visual styling */
     AukStyle *_style;
