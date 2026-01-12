@@ -346,10 +346,10 @@ void updateHorizontalScrollDomain(TrackListView *pm)
     AukAProject *project;
     long long duration;
     long long timePerPixelWidth;
-    long long timeLeft, timeRight;
     ULONG domainWidthPix;
     ULONG visibleWidthRelative;
     ULONG trackPixelWidth;
+    ULONG scrollerTop;
     LONG arrowDelta;
 
     if(!pm || !pm->trackList || !pm->scrollerH) return;
@@ -383,6 +383,10 @@ void updateHorizontalScrollDomain(TrackListView *pm)
      GetAttr(TRACKLIST_TrackAreaWidth, pm->trackList, &trackPixelWidth);
     if(trackPixelWidth==0) return;
 
+    // may move scrollerTop or not...
+    GetAttr(SCROLLER_Top, pm->scrollerH, &scrollerTop);
+
+
     /* Clamp timePerPixelWidth to minimum (prevent divide by zero and over-zoom) */
     if(timePerPixelWidth < MIN_TIME_PER_PIXEL_WIDTH) {
         timePerPixelWidth = MIN_TIME_PER_PIXEL_WIDTH;
@@ -402,18 +406,38 @@ void updateHorizontalScrollDomain(TrackListView *pm)
         if(arrowDelta==0) arrowDelta=1;
 
     }
+    // shouldnt happen, but well...
+    if(visibleWidthRelative>SCROLLERH_FIXEDTOTAL) visibleWidthRelative = SCROLLERH_FIXEDTOTAL;
 
-    SetGadgetAttrs((struct Gadget *)pm->scrollerH, pm->window, NULL,
-        SCROLLER_Total,/* totalScroll*/ SCROLLERH_FIXEDTOTAL, // WORD 16384
-        SCROLLER_Visible, visibleWidthRelative,
-        SCROLLER_ArrowDelta,arrowDelta,
-        TAG_END);
+    if(scrollerTop>(SCROLLERH_FIXEDTOTAL-visibleWidthRelative))
+    scrollerTop = SCROLLERH_FIXEDTOTAL-visibleWidthRelative;
+
+    // {
+    //     long long bottomtime = (trackListTimeproj._pixAtLeft+trackPixelWidth)*
+    //                             trackListTimeproj._timePerPixelWidth;
+    //     if(bottomtime>duration)
+    //     {
+    //         scrollerTop = SCROLLERH_FIXEDTOTAL-visibleWidthRelative;
+
+    //     }
+    // }
+    // if(scrollerTop+visibleWidthRelative>SCROLLERH_FIXEDTOTAL)
+    //     scrollerTop = SCROLLERH_FIXEDTOTAL-visibleWidthRelative;
+
 
     SetGadgetAttrs((struct Gadget *)pm->timerule, pm->window, NULL,
         TIMERULE_TimePerPixelWidth,&timePerPixelWidth,
         // not here INFINITESCROLL_Position, &trackListTimeproj._timeAtLeft,
         TAG_END);
 
+    SetGadgetAttrs((struct Gadget *)pm->scrollerH, pm->window, NULL,
+        SCROLLER_Total,/* totalScroll*/ SCROLLERH_FIXEDTOTAL, // WORD 16384
+        SCROLLER_Visible, visibleWidthRelative,
+        SCROLLER_Top,scrollerTop,
+        SCROLLER_ArrowDelta,arrowDelta,
+        TAG_END);
+    // need this update
+    TrackListView_UpdateTimeRule(pm);
 }
 
 
