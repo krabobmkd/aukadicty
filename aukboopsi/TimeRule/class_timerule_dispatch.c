@@ -119,9 +119,6 @@ ULONG ASM SAVEDS TimeRule_Dispatcher(
       retval=1;
       break;
    case GM_LAYOUT:
-   bdbprintf("TimeRule GM_LAYOUT%08x %d\n",M->gpLayout.gpl_GInfo->gi_Screen,
-   M->gpLayout.gpl_GInfo->gi_Screen->RastPort.BitMap->Depth);
-
       retval = TimeRule_Layout(C,(Object *)Gad,(struct gpLayout *)M);
         break;
 

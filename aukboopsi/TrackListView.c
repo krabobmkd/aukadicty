@@ -328,7 +328,7 @@ void updateVerticalScrollDomain(TrackListView *pm)
  * min = 1/(44100*2) seconds/pixel = 1/88200 sec/px
  * In fixed-point 32.32: (1LL << 32) / 88200 = approximately 48693
  */
-#define MIN_TIME_PER_PIXEL_WIDTH 48693LL
+#define MIN_TIME_PER_PIXEL_WIDTH (48693LL>>8)
 
 /**
  * Update the Horizontal scroller's domain based on the trackList's max time length
@@ -347,11 +347,13 @@ void updateHorizontalScrollDomain(TrackListView *pm)
     long long duration;
     long long timePerPixelWidth;
     long long timeLeft, timeRight;
-    long long domainWidthPix;
+    ULONG domainWidthPix;
     ULONG visibleWidthRelative;
     ULONG totalScroll;
     ULONG visibleScroll;
     LONG arrowDelta;
+
+ printf("updateHorizontalScrollDomain\n");
 
     if(!pm || !pm->trackList || !pm->scrollerH) return;
 
@@ -364,17 +366,19 @@ void updateHorizontalScrollDomain(TrackListView *pm)
     /* Get project duration (AukFixed 32.32 format, in seconds) */
     duration = project->GetDuration(project);
 
+ printf("updateHorizontalScrollDomain duration:%lld\n",duration);
+
     if(duration <= 0) {
         /* No duration, set scroller to full visible (disabled state) */
         SetGadgetAttrs((struct Gadget *)pm->scrollerH, pm->window, NULL,
             SCROLLER_Total, 1,
             SCROLLER_Visible, 1,
-            SCROLLER_ArrowDelta,0,
+            SCROLLER_ArrowDelta,1,
             TAG_END);
 
         return;
     }
-
+printf("updateHorizontalScrollDomain2\n");
 
     /* Get visible width from the gadget. TrackListArea uses headerWidth for left side,
      * so visible track area width = gadget width.
@@ -382,28 +386,49 @@ void updateHorizontalScrollDomain(TrackListView *pm)
      */
      GetAttr(TRACKLIST_TimeProjection, pm->trackList, &trackListTimeproj);
      timePerPixelWidth = trackListTimeproj._timePerPixelWidth;
+printf("updateHorizontalScrollDomain3\n");
 
     /* Clamp timePerPixelWidth to minimum (prevent divide by zero and over-zoom) */
     if(timePerPixelWidth < MIN_TIME_PER_PIXEL_WIDTH) {
         timePerPixelWidth = MIN_TIME_PER_PIXEL_WIDTH;
     }
 
+ printf("updateHorizontalScrollDomain4\n");
+
+    domainWidthPix =  (ULONG)((unsigned long long)duration/(unsigned long long)timePerPixelWidth);
+     if(domainWidthPix==0) domainWidthPix=1;
+
+printf("domainWidthPix:%d\n",(int)domainWidthPix);
+
+    if(domainWidthPix <=(ULONG)trackListGad->Width) {
+        visibleWidthRelative = SCROLLERH_FIXEDTOTAL;
+        arrowDelta = 1;
+    } else
+    {   // domainWidthPix > trackListGad->Width
+        visibleWidthRelative = ((ULONG)trackListGad->Width*SCROLLERH_FIXEDTOTAL)/visibleWidthRelative;
+
+        arrowDelta = (visibleWidthRelative*16)/trackListGad->Width; // should do 16 pixels
+        if(arrowDelta==0) arrowDelta=1;
+
+        //(((long long)trackListGad->Width*timePerPixelWidth*SCROLLERH_FIXEDTOTAL)/duration);
+
+    }
+printf("visibleWidthRelative:%d\n",(int)visibleWidthRelative);
+
+
     /* Calculate domain width in pixels: domainWidth = duration / timePerPixelWidth
      * Both are in AukFixed 32.32 format, so dividing them gives an integer result in pixels.
      */
 
-     if(domainWidthPix<=0) domainWidthPix=1;
 
   //  visibleWidth = (ULONG) (((long long)trackListGad->Width)*SCROLLERH_FIXEDTOTAL)/domainWidthPix;
  //aka
-    visibleWidthRelative = (ULONG) (((long long)trackListGad->Width*timePerPixelWidth*SCROLLERH_FIXEDTOTAL)/duration);
+
+//    visibleWidthRelative = (ULONG) (((long long)trackListGad->Width*timePerPixelWidth*SCROLLERH_FIXEDTOTAL)/duration);
 
 
-    if(visibleWidthRelative == 0) visibleWidthRelative = 1;
-
-    arrowDelta = visibleWidthRelative*16/trackListGad->Width; // should do 16 pixels
-    if(arrowDelta==0) arrowDelta=1;
-
+//    if(visibleWidthRelative == 0) visibleWidthRelative = 1;
+ return;
     SetGadgetAttrs((struct Gadget *)pm->scrollerH, pm->window, NULL,
         SCROLLER_Total,/* totalScroll*/ SCROLLERH_FIXEDTOTAL, // WORD 16384
         SCROLLER_Visible, visibleWidthRelative,
@@ -414,7 +439,7 @@ void updateHorizontalScrollDomain(TrackListView *pm)
         TIMERULE_TimePerPixelWidth,&timePerPixelWidth,
         // not here INFINITESCROLL_Position, &trackListTimeproj._timeAtLeft,
         TAG_END);
-
+printf("updateHorizontalScrollDomain5\n");
 }
 
 

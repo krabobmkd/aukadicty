@@ -336,7 +336,7 @@ ULONG InfiniteScroll_Render(Class *C, struct Gadget *Gad, struct gpRender *Rende
 
     gdata=INST_DATA(C, Gad);
 
- bdbprintf("InfiniteScroll_Render renderf: %08x\n",(int)gdata->_renderFunction);
+// bdbprintf("InfiniteScroll_Render renderf: %08x\n",(int)gdata->_renderFunction);
 
 
 
