@@ -449,7 +449,7 @@ static int TrackListArea_CreateTrackLine(
 
     if(dataTrack && dataTrack->name) trackname = dataTrack->name;
     if(trackname) TRACKHEADER_Nametag = TRACKHEADER_Name;
-    bdbprintf("TrackListArea_CreateTrackLine styleSheet:%08x\n",(int)styleSheet);
+ //   bdbprintf("TrackListArea_CreateTrackLine styleSheet:%08x\n",(int)styleSheet);
     /* Create TrackHeader gadget */
     strack->_trackHeader = NULL;
 //        NewObject(TRACKHEADER_GetClass(), NULL,

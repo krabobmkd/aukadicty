@@ -13,20 +13,20 @@
  * Colors are obtained as pens via ObtainBestPenA for efficient rendering
  */
 
-/* Internal helper to obtain a pen for an RGB color.
+/* Internal helper to obtain a pen for a ManagedColor.
  * Converts 0x00RRGGBB format to 32-bit per component for ObtainBestPenA.
- * Returns pen number or -1 on failure.
+ * Sets c->pen and c->allocated appropriately.
  */
-static WORD ObtainPenForRGB(struct ColorMap *cm, ULONG rgb) {
+static void ObtainPenForRGB(struct ColorMap *cm, ManagedColor *c) {
     ULONG r, g, b;
     LONG pen;
 
-    if (!cm) return -1;
+    if (!cm || !c) return;
 
     /* Extract 8-bit components and expand to 32-bit (0xFF -> 0xFFFFFFFF) */
-    r = ((rgb >> 16) & 0xFF);
-    g = ((rgb >> 8) & 0xFF);
-    b = (rgb & 0xFF);
+    r = ((c->rgbcolor >> 16) & 0xFF);
+    g = ((c->rgbcolor >> 8) & 0xFF);
+    b = (c->rgbcolor & 0xFF);
 
     /* Expand to full 32-bit range as expected by ObtainBestPenA */
     r = (r << 24) | (r << 16) | (r << 8) | r;
@@ -35,16 +35,23 @@ static WORD ObtainPenForRGB(struct ColorMap *cm, ULONG rgb) {
 
     pen = ObtainBestPenA(cm, r, g, b, NULL);
 
-    return (WORD)pen;
+    if (pen != -1) {
+        c->pen = (WORD)pen;
+        c->allocated = 1;
+    } else {
+        c->pen = (WORD)FindColor(cm, r, g, b, 255);
+        c->allocated = 0;
+    }
 }
 
-/* Internal helper to release a pen if it was allocated */
-static void ReleasePenIfValid(struct ColorMap *cm, WORD *penPtr) {
-    if (!cm || !penPtr) return;
-    if (*penPtr >= 0) {
-        ReleasePen(cm, *penPtr);
-        *penPtr = -1;
+/* Internal helper to release a pen if it was allocated via ObtainBestPenA */
+static void ReleasePenIfValid(struct ColorMap *cm, ManagedColor *c) {
+    if (!cm || !c) return;
+    if (c->allocated && c->pen >= 0) {
+        ReleasePen(cm, c->pen);
     }
+    c->pen = -1;
+    c->allocated = 0;
 }
 
 /* Internal helper to open a single font */
@@ -125,14 +132,14 @@ void AukStyleSheet_Serialize(void* This, ISerializer* ser, const char* pName) {
         return;
     }
 
-    /* Serialize colors */
-    ser->t_uint(ser, "background", &styleSheet->style.background);
-    ser->t_uint(ser, "trackBackground", &styleSheet->style.trackBackground);
-    ser->t_uint(ser, "soundBackground", &styleSheet->style.soundBackground);
-    ser->t_uint(ser, "selectedBackground", &styleSheet->style.selectedBackground);
-    ser->t_uint(ser, "waveformDark", &styleSheet->style.waveformDark);
-    ser->t_uint(ser, "waveformLight", &styleSheet->style.waveformLight);
-    ser->t_uint(ser, "textColor", &styleSheet->style.textColor);
+    /* Serialize colors (only rgbcolor field, pen/allocated are runtime) */
+    ser->t_uint(ser, "background", &styleSheet->style.background.rgbcolor);
+    ser->t_uint(ser, "trackBackground", &styleSheet->style.trackBackground.rgbcolor);
+    ser->t_uint(ser, "soundBackground", &styleSheet->style.soundBackground.rgbcolor);
+    ser->t_uint(ser, "selectedBackground", &styleSheet->style.selectedBackground.rgbcolor);
+    ser->t_uint(ser, "waveformDark", &styleSheet->style.waveformDark.rgbcolor);
+    ser->t_uint(ser, "waveformLight", &styleSheet->style.waveformLight.rgbcolor);
+    ser->t_uint(ser, "textColor", &styleSheet->style.textColor.rgbcolor);
 
     /* Serialize font specifications (name + height for each font) */
     ser->t_string_mutable(ser, "fontTinyName", &styleSheet->fontTinyName);
@@ -267,17 +274,15 @@ int AukStyleSheet_ApplyStyle(void* This, struct Screen *scr) {
         cm = scr->ViewPort.ColorMap;
 
         /* Obtain pens for all colors */
-        styleSheet->style.penBackground = ObtainPenForRGB(cm, styleSheet->style.background);
-        styleSheet->style.penTrackBackground = ObtainPenForRGB(cm, styleSheet->style.trackBackground);
-        styleSheet->style.penSoundBackground = ObtainPenForRGB(cm, styleSheet->style.soundBackground);
-        styleSheet->style.penSelectedBackground = ObtainPenForRGB(cm, styleSheet->style.selectedBackground);
-        styleSheet->style.penWaveformDark = ObtainPenForRGB(cm, styleSheet->style.waveformDark);
-        styleSheet->style.penWaveformLight = ObtainPenForRGB(cm, styleSheet->style.waveformLight);
-        styleSheet->style.penText = ObtainPenForRGB(cm, styleSheet->style.textColor);
-
-        /* Obtain fixed white and black pens */
-        styleSheet->style.penWhite = ObtainPenForRGB(cm, 0x00FFFFFF);
-        styleSheet->style.penBlack = ObtainPenForRGB(cm, 0x00000000);
+        ObtainPenForRGB(cm, &styleSheet->style.background);
+        ObtainPenForRGB(cm, &styleSheet->style.trackBackground);
+        ObtainPenForRGB(cm, &styleSheet->style.soundBackground);
+        ObtainPenForRGB(cm, &styleSheet->style.selectedBackground);
+        ObtainPenForRGB(cm, &styleSheet->style.waveformDark);
+        ObtainPenForRGB(cm, &styleSheet->style.waveformLight);
+        ObtainPenForRGB(cm, &styleSheet->style.textColor);
+        ObtainPenForRGB(cm, &styleSheet->style.white);
+        ObtainPenForRGB(cm, &styleSheet->style.black);
     }
 
     /* Close any existing fonts first */
@@ -325,15 +330,15 @@ void AukStyleSheet_ReleasePens(void* This) {
     cm = styleSheet->screen->ViewPort.ColorMap;
 
     /* Release all pens */
-    ReleasePenIfValid(cm, &styleSheet->style.penBackground);
-    ReleasePenIfValid(cm, &styleSheet->style.penTrackBackground);
-    ReleasePenIfValid(cm, &styleSheet->style.penSoundBackground);
-    ReleasePenIfValid(cm, &styleSheet->style.penSelectedBackground);
-    ReleasePenIfValid(cm, &styleSheet->style.penWaveformDark);
-    ReleasePenIfValid(cm, &styleSheet->style.penWaveformLight);
-    ReleasePenIfValid(cm, &styleSheet->style.penText);
-    ReleasePenIfValid(cm, &styleSheet->style.penWhite);
-    ReleasePenIfValid(cm, &styleSheet->style.penBlack);
+    ReleasePenIfValid(cm, &styleSheet->style.background);
+    ReleasePenIfValid(cm, &styleSheet->style.trackBackground);
+    ReleasePenIfValid(cm, &styleSheet->style.soundBackground);
+    ReleasePenIfValid(cm, &styleSheet->style.selectedBackground);
+    ReleasePenIfValid(cm, &styleSheet->style.waveformDark);
+    ReleasePenIfValid(cm, &styleSheet->style.waveformLight);
+    ReleasePenIfValid(cm, &styleSheet->style.textColor);
+    ReleasePenIfValid(cm, &styleSheet->style.white);
+    ReleasePenIfValid(cm, &styleSheet->style.black);
 
     styleSheet->screen = NULL;
 }
@@ -364,8 +369,8 @@ void AukStyleSheet_CloseFonts(void* This) {
 int AukStyleSheet_SetBackground(AukStyleSheet* This, ULONG color) {
     if (!This) return 0;
 
-    if (This->style.background != color) {
-        This->style.background = color;
+    if (This->style.background.rgbcolor != color) {
+        This->style.background.rgbcolor = color;
     }
     return 1;
 }
@@ -373,8 +378,8 @@ int AukStyleSheet_SetBackground(AukStyleSheet* This, ULONG color) {
 int AukStyleSheet_SetTrackBackground(AukStyleSheet* This, ULONG color) {
     if (!This) return 0;
 
-    if (This->style.trackBackground != color) {
-        This->style.trackBackground = color;
+    if (This->style.trackBackground.rgbcolor != color) {
+        This->style.trackBackground.rgbcolor = color;
     }
     return 1;
 }
@@ -382,8 +387,8 @@ int AukStyleSheet_SetTrackBackground(AukStyleSheet* This, ULONG color) {
 int AukStyleSheet_SetSoundBackground(AukStyleSheet* This, ULONG color) {
     if (!This) return 0;
 
-    if (This->style.soundBackground != color) {
-        This->style.soundBackground = color;
+    if (This->style.soundBackground.rgbcolor != color) {
+        This->style.soundBackground.rgbcolor = color;
     }
     return 1;
 }
@@ -391,8 +396,8 @@ int AukStyleSheet_SetSoundBackground(AukStyleSheet* This, ULONG color) {
 int AukStyleSheet_SetSelectedBackground(AukStyleSheet* This, ULONG color) {
     if (!This) return 0;
 
-    if (This->style.selectedBackground != color) {
-        This->style.selectedBackground = color;
+    if (This->style.selectedBackground.rgbcolor != color) {
+        This->style.selectedBackground.rgbcolor = color;
     }
     return 1;
 }
@@ -400,8 +405,8 @@ int AukStyleSheet_SetSelectedBackground(AukStyleSheet* This, ULONG color) {
 int AukStyleSheet_SetWaveformDark(AukStyleSheet* This, ULONG color) {
     if (!This) return 0;
 
-    if (This->style.waveformDark != color) {
-        This->style.waveformDark = color;
+    if (This->style.waveformDark.rgbcolor != color) {
+        This->style.waveformDark.rgbcolor = color;
     }
     return 1;
 }
@@ -409,8 +414,8 @@ int AukStyleSheet_SetWaveformDark(AukStyleSheet* This, ULONG color) {
 int AukStyleSheet_SetWaveformLight(AukStyleSheet* This, ULONG color) {
     if (!This) return 0;
 
-    if (This->style.waveformLight != color) {
-        This->style.waveformLight = color;
+    if (This->style.waveformLight.rgbcolor != color) {
+        This->style.waveformLight.rgbcolor = color;
     }
     return 1;
 }
@@ -418,8 +423,8 @@ int AukStyleSheet_SetWaveformLight(AukStyleSheet* This, ULONG color) {
 int AukStyleSheet_SetTextColor(AukStyleSheet* This, ULONG color) {
     if (!This) return 0;
 
-    if (This->style.textColor != color) {
-        This->style.textColor = color;
+    if (This->style.textColor.rgbcolor != color) {
+        This->style.textColor.rgbcolor = color;
     }
     return 1;
 }
@@ -444,24 +449,41 @@ void AukStyleSheet_Init(AukStyleSheet* styleSheet) {
         styleSheet->CloseFonts = AukStyleSheet_CloseFonts;
 
         /* Initialize colors with Audacity-like defaults */
-        styleSheet->style.background = 0x00464646;      /* Main background gray */
-        styleSheet->style.trackBackground = 0x00303030; /* Track empty area - dark gray */
-        styleSheet->style.soundBackground = 0x00454555; /* Sound clip area - slight blue tint */
-        styleSheet->style.selectedBackground = 0x005566AA; /* Selected region - blue highlight */
-        styleSheet->style.waveformDark = 0x00214783;    /* Dark blue for waveform min/max */
-        styleSheet->style.waveformLight = 0x004464C0;   /* Lighter blue for waveform RMS */
-        styleSheet->style.textColor = 0x00FFFFFF;       /* White */
+        styleSheet->style.background.rgbcolor = 0x00333355;      /* Main background gray */
+        styleSheet->style.background.pen = -1;
+        styleSheet->style.background.allocated = 0;
 
-        /* Initialize pen indices to -1 (not allocated) */
-        styleSheet->style.penBackground = -1;
-        styleSheet->style.penTrackBackground = -1;
-        styleSheet->style.penSoundBackground = -1;
-        styleSheet->style.penSelectedBackground = -1;
-        styleSheet->style.penWaveformDark = -1;
-        styleSheet->style.penWaveformLight = -1;
-        styleSheet->style.penText = -1;
-        styleSheet->style.penWhite = -1;
-        styleSheet->style.penBlack = -1;
+        styleSheet->style.trackBackground.rgbcolor = 0x00464656; /* Track empty area - dark gray */
+        styleSheet->style.trackBackground.pen = -1;
+        styleSheet->style.trackBackground.allocated = 0;
+
+        styleSheet->style.soundBackground.rgbcolor = 0x00757575; /* Sound clip area - slight blue tint */
+        styleSheet->style.soundBackground.pen = -1;
+        styleSheet->style.soundBackground.allocated = 0;
+
+        styleSheet->style.selectedBackground.rgbcolor = 0x005566AA; /* Selected region - blue highlight */
+        styleSheet->style.selectedBackground.pen = -1;
+        styleSheet->style.selectedBackground.allocated = 0;
+
+        styleSheet->style.waveformDark.rgbcolor = 0x00214783;    /* Dark blue for waveform min/max */
+        styleSheet->style.waveformDark.pen = -1;
+        styleSheet->style.waveformDark.allocated = 0;
+
+        styleSheet->style.waveformLight.rgbcolor = 0x004464C0;   /* Lighter blue for waveform RMS */
+        styleSheet->style.waveformLight.pen = -1;
+        styleSheet->style.waveformLight.allocated = 0;
+
+        styleSheet->style.textColor.rgbcolor = 0x00FFFFFF;       /* White */
+        styleSheet->style.textColor.pen = -1;
+        styleSheet->style.textColor.allocated = 0;
+
+        styleSheet->style.white.rgbcolor = 0x00FFFFFF;
+        styleSheet->style.white.pen = -1;
+        styleSheet->style.white.allocated = 0;
+
+        styleSheet->style.black.rgbcolor = 0x00000000;
+        styleSheet->style.black.pen = -1;
+        styleSheet->style.black.allocated = 0;
 
         /* Screen not yet set */
         styleSheet->screen = NULL;

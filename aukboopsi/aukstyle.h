@@ -19,29 +19,28 @@
 extern "C" {
 #endif
 
+/* ManagedColor - Color with pen allocation tracking */
+struct ManagedColor
+{
+    ULONG rgbcolor;     /* RGB 0x00RRGGBB format - serialized */
+    WORD pen;           /* Pen index for drawing - runtime only */
+    WORD allocated;     /* 1 if pen obtained via ObtainBestPenA, 0 if FindColor */
+};
+typedef struct ManagedColor ManagedColor;
+
 /* AukStyle structure - Plain C struct with no inheritance */
 struct AukStyle
 {
-    /* Color values (RGB 0x00RRGGBB format) - Audacity-like palette */
-    ULONG background;           /* Main background color (gray) */
-    ULONG trackBackground;      /* Track empty background (dark gray) */
-    ULONG soundBackground;      /* Sound clip background (lighter) */
-    ULONG selectedBackground;   /* Selected region background */
-    ULONG waveformDark;         /* Waveform min/max dark blue */
-    ULONG waveformLight;        /* Waveform RMS lighter blue */
-    ULONG textColor;            /* Text color */
-
-    /* Pen indices obtained via ObtainBestPenA - runtime only, NOT serialized */
-    WORD penBackground;         /* Pen for main background */
-    WORD penTrackBackground;    /* Pen for track empty area */
-    WORD penSoundBackground;    /* Pen for sound clip area */
-    WORD penSelectedBackground; /* Pen for selected region */
-    WORD penWaveformDark;       /* Pen for waveform min/max */
-    WORD penWaveformLight;      /* Pen for waveform RMS */
-    WORD penText;               /* Pen for text */
-    WORD penWhite;              /* Always white pen */
-    WORD penBlack;              /* Always black pen */
-    WORD _penPadding;           /* Padding for alignment */
+    /* Managed colors (RGB + pen + allocation flag) - Audacity-like palette */
+    ManagedColor background;           /* Main background color (gray) */
+    ManagedColor trackBackground;      /* Track empty background (dark gray) */
+    ManagedColor soundBackground;      /* Sound clip background (lighter) */
+    ManagedColor selectedBackground;   /* Selected region background */
+    ManagedColor waveformDark;         /* Waveform min/max dark blue */
+    ManagedColor waveformLight;        /* Waveform RMS lighter blue */
+    ManagedColor textColor;            /* Text color */
+    ManagedColor white;                /* Always white */
+    ManagedColor black;                /* Always black */
 
     /* Font pointers - Amiga TextFont structures (runtime, NOT serialized) */
     struct TextFont *fontTiny;    /* Small font for compact UI elements */

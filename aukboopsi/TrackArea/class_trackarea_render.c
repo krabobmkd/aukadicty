@@ -153,75 +153,110 @@ void TrackArea_RenderDelegate(InfiniteScrollRenderParams *p)
     unsigned int soundCount, i;
     long long timePerPixel;
     long long tileLeftTime, tileRightTime;
-
+    AukStyle *style = gdata->_style;
+    WORD penBackground,penBgSound;
     if(!Gad || !rp) return;
-
 
     gdata = INST_DATA(TrackAreaClassPtr, Gad);
 
-    /* Clear tile to background color */
-    SetAPen(rp, penbg);
-    SetBPen(rp, penbg);
-    RectFill(rp, p->destX, p->destY, p->destWidth - 1, p->destHeight - 1);
-
-    /* Draw bottom separator line */
-    SetAPen(rp, 2);
-    Move(rp, p->destX, p->destHeight - 1);
-    Draw(rp, p->destWidth - 1, p->destHeight - 1);
+    /* Style concern... */
+    style = gdata->_style;
+    penBackground = (style->background.pen!=-1)?style->background.pen:1;
+    penBgSound = (style->soundBackground.pen!=-1)?style->soundBackground.pen:2;
 
     /* Check we have required data */
     proj = gdata->_pTimeProjection;
     track = gdata->_dataTrack;
-    if(!proj || !track || !track->sounds) return;
+    if(!proj || !track || !track->sounds)
+    {
+        /* No data: clear entire tile to background */
+        SetAPen(rp, penBackground);
+        RectFill(rp, p->destX, p->destY, p->destWidth - 1, p->destHeight - 1);
+        SetAPen(rp, 2);
+        Move(rp, p->destX, p->destHeight - 1);
+        Draw(rp, p->destWidth - 1, p->destHeight - 1);
+        return;
+    }
 
     timePerPixel = proj->_timePerPixelWidth;
- //   bdbprintf("TrackArea_RenderDelegate timePerPixel %lld\n",timePerPixel);
-    if(timePerPixel == 0) return;
+    if(timePerPixel == 0)
+    {
+        SetAPen(rp, penBackground);
+        RectFill(rp, p->destX, p->destY, p->destWidth - 1, p->destHeight - 1);
+        SetAPen(rp, 2);
+        Move(rp, p->destX, p->destHeight - 1);
+        Draw(rp, p->destWidth - 1, p->destHeight - 1);
+        return;
+    }
 
     sounds = track->sounds;
     soundCount = AukArray_GetCount(sounds);
-    if(soundCount == 0) return;
 
     /* Calculate time range visible in this tile */
     tileLeftTime = p->_start._scrollx * timePerPixel;
     tileRightTime = (p->_start._scrollx + p->destWidth) * timePerPixel;
 
-    /* Iterate through sounds and draw those that overlap with tile */
-    for(i = 0; i < soundCount; i++)
+    /* Track current X position for gap filling - sounds are sorted and non-overlapping */
     {
-        AukSound *sound = (AukSound *)sounds->items[i];
-        long long soundStart, soundEnd;
-        LONG pixLeft, pixRight;
-        int pen;
+        LONG currentX = p->destX;
+        LONG tileRight = p->destWidth - 1;
 
-        if(!sound) continue;
+        /* Iterate through sounds and draw gaps + sounds without overdraw */
+        for(i = 0; i < soundCount; i++)
+        {
+            AukSound *sound = (AukSound *)sounds->items[i];
+            long long soundStart, soundEnd;
+            LONG pixLeft, pixRight;
 
-        soundStart = sound->startTime;
-        soundEnd = sound->endTime;
+            if(!sound) continue;
 
-        /* Skip sounds that don't overlap with this tile's time range */
-        /* Since sounds are sorted by time, we can break early if sound starts after tile ends */
-        if(soundStart >= tileRightTime) break;
-        if(soundEnd <= tileLeftTime) continue;
+            soundStart = sound->startTime;
+            soundEnd = sound->endTime;
 
-        /* Convert sound times to pixel positions relative to tile left edge */
-        pixLeft = (LONG)((soundStart / timePerPixel) - p->_start._scrollx);
-        pixRight = (LONG)((soundEnd / timePerPixel) - p->_start._scrollx) -1;
+            /* Since sounds are sorted, break early if sound starts after tile ends */
+            if(soundStart >= tileRightTime) break;
+            if(soundEnd <= tileLeftTime) continue;
 
-        /* Clamp to tile bounds */
-        if(pixLeft < 0) pixLeft = 0;
-        if(pixRight > p->destWidth) pixRight = p->destWidth;
+            /* Convert sound times to pixel positions relative to tile left edge */
+            pixLeft = (LONG)((soundStart / timePerPixel) - p->_start._scrollx);
+            pixRight = (LONG)((soundEnd / timePerPixel) - p->_start._scrollx) - 1;
 
-        /* Skip if completely outside tile after clamping */
-        if(pixLeft >= pixRight) continue;
+            /* Clamp to tile bounds */
+            if(pixLeft < p->destX) pixLeft = p->destX;
+            if(pixRight > tileRight) pixRight = tileRight;
 
-        /* Choose color based on sound index (cycle through a few colors) */
-        pen = 3 + (i % 5);  /* Pens 3-7, cycling */
+            /* Skip if completely outside tile after clamping */
+            if(pixLeft >= pixRight) continue;
 
-        /* Draw sound rectangle (with 2px margin top/bottom for visibility) */
-        SetAPen(rp, pen);
-        RectFill(rp, pixLeft, p->destY + 2, pixRight, p->destHeight - 3);
+            /* Fill background gap before this sound */
+            if(currentX < pixLeft)
+            {
+                SetAPen(rp, penBackground);
+                RectFill(rp, currentX, p->destY, pixLeft - 1, p->destHeight - 1);
+            }
 
+            /* Draw sound rectangle (with 2px margin top/bottom for visibility) */
+            SetAPen(rp, penBackground);
+            RectFill(rp, pixLeft, p->destY, pixRight, p->destY + 1);
+            SetAPen(rp, penBgSound);
+            RectFill(rp, pixLeft, p->destY + 2, pixRight, p->destHeight - 3);
+            SetAPen(rp, penBackground);
+            RectFill(rp, pixLeft, p->destHeight - 2, pixRight, p->destHeight - 1);
+
+            currentX = pixRight + 1;
+        }
+
+        /* Fill remaining background after last sound */
+        if(currentX <= tileRight)
+        {
+            SetAPen(rp, penBackground);
+            RectFill(rp, currentX, p->destY, tileRight, p->destHeight - 1);
+        }
     }
+
+    /* Draw bottom separator line */
+    SetAPen(rp, 2);
+    Move(rp, p->destX, p->destHeight - 1);
+    Draw(rp, p->destWidth - 1, p->destHeight - 1);
 }
 
