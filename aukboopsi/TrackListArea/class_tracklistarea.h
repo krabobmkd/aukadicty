@@ -7,10 +7,15 @@
 #include <exec/types.h>
 #include <intuition/gadgetclass.h>
 #include <intuition/classes.h>
-            #include <inline/macros.h>
-#define VERSION_TRACKLIST 1
-#define TrackList_SUPERCLASS_ID "gadgetclass"
+#include <proto/layout.h>
 
+
+#include <inline/macros.h>
+#define VERSION_TRACKLIST 1
+//#define TrackList_SUPERCLASS_ID "gadgetclass"
+#define TrackList_SUPERCLASS_ID "layout.gadget"
+
+// LAYOUT_Deferlayout
 #ifdef TRACKLIST_STATICLINK
     extern int TrackListStaticInit();
     extern void TrackListStaticClose();

@@ -82,6 +82,7 @@ ULONG ASM SAVEDS TrackListArea_Dispatcher(
         gdata->_defaulTrackHeight = 40;   /* default track height */
         gdata->_scrollY = 0;
         gdata->_domainHeight = 0;
+        gdata->_drawInfo = NULL;
 
         /* Initialize time projection:
          * _pixAtLeft: Time at left border, can be negative
@@ -112,11 +113,11 @@ ULONG ASM SAVEDS TrackListArea_Dispatcher(
 
        // Printf("OM_SET: GadgetID:%ld gad:%lx\n",(int)Gad->GadgetID,(int)Gad);
       retval=DoSuperMethodA(C,(Object *)Gad,(Msg)M);
-      TrackListArea_SetAttrs(C,Gad,(struct opSet *)M);
+      retval =TrackListArea_SetAttrs(C,Gad,(struct opSet *)M);
      break;
 
     case OM_GET:
-      TrackListArea_GetAttr(C,Gad,(struct opGet *)M);
+      retval = TrackListArea_GetAttr(C,Gad,(struct opGet *)M);
      break;
 
     case OM_DISPOSE:
@@ -134,21 +135,21 @@ ULONG ASM SAVEDS TrackListArea_Dispatcher(
 
     /* return GMR_GADGETHIT if you are clicked on (whether or not you
      * are disabled). */
-    case GM_HITTEST:    
-      retval =TrackListArea_HandleHitTest(C,Gad,(struct gpHitTest *)M);
-      break;
-    /* you are now going to be fed input */
-    case GM_GOACTIVE:
-        retval=TrackListArea_HandleInput(C,Gad,(struct gpInput *)M, M->gpInput.gpi_Mouse.X,M->gpInput.gpi_Mouse.Y);
-      break;
+//    case GM_HITTEST:
+//      retval =TrackListArea_HandleHitTest(C,Gad,(struct gpHitTest *)M);
+//      break;
+//    /* you are now going to be fed input */
+//    case GM_GOACTIVE:
+//        retval=TrackListArea_HandleInput(C,Gad,(struct gpInput *)M, M->gpInput.gpi_Mouse.X,M->gpInput.gpi_Mouse.Y);
+//      break;
 
-    case GM_GOINACTIVE:    
-        TrackListArea_GoInactive(C,Gad,(struct gpRender *)M);
-      break;
-    case GM_HANDLEINPUT:
-      gdata=INST_DATA(C, Gad);
-      retval=TrackListArea_HandleInput(C,Gad,(struct gpInput *)M,M->gpInput.gpi_Mouse.X,M->gpInput.gpi_Mouse.Y);
-      break;
+//    case GM_GOINACTIVE:
+//        TrackListArea_GoInactive(C,Gad,(struct gpRender *)M);
+//      break;
+//    case GM_HANDLEINPUT:
+//      gdata=INST_DATA(C, Gad);
+//      retval=TrackListArea_HandleInput(C,Gad,(struct gpInput *)M,M->gpInput.gpi_Mouse.X,M->gpInput.gpi_Mouse.Y);
+//      break;
 
 
     case GM_LAYOUT:

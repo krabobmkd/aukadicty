@@ -89,6 +89,9 @@ typedef struct TrackListArea {
     /* Pointer to AukStyleSheet to pass to child gadgets */
     struct AukStyle *_styleSheet;
 
+    /* Better to pass this when creating sub-gadgets */
+    struct DrawInfo *_drawInfo;
+
     /* allow our scroll strategy */
     struct Region *_clipRegion;
 

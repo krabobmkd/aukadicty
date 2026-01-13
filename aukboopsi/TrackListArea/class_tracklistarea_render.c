@@ -315,35 +315,27 @@ ULONG TrackListArea_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout
   return(1);
 }
 
-//ULONG TrackHeader_Render(Class *C, struct Gadget *Gad, struct gpRender *Render, ULONG update);
-// ULONG TrackArea_Render_rp( struct RastPort *rp,Class *C, struct Gadget *Gad, struct gpRender *Render);
-// ULONG TrackHeader_Render_rp( struct RastPort *rp,Class *C, struct Gadget *Gad, struct gpRender *Render);
-
 /* draw yourself, in the appropriate state */
 ULONG TrackListArea_Render(Class *C, struct Gadget *Gad, struct gpRender *Render,int filter)
 {
   TrackListArea *gdata;
   struct RastPort *rp;
-  ULONG retval=1;
-
-  gdata=INST_DATA(C, Gad);
-  // also sent from GM_GOINACTIVE (4).
-  if(Render->MethodID==GM_RENDER)
-  {
-    rp=Render->gpr_RPort;
-   // update=Render->gpr_Redraw;
-  }
-  else
-  {
-    return 0; //
-//    rp = ObtainGIRPort(Render->gpr_GInfo);
-  }
-
-  if(rp)
-  {
   	int bLayerUpdating=FALSE;
     LONG i;
     LONG topedge,leftedge,width,height;
+  // also sent from GM_GOINACTIVE (4).
+  if(Render->MethodID==GM_RENDER &&  Render->gpr_RPort )
+  {
+    rp=Render->gpr_RPort;
+  }
+  else
+  {
+    return 1;
+  }
+
+  gdata=INST_DATA(C, Gad);
+
+
     topedge = Gad->TopEdge;
     leftedge = Gad->LeftEdge;
     width = Gad->Width;
@@ -354,7 +346,7 @@ ULONG TrackListArea_Render(Class *C, struct Gadget *Gad, struct gpRender *Render
 	{
 		bLayerUpdating = TRUE;
 		EndUpdate(rp->Layer, FALSE);
-//		bdbprintf(" ****Render->MethodID:%08lx LAYERUPDATING\n",(int)Render->MethodID);
+		bdbprintf(" ****Render->MethodID:%08lx LAYERUPDATING\n",(int)Render->MethodID);
 	}
 
     oldClipRegion = InstallClipRegion( rp->Layer, gdata->_clipRegion);
@@ -378,9 +370,9 @@ ULONG TrackListArea_Render(Class *C, struct Gadget *Gad, struct gpRender *Render
             /* Call child's GM_RENDER */
 
           // recurse
-        if(headerGad && ((filter & 2)!=0)) // if layouted && selected for refresh
+        if(headerGad && ((filter & 2)!=0) && bLayerUpdating == 0) // if layouted && selected for refresh
         {
-           DoMethodA((Object*)headerGad, (Msg)Render); // not DoGadgetMethodA in that case
+          DoMethodA((Object*)headerGad, (Msg)Render); // not DoGadgetMethodA in that case
         }
          if(trackGad && ((filter & 1)!=0)) // if layouted && selected for refresh
          {
@@ -403,8 +395,8 @@ ULONG TrackListArea_Render(Class *C, struct Gadget *Gad, struct gpRender *Render
     // todo: recursively draw tracks on their projected rectangle
 
     // then draw eventually clear a rectangle of the empty scrool Area.
-  } // end if rp
-  return(retval);
+
+  return(1);
 }
 
 
@@ -418,17 +410,18 @@ void TrackListArea_DisposeGadgets(TrackListArea *gdata)
     /* Dispose all TrackHeader gadgets */
     if(gdata->_tracks)
     {
-        for(i = 0; i < gdata->_trackCount; i++)
-        {
-            if(gdata->_tracks[i]._trackHeader)
-            {
-                DisposeObject(gdata->_tracks[i]._trackHeader);
-            }
-            if(gdata->_tracks[i]._trackArea)
-            {
-                DisposeObject(gdata->_tracks[i]._trackArea);
-            }
-        }
+// now use AddChild...
+//        for(i = 0; i < gdata->_trackCount; i++)
+//        {
+//            if(gdata->_tracks[i]._trackHeader)
+//            {
+//                DisposeObject(gdata->_tracks[i]._trackHeader);
+//            }
+//            if(gdata->_tracks[i]._trackArea)
+//            {
+//                DisposeObject(gdata->_tracks[i]._trackArea);
+//            }
+//        }
 
         FreeVec(gdata->_tracks);
         gdata->_tracks = NULL;
@@ -438,6 +431,7 @@ void TrackListArea_DisposeGadgets(TrackListArea *gdata)
 }
 extern Class *AppModelClass;
 static int TrackListArea_CreateTrackLine(
+            struct Gadget *Gad,
             TrackListArea *gdata,
             TrackChild *strack, AukTrack *dataTrack, int iTrack)
 {
@@ -455,8 +449,13 @@ static int TrackListArea_CreateTrackLine(
                                     TRACKHEADER_StyleSheet, (ULONG)styleSheet,
                                     TRACKHEADER_TrackIndex,iTrack,
                                     ICA_TARGET,AppModelClass,
+                                    GA_DrawInfo, (ULONG)gdata->_drawInfo,
                                     TRACKHEADER_Nametag,trackname, // optional, must be last
                                     TAG_END);
+    if(strack->_trackHeader)
+    {
+        SetAttrs(Gad,LAYOUT_AddChild,(ULONG)strack->_trackHeader,TAG_END);
+    }
     //if(!strack->_trackHeader ) return 0;
     /* Create TrackArea - pass data track for reference counted retention */
     strack->_trackArea = NewObject(TRACKAREA_GetClass(), NULL,
@@ -465,7 +464,11 @@ static int TrackListArea_CreateTrackLine(
                                    TRACKAREA_PTimeProjection,(ULONG)&gdata->_timeProjection,
                                    TRACKAREA_DataTrack,(ULONG)dataTrack,
                                    TAG_END);
-    if(!strack->_trackArea ) return 0;
+    if(strack->_trackArea)
+    {
+        SetAttrs(Gad,LAYOUT_AddChild,(ULONG)strack->_trackArea,TAG_END);
+    }
+
     /* data we sync (weak reference for quick access): */
     strack->_dataTrack = dataTrack;
     // default value
@@ -533,7 +536,7 @@ static void TrackListArea_updateTrackListUiToData(struct Gadget *Gad)
             /* Create gadgets for each track */
             for(i = 0; i < dataTrackCount; i++)
             {
-                if(!TrackListArea_CreateTrackLine(gdata, &gdata->_tracks[i], project->tracks->items[i],i ))
+                if(!TrackListArea_CreateTrackLine(Gad,gdata, &gdata->_tracks[i], project->tracks->items[i],i ))
                 {
                     /* Failed to create gadgets, cleanup and abort */
                     TrackListArea_DisposeGadgets(gdata);
@@ -611,7 +614,7 @@ void TrackListArea_addTrack( struct Gadget *Gad,AukTrack *track)
 
     /* Create gadgets for this track */
     i =  gdata->_trackCount;
-    if(!TrackListArea_CreateTrackLine(gdata, &gdata->_tracks[i], project->tracks->items[i], i ))
+    if(!TrackListArea_CreateTrackLine(Gad, gdata, &gdata->_tracks[i], project->tracks->items[i], i ))
     {
         /* Failed to create gadgets, cleanup and abort */
         TrackListArea_DisposeGadgets(gdata);

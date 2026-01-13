@@ -49,10 +49,6 @@ typedef struct ITrackHeader {
     /* frame rectangle for clipping */
     struct Rectangle _framerec;
 
-    /* minimal dimensions */
-    UWORD _minimalWidth;
-    UWORD _minimalHeight;
-
     /* Pointer to AukStyle for visual styling */
     AukStyle *_style;
     /* track */

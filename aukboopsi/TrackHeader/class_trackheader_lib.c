@@ -15,8 +15,8 @@
 #include <intuition/classes.h>
 #include <intuition/classusr.h>
 
-// #include <proto/layout.h>
-// #include <gadgets/layout.h>
+#include <proto/layout.h>
+#include <gadgets/layout.h>
 
 #include <proto/button.h>
 #include <gadgets/button.h>
@@ -133,50 +133,6 @@ ULONG ASM SAVEDS HeaderSlider_Dispatcher(
                     REG(a2,struct Gadget *Gad),
                     REG(a1,union MsgUnion *M));
 
-#ifndef TRACKHEADER_STATICLINK
-// called by shared Lib init to create class.
-
-int ASM CreateClass(REG(a6,struct ExtClassLib *LibBase))
-{
-  if(LibBase) SysBase = LibBase->cb_SysBase;
-  if(TrackHeader_OpenLibs() && TrackHeader_OpenLibs_Dependencies())
-  {
-    if(TrackHeaderClassPtr=MakeClass(TrackHeader_CLASS_ID,TrackHeaderSuperClassID,0,sizeof(TrackHeader),0))
-    {
-     if(LibBase) LibBase->cb_ClassLibrary.cl_Class = TrackHeaderClassPtr;
-      TrackHeaderClassPtr->cl_Dispatcher.h_Data=LibBase;
-      TrackHeaderClassPtr->cl_Dispatcher.h_Entry=(REHOOKFUNC)TrackHeader_Dispatcher;
-
-      AddClass(TrackHeaderClassPtr);
-      /* Success */
-      return(0);
-    }
-    TrackHeader_CloseLibs_Dependencies();
-    TrackHeader_CloseLibs();
-  }
-  /* Fail */
-  return(-1);
-}
-// called by shared Lib expunge to dispose class.
-void ASM DestroyClass(REG(a6,struct ExtClassLib *LibBase))
-{
-    // note LibBase and TrackHeaderClassPtr should be the same
-    if(TrackHeaderClassPtr)
-    {
-      RemoveClass(TrackHeaderClassPtr);
-      FreeClass(TrackHeaderClassPtr);
-      TrackHeaderClassPtr = NULL;
-    }
-  TrackHeader_CloseLibs_Dependencies();
-  TrackHeader_CloseLibs();
-}
-// first public lib function for boopsi classes
-Class * ASM GetClass(void)
-{
-    return (Class *)TrackHeaderClassPtr;
-}
-// end if shared class
-#else
 // static version:
 struct IClass   *TRACKHEADER_GetClass()
 {
@@ -190,11 +146,9 @@ struct IClass   *HEADERSLIDER_GetClass()
 {
     return HeaderSliderClassPtr;
 }
-#endif
 
 //====================================================================================
 
-#ifdef TRACKHEADER_STATICLINK
 
 // just use this one once when static link
 int TrackHeaderStaticInit()
@@ -204,8 +158,8 @@ int TrackHeaderStaticInit()
     // MakeClass( ClassID, SuperClassID, SuperClassPtr,InstanceSize, Flags )
 
 
-//    if(TrackHeaderClassPtr=MakeClass(NULL,NULL,LAYOUT_GetClass(),sizeof(TrackHeader),0))
-    if(TrackHeaderClassPtr=MakeClass(NULL,"gadgetclass",0,sizeof(TrackHeader),0))
+    if(TrackHeaderClassPtr=MakeClass(NULL,NULL,LAYOUT_GetClass(),sizeof(TrackHeader),0))
+//    if(TrackHeaderClassPtr=MakeClass(NULL,"gadgetclass",0,sizeof(TrackHeader),0))
     {
       TrackHeaderClassPtr->cl_Dispatcher.h_Entry=(REHOOKFUNC)TrackHeader_Dispatcher;
      // do not AddClass() when static, no need to publish, TrackHeaderClassPtr will be enough.
@@ -246,7 +200,5 @@ void TrackHeaderStaticClose()
       TrackHeaderClassPtr = NULL;
     }
 }
-
-#endif
 
 

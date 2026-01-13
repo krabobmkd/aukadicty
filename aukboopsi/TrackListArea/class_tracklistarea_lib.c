@@ -97,19 +97,13 @@ const char TrackListSuperClassID[]=TrackList_SUPERCLASS_ID;
 #endif
 BOOL TrackList_OpenLibs_Dependencies(void)
 {
-#ifdef USE_BEVEL_FRAME
-    if(!BevelBase) BevelBase = OpenLibrary("images/bevel.image",44);
-    if(!BevelBase) return FALSE;
-#endif
+
     return TRUE;
 }
 
 void TrackList_CloseLibs_Dependencies(void)
 {
-#ifdef USE_BEVEL_FRAME
-    if(BevelBase) CloseLibrary(BevelBase);
-    BevelBase = NULL;
-#endif
+
 }
 //==========================================================================================
 // does not need to be exact, we just want the function pointer:
@@ -118,67 +112,21 @@ ULONG ASM SAVEDS TrackListArea_Dispatcher(
                     REG(a2,struct Gadget *Gad),
                     REG(a1,union MsgUnion *M));
 
-#ifndef TRACKLIST_STATICLINK
-// called by shared Lib init to create class.
 
-int ASM CreateClass(REG(a6,struct ExtClassLib *LibBase))
-{
-  if(LibBase) SysBase = LibBase->cb_SysBase;
-  if(TrackList_OpenLibs() && TrackList_OpenLibs_Dependencies())
-  {
-    if(TrackListClassPtr=MakeClass(TrackList_CLASS_ID,TrackListSuperClassID,0,sizeof(TrackList),0))
-    {
-     if(LibBase) LibBase->cb_ClassLibrary.cl_Class = TrackListClassPtr;
-      TrackListClassPtr->cl_Dispatcher.h_Data=LibBase;
-      TrackListClassPtr->cl_Dispatcher.h_Entry=(REHOOKFUNC)TrackList_Dispatcher;
-
-      AddClass(TrackListClassPtr);
-      /* Success */
-      return(0);
-    }
-    TrackList_CloseLibs_Dependencies();
-    TrackList_CloseLibs();
-  }
-  /* Fail */
-  return(-1);
-}
-// called by shared Lib expunge to dispose class.
-void ASM DestroyClass(REG(a6,struct ExtClassLib *LibBase))
-{
-    // note LibBase and TrackListClassPtr should be the same
-    if(TrackListClassPtr)
-    {
-      RemoveClass(TrackListClassPtr);
-      FreeClass(TrackListClassPtr);
-      TrackListClassPtr = NULL;
-    }
-  TrackList_CloseLibs_Dependencies();
-  TrackList_CloseLibs();
-}
-// first public lib function for boopsi classes
-Class * ASM GetClass(void)
-{
-    return (Class *)TrackListClassPtr;
-}
-// end if shared class
-#else
 // static version:
 struct IClass   *TRACKLIST_GetClass()
 {
     return TrackListClassPtr;
 }
-#endif
 
 //====================================================================================
-
-#ifdef TRACKLIST_STATICLINK
 
 // just use this one once when static link
 int TrackListStaticInit()
 {
    if(!TrackList_OpenLibs_Dependencies()) return 0;
-    if(TrackListClassPtr=MakeClass(NULL,TrackListSuperClassID,0,sizeof(TrackListArea),0))
-//    if(TrackListClassPtr=MakeClass(NULL,NULL,LAYOUT_GetClass(),sizeof(TrackListArea),0))
+//    if(TrackListClassPtr=MakeClass(NULL,TrackListSuperClassID,0,sizeof(TrackListArea),0))
+    if(TrackListClassPtr=MakeClass(NULL,NULL,LAYOUT_GetClass(),sizeof(TrackListArea),0))
     {
       TrackListClassPtr->cl_Dispatcher.h_Entry=(REHOOKFUNC)TrackListArea_Dispatcher;
      // do not AddClass() when static, no need to publish, TrackListClassPtr will be enough.
@@ -198,7 +146,4 @@ void TrackListStaticClose()
     }
 
 }
-
-#endif
-
 

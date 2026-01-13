@@ -121,8 +121,8 @@ int bdbprintf_new(const char *className, void *instance)
 
     instances_created++;
 
-//    result = bdbprintf("[NEW] %s instance:%lx (total created:%ld)\n",
-//                       className, (unsigned long)instance, (long)instances_created);
+    result = bdbprintf("[NEW] %s instance:%lx (total created:%ld)\n",
+                       className, (unsigned long)instance, (long)instances_created);
 
     return result;
 }
@@ -136,8 +136,8 @@ int bdbprintf_dispose(const char *className, void *instance)
 
     instances_disposed++;
 
-//    result = bdbprintf("[DISPOSE] %s instance:%lx (total disposed:%ld)\n",
-//                       className, (unsigned long)instance, (long)instances_disposed);
+    result = bdbprintf("[DISPOSE] %s instance:%lx (total disposed:%ld)\n",
+                       className, (unsigned long)instance, (long)instances_disposed);
 
     return result;
 }

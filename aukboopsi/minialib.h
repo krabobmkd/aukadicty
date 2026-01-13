@@ -52,13 +52,13 @@ INLINE ULONG DoSuperMethod( struct IClass *cl, Object *obj, ULONG methodID, ... 
 }
 // assume cl is class of obj
 INLINE ULONG SetSuperAttrs( struct IClass *cl, Object *obj, ULONG tag1, ... ) {
-    struct opSet ops, *msg = &ops;
+    struct opSet ops;
 
     ops.MethodID     = OM_SET;
     ops.ops_AttrList = ( struct TagItem	*)&tag1;
     ops.ops_GInfo    = NULL;
 
-    return DoSuperMethodA(cl, obj, (Msg)msg);
+    return CallHookPkt((struct Hook *)cl->cl_Super, obj, (APTR)&ops);
 }
 
 /*Boopsi support function that invokes the supplied message on the specified object,

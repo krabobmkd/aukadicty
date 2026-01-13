@@ -32,6 +32,8 @@
 
 #include "gadgetid.h"
 
+#include <stdio.h>
+
 typedef union MsgUnion
 {
   ULONG  MethodID;
@@ -59,7 +61,7 @@ typedef union MsgUnion
 
 /* Forward declaration for layout function */
 ULONG TrackHeader_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout);
-ULONG TrackHeader_Render(Class *C, struct Gadget *Gad, struct gpRender *Render, ULONG update);
+ULONG TrackHeader_Render(Class *C, struct Gadget *Gad, struct gpRender *Render);
 
 /** WATCH OUT ! boopsi docs says:
 *  "the rkmmodelclass dispatcher must be able to run on Intuition's context,
@@ -84,6 +86,7 @@ ULONG ASM SAVEDS TrackHeader_Dispatcher(
         ULONG iTrack=0;
         ULONG target=0;
         char *trackname=NULL;
+        struct DrawInfo *drawInfo;
         AukStyle *style=NULL;
         char tname[32];
         int i;
@@ -101,7 +104,12 @@ ULONG ASM SAVEDS TrackHeader_Dispatcher(
         {
             style = (AukStyle *)ptag->ti_Data;
         }
-        bdbprintf("OM_NEW trackheader style %08x\n",(int)style);
+        if((ptag = FindTagItem( GA_DrawInfo, M->opSet.ops_AttrList ))!=NULL)
+        {
+            drawInfo = (struct DrawInfo *)ptag->ti_Data;
+        }
+
+       // bdbprintf("OM_NEW trackheader style %08x\n",(int)style);
         if(!trackname)
         {
             snprintf(tname,31,"Track %d",iTrack);
@@ -116,52 +124,38 @@ ULONG ASM SAVEDS TrackHeader_Dispatcher(
             target = ptag->ti_Data;
         }
 
-        /* Call superclass OM_NEW with minimal tags - no LAYOUT_AddChild */
         {
-        ULONG tags[]={
-            LAYOUT_Orientation, LAYOUT_ORIENT_HORIZ,
-            LAYOUT_BottomSpacing, 0,
-            LAYOUT_TopSpacing,0,
-            LAYOUT_LeftSpacing,0,
-            LAYOUT_RightSpacing,0,
-            LAYOUT_InnerSpacing,0,
-            LAYOUT_BevelStyle, BVS_NONE,
-            TAG_DONE
-        };
-        struct opSet opset;
-        opset.MethodID = OM_NEW;
-        opset.ops_GInfo = M->opSet.ops_GInfo;
-        opset.ops_AttrList = &tags[0];
-
-          if(Gad=(struct Gadget *)DoSuperMethodA(C,(Object *)Gad,&opset))
+          if(Gad=(struct Gadget *)DoSuperMethodA(C,(Object *)Gad,(Msg)M))
           {
+            int i;
             gdata=INST_DATA(C, Gad);
             bdbprintf_new("TrackHeader", Gad);
             Gad->GadgetID = GAD_TRACKHEADER_BASE+(iTrack<<4);
 
+           //not sure SetSuperAttrs(C,Gad,LAYOUT_DeferLayout,TRUE,TAG_END);
             /* Initialize all child pointers to NULL */
             for(i=0; i<THS_Total; i++) gdata->subs[i] = NULL;
 
             gdata->_style = style;
             gdata->_trackIndex = iTrack;
-            gdata->_minimalWidth = 100;
-            gdata->_minimalHeight = 50;
 
             /* Create all child gadgets directly - no nested layouts */
 
             /* Row 1: Close button and Name button */
-            gdata->subs[THS_CloseButton] = NewObject( HEADERBUTTON_GetClass(),NULL,
+            gdata->subs[THS_CloseButton] = NewObject( BUTTON_GetClass(),NULL,
                                         GA_Text, "X",
                                         GA_ID,GAD_TRACKHEADER_BASE|GAD_TRACKHEADER_CLOSE|(iTrack<<4),
-                                        ICA_TARGET,target,
-                                        GA_RelVerify, TRUE,
+                                      //  ICA_TARGET,target,
+                                       // GA_DrawInfo,(ULONG)drawInfo,
+                                      //  GA_RelVerify, TRUE,
                                     TAG_END);
 
-            gdata->subs[THS_NameButton] = NewObject( HEADERBUTTON_GetClass(),NULL,
+            gdata->subs[THS_NameButton] = NewObject( BUTTON_GetClass(),NULL,
                                         GA_Text,trackname,
                                         GA_ID,GAD_TRACKHEADER_BASE|GAD_TRACKHEADER_NAME|(iTrack<<4),
-                                        ICA_TARGET,target,
-                                        GA_RelVerify, TRUE,
+                                      //  ICA_TARGET,target,
+                                       // GA_DrawInfo,(ULONG)drawInfo,
+                                      //  GA_RelVerify, TRUE,
                                     TAG_END);
 
             /* Row 2: Silencer and Solo buttons */
@@ -170,6 +164,7 @@ ULONG ASM SAVEDS TrackHeader_Dispatcher(
                                         GA_TextAttr,(ULONG) &style->fontTiny_TA,
                                         GA_ID,GAD_TRACKHEADER_BASE|GAD_TRACKHEADER_SILENCER|(iTrack<<4),
                                         ICA_TARGET,target,
+                                       // GA_DrawInfo,(ULONG)drawInfo,
                                         GA_RelVerify, TRUE,
                                         BUTTON_BevelStyle, BVS_THIN,
                                     TAG_END);
@@ -179,6 +174,7 @@ ULONG ASM SAVEDS TrackHeader_Dispatcher(
                                         GA_TextAttr,(ULONG) &style->fontTiny_TA,
                                         GA_ID,GAD_TRACKHEADER_BASE|GAD_TRACKHEADER_SOLO|(iTrack<<4),
                                         ICA_TARGET,target,
+                                       // GA_DrawInfo,(ULONG)drawInfo,
                                         GA_RelVerify, TRUE,
                                         BUTTON_BevelStyle, BVS_THIN,
                                     TAG_END);
@@ -187,6 +183,7 @@ ULONG ASM SAVEDS TrackHeader_Dispatcher(
             gdata->subs[THS_VolLabel] = NewObject( HEADERBUTTON_GetClass(),NULL,
                                         GA_Text,(ULONG)"Vol.",
                                         GA_ReadOnly,TRUE,
+                                      //  GA_DrawInfo,(ULONG)drawInfo,
                                         BUTTON_BevelStyle,BVS_NONE,
                                         BUTTON_Transparent, TRUE,
                                     TAG_END);
@@ -197,6 +194,7 @@ ULONG ASM SAVEDS TrackHeader_Dispatcher(
                                         SLIDER_Max, 128,
                                         SLIDER_Level, 128,
                                         ICA_TARGET,target,
+                                       // GA_DrawInfo,(ULONG)drawInfo,
                                         GA_ID,GAD_TRACKHEADER_BASE|GAD_TRACKHEADER_VOL|(iTrack<<4),
                                         GA_RelVerify, TRUE,
                                     TAG_END);
@@ -205,6 +203,7 @@ ULONG ASM SAVEDS TrackHeader_Dispatcher(
             gdata->subs[THS_PanLabel] = NewObject( HEADERBUTTON_GetClass(),NULL,
                                         GA_Text,(ULONG)"Pan",
                                         GA_ReadOnly,TRUE,
+                                      //  GA_DrawInfo,(ULONG)drawInfo,
                                         BUTTON_BevelStyle,BVS_NONE,
                                         BUTTON_Transparent, TRUE,
                                     TAG_END);
@@ -215,6 +214,7 @@ ULONG ASM SAVEDS TrackHeader_Dispatcher(
                                         SLIDER_Max, 128,
                                         SLIDER_Level, 64,
                                         ICA_TARGET,target,
+                                     //   GA_DrawInfo,(ULONG)drawInfo,
                                         GA_ID,GAD_TRACKHEADER_BASE|GAD_TRACKHEADER_PAN|(iTrack<<4),
                                         GA_RelVerify, TRUE,
                                     TAG_END);
@@ -224,6 +224,7 @@ ULONG ASM SAVEDS TrackHeader_Dispatcher(
                                         GA_Text,(ULONG)"Mono 22050Hz",
                                         GA_TextAttr,(ULONG) &style->fontTiny_TA,
                                         GA_ReadOnly,TRUE,
+                                      //  GA_DrawInfo,(ULONG)drawInfo,
                                         BUTTON_BevelStyle,BVS_NONE,
                                         BUTTON_Transparent, TRUE,
                                     TAG_END);
@@ -232,6 +233,17 @@ ULONG ASM SAVEDS TrackHeader_Dispatcher(
             gdata->subs[THS_VolumeRule] = NewObject( VOLUMERULE_GetClass(),NULL,
                                         VOLUMERULE_StyleSheet,(ULONG)style,
                                     TAG_END );
+            for(i=0;i<THS_Total;i++)
+            {
+                if(gdata->subs[i])
+                {
+                    //SetSuperAttrs(C,Gad,LAYOUT_AddChild,(ULONG)gdata->subs[i],TAG_END);
+                    //SetAttrs(Gad,LAYOUT_AddChild,(ULONG)gdata->subs[i],TAG_END);
+                    SetAttrs(Gad,LAYOUT_AddChild,(ULONG)gdata->subs[i],TAG_END);
+                }
+
+            }
+
 
             /* means new object OK so far: */
             retval=(ULONG)Gad;
@@ -243,34 +255,35 @@ ULONG ASM SAVEDS TrackHeader_Dispatcher(
       {
         int i;
         bdbprintf_dispose("TrackHeader", Gad);
-        gdata=INST_DATA(C, Gad);
+
 
         /* Dispose all child gadgets manually since we don't use LAYOUT_AddChild */
-        for(i=0; i<THS_Total; i++)
-        {
-            if(gdata->subs[i])
-            {
-                DisposeObject(gdata->subs[i]);
-                gdata->subs[i] = NULL;
-            }
-        }
+        // now use LAYOUT_AddChild
+//        gdata=INST_DATA(C, Gad);
+//        for(i=0; i<THS_Total; i++)
+//        {
+//            if(gdata->subs[i])
+//            {
+//                DisposeObject(gdata->subs[i]);
+//                gdata->subs[i] = NULL;
+//            }
+//        }
         retval=DoSuperMethodA(C,(Object *)Gad,(Msg)M);
       }
       break;
 
     case GM_LAYOUT:
       {
-        gdata=INST_DATA(C, Gad);
+       // gdata=INST_DATA(C, Gad);
         retval = TrackHeader_Layout(C, Gad, (struct gpLayout *)M);
       }
       break;
-    case GM_RENDER:
-      {
-        gdata=INST_DATA(C, Gad);
-        retval = TrackHeader_Render(C, Gad, (struct gpLayout *)M,1);
-      }
-      break;
-
+//    case GM_RENDER:
+//      {
+//       // gdata=INST_DATA(C, Gad);
+//        retval = TrackHeader_Render(C, Gad, (struct gpLayout *)M);
+//      }
+//      break;
 
     case OM_UPDATE:
     case OM_SET:
@@ -283,100 +296,100 @@ ULONG ASM SAVEDS TrackHeader_Dispatcher(
       retval= TrackHeader_GetAttr(C,Gad,(struct opGet *)M); // supercall done inside
      break;
 
-    case GM_HITTEST:
-      {
-        /* Forward hit test to child gadgets */
-        struct gpHitTest *ht = (struct gpHitTest *)M;
-        WORD mx = ht->gpht_Mouse.X;
-        WORD my = ht->gpht_Mouse.Y;
-        int i;
+//    case GM_HITTEST:
+//      {
+//        /* Forward hit test to child gadgets */
+//        struct gpHitTest *ht = (struct gpHitTest *)M;
+//        WORD mx = ht->gpht_Mouse.X;
+//        WORD my = ht->gpht_Mouse.Y;
+//        int i;
 
-        gdata=INST_DATA(C, Gad);
-        retval = 0; /* default: not hit */
+//        gdata=INST_DATA(C, Gad);
+//        retval = 0; /* default: not hit */
 
-        /* Check all child gadgets for hit */
-        for(i=0; i<THS_Total; i++)
-        {
-            struct Gadget *sub = (struct Gadget *)gdata->subs[i];
-            if(sub)
-            {
-                /* Convert mouse coords relative to child gadget */
-                WORD childX = mx + Gad->LeftEdge - sub->LeftEdge;
-                WORD childY = my + Gad->TopEdge - sub->TopEdge;
+//        /* Check all child gadgets for hit */
+//        for(i=0; i<THS_Total; i++)
+//        {
+//            struct Gadget *sub = (struct Gadget *)gdata->subs[i];
+//            if(sub)
+//            {
+//                /* Convert mouse coords relative to child gadget */
+//                WORD childX = mx + Gad->LeftEdge - sub->LeftEdge;
+//                WORD childY = my + Gad->TopEdge - sub->TopEdge;
 
-                /* Check if inside child bounds */
-                if(childX >= 0 && childX < sub->Width &&
-                   childY >= 0 && childY < sub->Height)
-                {
-                    /* Forward to child's GM_HITTEST */
-                    struct gpHitTest childHt;
-                    childHt.MethodID = GM_HITTEST;
-                    childHt.gpht_GInfo = ht->gpht_GInfo;
-                    childHt.gpht_Mouse.X = childX;
-                    childHt.gpht_Mouse.Y = childY;
+//                /* Check if inside child bounds */
+//                if(childX >= 0 && childX < sub->Width &&
+//                   childY >= 0 && childY < sub->Height)
+//                {
+//                    /* Forward to child's GM_HITTEST */
+//                    struct gpHitTest childHt;
+//                    childHt.MethodID = GM_HITTEST;
+//                    childHt.gpht_GInfo = ht->gpht_GInfo;
+//                    childHt.gpht_Mouse.X = childX;
+//                    childHt.gpht_Mouse.Y = childY;
 
-                    if(DoMethodA((Object*)sub, (Msg)&childHt))
-                    {
-                        retval = GMR_GADGETHIT;
-                        break;
-                    }
-                }
-            }
-        }
-        /* If no child hit, check if we are hit */
-        if(!retval)
-        {
-            if(mx >= 0 && mx < Gad->Width && my >= 0 && my < Gad->Height)
-            {
-                retval = GMR_GADGETHIT;
-            }
-        }
-      }
-      break;
+//                    if(DoMethodA((Object*)sub, (Msg)&childHt))
+//                    {
+//                        retval = GMR_GADGETHIT;
+//                        break;
+//                    }
+//                }
+//            }
+//        }
+//        /* If no child hit, check if we are hit */
+//        if(!retval)
+//        {
+//            if(mx >= 0 && mx < Gad->Width && my >= 0 && my < Gad->Height)
+//            {
+//                retval = GMR_GADGETHIT;
+//            }
+//        }
+//      }
+//      break;
 
-    case GM_GOACTIVE:
-    case GM_HANDLEINPUT:
-      {
-        /* Forward to child gadget that was hit */
-        struct gpInput *gpi = (struct gpInput *)M;
-        WORD mx = gpi->gpi_Mouse.X;
-        WORD my = gpi->gpi_Mouse.Y;
-        int i;
+//    case GM_GOACTIVE:
+//    case GM_HANDLEINPUT:
+//      {
+//        /* Forward to child gadget that was hit */
+//        struct gpInput *gpi = (struct gpInput *)M;
+//        WORD mx = gpi->gpi_Mouse.X;
+//        WORD my = gpi->gpi_Mouse.Y;
+//        int i;
 
-        gdata=INST_DATA(C, Gad);
-        retval = GMR_NOREUSE;
+//        gdata=INST_DATA(C, Gad);
+//        retval = GMR_NOREUSE;
 
-        /* Find which child gadget was clicked */
-        for(i=0; i<THS_Total; i++)
-        {
-            struct Gadget *sub = (struct Gadget *)gdata->subs[i];
-            if(sub)
-            {
-                /* Convert mouse coords relative to child gadget */
-                WORD childX = mx + Gad->LeftEdge - sub->LeftEdge;
-                WORD childY = my + Gad->TopEdge - sub->TopEdge;
+//        /* Find which child gadget was clicked */
+//        for(i=0; i<THS_Total; i++)
+//        {
+//            struct Gadget *sub = (struct Gadget *)gdata->subs[i];
+//            if(sub)
+//            {
+//                /* Convert mouse coords relative to child gadget */
+//                WORD childX = mx + Gad->LeftEdge - sub->LeftEdge;
+//                WORD childY = my + Gad->TopEdge - sub->TopEdge;
 
-                /* Check if inside child bounds */
-                if(childX >= 0 && childX < sub->Width &&
-                   childY >= 0 && childY < sub->Height)
-                {
-                    /* Forward to child */
-                    struct gpInput childGpi;
-                    childGpi.MethodID = M->MethodID;
-                    childGpi.gpi_GInfo = gpi->gpi_GInfo;
-                    childGpi.gpi_IEvent = gpi->gpi_IEvent;
-                    childGpi.gpi_Termination = gpi->gpi_Termination;
-                    childGpi.gpi_Mouse.X = childX;
-                    childGpi.gpi_Mouse.Y = childY;
-                    childGpi.gpi_TabletData = gpi->gpi_TabletData;
+//                /* Check if inside child bounds */
+//                if(childX >= 0 && childX < sub->Width &&
+//                   childY >= 0 && childY < sub->Height)
+//                {
+//                    /* Forward to child */
+//                    struct gpInput childGpi;
+//                    childGpi.MethodID = M->MethodID;
+//                    childGpi.gpi_GInfo = gpi->gpi_GInfo;
+//                    childGpi.gpi_IEvent = gpi->gpi_IEvent;
+//                    childGpi.gpi_Termination = gpi->gpi_Termination;
+//                    childGpi.gpi_Mouse.X = childX;
+//                    childGpi.gpi_Mouse.Y = childY;
+//                    childGpi.gpi_TabletData = gpi->gpi_TabletData;
 
-                    retval = DoMethodA((Object*)sub, (Msg)&childGpi);
-                    break;
-                }
-            }
-        }
-      }
-      break;
+//                    retval = DoMethodA((Object*)sub, (Msg)&childGpi);
+//                    break;
+//                }
+//            }
+//        }
+//      }
+//      break;
 
     default:
       // for anything, use default layout behaviour.

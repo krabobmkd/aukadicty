@@ -47,18 +47,18 @@ ULONG TrackHeader_GetAttr(Class *C, struct Gadget *Gad, struct opGet *Get)
 
   switch(Get->opg_AttrID)
   {
-//     case TRACKHEADER_TrackIndex:
-//         *data = (LONG)gdata->_trackIndex;
-//     break;
-//     case TRACKHEADER_Name:
-//         *data = (LONG)0;
-//     break;
-//     case TRACKHEADER_Pan:
-//         *data = (LONG)0;
-//     break;
-//     case TRACKHEADER_Volume:
-//         *data = (LONG)0;
-//     break;
+     case TRACKHEADER_TrackIndex:
+         *data = (LONG)gdata->_trackIndex;
+     break;
+     case TRACKHEADER_Name:
+         *data = (LONG)0;
+     break;
+     case TRACKHEADER_Pan:
+         *data = (LONG)0;
+     break;
+     case TRACKHEADER_Volume:
+         *data = (LONG)0;
+     break;
 
     // super class gadget things. would manage attribs selected/hightlighted, ...
     default:

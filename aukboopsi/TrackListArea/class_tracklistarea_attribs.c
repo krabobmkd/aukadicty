@@ -162,6 +162,9 @@ ULONG TrackListArea_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
       used = 1;
         gdata->_styleSheet = (struct AukStyle *)data;
         break;
+       case GA_DrawInfo:
+        gdata->_drawInfo = (struct DrawInfo *)data;
+        break;
 
      // - - - actually we have to manage super class attribs:
      // with GA_XXX and struct Gadget members...

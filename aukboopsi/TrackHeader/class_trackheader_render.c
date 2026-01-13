@@ -82,16 +82,10 @@ ULONG TrackHeader_Domain(Class *C, struct Gadget *Gad, struct gpDomain *D)
 
     case GDOMAIN_MINIMUM:
     default:
-     if(gdata)
-     {
-       D->gpd_Domain.Width =gdata->_minimalWidth; // sqrt(gdata->Pens) * 8 + 8;
-       D->gpd_Domain.Height=gdata->_minimalHeight; // sqrt(gdata->Pens) * 8 + 8;
-     }
-     else
-      {
-        D->gpd_Domain.Width=  50;
-        D->gpd_Domain.Height= 50;
-      }
+
+        D->gpd_Domain.Width=  128;
+        D->gpd_Domain.Height= 70;
+
       break;
 
   }
@@ -264,32 +258,39 @@ ULONG TrackHeader_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout)
 
   return(1);
 }
-ULONG TrackHeader_Render_rp( struct RastPort *rp,Class *C, struct Gadget *Gad, struct gpRender *Render)
+
+/* draw yourself, in the appropriate state */
+ULONG TrackHeader_Render(Class *C, struct Gadget *Gad, struct gpRender *Render)
 {
-  LONG topedge,leftedge,width,height;
-  TrackHeader *gdata;
-    int penbg=4,penb=2,penc=3;
-  ULONG retval=1;
-  int i;
+    LONG topedge,leftedge,width,height;
+    TrackHeader *gdata;
+    struct RastPort *rp;
+    int i;
+    ULONG retval=1;
 
-  gdata=INST_DATA(C, Gad);
+    gdata=INST_DATA(C, Gad);
 
-    topedge = Gad->TopEdge;
-    leftedge = Gad->LeftEdge;
-    width = Gad->Width;
-    height = Gad->Height;
+    // also sent from GM_GOINACTIVE (4).
+    if(Render->MethodID!=GM_RENDER || !Render->gpr_RPort) return 1;
 
-    gdata->_framerec.MinX = leftedge+1;
-    gdata->_framerec.MinY = topedge+1;
-    gdata->_framerec.MaxX = leftedge + width  -2;
-    gdata->_framerec.MaxY = topedge  + height -2;
+    rp = Render->gpr_RPort;
 
-      SetDrMd(rp,JAM1);
-      SetAPen(rp,penbg);
-      RectFill(rp,gdata->_framerec.MinX,
-                  gdata->_framerec.MinY,
-                  gdata->_framerec.MaxX,
-                  gdata->_framerec.MaxY) ;
+//    topedge = Gad->TopEdge;
+//    leftedge = Gad->LeftEdge;
+//    width = Gad->Width;
+//    height = Gad->Height;
+
+//    gdata->_framerec.MinX = leftedge+1;
+//    gdata->_framerec.MinY = topedge+1;
+//    gdata->_framerec.MaxX = leftedge + width  -2;
+//    gdata->_framerec.MaxY = topedge  + height -2;
+
+//      SetDrMd(rp,JAM1);
+//      SetAPen(rp,penbg);
+//      RectFill(rp,gdata->_framerec.MinX,
+//                  gdata->_framerec.MinY,
+//                  gdata->_framerec.MaxX,
+//                  gdata->_framerec.MaxY) ;
 
     /* Forward GM_RENDER to all child gadgets */
     for(i=0; i<THS_Total; i++)
@@ -300,86 +301,7 @@ ULONG TrackHeader_Render_rp( struct RastPort *rp,Class *C, struct Gadget *Gad, s
         }
     }
 
-    return retval;
-}
-
-/* draw yourself, in the appropriate state */
-ULONG TrackHeader_Render(Class *C, struct Gadget *Gad, struct gpRender *Render, ULONG update)
-{
-  LONG topedge,leftedge,width,height;
-  TrackHeader *gdata;
-  struct RastPort *rp; 
-  ULONG retval=1;
-
-  gdata=INST_DATA(C, Gad);
-
-    bdbprintf(" $$$ TrackHeader_Render\n");
-
-  // also sent from GM_GOINACTIVE (4).
-  if(Render->MethodID==GM_RENDER)
-  {
-    rp=Render->gpr_RPort;
-    update=Render->gpr_Redraw;
-  }
-  else
-  {
-    rp = ObtainGIRPort(Render->gpr_GInfo);
-  }
-
-  if(rp)
-  {
-	int bLayerUpdating=FALSE;
-
-    struct Region *oldClipRegion;
-
-   // bdbprintf(" $$$$ TrackHeader_Render trace MethodID:%08lx Layer flags:%04lx\n",(int)Render->MethodID,(int)rp->Layer->Flags);
-
-	// note from an OS3 official developer: we got to do manage the following:
-	if( ( rp->Layer->Flags & LAYERUPDATING ) != 0L )
-	{
-		bLayerUpdating = TRUE;
-		EndUpdate(rp->Layer, FALSE);
-		//bdbprintf(" ****Render->MethodID:%08lx LAYERUPDATING\n",(int)Render->MethodID);
-	} else
-	{
-
-	}
 
 
-//    if(Gad->Flags & GFLG_DISABLED) // if disabled, draw background with another color.
-//    {
-//        penbg = 0;
-//    }
-//    #ifdef USE_BEVEL_FRAME
-//        if(gdata->Bevel) DrawImage(rp,gdata->Bevel,0,0);
-//    #endif
-
-//    #ifdef USE_REGION_CLIPPING
-//        oldClipRegion = InstallClipRegion( rp->Layer, gdata->_clipRegion);
-//    #endif
-
-    TrackHeader_Render_rp(rp,C,Gad,Render);
-
-//        {
-//            UWORD width = gdata->_framerec.MaxX - gdata->_framerec.MinX;
-//            UWORD height = gdata->_framerec.MaxY - gdata->_framerec.MinY;
-
-//            UWORD xc = gdata->_framerec.MinX + ((width*gdata->_circleCenterX)>>16);
-//            UWORD yc = gdata->_framerec.MinY + ((height*gdata->_circleCenterY)>>16);
-//            SetAPen(rp,penb);
-//            DrawEllipse(rp,xc,yc,width>>1,height>>1);
-//            SetAPen(rp,penc);
-//            DrawEllipse(rp,xc,yc,width>>2,height>>2);
-//        }
-		
-		if(bLayerUpdating) 
-		{
-			BeginUpdate(rp->Layer);
-		}
-		
-
-    if (Render->MethodID != GM_RENDER)
-      ReleaseGIRPort(rp);
-  }
   return(retval);
 }

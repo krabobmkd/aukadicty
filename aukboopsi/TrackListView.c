@@ -87,6 +87,7 @@ void CreateTrackListView(TrackListView *pm,struct DrawInfo *drawInfo,
 
     // - - - - - B
         pm->trackList = (Object *)NewObject( TRACKLIST_GetClass(), NULL,
+                                LAYOUT_DeferLayout, TRUE,
                                 TRACKLIST_StyleSheet, (ULONG)stylesheet,
                                 GA_ID,GAD_TRACKLIST, /* allows to redirect notify messages */
                                 ICA_TARGET,appModel, /* will send messages, that will be received by the main app boopsi object model */
