@@ -163,6 +163,7 @@ int main(void) {
     AukSound* sound3;
     AukAProjectPtr loadedProjectPtr = NULL;
     AukAProject* loadedProject;
+    AukTrack* loadedTrack = NULL;
 
     printf("=== IFF Binary Serialization Example ===\n\n");
 
@@ -294,7 +295,6 @@ int main(void) {
         printf("✗ Track count mismatch\n");
     }
 
-    AukTrack* loadedTrack = NULL;
     loadedProject->GetTrack(loadedProject, &loadedTrack, 0);
     if (loadedTrack && AukString_Compare(AukTrack_GetName(loadedTrack), "Vocals") == 0) {
         printf("✓ First track name matches\n");

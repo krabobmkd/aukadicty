@@ -15,30 +15,21 @@
 extern "C" {
 #endif
 
-/* Forward declarations */
-struct sAukTrack;
-typedef struct sAukTrack AukTrack;
-typedef AukTrack* AukTrackPtr;
-
-typedef struct AukArray AukArray;
-typedef AukArray* AukArrayPtr;
 
 /* Audio project preferences */
-typedef struct AukProjectPrefs {
+struct AukProjectPrefs {
     AukObject base;          /* Must be first - inheritance */
     unsigned int sampleRate;    /* Audio mixing rate (e.g., 44100) */
     unsigned int maxTracks;     /* Maximum number of tracks */
-} AukProjectPrefs;
-
-typedef AukProjectPrefs* AukProjectPrefsPtr;
+};
 
 void AukProjectPrefs_New(AukProjectPrefsPtr *firstPtr);
-void AukProjectPrefs_Delete(void* This);
-const char* AukProjectPrefs_GetTypeName(void* This);
+void AukProjectPrefs_Delete(AukObject* This);
+const char* AukProjectPrefs_GetTypeName(AukObject* This);
 void AukProjectPrefs_Init(AukProjectPrefs *prefs);
 
 /* AukAProject structure - inherits from AukProject */
-typedef struct AukAProject {
+struct AukAProject {
     AukProject base;         /* Must be first - inheritance from abstract AukProject */
 
     /* Audio-specific data members */
@@ -50,15 +41,13 @@ typedef struct AukAProject {
     int (*RemoveTrack)(void* This, AukTrack* track);
     /** uses aukArray->Get() with retained pointer, so need a pointer inited to NULL, and a call to AukObjectPtr_Release() before pointer dies. */
     void (*GetTrack)(void* This, AukTrack**ptr, unsigned int index);
-    unsigned long (*GetTrackCount)(void* This);
+    unsigned int (*GetTrackCount)(void* This);
     AukFixed (*GetDuration)(void* This);
-} AukAProject;
-
-typedef AukAProject* AukAProjectPtr;
+};
 
 /* Constructor/Destructor */
-void AukAProject_New(AukAProjectPtr *firstPtr);
-const char* AukAProject_GetTypeName(void* This);
+void AukAProject_New(AukObjectPtr *firstPtr);
+const char* AukAProject_GetTypeName(AukObject* This);
 
 /* Initialize AukAProject structure */
 void AukAProject_Init(AukAProject* project);

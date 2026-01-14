@@ -106,6 +106,11 @@ void AukJson_LoadProject(AukProjectPtr* projectPtr, const char* filename) {
     long size;
     char* buffer;
     AukProject* project;
+    char* lastSlash;
+    char* lastColon;
+    char* pathEnd;
+    unsigned long pathLen;
+    char* path;
 
     if (!projectPtr || !filename) {
         return;
@@ -146,13 +151,13 @@ void AukJson_LoadProject(AukProjectPtr* projectPtr, const char* filename) {
     /* Set project path from filename */
     if (project) {
         /* Extract directory from filename */
-        char* lastSlash = AukString_Find(filename, "/");
-        char* lastColon = AukString_Find(filename, ":");
-        char* pathEnd = lastSlash > lastColon ? lastSlash : lastColon;
+        lastSlash = AukString_Find(filename, "/");
+        lastColon = AukString_Find(filename, ":");
+        pathEnd = lastSlash > lastColon ? lastSlash : lastColon;
 
         if (pathEnd) {
-            unsigned long pathLen = (unsigned long)(pathEnd - filename + 1);
-            char* path = (char*)AllocVec(pathLen + 1, MEMF_CLEAR);
+            pathLen = (unsigned long)(pathEnd - filename + 1);
+            path = (char*)AllocVec(pathLen + 1, MEMF_CLEAR);
             if (path) {
                 memcpy(path, filename, pathLen);
                 project->SetPath(project, path);

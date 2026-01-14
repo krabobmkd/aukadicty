@@ -13,10 +13,6 @@
 extern "C" {
 #endif
 
-/* Forward declaration */
-typedef struct AukSoundFile AukSoundFile;
-typedef AukSoundFile* AukSoundFilePtr;
-
 /* AukSoundFile structure - inherits from AukObject */
 struct AukSoundFile {
     AukObject base;          /* Must be first - inheritance */

@@ -354,7 +354,7 @@ static void IFFWriter_t_object(ISerializer* This, const char* name, AukObjectPtr
 }
 
 static void IFFWriter_t_arrayobj(ISerializer* This, const char* name, AukArray** array,
-    AukObjectNewFunc itemNewFunc, const char* (*itemGetTypeName)(AukObject*)) {
+    AukObjectNewFunc itemNewFunc,const char *typename) {
     IFFWriter_t_object(This, name, (AukObjectPtr*)array);
 }
 
@@ -552,21 +552,25 @@ static AukObject* IFFReader_GetFromRememberList(IFFReaderContext* ctx, unsigned 
 }
 
 static int IFFReader_ReadChunkHeader(BPTR file, unsigned long* chunkID, unsigned long* chunkSize) {
+    /* unsigned long cid; */
     *chunkID = ReadBigEndianLong(file);
     *chunkSize = ReadBigEndianLong(file);
 
-     unsigned long cid = *chunkID;
-//    printf("chunkID:%c%c%c%c\n",(int)(cid>>24),(int)(cid>>16),(int)(cid>>8),(int)(cid));
-//    printf("chunksize:%d\n",(int)*chunkSize);
+    /* cid = *chunkID; */
+/*    printf("chunkID:%c%c%c%c\n",(int)(cid>>24),(int)(cid>>16),(int)(cid>>8),(int)(cid));
+    printf("chunksize:%d\n",(int)*chunkSize); */
     return 1;
 }
-// this ones only manage simpleton members that bcan be managed by copy.
+/* this ones only manage simpleton members that can be managed by copy. */
 static int IFFReader_FindChunk(IFFReaderContext* ctx, const char* name, unsigned long expectedID,
                                 unsigned long* outSize, void* outData, unsigned long maxDataSize) {
     unsigned long chunkID, chunkSize;
     char chunkName[64];
     unsigned long nameLen;
-    long pos = ctx->startPos;
+    long pos;
+    unsigned long dataSize;
+
+    pos = ctx->startPos;
 
     while (pos<ctx->endPos) {
         Seek(ctx->file, pos, OFFSET_BEGINNING);
@@ -591,7 +595,7 @@ static int IFFReader_FindChunk(IFFReaderContext* ctx, const char* name, unsigned
 
         if (AukString_Compare(chunkName, name) == 0) {
             /* Found it - read data */
-            unsigned long dataSize = chunkSize - nameLen - 1;
+            dataSize = chunkSize - nameLen - 1;
             if (outData && dataSize <= maxDataSize) {
                 Read(ctx->file, outData, dataSize);
             }
@@ -862,14 +866,14 @@ static void IFFReader_t_object(ISerializer* This, const char* name, AukObjectPtr
 }
 
 static void IFFReader_t_arrayobj(ISerializer* This, const char* name, AukArray** parray,
-    AukObjectNewFunc itemNewFunc, const char* (*itemGetTypeName)(AukObject*)) {
-
+    AukObjectNewFunc itemNewFunc, const char* typename) {
+    AukArray *array;
 
     IFFReader_t_object(This, name, (AukObjectPtr*)parray);
-    AukArray *array = *parray;
+    array = *parray;
     if(array)
     {
-        AukArray_SetType(array,itemNewFunc, itemGetTypeName);
+        AukArray_SetType(array,itemNewFunc, typename);
     }
 }
 

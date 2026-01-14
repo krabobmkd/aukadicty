@@ -9,16 +9,17 @@
  * Abstract base class for all project types
  */
 
-void AukProject_New(AukProjectPtr *firstPtr) {
+void AukProject_New(AukObjectPtr *firstPtr) {
+    AukProject* project;
     if(!firstPtr) return;
-    AukProject* project = (AukProject*)AllocVec(sizeof(AukProject), MEMF_CLEAR);
+    project = (AukProject*)AllocVec(sizeof(AukProject), MEMF_CLEAR);
     if (project) {
         AukProject_Init(project);
-        AukObjectPtr_Set((AukObjectPtr*)firstPtr, &project->base);
+        AukObjectPtr_Set(firstPtr, &project->base);
     }
 }
 
-void AukProject_Delete(void* This) {
+void AukProject_Delete(AukObject* This) {
     AukProject* project = (AukProject*)This;
 
     if (project) {
@@ -35,7 +36,7 @@ void AukProject_Delete(void* This) {
     }
 }
 
-const char* AukProject_GetTypeName(void* This) {
+const char* AukProject_GetTypeName(AukObject* This) {
     (void)This;
     return "AukProject";
 }

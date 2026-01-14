@@ -8,7 +8,7 @@
  * Represents an instance of a sound on a track
  */
 
-void AukSound_New(AukSoundPtr* firstPtr) {
+void AukSound_New(AukObjectPtr* firstPtr) {
     AukSound* sound;
 
     if (!firstPtr) {
@@ -18,7 +18,7 @@ void AukSound_New(AukSoundPtr* firstPtr) {
     sound = (AukSound*)AllocVec(sizeof(AukSound), MEMF_CLEAR);
     if (sound) {
         AukSound_Init(sound);
-        AukObjectPtr_Set((AukObjectPtr*)firstPtr, &sound->base);
+        AukObjectPtr_Set(firstPtr, &sound->base);
     }
 }
 
@@ -40,7 +40,7 @@ const char* AukSound_GetTypeName(void* This) {
     return "AukSound";
 }
 
-void AukSound_Serialize(void* This, ISerializer* ser, const char* pName) {
+void AukSound_Serialize(AukObject* This, ISerializer* ser, const char* pName) {
     AukSound* sound = (AukSound*)This;
     (void)pName;
 

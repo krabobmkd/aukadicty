@@ -124,7 +124,7 @@ const char* AukStyleSheet_GetTypeName(void* This) {
     return "AukStyleSheet";
 }
 
-void AukStyleSheet_Serialize(void* This, ISerializer* ser, const char* pName) {
+void AukStyleSheet_Serialize(AukObject* This, ISerializer* ser, const char* pName) {
     AukStyleSheet* styleSheet = (AukStyleSheet*)This;
     (void)pName;
 

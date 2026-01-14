@@ -23,12 +23,13 @@
 
 #define INITIAL_SOUND_CAPACITY 16
 
-void AukTrack_New(AukTrackPtr *firstPtr) {
+void AukTrack_New(AukObjectPtr *firstPtr) {
+    AukTrack* track;
     if (!firstPtr) return;
-    AukTrack* track = (AukTrack*)AllocVec(sizeof(AukTrack), MEMF_CLEAR);
+    track = (AukTrack*)AllocVec(sizeof(AukTrack), MEMF_CLEAR);
     if (track) {
         AukTrack_Init(track);
-        AukObjectPtr_Set((AukObjectPtr*)firstPtr, &track->base);
+        AukObjectPtr_Set(firstPtr, &track->base);
     }
 }
 
@@ -62,7 +63,7 @@ const char* AukTrack_GetTypeName(void* This) {
     return "AukTrack";
 }
 
-void AukTrack_Serialize(void* This, ISerializer* ser, const char* pName) {
+void AukTrack_Serialize(AukObject* This, ISerializer* ser, const char* pName) {
     AukTrack* track = (AukTrack*)This;
     (void)pName;
 
@@ -94,6 +95,7 @@ void AukTrack_SetProject(AukTrack* track, AukProject* project) {
 
 int AukTrack_SetName(AukTrack* track, const char* name) {
     int changed;
+    AukMessage_AProject msg;
 
     if (!track || !name) {
         return 0;
@@ -116,13 +118,11 @@ int AukTrack_SetName(AukTrack* track, const char* name) {
 
     if (track->name) {
         /* Send update notification */
-        AukMessage_AProject msg;
-
         msg.type = AUK_MSG_TRACKMODIFIED_NAMECHANGE;
         msg._track_id = track->trackIndex;
         msg._track = track;
         msg._timeStart = 0;
-        track->base.SendUpdate(&track->base, &msg);
+        track->base.SendUpdate(&track->base, (AukMessage*)&msg);
     }
 
     return track->name != NULL;
@@ -205,6 +205,7 @@ AukSound* AukTrack_CreateSound(void* This, AukSoundFilePtr soundFile, AukFixed s
     AukSound* sound;
     AukFixed duration, adjustedStart;
     unsigned int insertIndex;
+    AukMessage msg;
 
     if (!track || !soundFile) {
         return NULL;
@@ -244,11 +245,10 @@ AukSound* AukTrack_CreateSound(void* This, AukSoundFilePtr soundFile, AukFixed s
     }
 
     AukObjectPtr_Release(&soundPtr);
-    {
-        AukMessage msg;
-        msg.type = AUK_MSG_MODIFY;
-        track->base.SendUpdate(&track->base, &msg);
-    }
+
+    msg.type = AUK_MSG_MODIFY;
+    track->base.SendUpdate(&track->base, &msg);
+
     /* Return raw pointer - the track owns the reference, caller doesn't */
     return sound;
 }
@@ -259,6 +259,7 @@ int AukTrack_MoveSound(void* This, AukSound* sound, AukFixed newStartTime) {
     AukFixed duration, adjustedStart, oldStart;
     unsigned int oldIndex, newIndex, i, count;
     AukSound* currentSound = NULL;
+    AukMessage msg;
 
     if (!track || !sound) {
         return 0;
@@ -319,17 +320,16 @@ int AukTrack_MoveSound(void* This, AukSound* sound, AukFixed newStartTime) {
         return 0;
     }
 
-    {
-        AukMessage msg;
-        msg.type = AUK_MSG_MODIFY;
-        track->base.SendUpdate(&track->base, &msg);
-    }
+    msg.type = AUK_MSG_MODIFY;
+    track->base.SendUpdate(&track->base, &msg);
+
     return 1;
 }
 
 
 int AukTrack_MoveSoundToTrack(void* This, AukSound* sound, AukTrack* destTrack) {
     AukTrack* srcTrack = (AukTrack*)This;
+    AukMessage msg;
 
     if (!srcTrack || !sound || !destTrack) {
         return 0;
@@ -352,12 +352,9 @@ int AukTrack_MoveSoundToTrack(void* This, AukSound* sound, AukTrack* destTrack) 
         return 0;
     }
     /* Send update notification */
-    {
-        AukMessage msg;
-        msg.type = AUK_MSG_MODIFY;
-        srcTrack->base.SendUpdate(&srcTrack->base, &msg);
-        destTrack->base.SendUpdate(&destTrack->base, &msg);
-    }
+    msg.type = AUK_MSG_MODIFY;
+    srcTrack->base.SendUpdate(&srcTrack->base, &msg);
+    destTrack->base.SendUpdate(&destTrack->base, &msg);
 
     return 1;
 }
@@ -383,6 +380,7 @@ void AukTrack_GetSound(void* This,AukSound**ptr, unsigned int index) {
 int AukTrack_RemoveSound(void* This, AukSound* sound){
     AukTrack* track = (AukTrack*)This;
     AukArray* tracksArray;
+    AukMessage msg;
 
     if (!track || !sound || !track->sounds) {
         return 0;
@@ -394,11 +392,8 @@ int AukTrack_RemoveSound(void* This, AukSound* sound){
     if (tracksArray->Remove(tracksArray, &sound->base)) {
 
         /* Send update notification */
-        {
-            AukMessage msg;
-            msg.type = AUK_MSG_MODIFY;
-            track->base.SendUpdate(&track->base, &msg);
-        }
+        msg.type = AUK_MSG_MODIFY;
+        track->base.SendUpdate(&track->base, &msg);
 
         return 1;
     }
@@ -419,6 +414,9 @@ int AukTrack_AddEnvelopePoint(void* This, AukFixed time, unsigned short value) {
     AukScalarArray* newValueArray;
     long long* timeData;
     short* valueData;
+    long long* oldTimeData;
+    short* oldValueData;
+    AukMessage msg;
 
     if (!track) {
         return 0;
@@ -455,8 +453,8 @@ int AukTrack_AddEnvelopePoint(void* This, AukFixed time, unsigned short value) {
     valueData = (short*)newValueArray->data;
 
     if (track->envelopeTime && track->envelopeValue) {
-        long long* oldTimeData = (long long*)track->envelopeTime->data;
-        short* oldValueData = (short*)track->envelopeValue->data;
+        oldTimeData = (long long*)track->envelopeTime->data;
+        oldValueData = (short*)track->envelopeValue->data;
 
         /* Copy elements before insertion point */
         for (i = 0; i < insertIndex; i++) {
@@ -490,11 +488,9 @@ int AukTrack_AddEnvelopePoint(void* This, AukFixed time, unsigned short value) {
     track->envelopeTime = newTimeArray;
     track->envelopeValue = newValueArray;
 
-    {
-        AukMessage msg;
-        msg.type = AUK_MSG_MODIFY;
-        track->base.SendUpdate(&track->base, &msg);
-    }
+    msg.type = AUK_MSG_MODIFY;
+    track->base.SendUpdate(&track->base, &msg);
+
     return 1;
 }
 
@@ -510,6 +506,7 @@ int AukTrack_RemoveEnvelopePointAt(void* This, unsigned int index) {
     short* valueData;
     long long* oldTimeData;
     short* oldValueData;
+    AukMessage msg;
 
     if (!track || !track->envelopeTime || !track->envelopeValue) {
         return 0;
@@ -567,11 +564,9 @@ int AukTrack_RemoveEnvelopePointAt(void* This, unsigned int index) {
     track->envelopeTime = newTimeArray;
     track->envelopeValue = newValueArray;
 
-    {
-        AukMessage msg;
-        msg.type = AUK_MSG_MODIFY;
-        track->base.SendUpdate(&track->base, &msg);
-    }
+    msg.type = AUK_MSG_MODIFY;
+    track->base.SendUpdate(&track->base, &msg);
+
     return 1;
 }
 
@@ -690,7 +685,7 @@ void AukTrack_Init(AukTrack* track) {
         /* Initialize sounds array */
         AukArray_New(&track->sounds);
         if (track->sounds) {
-            AukArray_SetType(track->sounds, AukSound_New, AukSound_GetTypeName);
+            AukArray_SetType(track->sounds, AukSound_New, AukSound_GetTypeName(NULL));
         }
 
         /* Initialize envelope scalar arrays (start empty) */

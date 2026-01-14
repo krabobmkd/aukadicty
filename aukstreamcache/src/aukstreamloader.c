@@ -94,6 +94,19 @@ AukStreamCacheResult aukloader_LoadStream(AukStreamEngine* engine,
     unsigned long chunkIndex;
     void* tempBuffer = NULL;
     unsigned long tempBufferSize;
+    unsigned long startFrame;
+    unsigned long endFrame;
+    long long temp;
+    unsigned long totalBytes;
+    unsigned long totalChunks, usedChunks, freeChunks;
+    unsigned long i;
+    unsigned long framesToRead;
+    unsigned long maxFramesPerChunk;
+    unsigned long framesRead;
+    void* chunkData;
+    unsigned long convertedFrames;
+    AukWaveInfo waveInfo;
+    Auk8SVXInfo svxInfo;
 
     if (!engine || !request || !outStream) {
         return AUK_STREAM_ERROR_INVALID;
@@ -123,7 +136,6 @@ AukStreamCacheResult aukloader_LoadStream(AukStreamEngine* engine,
 
     /* Parse file based on format */
     if (format == AUK_STREAM_FORMAT_WAVE) {
-        AukWaveInfo waveInfo;
         result = aukwave_ParseHeader(file, &waveInfo);
         if (result != AUK_STREAM_OK) {
             Close(file);
@@ -137,7 +149,6 @@ AukStreamCacheResult aukloader_LoadStream(AukStreamEngine* engine,
         totalFrames = waveInfo.frameCount;
 
     } else if (format == AUK_STREAM_FORMAT_8SVX) {
-        Auk8SVXInfo svxInfo;
         result = auk8svx_ParseHeader(file, &svxInfo);
         if (result != AUK_STREAM_OK) {
             Close(file);
@@ -160,21 +171,21 @@ AukStreamCacheResult aukloader_LoadStream(AukStreamEngine* engine,
     targetType = GetTargetDataType(engine->config.conversionMode, sourceType);
 
     /* Determine which frames to load based on request */
-    unsigned long startFrame = request->fileStartFrame;
-    unsigned long endFrame = request->fileEndFrame;
+    startFrame = request->fileStartFrame;
+    endFrame = request->fileEndFrame;
 
     /* If time-based request, convert to frames */
     if (request->startTime != 0 || request->endTime != 0) {
         /* Convert fixed-point time to frames */
         if (request->startTime != 0) {
             /* startFrame = (startTime * sampleRate) >> 32 */
-            long long temp = (long long)request->startTime * (long long)sampleRate;
+            temp = (long long)request->startTime * (long long)sampleRate;
             startFrame = (unsigned long)(temp >> 32);
         }
 
         if (request->endTime != 0) {
             /* endFrame = (endTime * sampleRate) >> 32 */
-            long long temp = (long long)request->endTime * (long long)sampleRate;
+            temp = (long long)request->endTime * (long long)sampleRate;
             endFrame = (unsigned long)(temp >> 32);
         }
     }
@@ -218,11 +229,10 @@ AukStreamCacheResult aukloader_LoadStream(AukStreamEngine* engine,
     DateStamp(&stream->lastUsedTime);
 
     /* Calculate number of chunks needed */
-    unsigned long totalBytes = framesToLoad * stream->info.bytesPerFrame;
+    totalBytes = framesToLoad * stream->info.bytesPerFrame;
     stream->chunkCount = (totalBytes + AUK_STREAM_CHUNK_SIZE - 1) / AUK_STREAM_CHUNK_SIZE;
 
     /* Check if we have enough free chunks, evict if needed */
-    unsigned long totalChunks, usedChunks, freeChunks;
     aukstreampool_GetStats(engine->pool, &totalChunks, &usedChunks, &freeChunks);
 
     if (freeChunks < stream->chunkCount) {
@@ -254,7 +264,6 @@ AukStreamCacheResult aukloader_LoadStream(AukStreamEngine* engine,
         stream->chunks[chunkIndex] = aukstreampool_AllocChunk(engine->pool);
         if (!stream->chunks[chunkIndex]) {
             /* Out of memory - free what we allocated */
-            unsigned long i;
             for (i = 0; i < chunkIndex; i++) {
                 aukstreampool_FreeChunk(engine->pool, stream->chunks[i]);
             }
@@ -271,7 +280,6 @@ AukStreamCacheResult aukloader_LoadStream(AukStreamEngine* engine,
     tempBufferSize = AUK_STREAM_CHUNK_SIZE;
     tempBuffer = AllocVec(tempBufferSize, MEMF_CLEAR);
     if (!tempBuffer) {
-        unsigned long i;
         for (i = 0; i < stream->chunkCount; i++) {
             aukstreampool_FreeChunk(engine->pool, stream->chunks[i]);
         }
@@ -288,18 +296,17 @@ AukStreamCacheResult aukloader_LoadStream(AukStreamEngine* engine,
     chunkIndex = 0;
 
     while (framesLoaded < framesToLoad && chunkIndex < stream->chunkCount) {
-        unsigned long framesToRead = (framesToLoad - framesLoaded);
-        unsigned long maxFramesPerChunk = AUK_STREAM_CHUNK_SIZE / stream->info.bytesPerFrame;
+        framesToRead = (framesToLoad - framesLoaded);
+        maxFramesPerChunk = AUK_STREAM_CHUNK_SIZE / stream->info.bytesPerFrame;
 
         if (framesToRead > maxFramesPerChunk) {
             framesToRead = maxFramesPerChunk;
         }
 
-        unsigned long framesRead = 0;
+        framesRead = 0;
 
         /* Read from file based on format */
         if (format == AUK_STREAM_FORMAT_WAVE) {
-            AukWaveInfo waveInfo;
             waveInfo.dataType = sourceType;
             waveInfo.channels = sourceChannels;
             waveInfo.frameCount = totalFrames;
@@ -309,7 +316,6 @@ AukStreamCacheResult aukloader_LoadStream(AukStreamEngine* engine,
                                          framesToRead, tempBuffer, tempBufferSize,
                                          &framesRead);
         } else {
-            Auk8SVXInfo svxInfo;
             svxInfo.dataType = sourceType;
             svxInfo.channels = sourceChannels;
             svxInfo.frameCount = totalFrames;
@@ -325,8 +331,7 @@ AukStreamCacheResult aukloader_LoadStream(AukStreamEngine* engine,
         }
 
         /* Convert if needed */
-        void* chunkData = aukstreampool_GetChunkData(stream->chunks[chunkIndex]);
-        unsigned long convertedFrames;
+        chunkData = aukstreampool_GetChunkData(stream->chunks[chunkIndex]);
 
         result = aukconvert_Convert(tempBuffer, sourceType, framesRead, sourceChannels,
                                      chunkData, targetType, AUK_STREAM_CHUNK_SIZE,
@@ -347,7 +352,6 @@ AukStreamCacheResult aukloader_LoadStream(AukStreamEngine* engine,
 
     if (result != AUK_STREAM_OK || framesLoaded == 0) {
         /* Failed - cleanup stream */
-        unsigned long i;
         for (i = 0; i < stream->chunkCount; i++) {
             aukstreampool_FreeChunk(engine->pool, stream->chunks[i]);
         }

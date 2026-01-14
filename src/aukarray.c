@@ -11,16 +11,17 @@
 
 #define INITIAL_ARRAY_CAPACITY 8
 // AukObjectNewFunc itemNewFunc, const char* (*itemGetTypeName)(AukObject*)
-void AukArray_New(AukArrayPtr* firstPtr) {
+void AukArray_New(AukObjectPtr* firstPtr) {
+    AukArray* array;
     if (!firstPtr) return;
-    AukArray* array = (AukArray*)AllocVec(sizeof(AukArray), MEMF_CLEAR);
+    array = (AukArray*)AllocVec(sizeof(AukArray), MEMF_CLEAR);
     if (array) {
         AukArray_Init(array);
-        AukObjectPtr_Set((AukObjectPtr*)firstPtr, &array->base);
+        AukObjectPtr_Set(firstPtr, &array->base);
     }
 }
 
-void AukArray_Delete(void* This) {
+void AukArray_Delete(AukObject* This) {
     AukArray* array = (AukArray*)This;
     unsigned int i;
 
@@ -38,14 +39,17 @@ void AukArray_Delete(void* This) {
     }
 }
 
-const char* AukArray_GetTypeName(void* This) {
+const char* AukArray_GetTypeName(AukObject* This) {
     (void)This;
     return "AukArray";
 }
 
-void AukArray_Serialize(void* This, ISerializer* ser, const char* pName) {
+void AukArray_Serialize(AukObject* This, ISerializer* ser, const char* pName) {
     AukArray* array = (AukArray*)This;
     unsigned int i;
+    unsigned int count;
+    char temp[32];
+    AukObjectPtr itemPtr;
     (void)pName;
 
     if (!array || !ser) {
@@ -57,20 +61,18 @@ void AukArray_Serialize(void* This, ISerializer* ser, const char* pName) {
         ser->t_uint(ser, "count", &array->count);
 
         for (i = 0; i < array->count; i++) {
-            char temp[32];
             snprintf(temp,31,"i%d",i);
-            AukObjectPtr itemPtr = array->items[i];
+            itemPtr = array->items[i];
             ser->t_object(ser, temp, &itemPtr);
         }
     } else {
         /* Load array items */
-        unsigned int count = 0;
+        count = 0;
         ser->t_uint(ser, "count", &count);
 
         for (i = 0; i < count; i++) {
-            char temp[32];
             snprintf(temp,31,"i%d",i);
-            AukObjectPtr itemPtr = NULL;
+            itemPtr = NULL;
             ser->t_object(ser, temp, &itemPtr);
             if (itemPtr) {
                 array->Add(array, itemPtr);
@@ -107,10 +109,10 @@ void AukArray_Init(AukArray* array) {
 
     }
 }
-void AukArray_SetType(AukArray* array,AukObjectNewFunc itemNewFunc, const char* (*itemGetTypeName)(AukObject*))
+void AukArray_SetType(AukArray* array,AukObjectNewFunc itemNewFunc, const char*typename)
 {
     array->itemNewFunc = itemNewFunc;
-    array->GetItemTypeName = itemGetTypeName;
+    array->typename = typename;
 }
 
 

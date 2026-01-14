@@ -5,7 +5,6 @@
 #include <proto/layers.h>
 
 #ifdef __SASC
-//    #include "minialib.h"
     #include <clib/alib_protos.h>
 #else
     // GCC

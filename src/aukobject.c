@@ -9,8 +9,9 @@
  */
 
 void AukObject_New(AukObjectPtr *firstPtr) {
+    AukObject* obj;
     if(!firstPtr) return;
-    AukObject* obj = (AukObject*)AllocVec(sizeof(AukObject), MEMF_CLEAR);
+    obj = (AukObject*)AllocVec(sizeof(AukObject), MEMF_CLEAR);
     if (obj) {
         AukObject_Init(obj);
         AukObjectPtr_Set(firstPtr,obj);
@@ -20,10 +21,10 @@ void AukObject_New(AukObjectPtr *firstPtr) {
 void AukObject_Delete(AukObject* obj) {
     AukListener* listener;
     AukListener* nextListener;
+    AukMessage m;
 
     if (obj) {
 
-         AukMessage m;
          m.type = AUK_MSG_WILL_DELETE;
          AukObject_SendUpdate(obj,&m);
 
@@ -60,6 +61,7 @@ void AukObject_Serialize(AukObject* This, ISerializer* ser, const char* pName) {
 
 int AukObject_AddListener(AukObject* obj, AukObject* listenerObject, void* userData, AukUpdateCallback callback) {
     AukListener* newListener;
+    AukListener* current;
 
     if (!obj || !listenerObject || !callback) {
         return 0;
@@ -68,7 +70,7 @@ int AukObject_AddListener(AukObject* obj, AukObject* listenerObject, void* userD
     aukMutex_lock( &obj->listeners_mutex );
 
     /* Check if listener already exists */
-    AukListener* current = obj->listeners;
+    current = obj->listeners;
     while (current) {
         if (AukObjectPtr_GetObject(&current->listenerObject) == listenerObject) {
             /* Already registered */

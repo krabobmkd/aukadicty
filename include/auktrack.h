@@ -15,23 +15,8 @@
 extern "C" {
 #endif
 
-/* Forward declarations */
-typedef struct sAukTrack AukTrack;
-typedef struct AukSound AukSound;
-typedef struct AukProject AukProject;
-
-typedef struct AukSoundFile AukSoundFile;
-typedef AukSoundFile* AukSoundFilePtr;
-
-/* Dynamic array for sounds */
-// typedef struct AukSoundArray {
-//     AukSound** sounds;      /* Array of sound pointers */
-//     unsigned int count;     /* Current number of sounds */
-//     unsigned int capacity;  /* Allocated capacity */
-// } AukSoundArray;
-
 /* AukTrack structure - inherits from AukObject */
-struct sAukTrack {
+struct AukTrack {
     AukObject base;          /* Must be first - inheritance */
 
     /* Data members */
@@ -59,11 +44,10 @@ struct sAukTrack {
     unsigned int (*GetEnvelopePointCount)(void* This);
     AukFixed (*GetEnvelopeValue)(void* This, AukFixed time);
 };
-typedef struct sAukTrack AukTrack;
-typedef AukTrack* AukTrackPtr;
+
 
 /* Constructor/Destructor */
-void AukTrack_New(AukTrackPtr *firstPtr);
+void AukTrack_New(AukObjectPtr *firstPtr);
 void AukTrack_Delete(void* This);
 const char* AukTrack_GetTypeName(void* This);
 

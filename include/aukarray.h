@@ -13,11 +13,6 @@
 extern "C" {
 #endif
 
-/* Forward declarations */
-typedef struct AukArray AukArray;
-typedef AukArray* AukArrayPtr;
-
-
 
 /* AukArray structure - inherits from AukObject */
 struct AukArray {
@@ -32,8 +27,8 @@ struct AukArray {
     /* Object creation function pointer for this array type */
     AukObjectNewFunc itemNewFunc;      /* Function to create new items */
 
-    /* GetTypeName function for the item type */
-    const char* (*GetItemTypeName)(AukObject* This);
+    /* TypeName for the item type */
+    const char *typename;
 
     /* Virtual methods specific to AukArray */
     int (*Add)(void* This, AukObject* item);
@@ -45,18 +40,14 @@ struct AukArray {
     void (*Clear)(void* This);
 };
 
-/* Forward declaration for serializer */
-struct sISerializer;
-typedef struct sISerializer ISerializer;
-
 /* Constructor/Destructor */
 /* Parameters: firstPtr, itemNewFunc, itemGetTypeName */
-void AukArray_New(AukArrayPtr* firstPtr);
-void AukArray_SetType(AukArray* array,AukObjectNewFunc itemNewFunc, const char* (*itemGetTypeName)(AukObject*));
+void AukArray_New(AukObjectPtr* firstPtr);
+void AukArray_SetType(AukArray* array,AukObjectNewFunc itemNewFunc, const char*typename );
 
-void AukArray_Delete(void* This);
-const char* AukArray_GetTypeName(void* This);
-void AukArray_Serialize(void* This, ISerializer* ser, const char* pName);
+void AukArray_Delete(AukObject* This);
+const char* AukArray_GetTypeName(AukObject* This);
+void AukArray_Serialize(AukObject* This, ISerializer* ser, const char* pName);
 
 /* Initialize AukArray structure */
 void AukArray_Init(AukArray* array);

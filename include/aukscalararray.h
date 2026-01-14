@@ -10,6 +10,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+#include "aukdefs.h"
 
 /* Scalar type enumeration - by size */
 typedef enum {
@@ -20,14 +21,14 @@ typedef enum {
 } AukScalarType;
 
 /* ScalarArray structure */
-typedef struct AukScalarArray {
+struct AukScalarArray {
     short scalarType;  /* Type of scalar elements */
     short ndim;                /* Number of dimensions */
     unsigned int* shape;       /* Array of dimension sizes [ndim] */
     unsigned int* strides;     /* Stride per dimension [ndim] (computed) */
     void* data;                /* Actual data buffer */
     unsigned int totalElements; /* Total number of elements (computed) */
-} AukScalarArray;
+};
 
 /* Get size in bytes for a scalar type */
 unsigned int AukScalarArray_GetScalarSize(AukScalarType type);

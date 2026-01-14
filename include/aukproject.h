@@ -14,10 +14,6 @@
 extern "C" {
 #endif
 
-/* Forward declaration */
-typedef struct AukProject AukProject;
-typedef AukProject* AukProjectPtr;
-
 /* Abstract AukProject structure - inherits from AukObject */
 struct AukProject {
     AukObject base;          /* Must be first - inheritance */
@@ -36,9 +32,9 @@ struct AukProject {
 };
 
 /* Constructor/Destructor */
-void AukProject_New(AukProjectPtr *firstPtr);
-void AukProject_Delete(void* This);
-const char* AukProject_GetTypeName(void* This);
+void AukProject_New(AukObjectPtr *firstPtr);
+void AukProject_Delete(AukObject* This);
+const char* AukProject_GetTypeName(AukObject* This);
 
 /* Initialize AukProject structure */
 void AukProject_Init(AukProject* project);

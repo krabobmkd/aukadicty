@@ -233,6 +233,10 @@ static void JsonWriter_t_scalararray(ISerializer* This, const char* name, AukSca
     unsigned int scalarSize;
     unsigned int i;
     short j;
+    char* dataChar;
+    short* dataShort;
+    int* dataInt;
+    long long* dataLongLong;
 
     if (!arr) {
         cJSON_AddNullToObject(ctx->current, name);
@@ -264,24 +268,24 @@ static void JsonWriter_t_scalararray(ISerializer* This, const char* name, AukSca
         scalarSize = AukScalarArray_GetScalarSize(arr->scalarType);
 
         if (scalarSize == 1) {
-            char* data = (char*)arr->data;
+            dataChar = (char*)arr->data;
             for (i = 0; i < arr->totalElements; i++) {
-                cJSON_AddItemToArray(dataArray, cJSON_CreateNumberInt((int)data[i]));
+                cJSON_AddItemToArray(dataArray, cJSON_CreateNumberInt((int)dataChar[i]));
             }
         } else if (scalarSize == 2) {
-            short* data = (short*)arr->data;
+            dataShort = (short*)arr->data;
             for (i = 0; i < arr->totalElements; i++) {
-                cJSON_AddItemToArray(dataArray, cJSON_CreateNumberInt((int)data[i]));
+                cJSON_AddItemToArray(dataArray, cJSON_CreateNumberInt((int)dataShort[i]));
             }
         } else if (scalarSize == 4) {
-            int* data = (int*)arr->data;
+            dataInt = (int*)arr->data;
             for (i = 0; i < arr->totalElements; i++) {
-                cJSON_AddItemToArray(dataArray, cJSON_CreateNumberInt(data[i]));
+                cJSON_AddItemToArray(dataArray, cJSON_CreateNumberInt(dataInt[i]));
             }
         } else if (scalarSize == 8) {
-            long long* data = (long long*)arr->data;
+            dataLongLong = (long long*)arr->data;
             for (i = 0; i < arr->totalElements; i++) {
-                cJSON_AddItemToArray(dataArray, cJSON_CreateNumberInt((int)data[i]));
+                cJSON_AddItemToArray(dataArray, cJSON_CreateNumberInt((int)dataLongLong[i]));
             }
         }
 
@@ -540,6 +544,8 @@ static void JsonReader_t_object(ISerializer* This, const char* name, AukObjectPt
     const char* typeName;
     const TypeNameToContructor* reg;
     AukObject* newObj;
+    unsigned int refIndex;
+    AukObject* refObj;
 
     /* Release existing object */
     if (*object) {
@@ -561,8 +567,8 @@ static void JsonReader_t_object(ISerializer* This, const char* name, AukObjectPt
         /* This is a reference - get the index */
         indexItem = cJSON_GetObjectItem(objNode, "__index");
         if (indexItem && cJSON_IsNumber(indexItem)) {
-            unsigned int refIndex = (unsigned int)indexItem->valueint;
-            AukObject* refObj = JsonReader_GetFromRememberList(ctx, refIndex);
+            refIndex = (unsigned int)indexItem->valueint;
+            refObj = JsonReader_GetFromRememberList(ctx, refIndex);
 
             if (refObj) {
                 /* Retain reference to existing object */

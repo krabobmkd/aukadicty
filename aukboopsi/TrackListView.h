@@ -3,7 +3,7 @@
 
 #include <intuition/classusr.h>
 
-#include <aukobject.h>
+#include <aukdefs.h>
 #include "aukstyle.h"
 
 
@@ -51,8 +51,6 @@ void CreateTrackListView(TrackListView *pm,struct DrawInfo *drawInfo,
                 Object *appModel,
                 AukStyle *stylesheet);
 
-typedef struct AukAProject AukAProject;
-typedef struct sAukTrack AukTrack;
 /**
     if project NULL, will release.
 */

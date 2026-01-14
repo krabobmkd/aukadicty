@@ -62,10 +62,12 @@ int main(void) {
     AukStreamRequest request;
     AukCachedStream* stream1 = NULL;
     AukCachedStream* stream2 = NULL;
+    AukCachedStream* stream1Again = NULL;
     AukStreamInfo info;
     AukStreamCacheResult result;
     const void* audioData;
     unsigned long available;
+    AukFixed halfSecond;
 
     printf("=== AukStreamCache Example ===\n\n");
 
@@ -158,7 +160,7 @@ int main(void) {
     printf("   Loading first 0.5 seconds of kick.wav\n");
 
     /* 0.5 seconds in fixed-point (32.32 format) */
-    AukFixed halfSecond = AukFixed_FromDouble(0.5);
+    halfSecond = AukFixed_FromDouble(0.5);
 
     request.filename = "kick_partial.wav";  /* Different cache key */
     request.startTime = 0;
@@ -171,7 +173,6 @@ int main(void) {
 
     /* Request first stream again (should return cached version) */
     printf("\n5. Requesting kick.wav again (should use cache)...\n");
-    AukCachedStream* stream1Again = NULL;
     request.filename = "kick.wav";
     request.startTime = 0;
     request.endTime = 0;

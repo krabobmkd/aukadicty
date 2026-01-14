@@ -13,17 +13,8 @@
 extern "C" {
 #endif
 #include "compilers.h"
+#include "aukdefs.h"
 #include "aukmutex.h"
-/* Forward declarations */
-typedef struct AukObject AukObject;
-typedef struct AukListener AukListener;
-typedef struct AukProject AukProject;
-
-/* Typed pointer system - replaces generic AukShared */
-typedef AukObject* AukObjectPtr;
-
-/* Function pointer type for creating new objects of a specific type */
-typedef void (*AukObjectNewFunc)(AukObjectPtr* firstPtr);
 
 /* Message type enumeration */
 typedef enum {
@@ -60,9 +51,6 @@ struct AukListener {
     AukUpdateCallback callback;     /* Update notification callback */
     AukListener* next;              /* Next listener in list */
 };
-
-struct sISerializer;
-typedef struct sISerializer ISerializer;
 
 /* Base object vtable - all objects must implement these */
 struct AukObject {

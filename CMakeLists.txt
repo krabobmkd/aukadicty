@@ -101,6 +101,7 @@ set(AUKSTREAMCACHE_SOURCES
 
 # Aukadicty header files
 set(AUKADICTY_HEADERS
+    include/aukdefs.h
     include/aukadicty.h
     include/aukobject.h
     include/aukmutex.h

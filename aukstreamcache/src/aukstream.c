@@ -120,6 +120,7 @@ void aukstream_Shutdown(AukStreamEngine* engine) {
     AukCachedStream* stream;
     AukCachedStream* next;
     AukStreamMessage* msg;
+    unsigned long i;
 
     if (!engine) return;
 
@@ -153,7 +154,6 @@ void aukstream_Shutdown(AukStreamEngine* engine) {
 
         /* Free chunks */
         if (stream->chunks) {
-            unsigned long i;
             for (i = 0; i < stream->chunkCount; i++) {
                 if (stream->chunks[i]) {
                     aukstreampool_FreeChunk(engine->pool, stream->chunks[i]);
@@ -199,6 +199,7 @@ static void aukstream_CacheProcessEntry(void) {
 
     struct MsgPort* port;
     struct Message* msg;
+    AukStreamMessage* streamMsg;
     int running = 1;
 
     port = CreateMsgPort();
@@ -209,7 +210,7 @@ static void aukstream_CacheProcessEntry(void) {
     while (running) {
         WaitPort(port);
         while ((msg = GetMsg(port))) {
-            AukStreamMessage* streamMsg = (AukStreamMessage*)msg;
+            streamMsg = (AukStreamMessage*)msg;
 
             if (streamMsg->type == AUK_MSG_SHUTDOWN) {
                 running = 0;
@@ -291,6 +292,9 @@ AukStreamCacheResult aukstream_GetAudioData(AukCachedStream* stream,
     unsigned long framesPerChunk;
     unsigned long frameOffsetInChunk;
     unsigned long availableInChunk;
+    void* chunkData;
+    unsigned long byteOffset;
+    unsigned long remainingFrames;
 
     if (!stream || !outData || !outAvailable) {
         return AUK_STREAM_ERROR_INVALID;
@@ -323,20 +327,20 @@ AukStreamCacheResult aukstream_GetAudioData(AukCachedStream* stream,
         return AUK_STREAM_ERROR_NOTFOUND;
     }
 
-    void* chunkData = aukstreampool_GetChunkData(stream->chunks[chunkIndex]);
+    chunkData = aukstreampool_GetChunkData(stream->chunks[chunkIndex]);
     if (!chunkData) {
         return AUK_STREAM_ERROR_NOTFOUND;
     }
 
     /* Calculate byte offset within chunk */
-    unsigned long byteOffset = frameOffsetInChunk * stream->info.bytesPerFrame;
+    byteOffset = frameOffsetInChunk * stream->info.bytesPerFrame;
     *outData = (const void*)((unsigned char*)chunkData + byteOffset);
 
     /* Calculate available frames in this chunk */
     availableInChunk = framesPerChunk - frameOffsetInChunk;
 
     /* Limit to remaining frames in stream */
-    unsigned long remainingFrames = stream->info.frameCount - frameOffset;
+    remainingFrames = stream->info.frameCount - frameOffset;
     if (availableInChunk > remainingFrames) {
         availableInChunk = remainingFrames;
     }

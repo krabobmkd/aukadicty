@@ -42,6 +42,9 @@ AukStreamCacheResult aukwave_ParseHeader(BPTR file, AukWaveInfo* outInfo) {
     unsigned long sampleRate, byteRate;
     unsigned short blockAlign;
     int foundFmt = 0, foundData = 0;
+    long pos;
+    unsigned long bytesPerSample;
+    unsigned long bytesPerFrame;
 
     if (!file || !outInfo) {
         return AUK_STREAM_ERROR_INVALID;
@@ -61,7 +64,7 @@ AukStreamCacheResult aukwave_ParseHeader(BPTR file, AukWaveInfo* outInfo) {
 
     /* Parse chunks */
     while (!foundFmt || !foundData) {
-        long pos = Seek(file, 0, OFFSET_CURRENT);
+        pos = Seek(file, 0, OFFSET_CURRENT);
         if (pos < 0) break;
 
         chunkId = ReadLE32(file);
@@ -115,8 +118,8 @@ AukStreamCacheResult aukwave_ParseHeader(BPTR file, AukWaveInfo* outInfo) {
             outInfo->dataSize = chunkSize;
 
             /* Calculate frame count */
-            unsigned long bytesPerSample = bitsPerSample / 8;
-            unsigned long bytesPerFrame = bytesPerSample * numChannels;
+            bytesPerSample = bitsPerSample / 8;
+            bytesPerFrame = bytesPerSample * numChannels;
             outInfo->frameCount = chunkSize / bytesPerFrame;
 
             foundData = 1;

@@ -8,7 +8,7 @@
  * Manages sound file metadata and filename
  */
 
-void AukSoundFile_New(AukSoundFilePtr* firstPtr) {
+void AukSoundFile_New(AukObjectPtr* firstPtr) {
     AukSoundFile* soundFile;
 
     if (!firstPtr) {
@@ -18,7 +18,7 @@ void AukSoundFile_New(AukSoundFilePtr* firstPtr) {
     soundFile = (AukSoundFile*)AllocVec(sizeof(AukSoundFile), MEMF_CLEAR);
     if (soundFile) {
         AukSoundFile_Init(soundFile);
-        AukObjectPtr_Set((AukObjectPtr*)firstPtr, &soundFile->base);
+        AukObjectPtr_Set(firstPtr, &soundFile->base);
     }
 }
 
@@ -40,7 +40,7 @@ const char* AukSoundFile_GetTypeName(void* This) {
     return "AukSoundFile";
 }
 
-void AukSoundFile_Serialize(void* This, ISerializer* ser, const char* pName) {
+void AukSoundFile_Serialize(AukObject* This, ISerializer* ser, const char* pName) {
     AukSoundFile* soundFile = (AukSoundFile*)This;
     (void)pName;
 

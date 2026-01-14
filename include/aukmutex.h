@@ -13,9 +13,7 @@ extern "C" {
 #include <proto/exec.h>
 #include <proto/graphics.h>
 #endif
-/* #include <proto/graphics.h> */  /* Temporarily commented - not in AmigaStack */
-typedef struct AukMutex AukMutex;
-
+#include "aukdefs.h"
 /* Base object vtable - all objects must implement these */
 struct AukMutex {
     signed short n,m;

@@ -11,6 +11,8 @@
 
 
 #include <inline/macros.h>
+#include "aukdefs.h"
+
 #define VERSION_TRACKLIST 1
 //#define TrackList_SUPERCLASS_ID "gadgetclass"
 #define TrackList_SUPERCLASS_ID "layout.gadget"
@@ -116,9 +118,6 @@ typedef struct TimeProjection {
 #define GM_TRACKLIST_REMOVETRACK (TRACKLIST_GMDummy+2)
 */
 // private class, so keep methids open for dev:
-
-typedef struct AukAProject AukAProject;
-typedef struct sAukTrack AukTrack;
 
 // set main project - tracklist NULL means clean everything, back to empty state.
 void TrackListArea_setTrackList(struct Gadget *Gad,AukAProject *tracklist);

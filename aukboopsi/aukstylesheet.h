@@ -60,7 +60,7 @@ const char* AukStyleSheet_GetTypeName(void* This);
 void AukStyleSheet_Init(AukStyleSheet* styleSheet);
 
 /* Serialization */
-void AukStyleSheet_Serialize(void* This, ISerializer* ser, const char* pName);
+void AukStyleSheet_Serialize(AukObject* This, ISerializer* ser, const char* pName);
 
 /* Methods */
 int AukStyleSheet_SetFontTiny(void* This, const char* name, int height);
