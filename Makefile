@@ -32,9 +32,9 @@ LIBOBJS = \
  $(BUILDDIRAUK)/auksoundfile.o \
  $(BUILDDIRAUK)/aukscalararray.o \
  $(BUILDDIRAUK)/auktyperegistry.o \
- $(BUILDDIRAUK)/aukjsonserializer.o \
  $(BUILDDIRAUK)/aukiffserializer.o 
 
+# $(BUILDDIRAUK)/aukjsonserializer.o
 # $(BUILDDIRAUK)/aukjson.o 
 # $(BUILDDIRAUK)/cJSON.o
 
