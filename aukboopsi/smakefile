@@ -1,0 +1,186 @@
+# smakefile for AukBoopsi - Amiga SAS/C 6.5
+# Use with command "smake"
+
+SCOPTS = OPTIMIZE CPU=68030 NOSTKCHK STRMERGE UNSCHAR DATA=FAR IDIR=//include IDIR=TrackArea IDIR=.
+STATICDEFS = DEFINE=TRACKAREA_STATICLINK=1 DEFINE=TRACKHEADER_STATICLINK=1 DEFINE=TIMERULE_STATICLINK=1 DEFINE=TRACKLIST_STATICLINK=1 DEFINE=INFINITESCROLL_STATICLINK=1 DEFINE=VOLUMERULE_STATICLINK=1 DEFINE=USE_DEBUG_BDBPRINT=1
+LIBS = LIB:sc.lib LIB:amiga.lib
+
+BUILDDIR = build-sasc
+
+HEADERS = \
+ aukstylesheet.h aukstyle.h gadgetid.h bdbprintf.h \
+ TrackListView.h HeaderView.h FooterView.h \
+ auklocale.h aukaction.h aukmenu.h offscreenbm.h
+
+OBJS = \
+ $(BUILDDIR)/aukboopsi.o \
+ $(BUILDDIR)/TrackListView.o \
+ $(BUILDDIR)/HeaderView.o \
+ $(BUILDDIR)/FooterView.o \
+ $(BUILDDIR)/auklocale.o \
+ $(BUILDDIR)/aukaction.o \
+ $(BUILDDIR)/aukmenu.o \
+ $(BUILDDIR)/aukstylesheet.o \
+ $(BUILDDIR)/bdbprintf.o \
+ $(BUILDDIR)/offscreenbm.o \
+ $(BUILDDIR)/class_infinitescroll_attribs.o \
+ $(BUILDDIR)/class_infinitescroll_dispatch.o \
+ $(BUILDDIR)/class_infinitescroll_lib.o \
+ $(BUILDDIR)/class_infinitescroll_render.o \
+ $(BUILDDIR)/class_infinitescroll_handleinput.o \
+ $(BUILDDIR)/class_trackarea_attribs.o \
+ $(BUILDDIR)/class_trackarea_dispatch.o \
+ $(BUILDDIR)/class_trackarea_lib.o \
+ $(BUILDDIR)/class_trackarea_render.o \
+ $(BUILDDIR)/class_trackarea_handleinput.o \
+ $(BUILDDIR)/class_tracklistarea_attribs.o \
+ $(BUILDDIR)/class_tracklistarea_dispatch.o \
+ $(BUILDDIR)/class_tracklistarea_lib.o \
+ $(BUILDDIR)/class_tracklistarea_render.o \
+ $(BUILDDIR)/class_tracklistarea_handleinput.o \
+ $(BUILDDIR)/class_timerule_attribs.o \
+ $(BUILDDIR)/class_timerule_dispatch.o \
+ $(BUILDDIR)/class_timerule_lib.o \
+ $(BUILDDIR)/class_timerule_render.o \
+ $(BUILDDIR)/class_timerule_handleinput.o \
+ $(BUILDDIR)/class_trackheader_attribs.o \
+ $(BUILDDIR)/class_trackheader_dispatch.o \
+ $(BUILDDIR)/class_trackheader_render.o \
+ $(BUILDDIR)/class_trackheader_lib.o \
+ $(BUILDDIR)/class_volumerule_attribs.o \
+ $(BUILDDIR)/class_volumerule_dispatch.o \
+ $(BUILDDIR)/class_volumerule_lib.o \
+ $(BUILDDIR)/class_volumerule_render.o
+
+all: $(BUILDDIR)/aukadicty
+
+$(BUILDDIR):
+	-makedir $(BUILDDIR)
+
+# Main source files
+$(BUILDDIR)/aukboopsi.o: aukboopsi.c $(BUILDDIR) $(HEADERS)
+	sc aukboopsi.c $(SCOPTS) $(STATICDEFS) OBJNAME=$@
+
+$(BUILDDIR)/TrackListView.o: TrackListView.c $(BUILDDIR) $(HEADERS)
+	sc TrackListView.c $(SCOPTS) $(STATICDEFS) OBJNAME=$@
+
+$(BUILDDIR)/HeaderView.o: HeaderView.c $(BUILDDIR) $(HEADERS)
+	sc HeaderView.c $(SCOPTS) $(STATICDEFS) OBJNAME=$@
+
+$(BUILDDIR)/FooterView.o: FooterView.c $(BUILDDIR) $(HEADERS)
+	sc FooterView.c $(SCOPTS) $(STATICDEFS) OBJNAME=$@
+
+$(BUILDDIR)/auklocale.o: auklocale.c $(BUILDDIR) $(HEADERS)
+	sc auklocale.c $(SCOPTS) $(STATICDEFS) OBJNAME=$@
+
+$(BUILDDIR)/aukaction.o: aukaction.c $(BUILDDIR) $(HEADERS)
+	sc aukaction.c $(SCOPTS) $(STATICDEFS) OBJNAME=$@
+
+$(BUILDDIR)/aukmenu.o: aukmenu.c $(BUILDDIR) $(HEADERS)
+	sc aukmenu.c $(SCOPTS) $(STATICDEFS) OBJNAME=$@
+
+$(BUILDDIR)/aukstylesheet.o: aukstylesheet.c $(BUILDDIR) $(HEADERS)
+	sc aukstylesheet.c $(SCOPTS) $(STATICDEFS) OBJNAME=$@
+
+$(BUILDDIR)/bdbprintf.o: bdbprintf.c $(BUILDDIR) $(HEADERS)
+	sc bdbprintf.c $(SCOPTS) $(STATICDEFS) OBJNAME=$@
+
+$(BUILDDIR)/offscreenbm.o: offscreenbm.c $(BUILDDIR) $(HEADERS)
+	sc offscreenbm.c $(SCOPTS) $(STATICDEFS) OBJNAME=$@
+
+# InfiniteScroll class
+$(BUILDDIR)/class_infinitescroll_attribs.o: InfiniteScroll/class_infinitescroll_attribs.c $(BUILDDIR)
+	sc InfiniteScroll/class_infinitescroll_attribs.c $(SCOPTS) $(STATICDEFS) OBJNAME=$@
+
+$(BUILDDIR)/class_infinitescroll_dispatch.o: InfiniteScroll/class_infinitescroll_dispatch.c $(BUILDDIR)
+	sc InfiniteScroll/class_infinitescroll_dispatch.c $(SCOPTS) $(STATICDEFS) OBJNAME=$@
+
+$(BUILDDIR)/class_infinitescroll_lib.o: InfiniteScroll/class_infinitescroll_lib.c $(BUILDDIR)
+	sc InfiniteScroll/class_infinitescroll_lib.c $(SCOPTS) $(STATICDEFS) OBJNAME=$@
+
+$(BUILDDIR)/class_infinitescroll_render.o: InfiniteScroll/class_infinitescroll_render.c $(BUILDDIR)
+	sc InfiniteScroll/class_infinitescroll_render.c $(SCOPTS) $(STATICDEFS) OBJNAME=$@
+
+$(BUILDDIR)/class_infinitescroll_handleinput.o: InfiniteScroll/class_infinitescroll_handleinput.c $(BUILDDIR)
+	sc InfiniteScroll/class_infinitescroll_handleinput.c $(SCOPTS) $(STATICDEFS) OBJNAME=$@
+
+# TrackArea class
+$(BUILDDIR)/class_trackarea_attribs.o: TrackArea/class_trackarea_attribs.c $(BUILDDIR)
+	sc TrackArea/class_trackarea_attribs.c $(SCOPTS) $(STATICDEFS) OBJNAME=$@
+
+$(BUILDDIR)/class_trackarea_dispatch.o: TrackArea/class_trackarea_dispatch.c $(BUILDDIR)
+	sc TrackArea/class_trackarea_dispatch.c $(SCOPTS) $(STATICDEFS) OBJNAME=$@
+
+$(BUILDDIR)/class_trackarea_lib.o: TrackArea/class_trackarea_lib.c $(BUILDDIR)
+	sc TrackArea/class_trackarea_lib.c $(SCOPTS) $(STATICDEFS) OBJNAME=$@
+
+$(BUILDDIR)/class_trackarea_render.o: TrackArea/class_trackarea_render.c $(BUILDDIR)
+	sc TrackArea/class_trackarea_render.c $(SCOPTS) $(STATICDEFS) OBJNAME=$@
+
+$(BUILDDIR)/class_trackarea_handleinput.o: TrackArea/class_trackarea_handleinput.c $(BUILDDIR)
+	sc TrackArea/class_trackarea_handleinput.c $(SCOPTS) $(STATICDEFS) OBJNAME=$@
+
+# TrackListArea class
+$(BUILDDIR)/class_tracklistarea_attribs.o: TrackListArea/class_tracklistarea_attribs.c $(BUILDDIR)
+	sc TrackListArea/class_tracklistarea_attribs.c $(SCOPTS) $(STATICDEFS) OBJNAME=$@
+
+$(BUILDDIR)/class_tracklistarea_dispatch.o: TrackListArea/class_tracklistarea_dispatch.c $(BUILDDIR)
+	sc TrackListArea/class_tracklistarea_dispatch.c $(SCOPTS) $(STATICDEFS) OBJNAME=$@
+
+$(BUILDDIR)/class_tracklistarea_lib.o: TrackListArea/class_tracklistarea_lib.c $(BUILDDIR)
+	sc TrackListArea/class_tracklistarea_lib.c $(SCOPTS) $(STATICDEFS) OBJNAME=$@
+
+$(BUILDDIR)/class_tracklistarea_render.o: TrackListArea/class_tracklistarea_render.c $(BUILDDIR)
+	sc TrackListArea/class_tracklistarea_render.c $(SCOPTS) $(STATICDEFS) OBJNAME=$@
+
+$(BUILDDIR)/class_tracklistarea_handleinput.o: TrackListArea/class_tracklistarea_handleinput.c $(BUILDDIR)
+	sc TrackListArea/class_tracklistarea_handleinput.c $(SCOPTS) $(STATICDEFS) OBJNAME=$@
+
+# TimeRule class
+$(BUILDDIR)/class_timerule_attribs.o: TimeRule/class_timerule_attribs.c $(BUILDDIR)
+	sc TimeRule/class_timerule_attribs.c $(SCOPTS) $(STATICDEFS) OBJNAME=$@
+
+$(BUILDDIR)/class_timerule_dispatch.o: TimeRule/class_timerule_dispatch.c $(BUILDDIR)
+	sc TimeRule/class_timerule_dispatch.c $(SCOPTS) $(STATICDEFS) OBJNAME=$@
+
+$(BUILDDIR)/class_timerule_lib.o: TimeRule/class_timerule_lib.c $(BUILDDIR)
+	sc TimeRule/class_timerule_lib.c $(SCOPTS) $(STATICDEFS) OBJNAME=$@
+
+$(BUILDDIR)/class_timerule_render.o: TimeRule/class_timerule_render.c $(BUILDDIR)
+	sc TimeRule/class_timerule_render.c $(SCOPTS) $(STATICDEFS) OBJNAME=$@
+
+$(BUILDDIR)/class_timerule_handleinput.o: TimeRule/class_timerule_handleinput.c $(BUILDDIR)
+	sc TimeRule/class_timerule_handleinput.c $(SCOPTS) $(STATICDEFS) OBJNAME=$@
+
+# TrackHeader class
+$(BUILDDIR)/class_trackheader_attribs.o: TrackHeader/class_trackheader_attribs.c $(BUILDDIR)
+	sc TrackHeader/class_trackheader_attribs.c $(SCOPTS) $(STATICDEFS) OBJNAME=$@
+
+$(BUILDDIR)/class_trackheader_dispatch.o: TrackHeader/class_trackheader_dispatch.c $(BUILDDIR)
+	sc TrackHeader/class_trackheader_dispatch.c $(SCOPTS) $(STATICDEFS) OBJNAME=$@
+
+$(BUILDDIR)/class_trackheader_render.o: TrackHeader/class_trackheader_render.c $(BUILDDIR)
+	sc TrackHeader/class_trackheader_render.c $(SCOPTS) $(STATICDEFS) OBJNAME=$@
+
+$(BUILDDIR)/class_trackheader_lib.o: TrackHeader/class_trackheader_lib.c $(BUILDDIR)
+	sc TrackHeader/class_trackheader_lib.c $(SCOPTS) $(STATICDEFS) OBJNAME=$@
+
+# VolumeRule class
+$(BUILDDIR)/class_volumerule_attribs.o: VolumeRule/class_volumerule_attribs.c $(BUILDDIR)
+	sc VolumeRule/class_volumerule_attribs.c $(SCOPTS) $(STATICDEFS) OBJNAME=$@
+
+$(BUILDDIR)/class_volumerule_dispatch.o: VolumeRule/class_volumerule_dispatch.c $(BUILDDIR)
+	sc VolumeRule/class_volumerule_dispatch.c $(SCOPTS) $(STATICDEFS) OBJNAME=$@
+
+$(BUILDDIR)/class_volumerule_lib.o: VolumeRule/class_volumerule_lib.c $(BUILDDIR)
+	sc VolumeRule/class_volumerule_lib.c $(SCOPTS) $(STATICDEFS) OBJNAME=$@
+
+$(BUILDDIR)/class_volumerule_render.o: VolumeRule/class_volumerule_render.c $(BUILDDIR)
+	sc VolumeRule/class_volumerule_render.c $(SCOPTS) $(STATICDEFS) OBJNAME=$@
+
+# Link executable
+$(BUILDDIR)/aukadicty: $(OBJS) //build-sasc/libaukproject.lib
+	slink FROM LIB:c.o $(OBJS) //build-sasc/libaukproject.lib LIB $(LIBS) TO $@
+
+clean:
+	-delete ALL FORCE $(BUILDDIR)
