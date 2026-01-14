@@ -33,7 +33,7 @@ void AukTrack_New(AukObjectPtr *firstPtr) {
     }
 }
 
-void AukTrack_Delete(void* This) {
+void AukTrack_Delete(AukObject* This) {
     AukTrack* track = (AukTrack*)This;
 
     if (track) {
@@ -58,7 +58,7 @@ void AukTrack_Delete(void* This) {
     }
 }
 
-const char* AukTrack_GetTypeName(void* This) {
+const char* AukTrack_GetTypeName(AukObject* This) {
     (void)This;
     return "AukTrack";
 }
@@ -75,7 +75,7 @@ void AukTrack_Serialize(AukObject* This, ISerializer* ser, const char* pName) {
     ser->t_string_mutable(ser, "name", &track->name);
 
     /* Serialize sounds array */
-    ser->t_arrayobj(ser, "sounds", &track->sounds, AukSound_New, AukSound_GetTypeName);
+    ser->t_arrayobj(ser, "sounds", &track->sounds, AukSound_New, AukSound_GetTypeName(NULL));
 
     /* Serialize envelope scalar arrays */
     ser->t_scalararray(ser, "envelopeTime", &track->envelopeTime);
@@ -154,7 +154,7 @@ static AukFixed FindAvailableTimeSlot(AukTrack* track, AukFixed requestedStart, 
 
     /* Try to find a slot starting from requestedStart */
     for (i = 0; i < count; i++) {
-        soundsArray->Get(soundsArray, &sound, i);
+        soundsArray->Get(soundsArray, (AukObjectPtr*)&sound, i);
         if (!sound || sound == excludeSound) {
             if (sound) AukObjectPtr_Release((AukObjectPtr*)&sound);
             continue;
@@ -186,7 +186,7 @@ static unsigned int FindInsertionIndex(AukTrack* track, AukFixed startTime) {
 
     count = soundsArray->GetCount(soundsArray);
     for (i = 0; i < count; i++) {
-        soundsArray->Get(soundsArray, &sound, i);
+        soundsArray->Get(soundsArray, (AukObjectPtr*)&sound, i);
         if (sound && sound->startTime >= startTime) {
             AukObjectPtr_Release((AukObjectPtr*)&sound);
             return i;
@@ -221,7 +221,7 @@ AukSound* AukTrack_CreateSound(void* This, AukSoundFilePtr soundFile, AukFixed s
     adjustedStart = FindAvailableTimeSlot(track, startTime, endTime, NULL);
 
     /* Create new sound */
-    AukSound_New(&soundPtr);
+    AukSound_New((AukObjectPtr*)&soundPtr);
     sound = soundPtr;
     if (!sound) {
         return NULL;
@@ -238,13 +238,13 @@ AukSound* AukTrack_CreateSound(void* This, AukSoundFilePtr soundFile, AukFixed s
     insertIndex = FindInsertionIndex(track, adjustedStart);
 
     /* Insert at the correct position */
-    if (!track->sounds->Insert(track->sounds, insertIndex, sound)) {
+    if (!track->sounds->Insert(track->sounds, insertIndex,(AukObject*) sound)) {
         /* Failed to insert - release our reference */
-        AukObjectPtr_Release(&soundPtr);
+        AukObjectPtr_Release((AukObjectPtr*)&soundPtr);
         return NULL;
     }
 
-    AukObjectPtr_Release(&soundPtr);
+    AukObjectPtr_Release((AukObjectPtr*)&soundPtr);
 
     msg.type = AUK_MSG_MODIFY;
     track->base.SendUpdate(&track->base, &msg);
@@ -274,7 +274,7 @@ int AukTrack_MoveSound(void* This, AukSound* sound, AukFixed newStartTime) {
     count = soundsArray->GetCount(soundsArray);
     oldIndex = (unsigned int)-1;
     for (i = 0; i < count; i++) {
-        soundsArray->Get(soundsArray, &currentSound, i);
+        soundsArray->Get(soundsArray,(AukObjectPtr*) &currentSound, i);
         if (currentSound == sound) {
             oldIndex = i;
             AukObjectPtr_Release((AukObjectPtr*)&currentSound);
@@ -341,14 +341,14 @@ int AukTrack_MoveSoundToTrack(void* This, AukSound* sound, AukTrack* destTrack) 
     }
 
     /* Add to destination track first */
-    if (!destTrack->sounds->Add(&destTrack->sounds, sound)) {
+    if (!destTrack->sounds->Add(&destTrack->sounds,(AukObject*) sound)) {
         return 0;
     }
 
     /* Remove from source track */
-    if (!srcTrack->sounds->Remove(&srcTrack->sounds, sound)) {
+    if (!srcTrack->sounds->Remove(&srcTrack->sounds,(AukObject*) sound)) {
         /* Failed to remove - this shouldn't happen, but try to undo */
-        srcTrack->sounds->Add(&srcTrack->sounds, sound);
+        srcTrack->sounds->Add(&srcTrack->sounds, (AukObject*)sound);
         return 0;
     }
     /* Send update notification */
@@ -375,7 +375,7 @@ void AukTrack_GetSound(void* This,AukSound**ptr, unsigned int index) {
     }
 
     tracksArray = (AukArray*)track->sounds;
-    tracksArray->Get(tracksArray,ptr, index);
+    tracksArray->Get(tracksArray,(AukObjectPtr *)ptr, index);
 }
 int AukTrack_RemoveSound(void* This, AukSound* sound){
     AukTrack* track = (AukTrack*)This;
@@ -683,7 +683,7 @@ void AukTrack_Init(AukTrack* track) {
         track->name = NULL;
 
         /* Initialize sounds array */
-        AukArray_New(&track->sounds);
+        AukArray_New((AukObjectPtr*)&track->sounds);
         if (track->sounds) {
             AukArray_SetType(track->sounds, AukSound_New, AukSound_GetTypeName(NULL));
         }

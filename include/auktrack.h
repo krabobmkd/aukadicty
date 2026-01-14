@@ -48,8 +48,8 @@ struct AukTrack {
 
 /* Constructor/Destructor */
 void AukTrack_New(AukObjectPtr *firstPtr);
-void AukTrack_Delete(void* This);
-const char* AukTrack_GetTypeName(void* This);
+void AukTrack_Delete(AukObject* This);
+const char* AukTrack_GetTypeName(AukObject* This);
 
 /* Initialize AukTrack structure */
 void AukTrack_Init(AukTrack* track);

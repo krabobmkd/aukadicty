@@ -29,9 +29,9 @@ struct AukSoundFile {
 };
 
 /* Constructor/Destructor */
-void AukSoundFile_New(AukSoundFilePtr* firstPtr);
-void AukSoundFile_Delete(void* This);
-const char* AukSoundFile_GetTypeName(void* This);
+void AukSoundFile_New(AukObjectPtr* firstPtr);
+void AukSoundFile_Delete(AukObject* This);
+const char* AukSoundFile_GetTypeName(AukObject* This);
 
 /* Initialize AukSoundFile structure */
 void AukSoundFile_Init(AukSoundFile* soundFile);

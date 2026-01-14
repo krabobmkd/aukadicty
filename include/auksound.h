@@ -37,9 +37,9 @@ struct AukSound {
 };
 
 /* Constructor/Destructor */
-void AukSound_New(AukSoundPtr* firstPtr);
-void AukSound_Delete(void* This);
-const char* AukSound_GetTypeName(void* This);
+void AukSound_New(AukObjectPtr* firstPtr);
+void AukSound_Delete(AukObject* This);
+const char* AukSound_GetTypeName(AukObject* This);
 
 /* Initialize AukSound structure */
 void AukSound_Init(AukSound* sound);

@@ -344,7 +344,7 @@ void AukAProject_Init(AukAProject* project) {
 
         /* Initialize tracks array using AukArray */
         project->tracks = NULL;
-        AukArray_New(&project->tracks);
+        AukArray_New((AukObjectPtr*)&project->tracks);
         if(project->tracks) {
             AukArray_SetType(project->tracks, AukTrack_New, AukTrack_GetTypeName(NULL));
             project->tracks->base._project = (AukProject*)project;

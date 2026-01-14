@@ -22,7 +22,7 @@ void AukSoundFile_New(AukObjectPtr* firstPtr) {
     }
 }
 
-void AukSoundFile_Delete(void* This) {
+void AukSoundFile_Delete(AukObject* This) {
     AukSoundFile* soundFile = (AukSoundFile*)This;
     if (soundFile) {
         /* Free filename string */
@@ -35,7 +35,7 @@ void AukSoundFile_Delete(void* This) {
     }
 }
 
-const char* AukSoundFile_GetTypeName(void* This) {
+const char* AukSoundFile_GetTypeName(AukObject* This) {
     (void)This;
     return "AukSoundFile";
 }

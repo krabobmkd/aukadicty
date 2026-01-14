@@ -22,7 +22,7 @@ void AukSound_New(AukObjectPtr* firstPtr) {
     }
 }
 
-void AukSound_Delete(void* This) {
+void AukSound_Delete(AukObject* This) {
     AukSound* sound = (AukSound*)This;
     if (sound) {
         /* Release shared sound file reference */
@@ -35,7 +35,7 @@ void AukSound_Delete(void* This) {
     }
 }
 
-const char* AukSound_GetTypeName(void* This) {
+const char* AukSound_GetTypeName(AukObject* This) {
     (void)This;
     return "AukSound";
 }
