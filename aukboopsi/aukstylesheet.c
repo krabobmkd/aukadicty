@@ -94,7 +94,7 @@ void AukStyleSheet_New(AukStyleSheetPtr* firstPtr) {
     }
 }
 
-void AukStyleSheet_Delete(void* This) {
+void AukStyleSheet_Delete(AukObject* This) {
     AukStyleSheet* styleSheet = (AukStyleSheet*)This;
     if (styleSheet) {
         /* Release obtained pens */

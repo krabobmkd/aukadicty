@@ -3,6 +3,7 @@
 #include <proto/intuition.h>
 #include <proto/graphics.h>
 #include <proto/utility.h>
+#include <proto/alib.h>
 
 #include <intuition/classes.h>
 #include <intuition/classusr.h>
@@ -55,7 +56,7 @@ ULONG InfiniteScroll_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
 //    tags++;
 //   }
         tags = Set->ops_AttrList;
-    while(tag = NextTagItem(&tags))
+    while((tag = NextTagItem(&tags))!=NULL)
     {
         switch(tag->ti_Tag)
         {
@@ -88,7 +89,7 @@ ULONG InfiniteScroll_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
             break;
             case INFINITESCROLL_RenderFunction:
             {
-                ULONG f = (ULONG)tag->ti_Data;
+                InfiniteScrollRenderf f = (InfiniteScrollRenderf)tag->ti_Data;
                 bdbprintf(" //// set INFINITESCROLL_RenderFunction:%08x\n",(int)f);
                 if(f !=  gdata->_renderFunction)
                 {

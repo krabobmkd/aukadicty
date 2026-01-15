@@ -56,31 +56,6 @@ struct ISerializer {
 
 };
 
-///* Helper macros for cleaner syntax in Serialize methods */
-//#define SERIALIZE_INT(ser, name, value) \
-//    if ((ser)->t_int) (ser)->t_int((ser), (name), (value))
-
-//#define SERIALIZE_UINT(ser, name, value) \
-//    if ((ser)->t_uint) (ser)->t_uint((ser), (name), (value))
-
-//#define SERIALIZE_LONGLONG(ser, name, value) \
-//    if ((ser)->t_longlong) (ser)->t_longlong((ser), (name), (value))
-
-//#define SERIALIZE_ULONGLONG(ser, name, value) \
-//    if ((ser)->t_ulonglong) (ser)->t_ulonglong((ser), (name), (value))
-
-//#define SERIALIZE_FIXED(ser, name, value) \
-//    if ((ser)->t_fixed) (ser)->t_fixed((ser), (name), (value))
-
-//#define SERIALIZE_STRING(ser, name, value) \
-//    if ((ser)->t_string) (ser)->t_string((ser), (name), (value))
-
-//#define SERIALIZE_OBJECT(ser, name, object) \
-//    if ((ser)->t_object) (ser)->t_object((ser), (name), (object))
-
-//#define SERIALIZE_ARRAY(ser, name, array) \
-//    if ((ser)->t_arrayobj) (ser)->t_arrayobj((ser), (name), (array))
-
 /* Check if serializer is in read or write mode */
 #define IS_READING(ser) ((ser)->_isReading)
 #define IS_WRITING(ser) (!(ser)->_isReading)

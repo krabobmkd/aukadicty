@@ -3,13 +3,8 @@
 #include <proto/intuition.h>
 #include <proto/dos.h>
 
-#ifdef __SASC
-//    #include "minialib.h"
-    #include <clib/alib_protos.h>
-#else
-    // GCC
-    #include "minialib.h"
-#endif
+
+#include <clib/alib_protos.h>
 
 #include <intuition/classes.h>
 #include <intuition/classusr.h>
@@ -40,7 +35,7 @@ extern struct IClass   *TrackListClassPtr;
 ULONG TrackListArea_NotifyAttribValue(struct Gadget *Gad, struct GadgetInfo *GInfo,ULONG attrib, ULONG value)
 {
     struct opUpdate notifymsg;
-    TrackListArea *gdata=INST_DATA(TrackListClassPtr, Gad);
+//    TrackListArea *gdata=INST_DATA(TrackListClassPtr, Gad);
     ULONG tags[]={
      GA_ID,0,
      0,0,
@@ -130,8 +125,7 @@ ULONG TrackListArea_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
     switch(tag->ti_Tag)
     {
       case TRACKLIST_ScrollY:
-        {
-            used = 1;
+        {            
           LONG newScrollY = (LONG)data;
           if(gdata->_scrollY != newScrollY)
           {
@@ -139,6 +133,7 @@ ULONG TrackListArea_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
   //  bdbprintf(" **** TrackListArea_SetAttrs: newScrollY:%d  Gad->GadgetID:%d\n",newScrollY,Gad->GadgetID);
             TrackListArea_NotifyAttribValue(Gad,Set->ops_GInfo, TRACKLIST_ScrollY, newScrollY);
           }
+          used = 1;
         }
         break;
 
@@ -238,7 +233,7 @@ void TrackListArea_SetTrackName(struct Gadget *Gad,struct Window *window,int itr
     gdata=INST_DATA(OCLASS(Gad), Gad);
 
 
-    if(itrack>= gdata->_trackCount) return;
+    if(itrack>= (int)gdata->_trackCount) return;
 
     strack = &gdata->_tracks[itrack];
     if(!strack->_trackHeader) return;

@@ -167,7 +167,7 @@ struct IClass   *INFINITESCROLL_GetClass()
 int InfiniteScrollStaticInit()
 {
    if(!InfiniteScroll_OpenLibs_Dependencies()) return 0;
-    if(InfiniteScrollClassPtr=MakeClass(NULL,InfiniteScrollSuperClassID,0,sizeof(InfiniteScroll),0))
+    if((InfiniteScrollClassPtr=MakeClass(NULL,InfiniteScrollSuperClassID,0,sizeof(InfiniteScroll),0))!=NULL)
     {
       InfiniteScrollClassPtr->cl_Dispatcher.h_Entry=(REHOOKFUNC)InfiniteScroll_Dispatcher;
      /* do not AddClass() when static, no need to publish, InfiniteScrollClassPtr will be enough. */

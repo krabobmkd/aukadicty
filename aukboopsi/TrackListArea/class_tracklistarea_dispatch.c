@@ -1,11 +1,6 @@
 
 
-#ifdef __SASC
-    #include <clib/alib_protos.h>
-#else
-    // GCC, vbcc
-    #include "minialib.h"
-#endif
+#include <clib/alib_protos.h>
 #include <proto/dos.h>
 //#include <proto/utility.h>
 #include <intuition/classes.h>
@@ -68,7 +63,7 @@ ULONG ASM SAVEDS TrackListArea_Dispatcher(
   switch(M->MethodID)
   {
     case OM_NEW:
-      if(Gad=(struct Gadget *)DoSuperMethodA(C,(Object *)Gad,(Msg)M))
+      if((Gad=(struct Gadget *)DoSuperMethodA(C,(Object *)Gad,(Msg)M))!=NULL)
       {
         gdata=INST_DATA(C, Gad);
 

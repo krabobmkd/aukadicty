@@ -32,6 +32,21 @@
  */
 #include "bdbprintf.h"
 
+/* Message union for dispatcher */
+typedef union MsgUnion
+{
+  ULONG  MethodID;
+  struct opSet        opSet;
+  struct opUpdate     opUpdate;
+  struct opGet        opGet;
+  struct gpHitTest    gpHitTest;
+  struct gpRender     gpRender;
+  struct gpInput      gpInput;
+  struct gpGoInactive gpGoInactive;
+  struct gpLayout     gpLayout;
+  struct gpDomain     gpDomain;
+} *Msgs;
+
 
 typedef ULONG (*REHOOKFUNC)();
 
@@ -52,9 +67,6 @@ struct Library        *UtilityBase=NULL;
     #endif
 #endif
 
-#ifdef USE_BEVEL_FRAME
-struct Library        *BevelBase=NULL;
-#endif
 // this is the only global writtable we should see in the whole class binary !
 struct IClass   *TrackListClassPtr=NULL;
 // this 2 strings are also linked to the asm startup header ( in .gadget mode)
@@ -126,7 +138,7 @@ int TrackListStaticInit()
 {
    if(!TrackList_OpenLibs_Dependencies()) return 0;
 //    if(TrackListClassPtr=MakeClass(NULL,TrackListSuperClassID,0,sizeof(TrackListArea),0))
-    if(TrackListClassPtr=MakeClass(NULL,NULL,LAYOUT_GetClass(),sizeof(TrackListArea),0))
+    if((TrackListClassPtr=MakeClass(NULL,NULL,LAYOUT_GetClass(),sizeof(TrackListArea),0))!=NULL)
     {
       TrackListClassPtr->cl_Dispatcher.h_Entry=(REHOOKFUNC)TrackListArea_Dispatcher;
      // do not AddClass() when static, no need to publish, TrackListClassPtr will be enough.

@@ -27,6 +27,8 @@ void CreateHeaderView(HeaderView *hv, struct DrawInfo *drawInfo,
                       Object *appModel,
                        AukStyle *stylesheet)
 {
+    Object *editCol1,*editCol2,*editCol3;
+
     hv->pstyleSheet = stylesheet;
     hv->appModel = appModel;
     hv->window = NULL;
@@ -147,7 +149,7 @@ void CreateHeaderView(HeaderView *hv, struct DrawInfo *drawInfo,
                         TAG_END);
 
     /* Create nested vertical layouts for the 3x2 grid */
-    Object *editCol1 = NewObject(LAYOUT_GetClass(), NULL,
+    editCol1 = NewObject(LAYOUT_GetClass(), NULL,
                         LAYOUT_Orientation, LAYOUT_ORIENT_VERT,
                         LAYOUT_EvenSize, TRUE,
                         LAYOUT_SpaceInner, FALSE,
@@ -155,7 +157,7 @@ void CreateHeaderView(HeaderView *hv, struct DrawInfo *drawInfo,
                         LAYOUT_AddChild, hv->btEditMode4,
                         TAG_END);
 
-    Object *editCol2 = NewObject(LAYOUT_GetClass(), NULL,
+    editCol2 = NewObject(LAYOUT_GetClass(), NULL,
                         LAYOUT_Orientation, LAYOUT_ORIENT_VERT,
                         LAYOUT_EvenSize, TRUE,
                         LAYOUT_SpaceInner, FALSE,
@@ -163,7 +165,7 @@ void CreateHeaderView(HeaderView *hv, struct DrawInfo *drawInfo,
                         LAYOUT_AddChild, hv->btEditMode5,
                         TAG_END);
 
-    Object *editCol3 = NewObject(LAYOUT_GetClass(), NULL,
+    editCol3 = NewObject(LAYOUT_GetClass(), NULL,
                         LAYOUT_Orientation, LAYOUT_ORIENT_VERT,
                         LAYOUT_EvenSize, TRUE,
                         LAYOUT_SpaceInner, FALSE,

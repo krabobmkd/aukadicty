@@ -1,6 +1,5 @@
 #include "aukproject.h"
 #include "aukstring.h"
-#include "aukjson.h"
 #include <proto/exec.h>
 #include <string.h>
 
@@ -121,19 +120,6 @@ const char* AukProject_GetPath(void* This) {
     return project ? project->path : NULL;
 }
 
-int AukProject_Save(void* This, const char* filename) {
-    AukProject* project = (AukProject*)This;
-    return AukJson_SaveProject(project, filename);
-}
-
-int AukProject_Load(void* This, const char* filename) {
-    /* Note: Load creates a new project, doesn't modify existing one */
-    /* This method signature doesn't fit well with load pattern */
-    /* Use AukJson_LoadProject() directly instead */
-    (void)This;
-    (void)filename;
-    return 0;
-}
 
 void AukProject_Init(AukProject* project) {
     if (project) {
@@ -151,8 +137,6 @@ void AukProject_Init(AukProject* project) {
         project->GetName = AukProject_GetName;
         project->SetPath = AukProject_SetPath;
         project->GetPath = AukProject_GetPath;
-        project->Save = AukProject_Save;
-        project->Load = AukProject_Load;
 
         /* Initialize data members */
         project->name = NULL;

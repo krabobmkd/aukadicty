@@ -67,24 +67,6 @@ void TrackArea_RenderDelegate(InfiniteScrollRenderParams *p);
 
 /* - - - - -- - */
 
-/** for dispatcher, very wise use of union.
- *  each  struct also starts with MethodID.
- * and they are the very parameters for each methods.
- */
-typedef union MsgUnion
-{
-  ULONG  MethodID;
-  /* from classusr.h or gadgetclass.h, all starts with MethodID. */
-  struct opSet        opSet;
-  struct opUpdate     opUpdate;
-  struct opGet        opGet;
-  struct gpHitTest    gpHitTest;
-  struct gpRender     gpRender;
-  struct gpInput      gpInput;
-  struct gpGoInactive gpGoInactive;
-  struct gpLayout     gpLayout;
-} *Msgs;
-
 /**
 * This is to publish our data when they change.
 * It may be better to just notify what change and have many notify functions per theme.

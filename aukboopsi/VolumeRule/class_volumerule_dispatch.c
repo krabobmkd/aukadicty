@@ -1,10 +1,6 @@
 
-#ifdef __SASC
-    #include <clib/alib_protos.h>
-#else
-    /* GCC, vbcc */
-    #include "minialib.h"
-#endif
+
+#include <clib/alib_protos.h>
 #include <proto/dos.h>
 #include <intuition/classes.h>
 #include <intuition/classusr.h>
@@ -19,6 +15,22 @@
 #include <proto/utility.h>
 
 #include "bdbprintf.h"
+
+/* Message union for dispatcher */
+typedef union MsgUnion
+{
+  ULONG  MethodID;
+  struct opSet        opSet;
+  struct opUpdate     opUpdate;
+  struct opGet        opGet;
+  struct gpHitTest    gpHitTest;
+  struct gpRender     gpRender;
+  struct gpInput      gpInput;
+  struct gpGoInactive gpGoInactive;
+  struct gpLayout     gpLayout;
+  struct gpDomain     gpDomain;
+} *Msgs;
+
 
 /**
  * VolumeRule Dispatcher
@@ -38,7 +50,7 @@ ULONG ASM SAVEDS VolumeRule_Dispatcher(
   {
     case OM_NEW:
       {
-        if(Gad=(struct Gadget *)DoSuperMethodA(C,(Object *)Gad,(Msg)M))
+        if((Gad=(struct Gadget *)DoSuperMethodA(C,(Object *)Gad,(Msg)M))!=NULL)
         {
             gdata=INST_DATA(C, Gad);
             bdbprintf_new("VolumeRule", Gad);

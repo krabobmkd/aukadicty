@@ -30,10 +30,13 @@
 #include <gadgets/layout.h>
 
 #include "TimeRule/class_timerule.h"
+#include "TimeRule/class_timerule_private.h"
 #include "TrackArea/class_trackarea.h"
 #include "TrackHeader/class_trackheader.h"
 #include "TrackListArea/class_tracklistarea.h"
+#include "TrackListArea/class_tracklistarea_private.h"
 #include "VolumeRule/class_volumerule.h"
+#include "VolumeRule/class_volumerule_private.h"
 
 #include "gadgetid.h"
 
@@ -236,9 +239,9 @@ static void AukUpdate_TrackList(AukObject* listenerObject, AukObject* modifiedOb
     {
         case AUK_MSG_TRACKADDED:
         {
- //   bdbprintf(" **** AUK_MSG_TRACKADDED ! \n");
             AukMessage_AProject *m = (AukMessage_AProject *)message;
             AukTrack *track = m->_track;
+ //   bdbprintf(" **** AUK_MSG_TRACKADDED ! \n");
             if(track)  AukObject_AddListener(track,
                   pm->updateListener, // AukObject* listenerObject,
                   (void*)pm, // userData
@@ -255,9 +258,10 @@ static void AukUpdate_TrackList(AukObject* listenerObject, AukObject* modifiedOb
         break;
         case AUK_MSG_TRACKREMOVED:
         {
-    bdbprintf(" **** AUK_MSG_TRACKREMOVED ! \n");
             AukMessage_AProject *m = (AukMessage_AProject *)message;
             AukTrack *track = m->_track;
+
+    bdbprintf(" **** AUK_MSG_TRACKREMOVED ! \n");
             if(track)  AukObject_RemoveListener(track,
                         pm->updateListener // AukObject* listenerObject,
                   );
@@ -365,7 +369,7 @@ void updateHorizontalScrollDomain(TrackListView *pm)
 
     if(duration <= 0) {
         /* No duration, set scroller to full visible (disabled state) */
-        SetGadgetAttrs((struct Gadget *)pm->scrollerH, pm->window, NULL,
+        SetGadgetAttrs((struct Gadget *)pm->scrollerH,(struct Window *) pm->window, NULL,
             SCROLLER_Total, 1,
             SCROLLER_Visible, 1,
             SCROLLER_ArrowDelta,1,
@@ -541,20 +545,17 @@ static void TrackListView_SetHScrollPos(TrackListView *pm,TimeProjection *timepr
  */
 void TrackListView_ListenScrollHMessage(TrackListView *pm, struct opUpdate *M)
 {
-// bdbprintf("//// TrackListView_ListenScrollHMessage\n");
+    struct TagItem *ptag;
 	AukAProject *project;
+
+// bdbprintf("//// TrackListView_ListenScrollHMessage\n");
 	project = (AukAProject *)pm->project;
 	if(!project) return;
 
-    struct TagItem *ptag;
     if((ptag = FindTagItem( SCROLLER_Top, M->opu_AttrList )) != NULL)
     {
         long long duration;
         ULONG scrollerTop = ptag->ti_Data;
-        ULONG timePerPixLo = 0, timePerPixHi = 0;
-
-        ULONG visibleWidth;
-        struct Gadget *trackListGad;
         TimeProjection trackListTimeproj;
 
         GetAttr(TRACKLIST_TimeProjection, pm->trackList, &trackListTimeproj);
@@ -605,7 +606,7 @@ void TrackListView_CheckUpdates(TrackListView *pm)
     if(pm->updateBits & TLVB_UPDATE_REDRAW_TRACKLIST)
     {
         // also apply
-        SetGadgetAttrs(pm->trackList, pm->window, NULL,TRACKLIST_Refresh,TRUE,TAG_END);
+        SetGadgetAttrs((struct Gadget *)pm->trackList,(struct Window *) pm->window, NULL,TRACKLIST_Refresh,TRUE,TAG_END);
     } else
     if(pm->updateBits & TLVB_UPDATE_REDRAW_JUSTTRACKS)
     {

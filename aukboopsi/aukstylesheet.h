@@ -53,7 +53,7 @@ struct AukStyleSheet
 
 /* Constructor/Destructor */
 void AukStyleSheet_New(AukStyleSheetPtr* firstPtr);
-void AukStyleSheet_Delete(void* This);
+void AukStyleSheet_Delete(AukObject* This);
 const char* AukStyleSheet_GetTypeName(void* This);
 
 /* Initialize AukStyleSheet structure */

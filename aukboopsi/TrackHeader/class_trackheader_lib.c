@@ -41,71 +41,36 @@
  */
 #include "bdbprintf.h"
 
+/* Message union for dispatcher */
+typedef union MsgUnion
+{
+  ULONG  MethodID;
+  struct opSet        opSet;
+  struct opUpdate     opUpdate;
+  struct opGet        opGet;
+  struct gpHitTest    gpHitTest;
+  struct gpRender     gpRender;
+  struct gpInput      gpInput;
+  struct gpGoInactive gpGoInactive;
+  struct gpLayout     gpLayout;
+  struct gpDomain     gpDomain;
+} *Msgs;
+
 
 typedef ULONG (*REHOOKFUNC)();
 
-#ifdef TRACKHEADER_STATICLINK
 #include <stdlib.h>
 #include <string.h>
-#endif
 
-#ifndef TRACKHEADER_STATICLINK
-struct ExecBase       *SysBase=NULL;
-struct GfxBase        *GfxBase=NULL;
-struct IntuitionBase  *IntuitionBase=NULL;
-struct Library        *LayersBase=NULL;
-struct DosLibrary     *DOSBase=NULL;
-struct Library        *UtilityBase=NULL;
-    #if defined(__GNUC__) && (__GNUC__ < 3)
-        struct Library        *__UtilityBase=NULL; // amiga gcc2.95 with noixemul and 68000, and our gadget startup needs that.
-    #endif
-#endif
 
-#ifdef USE_BEVEL_FRAME
-struct Library        *BevelBase=NULL;
-#endif
 // this is the only global writtable we should see in the whole class binary !
 struct IClass   *TrackHeaderClassPtr=NULL;
 struct IClass   *HeaderButtonClassPtr=NULL;
 struct IClass   *HeaderSliderClassPtr=NULL;
-// this 2 strings are also linked to the asm startup header ( in .gadget mode)
-// note: (const char *str="") would make str be a (char **) to the linker. so char str[] is linkable to asm startup
-#ifndef TRACKHEADER_STATICLINK
-const char Class_ID[]= TrackHeader_CLASS_ID;
-const char *VersionString = "trackheader.gadget 1.0 "; // add date
-#endif
+
 const char TrackHeaderSuperClassID[]=TrackHeader_SUPERCLASS_ID;
 
 
-
-
-// note: if other boopsi classes are dependences, they need to be opened here.
-#ifndef TRACKHEADER_STATICLINK
-    BOOL TrackHeader_OpenLibs(void)
-    {
-      // if here, sysbase is already acquired from LibInit.
-      //NO: if(!SysBase) SysBase = *(( struct ExecBase **)4);
-       if(!DOSBase)  DOSBase = (struct DosLibrary *)OpenLibrary("dos.library",1);
-       if(!IntuitionBase)  IntuitionBase = (struct IntuitionBase *) OpenLibrary("intuition.library",39);
-       if(!GfxBase) GfxBase = (struct GfxBase *) OpenLibrary("graphics.library",39);
-       if(!UtilityBase) UtilityBase = OpenLibrary("utility.library",39);
-       if(!LayersBase) LayersBase = OpenLibrary("layers.library",39);
-    #if defined(__GNUC__) && (__GNUC__ < 3)
-        __UtilityBase = UtilityBase; // amiga gcc2.95 with noixemul and 68000, and our gadget startup needs that.
-    #endif
-        return TRUE;
-    }
-
-    void TrackHeader_CloseLibs(void)
-    {
-        if(LayersBase) CloseLibrary(LayersBase);
-        if(DOSBase) CloseLibrary((struct Library *)DOSBase);
-        if(UtilityBase) CloseLibrary(UtilityBase);
-        if(GfxBase) CloseLibrary((struct Library *)GfxBase);
-        if(IntuitionBase) CloseLibrary((struct Library *)IntuitionBase);
-    }
-
-#endif
 BOOL TrackHeader_OpenLibs_Dependencies(void)
 {
 
@@ -158,7 +123,7 @@ int TrackHeaderStaticInit()
     // MakeClass( ClassID, SuperClassID, SuperClassPtr,InstanceSize, Flags )
 
 
-    if(TrackHeaderClassPtr=MakeClass(NULL,NULL,LAYOUT_GetClass(),sizeof(TrackHeader),0))
+    if((TrackHeaderClassPtr=MakeClass(NULL,NULL,LAYOUT_GetClass(),sizeof(TrackHeader),0))!=NULL)
 //    if(TrackHeaderClassPtr=MakeClass(NULL,"gadgetclass",0,sizeof(TrackHeader),0))
     {
       TrackHeaderClassPtr->cl_Dispatcher.h_Entry=(REHOOKFUNC)TrackHeader_Dispatcher;

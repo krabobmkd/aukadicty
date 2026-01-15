@@ -2,7 +2,7 @@
 #define TrackListView_H
 
 #include <intuition/classusr.h>
-
+#include <intuition/intuition.h>
 #include <aukdefs.h>
 #include "aukstyle.h"
 

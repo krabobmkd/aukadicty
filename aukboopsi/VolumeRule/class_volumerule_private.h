@@ -37,31 +37,6 @@ ULONG VolumeRule_GetAttr(Class *C, struct Gadget *Gad, struct opGet *Get);
 ULONG VolumeRule_Domain(Class *C, struct Gadget *Gad, struct gpDomain *D);
 ULONG VolumeRule_Render(Class *C, struct Gadget *Gad, struct gpRender *R);
 
-/* Message union for dispatcher */
-typedef union MsgUnion
-{
-  ULONG  MethodID;
-  struct opSet        opSet;
-  struct opUpdate     opUpdate;
-  struct opGet        opGet;
-  struct gpHitTest    gpHitTest;
-  struct gpRender     gpRender;
-  struct gpInput      gpInput;
-  struct gpGoInactive gpGoInactive;
-  struct gpLayout     gpLayout;
-  struct gpDomain     gpDomain;
-} *Msgs;
-
-/**
- * Extended struct Library for when this is a shared .gadget file.
- */
-struct ExtClassLib
-{
-    struct ClassLibrary cb_ClassLibrary;
-
-    APTR  cb_SysBase;
-    APTR  cb_SegList;
-};
 
 #ifdef __cplusplus
 }

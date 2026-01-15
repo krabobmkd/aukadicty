@@ -4,13 +4,8 @@
 #include <proto/graphics.h>
 #include <proto/layers.h>
 
-#ifdef __SASC
-//    #include "minialib.h"
-    #include <clib/alib_protos.h>
-#else
-    // GCC
-    #include "minialib.h"
-#endif
+
+#include <clib/alib_protos.h>
 
 #include <intuition/classes.h>
 #include <intuition/classusr.h>
@@ -36,6 +31,8 @@
 #include <aukarray.h>
 #include <auktrack.h>
 
+// memcpy
+#include <string.h>
 /* Most of the calls to boopsi methods are not done from the App's context,
  * but from a specific intuition context, and because of that we can't use DOS calls
  * like dos/Printf() , and also stdlib printf().
@@ -318,29 +315,30 @@ ULONG TrackListArea_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout
 /* draw yourself, in the appropriate state */
 ULONG TrackListArea_Render(Class *C, struct Gadget *Gad, struct gpRender *Render,int filter)
 {
-  TrackListArea *gdata;
-  struct RastPort *rp;
-  	int bLayerUpdating=FALSE;
+    struct Region *oldClipRegion;
+    TrackListArea *gdata;
+    struct RastPort *rp;
+    int bLayerUpdating=FALSE;
     LONG i;
     LONG topedge,leftedge,width,height;
-  // also sent from GM_GOINACTIVE (4).
-  if(Render->MethodID==GM_RENDER &&  Render->gpr_RPort )
-  {
-    rp=Render->gpr_RPort;
-  }
-  else
-  {
-    return 1;
-  }
 
-  gdata=INST_DATA(C, Gad);
+    if(Render->MethodID==GM_RENDER &&  Render->gpr_RPort )
+    {
+        rp=Render->gpr_RPort;
+    }
+    else
+    {
+        return 1;
+    }
+
+    gdata=INST_DATA(C, Gad);
 
 
     topedge = Gad->TopEdge;
     leftedge = Gad->LeftEdge;
     width = Gad->Width;
     height = Gad->Height;
-    struct Region *oldClipRegion;
+
 
 	if( ( rp->Layer->Flags & LAYERUPDATING ) != 0L )
 	{

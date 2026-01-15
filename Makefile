@@ -2,9 +2,10 @@
 # Use with command "make"
 # Place this file in the aukadicty root directory as "makefile"
 
+USEJSON = 0
 CC = gcc
 AR = ar
-BUILDDIRAUK = build-auk-gcc
+BUILDDIRAUK = build-gcc
 BUILDDIRSTRCA = build-stc-gcc
 #  -Wall
 CFLAGS = -m68030 -O2 -noixemul -Iinclude -Ios-include -Icjson -Iaukstreamcache/include
@@ -14,10 +15,12 @@ HEADERS = \
  include/aukarray.h include/aukstring.h include/aukfixed.h \
  include/aukproject.h include/aukaproject.h include/auktrack.h \
  include/auksound.h include/auksoundfile.h include/aukscalararray.h \
- include/aukjson.h include/auktyperegistry.h include/serializer.h \
- include/aukjsonserializer.h include/aukiffserializer.h \
- cjson/cJSON.h
+ include/auktyperegistry.h include/serializer.h \
+ include/aukiffserializer.h
 
+ifeq ($(USEJSON), 1 )
+HEADERS = $(HEADERS) cjson/cJSON.h include/aukjson.h sinclude/aukjsonserializer.h
+endif
 # AukProject library objects
 LIBOBJS = \
  $(BUILDDIRAUK)/aukobject.o \
@@ -34,9 +37,12 @@ LIBOBJS = \
  $(BUILDDIRAUK)/auktyperegistry.o \
  $(BUILDDIRAUK)/aukiffserializer.o 
 
-# $(BUILDDIRAUK)/aukjsonserializer.o
-# $(BUILDDIRAUK)/aukjson.o 
-# $(BUILDDIRAUK)/cJSON.o
+ifeq ($(USEJSON), 1 )
+LIBOBJS = $(LIBOBJS)\
+        $(BUILDDIRAUK)/aukjsonserializer.o \
+        $(BUILDDIRAUK)/aukjson.o \
+        $(BUILDDIRAUK)/cJSON.o
+endif
 
 # AukStreamCache library objects
 STREAMLIBOBJS = \
@@ -50,8 +56,8 @@ STREAMLIBOBJS = \
 all: $(BUILDDIRAUK)/libaukproject.a $(BUILDDIRSTRCA)/libaukstreamcache.a
 
 $(BUILDDIRAUK):
-	-makedir $(BUILDDIRAUK)
-
+	#-makedir $(BUILDDIRAUK)
+	-mkdir -p $(BUILDDIRAUK)
 $(BUILDDIRSTRCA):
 	-makedir $(BUILDDIRSTRCA)
 

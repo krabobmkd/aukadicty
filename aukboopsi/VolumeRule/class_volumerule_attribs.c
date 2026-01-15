@@ -4,13 +4,8 @@
 #include <proto/graphics.h>
 #include <proto/utility.h>
 
-#ifdef __SASC
-    #include <clib/alib_protos.h>
-#else
-    /* GCC */
-    #include "minialib.h"
-#endif
 
+#include <clib/alib_protos.h>
 #include <intuition/classes.h>
 #include <intuition/classusr.h>
 #include <intuition/gadgetclass.h>

@@ -7,7 +7,7 @@
 #include <proto/exec.h>
 #include <proto/dos.h>
 #include <stdio.h>
-
+#include "aukjson.h"
 int main(void) {
     AukAProjectPtr projectPtr = NULL;
     AukAProject* project;
@@ -89,7 +89,7 @@ int main(void) {
     printf("Project duration: %ld seconds\n", AukFixed_ToInt(duration));
 
     /* Save project to JSON file */
-    if (project->base.Save(project, "my_project.auk")) {
+    if (AukJson_SaveProject(project,"my_project.auk")) {
         printf("Project saved successfully\n");
     } else {
         printf("Failed to save project\n");

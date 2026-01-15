@@ -1,10 +1,6 @@
 
-#ifdef __SASC
-    #include <clib/alib_protos.h>
-#else
-    /* GCC, vbcc */
-    #include "minialib.h"
-#endif
+
+#include <clib/alib_protos.h>
 #include <proto/dos.h>
 #include <intuition/classes.h>
 #include <intuition/classusr.h>
@@ -57,7 +53,7 @@ ULONG ASM SAVEDS TimeRule_Dispatcher(
   {
     case OM_NEW:
       /* Let InfiniteScroll handle creation first (it sets up tiles, etc) */
-      if(Gad=(struct Gadget *)DoSuperMethodA(C,(Object *)Gad,(Msg)M))
+      if((Gad=(struct Gadget *)DoSuperMethodA(C,(Object *)Gad,(Msg)M))!=NULL)
       {
             struct opSet superops;
             ULONG supertags[] = {

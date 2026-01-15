@@ -57,7 +57,7 @@ void PrintProjectInfo(AukAProject* project) {
                     if (sound->loopCount > 0) {
                         printf("      Loop count: %lu\n", sound->loopCount);
                     }
-                    AukObjectPtr_Release(&sound);
+                    AukObjectPtr_Release((AukObjectPtr*)&sound);
                 }
             }
         }
@@ -170,7 +170,7 @@ int main(void) {
     /* ========== Create Project ========== */
     printf("Creating project...\n");
 
-    AukAProject_New(&projectPtr);
+    AukAProject_New((AukObjectPtr*)&projectPtr);
     project = projectPtr;
     if (!project) {
         printf("Failed to create project\n");
@@ -196,7 +196,7 @@ int main(void) {
     AukTrack_SetName(track2, "Instruments");
 
     /* Create sound files */
-    AukSoundFile_New(&soundFile1);
+    AukSoundFile_New((AukObjectPtr*)&soundFile1);
     if (!soundFile1) {
         printf("Failed to create sound file 1\n");
         AukObjectPtr_Release((AukObjectPtr*)&projectPtr);
@@ -205,7 +205,7 @@ int main(void) {
     AukSoundFile_SetFilename(soundFile1, "sounds/vocals.wav");
     AukSoundFile_SetProperties(soundFile1, 48000, 2, 144000);
 
-    AukSoundFile_New(&soundFile2);
+    AukSoundFile_New((AukObjectPtr*)&soundFile2);
     if (!soundFile2) {
         printf("Failed to create sound file 2\n");
         AukObjectPtr_Release((AukObjectPtr*)&soundFile1);

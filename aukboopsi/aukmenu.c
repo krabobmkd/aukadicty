@@ -16,26 +16,7 @@
 extern struct Library *GadToolsBase;
 
 void cleanexit(const char *pmessage);
-/*
-struct NewMenu
-{
-    UBYTE nm_Type;		/* See below
-     Compiler inserts a PAD byte here
-    CONST_STRPTR nm_Label;	/* Menu's label
-    CONST_STRPTR nm_CommKey;	/* MenuItem Command Key Equiv
-    UWORD nm_Flags;		/* Menu or MenuItem flags (see note)
-    LONG nm_MutualExclude;	/* MenuItem MutualExclude word
-    APTR nm_UserData;		/* For your own use, see note
-};
-*/
-/* NewMenu template for GadTools menus
-   UserData points to action ID (cast to APTR)
-   Labels will be filled in from action names during initialization
-   Watch out:
-    - NM_TITLE (menu entry with just name) nm_UserData is the message enum
-    - NM_ITEM (menu entry with an actual action) nm_UserData is the action enum, action already hold the name.
 
-*/
 static struct NewMenu menuTemplate[] = {
     /* Project menu */
     {NM_TITLE, NULL, 0, 0, 0, (APTR)MSG_MENU_PROJECT},  /* Title uses string ID */

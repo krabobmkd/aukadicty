@@ -27,8 +27,7 @@ struct AukProject {
     const char* (*GetName)(void* This);
     int (*SetPath)(void* This, const char* path);
     const char* (*GetPath)(void* This);
-    int (*Save)(void* This, const char* filename);
-    int (*Load)(void* This, const char* filename);
+
 };
 
 /* Constructor/Destructor */
@@ -44,8 +43,6 @@ int AukProject_SetName(void* This, const char* name);
 const char* AukProject_GetName(void* This);
 int AukProject_SetPath(void* This, const char* path);
 const char* AukProject_GetPath(void* This);
-int AukProject_Save(void* This, const char* filename);
-int AukProject_Load(void* This, const char* filename);
 
 /* Helper to set project context on all objects after deserialization */
 void AukProject_SetProjectContext(AukProject* project);

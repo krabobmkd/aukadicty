@@ -83,7 +83,7 @@ typedef ULONG (*REHOOKFUNC)();
 
 struct Task	*myTask=NULL;
 
-static const char *pVersion="$VER: 0.1";
+const char *pVersion="$VER: 0.1";
 
 // DOSBase is already opened by C startup...
 // struct DosLibrary *DOSBase=NULL;
@@ -130,7 +130,7 @@ static LibraryEntry libraryTable[] = {
     {"asl.library", 39, &AslBase},
     {"diskfont.library", 39, &DiskfontBase},
     {"gadtools.library", 39, &GadToolsBase},
-    {"locale.library", 38, &LocaleBase},
+    {"locale.library", 38, (struct Library **)&LocaleBase},
     /* BOOPSI class libraries - version 45 for OS3.9 */
     /* class */
     {"window.class", 45, &WindowBase},
@@ -223,7 +223,7 @@ ULONG ASM SAVEDS AppModelDispatch(
   switch(M->MethodID)
   {
     case OM_NEW:
-        if(obj=(Object *)DoSuperMethodA(C,(Object *)obj,(Msg)M))
+        if((obj=(Object *)DoSuperMethodA(C,(Object *)obj,(Msg)M))!= NULL)
         {
             app=(struct App *)INST_DATA(C, obj);
             memset(app,0,sizeof(struct App)); // absolutely *NOT* sure about this being cleaned, more secure.
@@ -332,7 +332,7 @@ void closeAppModel(void)
     if(AppModelClass) FreeClass(AppModelClass);
     AppModelClass = NULL;
 }
-
+static int testprojectinited=0;
 int initProject();
 //  - - - -- - - - -  end of App modelclass management.
 
@@ -531,7 +531,7 @@ int main(int argc, char **argv)
 
 
             } // end while messages
- static int testprojectinited=0;
+
  if(!testprojectinited)
  {
     initProject();
@@ -623,12 +623,10 @@ void exitclose(void)
 
 void openAboutReq()
 {
-
+ static const char *p= "...";
     SetAttrs(app->reportReq,REQ_TitleText,(ULONG)"About...",TAG_END);
     // if ok, show a report requester
- static const char *p=
-    "..."
-    ;
+
     SetAttrs(app->reportReq,REQ_BodyText,(ULONG)p,TAG_END);
 
     OpenRequester(app->reportReq,app->win);
@@ -638,8 +636,6 @@ void openAboutReq()
 
 int initProject()
 {
-    if(!app) return;
-
     AukAProject* project;
     AukTrack* track1;
     AukTrack* track2;
@@ -648,8 +644,10 @@ int initProject()
     AukSound* sound2;
     AukFixed duration;
 
+    if(!app) return 1;
+
     /* Create a new project */
-    AukAProject_New(&app->_project);
+    AukAProject_New((AukObjectPtr *)&app->_project);
     project = app->_project;
     if (!project) {
         printf("Failed to create project\n");
@@ -687,7 +685,7 @@ project->CreateTrack(project);
 
 
     /* Create a sound file reference */
-    AukSoundFile_New(&soundFile1);
+    AukSoundFile_New((AukObjectPtr*)&soundFile1);
     if (!soundFile1) {
         printf("Failed to create sound file\n");
         AukObjectPtr_Release((AukObjectPtr*)&app->_project);
@@ -728,7 +726,7 @@ project->CreateTrack(project);
 
     /* Get project duration */
     duration = project->GetDuration(project);
-    printf("Project duration: %ld seconds\n", AukFixed_ToInt(duration));
+    printf("Project duration: %d seconds\n",(int) AukFixed_ToInt(duration));
 
     /* Save project to JSON file */
 //    if (project->base.Save(project, "my_project.auk")) {
@@ -739,13 +737,13 @@ project->CreateTrack(project);
 
     /* Display project info */
     printf("Project: %s\n", project->base.GetName(project));
-    printf("Tracks: %lu\n", project->GetTrackCount(project));
-    printf("Track 1: %s, Sounds: %lu\n",
+    printf("Tracks: %d\n", (int)project->GetTrackCount(project));
+    printf("Track 1: %s, Sounds: %d\n",
            AukTrack_GetName(track1),
-           track1->GetSoundCount(track1));
-    printf("Track 2: %s, Sounds: %lu\n",
+           (int)track1->GetSoundCount(track1));
+    printf("Track 2: %s, Sounds: %d\n",
            AukTrack_GetName(track2),
-           track2->GetSoundCount(track2));
+           (int)track2->GetSoundCount(track2));
     return 0;
 }
 

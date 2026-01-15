@@ -1,12 +1,19 @@
-# Makefile for AukBoopsi - Amiga GCC 2.x
+# Makefile for AukBoopsi - Amiga GCC 2.95
 # Use with command "make"
 
 CC = gcc
 BUILDDIR = build-gcc
+BUILDDIRIS = $(BUILDDIR)/is
+BUILDDIRTA = $(BUILDDIR)/ta
+BUILDDIRTLA = $(BUILDDIR)/tla
+BUILDDIRTR = $(BUILDDIR)/tr
+BUILDDIRTH = $(BUILDDIR)/th
+BUILDDIRVOLR = $(BUILDDIR)/vr
 
-CFLAGS = -m68030 -O2 -noixemul -Wall -Wextra -I../include -ITrackArea -I.
-STATICDEFS = -DTRACKAREA_STATICLINK=1 -DTRACKHEADER_STATICLINK=1 -DTIMERULE_STATICLINK=1 -DTRACKLIST_STATICLINK=1 -DINFINITESCROLL_STATICLINK=1 -DVOLUMERULE_STATICLINK=1 -DUSE_DEBUG_BDBPRINT=1
+STATICDEFS = -DTRACKLIST_STATICLINK=1 -DINFINITESCROLL_STATICLINK=1 -DUSE_DEBUG_BDBPRINT=1
 
+# -I../include
+CFLAGS = -m68030 -O2 -noixemul -Wall -ITrackArea -I. $(STATICDEFS)
 LIBS = ../build-gcc/libaukproject.a
 
 HEADERS = \
@@ -31,160 +38,79 @@ OBJS = \
  $(BUILDDIR)/aukstylesheet.o \
  $(BUILDDIR)/bdbprintf.o \
  $(BUILDDIR)/offscreenbm.o \
- $(BUILDDIR)/class_infinitescroll_attribs.o \
- $(BUILDDIR)/class_infinitescroll_dispatch.o \
- $(BUILDDIR)/class_infinitescroll_lib.o \
- $(BUILDDIR)/class_infinitescroll_render.o \
- $(BUILDDIR)/class_infinitescroll_handleinput.o \
- $(BUILDDIR)/class_trackarea_attribs.o \
- $(BUILDDIR)/class_trackarea_dispatch.o \
- $(BUILDDIR)/class_trackarea_lib.o \
- $(BUILDDIR)/class_trackarea_render.o \
- $(BUILDDIR)/class_trackarea_handleinput.o \
- $(BUILDDIR)/class_tracklistarea_attribs.o \
- $(BUILDDIR)/class_tracklistarea_dispatch.o \
- $(BUILDDIR)/class_tracklistarea_lib.o \
- $(BUILDDIR)/class_tracklistarea_render.o \
- $(BUILDDIR)/class_tracklistarea_handleinput.o \
- $(BUILDDIR)/class_timerule_attribs.o \
- $(BUILDDIR)/class_timerule_dispatch.o \
- $(BUILDDIR)/class_timerule_lib.o \
- $(BUILDDIR)/class_timerule_render.o \
- $(BUILDDIR)/class_timerule_handleinput.o \
- $(BUILDDIR)/class_trackheader_attribs.o \
- $(BUILDDIR)/class_trackheader_dispatch.o \
- $(BUILDDIR)/class_trackheader_render.o \
- $(BUILDDIR)/class_trackheader_lib.o \
- $(BUILDDIR)/class_volumerule_attribs.o \
- $(BUILDDIR)/class_volumerule_dispatch.o \
- $(BUILDDIR)/class_volumerule_lib.o \
- $(BUILDDIR)/class_volumerule_render.o
+ $(BUILDDIRIS)/class_infinitescroll_attribs.o \
+ $(BUILDDIRIS)/class_infinitescroll_dispatch.o \
+ $(BUILDDIRIS)/class_infinitescroll_lib.o \
+ $(BUILDDIRIS)/class_infinitescroll_render.o \
+ $(BUILDDIRIS)/class_infinitescroll_handleinput.o \
+ $(BUILDDIRTA)/class_trackarea_attribs.o \
+ $(BUILDDIRTA)/class_trackarea_dispatch.o \
+ $(BUILDDIRTA)/class_trackarea_lib.o \
+ $(BUILDDIRTA)/class_trackarea_render.o \
+ $(BUILDDIRTA)/class_trackarea_handleinput.o \
+ $(BUILDDIRTLA)/class_tracklistarea_attribs.o \
+ $(BUILDDIRTLA)/class_tracklistarea_dispatch.o \
+ $(BUILDDIRTLA)/class_tracklistarea_lib.o \
+ $(BUILDDIRTLA)/class_tracklistarea_render.o \
+ $(BUILDDIRTLA)/class_tracklistarea_handleinput.o \
+ $(BUILDDIRTR)/class_timerule_attribs.o \
+ $(BUILDDIRTR)/class_timerule_dispatch.o \
+ $(BUILDDIRTR)/class_timerule_lib.o \
+ $(BUILDDIRTR)/class_timerule_render.o \
+ $(BUILDDIRTR)/class_timerule_handleinput.o \
+ $(BUILDDIRTH)/class_trackheader_attribs.o \
+ $(BUILDDIRTH)/class_trackheader_dispatch.o \
+ $(BUILDDIRTH)/class_trackheader_render.o \
+ $(BUILDDIRTH)/class_trackheader_lib.o \
+ $(BUILDDIRVOLR)/class_volumerule_attribs.o \
+ $(BUILDDIRVOLR)/class_volumerule_dispatch.o \
+ $(BUILDDIRVOLR)/class_volumerule_lib.o \
+ $(BUILDDIRVOLR)/class_volumerule_render.o
 
 all: $(BUILDDIR)/aukadicty
 
 $(BUILDDIR):
 	-makedir $(BUILDDIR)
 
+$(BUILDDIRIS):
+	-makedir $(BUILDDIRIS)
+
+$(BUILDDIRTA):
+	-makedir $(BUILDDIRTA)
+
+$(BUILDDIRTLA):
+	-makedir $(BUILDDIRTLA)
+
+$(BUILDDIRTR):
+	-makedir $(BUILDDIRTR)
+
+$(BUILDDIRTH):
+	-makedir $(BUILDDIRTH)
+
+$(BUILDDIRVOLR):
+	-makedir $(BUILDDIRVOLR)
+
 # Main source files
-$(BUILDDIR)/aukboopsi.o: aukboopsi.c $(BUILDDIR) $(HEADERS)
-	$(CC) -c -o $@ $< $(CFLAGS) $(STATICDEFS)
+$(BUILDDIR)/%.o: %.c $(BUILDDIR) $(HEADERS)
+	$(CC) -c -o $@ $< $(CFLAGS) -I../include
 
-$(BUILDDIR)/TrackListView.o: TrackListView.c $(BUILDDIR) $(HEADERS)
-	$(CC) -c -o $@ $< $(CFLAGS) $(STATICDEFS)
+$(BUILDDIRIS)/%.o: InfiniteScroll/%.c $(BUILDDIRIS) $(HEADERS)
+	$(CC) -c -o $@ $< $(CFLAGS) -I../../include
 
-$(BUILDDIR)/HeaderView.o: HeaderView.c $(BUILDDIR) $(HEADERS)
-	$(CC) -c -o $@ $< $(CFLAGS) $(STATICDEFS)
+$(BUILDDIRTA)/%.o: TrackArea/%.c $(BUILDDIRTA) $(HEADERS)
+	$(CC) -c -o $@ $< $(CFLAGS) -I../../include
 
-$(BUILDDIR)/FooterView.o: FooterView.c $(BUILDDIR) $(HEADERS)
-	$(CC) -c -o $@ $< $(CFLAGS) $(STATICDEFS)
+$(BUILDDIRTLA)/%.o: TrackListArea/%.c $(BUILDDIRTLA) $(HEADERS)
+	$(CC) -c -o $@ $< $(CFLAGS) -I../../include
 
-$(BUILDDIR)/auklocale.o: auklocale.c $(BUILDDIR) $(HEADERS)
-	$(CC) -c -o $@ $< $(CFLAGS) $(STATICDEFS)
+$(BUILDDIRTR)/%.o: TimeRule/%.c $(BUILDDIRTR) $(HEADERS)
+	$(CC) -c -o $@ $< $(CFLAGS) -I../../include
 
-$(BUILDDIR)/aukaction.o: aukaction.c $(BUILDDIR) $(HEADERS)
-	$(CC) -c -o $@ $< $(CFLAGS) $(STATICDEFS)
+$(BUILDDIRTH)/%.o: TrackHeader/%.c $(BUILDDIRTH) $(HEADERS)
+	$(CC) -c -o $@ $< $(CFLAGS) -I../../include
 
-$(BUILDDIR)/aukmenu.o: aukmenu.c $(BUILDDIR) $(HEADERS)
-	$(CC) -c -o $@ $< $(CFLAGS) $(STATICDEFS)
-
-$(BUILDDIR)/aukstylesheet.o: aukstylesheet.c $(BUILDDIR) $(HEADERS)
-	$(CC) -c -o $@ $< $(CFLAGS) $(STATICDEFS)
-
-$(BUILDDIR)/bdbprintf.o: bdbprintf.c $(BUILDDIR) $(HEADERS)
-	$(CC) -c -o $@ $< $(CFLAGS) $(STATICDEFS)
-
-$(BUILDDIR)/offscreenbm.o: offscreenbm.c $(BUILDDIR) $(HEADERS)
-	$(CC) -c -o $@ $< $(CFLAGS) $(STATICDEFS)
-
-# InfiniteScroll class
-$(BUILDDIR)/class_infinitescroll_attribs.o: InfiniteScroll/class_infinitescroll_attribs.c $(BUILDDIR) $(HEADERS)
-	$(CC) -c -o $@ $< $(CFLAGS) $(STATICDEFS)
-
-$(BUILDDIR)/class_infinitescroll_dispatch.o: InfiniteScroll/class_infinitescroll_dispatch.c $(BUILDDIR) $(HEADERS)
-	$(CC) -c -o $@ $< $(CFLAGS) $(STATICDEFS)
-
-$(BUILDDIR)/class_infinitescroll_lib.o: InfiniteScroll/class_infinitescroll_lib.c $(BUILDDIR) $(HEADERS)
-	$(CC) -c -o $@ $< $(CFLAGS) $(STATICDEFS)
-
-$(BUILDDIR)/class_infinitescroll_render.o: InfiniteScroll/class_infinitescroll_render.c $(BUILDDIR) $(HEADERS)
-	$(CC) -c -o $@ $< $(CFLAGS) $(STATICDEFS)
-
-$(BUILDDIR)/class_infinitescroll_handleinput.o: InfiniteScroll/class_infinitescroll_handleinput.c $(BUILDDIR) $(HEADERS)
-	$(CC) -c -o $@ $< $(CFLAGS) $(STATICDEFS)
-
-# TrackArea class
-$(BUILDDIR)/class_trackarea_attribs.o: TrackArea/class_trackarea_attribs.c $(BUILDDIR) $(HEADERS)
-	$(CC) -c -o $@ $< $(CFLAGS) $(STATICDEFS)
-
-$(BUILDDIR)/class_trackarea_dispatch.o: TrackArea/class_trackarea_dispatch.c $(BUILDDIR) $(HEADERS)
-	$(CC) -c -o $@ $< $(CFLAGS) $(STATICDEFS)
-
-$(BUILDDIR)/class_trackarea_lib.o: TrackArea/class_trackarea_lib.c $(BUILDDIR) $(HEADERS)
-	$(CC) -c -o $@ $< $(CFLAGS) $(STATICDEFS)
-
-$(BUILDDIR)/class_trackarea_render.o: TrackArea/class_trackarea_render.c $(BUILDDIR) $(HEADERS)
-	$(CC) -c -o $@ $< $(CFLAGS) $(STATICDEFS)
-
-$(BUILDDIR)/class_trackarea_handleinput.o: TrackArea/class_trackarea_handleinput.c $(BUILDDIR) $(HEADERS)
-	$(CC) -c -o $@ $< $(CFLAGS) $(STATICDEFS)
-
-# TrackListArea class
-$(BUILDDIR)/class_tracklistarea_attribs.o: TrackListArea/class_tracklistarea_attribs.c $(BUILDDIR) $(HEADERS)
-	$(CC) -c -o $@ $< $(CFLAGS) $(STATICDEFS)
-
-$(BUILDDIR)/class_tracklistarea_dispatch.o: TrackListArea/class_tracklistarea_dispatch.c $(BUILDDIR) $(HEADERS)
-	$(CC) -c -o $@ $< $(CFLAGS) $(STATICDEFS)
-
-$(BUILDDIR)/class_tracklistarea_lib.o: TrackListArea/class_tracklistarea_lib.c $(BUILDDIR) $(HEADERS)
-	$(CC) -c -o $@ $< $(CFLAGS) $(STATICDEFS)
-
-$(BUILDDIR)/class_tracklistarea_render.o: TrackListArea/class_tracklistarea_render.c $(BUILDDIR) $(HEADERS)
-	$(CC) -c -o $@ $< $(CFLAGS) $(STATICDEFS)
-
-$(BUILDDIR)/class_tracklistarea_handleinput.o: TrackListArea/class_tracklistarea_handleinput.c $(BUILDDIR) $(HEADERS)
-	$(CC) -c -o $@ $< $(CFLAGS) $(STATICDEFS)
-
-# TimeRule class
-$(BUILDDIR)/class_timerule_attribs.o: TimeRule/class_timerule_attribs.c $(BUILDDIR) $(HEADERS)
-	$(CC) -c -o $@ $< $(CFLAGS) $(STATICDEFS)
-
-$(BUILDDIR)/class_timerule_dispatch.o: TimeRule/class_timerule_dispatch.c $(BUILDDIR) $(HEADERS)
-	$(CC) -c -o $@ $< $(CFLAGS) $(STATICDEFS)
-
-$(BUILDDIR)/class_timerule_lib.o: TimeRule/class_timerule_lib.c $(BUILDDIR) $(HEADERS)
-	$(CC) -c -o $@ $< $(CFLAGS) $(STATICDEFS)
-
-$(BUILDDIR)/class_timerule_render.o: TimeRule/class_timerule_render.c $(BUILDDIR) $(HEADERS)
-	$(CC) -c -o $@ $< $(CFLAGS) $(STATICDEFS)
-
-$(BUILDDIR)/class_timerule_handleinput.o: TimeRule/class_timerule_handleinput.c $(BUILDDIR) $(HEADERS)
-	$(CC) -c -o $@ $< $(CFLAGS) $(STATICDEFS)
-
-# TrackHeader class
-$(BUILDDIR)/class_trackheader_attribs.o: TrackHeader/class_trackheader_attribs.c $(BUILDDIR) $(HEADERS)
-	$(CC) -c -o $@ $< $(CFLAGS) $(STATICDEFS)
-
-$(BUILDDIR)/class_trackheader_dispatch.o: TrackHeader/class_trackheader_dispatch.c $(BUILDDIR) $(HEADERS)
-	$(CC) -c -o $@ $< $(CFLAGS) $(STATICDEFS)
-
-$(BUILDDIR)/class_trackheader_render.o: TrackHeader/class_trackheader_render.c $(BUILDDIR) $(HEADERS)
-	$(CC) -c -o $@ $< $(CFLAGS) $(STATICDEFS)
-
-$(BUILDDIR)/class_trackheader_lib.o: TrackHeader/class_trackheader_lib.c $(BUILDDIR) $(HEADERS)
-	$(CC) -c -o $@ $< $(CFLAGS) $(STATICDEFS)
-
-# VolumeRule class
-$(BUILDDIR)/class_volumerule_attribs.o: VolumeRule/class_volumerule_attribs.c $(BUILDDIR) $(HEADERS)
-	$(CC) -c -o $@ $< $(CFLAGS) $(STATICDEFS)
-
-$(BUILDDIR)/class_volumerule_dispatch.o: VolumeRule/class_volumerule_dispatch.c $(BUILDDIR) $(HEADERS)
-	$(CC) -c -o $@ $< $(CFLAGS) $(STATICDEFS)
-
-$(BUILDDIR)/class_volumerule_lib.o: VolumeRule/class_volumerule_lib.c $(BUILDDIR) $(HEADERS)
-	$(CC) -c -o $@ $< $(CFLAGS) $(STATICDEFS)
-
-$(BUILDDIR)/class_volumerule_render.o: VolumeRule/class_volumerule_render.c $(BUILDDIR) $(HEADERS)
-	$(CC) -c -o $@ $< $(CFLAGS) $(STATICDEFS)
+$(BUILDDIRVOLR)/%.o: VolumeRule/%.c $(BUILDDIRVOLR) $(HEADERS)
+	$(CC) -c -o $@ $< $(CFLAGS) -I../../include
 
 # Link executable
 $(BUILDDIR)/aukadicty: $(OBJS) $(LIBS)

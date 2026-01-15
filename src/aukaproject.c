@@ -3,7 +3,6 @@
 #include "auksound.h"
 #include "auksoundfile.h"
 #include "aukstring.h"
-#include "aukjson.h"
 #include "aukarray.h"
 #include <proto/exec.h>
 #include <string.h>
@@ -299,20 +298,6 @@ AukFixed AukAProject_GetDuration(void* This) {
     return maxEndTime;
 }
 
-int AukAProject_Save(void* This, const char* filename) {
-    AukAProject* project = (AukAProject*)This;
-    return AukJson_SaveProject((AukProject*)project, filename);
-}
-
-int AukAProject_Load(void* This, const char* filename) {
-    /* Note: Load creates a new project, doesn't modify existing one */
-    /* This method signature doesn't fit well with load pattern */
-    /* Use AukJson_LoadProject() directly instead */
-    (void)This;
-    (void)filename;
-    return 0;
-}
-
 void AukAProject_Init(AukAProject* project) {
     if (project) {
         /* Initialize base project */
@@ -323,10 +308,6 @@ void AukAProject_Init(AukAProject* project) {
         project->base.base.Delete = AukAProject_Delete;
         project->base.base.GetTypeName = AukAProject_GetTypeName;
         project->base.base.Serialize = AukAProject_Serialize;
-
-        /* Override base project methods */
-        project->base.Save = AukAProject_Save;
-        project->base.Load = AukAProject_Load;
 
         /* Set AukAProject specific methods */
         project->CreateTrack = AukAProject_CreateTrack;

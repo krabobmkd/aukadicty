@@ -4,12 +4,8 @@
 #include <proto/graphics.h>
 #include <proto/layers.h>
 
-#ifdef __SASC
-    #include <clib/alib_protos.h>
-#else
-    /* GCC */
-    #include "../minialib.h"
-#endif
+
+#include <clib/alib_protos.h>
 
 #include <intuition/classes.h>
 #include <intuition/classusr.h>
@@ -276,19 +272,21 @@ static void InfiniteScroll_RenderTilesRow(
         InfiniteScrollPosition *startpos
      )
 {
+    InfiniteScrollPosition pos;
     int i=0;
     renderParams->destX=0;
     renderParams->destY=0;
     renderParams->destWidth=gdata->_tileWidth;
     renderParams->destHeight=gdata->_tileHeight;
 // bdbprintf("gdata->_renderFunction:%08x\n",(int)gdata->_renderFunction);
-    InfiniteScrollPosition pos = *startpos;
+    pos = *startpos;
 
     for(i=0;i<nbTiles;i++)
     {
+        InfiniteScrollTile *tile;
         int iTile = i+itileStart;
         if(iTile>=gdata->_tileCount) iTile -=gdata->_tileCount;
-        InfiniteScrollTile *tile = &gdata->_tiles[iTile];
+        tile = &gdata->_tiles[iTile];
  //    bdbprintf(" ask render tile %d -> %d _tileCount:%d nbTilesAsked:%d  scrollpos:%lld\n",i,iTile,gdata->_tileCount,nbTiles,pos._scrollx );
         if(gdata->_renderFunction)
         {
@@ -304,6 +302,7 @@ static void InfiniteScroll_RenderTilesRow(
         pos._scrollx += gdata->_tileWidth;
     }
 }
+
 static void InfiniteScroll_FullRedraw(
         struct Gadget *Gad,
         InfiniteScroll *gdata,
@@ -328,7 +327,7 @@ ULONG InfiniteScroll_Render(Class *C, struct Gadget *Gad, struct gpRender *Rende
     InfiniteScroll *gdata;
     struct RastPort *rp;
     ULONG retval=1;
-    LONG i;
+    ULONG i;
 
     InfiniteScrollRenderParams renderParams;
     // We render only under GM_RENDER.
@@ -421,13 +420,13 @@ ULONG InfiniteScroll_Render(Class *C, struct Gadget *Gad, struct gpRender *Rende
     /* Get RastPort */
     rp=Render->gpr_RPort;
 
-    if(!rp) return;
+    if(!rp) return 1;
 
     /* Now blit tiles to gadget  */
     for(i =0; i < gdata->_tileCount; i++)
     {
         InfiniteScrollTile *tile;
-        int j = i+ gdata->_currentLeftBorderTileIndex;
+        ULONG j = i+ gdata->_currentLeftBorderTileIndex;
         int dx;
         if(j>=gdata->_tileCount) j-=gdata->_tileCount;
 

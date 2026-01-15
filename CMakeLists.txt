@@ -7,6 +7,8 @@ option(AMIGA_USE_68030 " use 68030" ON)
 option(AMIGA_USE_68040 " use 68040" OFF)
 option(AMIGA_USE_68060 " use 68060" OFF)
 
+option(ENABLEJSONSERIAL " embbed json lib" ON)
+
 # Set C standard
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)
@@ -74,12 +76,17 @@ set(AUKADICTY_SOURCES
     src/auksound.c
     src/auksoundfile.c
     src/aukscalararray.c
-    src/aukjson.c
     src/auktyperegistry.c
-    src/aukjsonserializer.c
     src/aukiffserializer.c
-    cjson/cJSON.c
 )
+
+if(ENABLEJSONSERIAL)
+    list(APPEND AUKADICTY_SOURCES
+        src/aukjson.c
+        src/aukjsonserializer.c
+        cjson/cJSON.c
+    )
+endif()
 
 # AmigaStack source files (for non-Amiga platforms)
 if(USE_AMIGA_STACK)
@@ -114,14 +121,18 @@ set(AUKADICTY_HEADERS
     include/auksound.h
     include/auksoundfile.h
     include/aukscalararray.h
-    include/aukjson.h
     include/auktyperegistry.h
     include/serializer.h
-    include/aukjsonserializer.h
     include/aukiffserializer.h
-    cjson/cJSON.h
-)
 
+)
+if(ENABLEJSONSERIAL)
+    list(APPEND AUKADICTY_HEADERS
+        src/aukjson.h
+        src/aukjsonserializer.h
+        cjson/cJSON.h
+    )
+endif()
 # AukStreamCache header files
 set(AUKSTREAMCACHE_HEADERS
     aukstreamcache/include/aukstream.h

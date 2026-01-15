@@ -141,12 +141,8 @@ install(TARGETS aukadicty
 
 target_link_libraries(aukadicty aukproject)
 target_compile_definitions(aukadicty PRIVATE
-			TRACKAREA_STATICLINK=1
-			TRACKHEADER_STATICLINK=1
-			TIMERULE_STATICLINK=1
 			TRACKLIST_STATICLINK=1
 			INFINITESCROLL_STATICLINK=1
-			VOLUMERULE_STATICLINK=1
 			USE_DEBUG_BDBPRINT=1)
 target_compile_options(aukadicty PRIVATE
 		$<$<CONFIG:RELEASE>:-O2 -Wno-narrowing -DNDEBUG>

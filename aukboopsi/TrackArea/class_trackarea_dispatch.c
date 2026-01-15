@@ -1,10 +1,6 @@
 
-#ifdef __SASC
-    #include <clib/alib_protos.h>
-#else
-    /* GCC, vbcc */
-    #include "minialib.h"
-#endif
+
+#include <clib/alib_protos.h>
 #include <proto/dos.h>
 #include <intuition/classes.h>
 #include <intuition/classusr.h>
@@ -35,6 +31,22 @@
  * Template projects that uses boopsi classes with LoadLibrary() do not.
  */
 #include "bdbprintf.h"
+
+/* Message union for dispatcher */
+typedef union MsgUnion
+{
+  ULONG  MethodID;
+  struct opSet        opSet;
+  struct opUpdate     opUpdate;
+  struct opGet        opGet;
+  struct gpHitTest    gpHitTest;
+  struct gpRender     gpRender;
+  struct gpInput      gpInput;
+  struct gpGoInactive gpGoInactive;
+  struct gpLayout     gpLayout;
+  struct gpDomain     gpDomain;
+} *Msgs;
+
 
 /** WATCH OUT ! BOOPSI docs says:
  *  "the model class dispatcher must be able to run on Intuition's context,

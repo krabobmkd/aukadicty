@@ -35,82 +35,30 @@
 
 typedef ULONG (*REHOOKFUNC)();
 
-#ifdef TIMERULE_STATICLINK
+
 #include <stdlib.h>
 #include <string.h>
-#endif
 
-#ifndef TIMERULE_STATICLINK
-struct ExecBase       *SysBase=NULL;
-struct GfxBase        *GfxBase=NULL;
-struct IntuitionBase  *IntuitionBase=NULL;
-struct Library        *LayersBase=NULL;
-struct DosLibrary     *DOSBase=NULL;
-struct Library        *UtilityBase=NULL;
-    #if defined(__GNUC__) && (__GNUC__ < 3)
-        struct Library        *__UtilityBase=NULL; // amiga gcc2.95 with noixemul and 68000, and our gadget startup needs that.
-    #endif
-#endif
 
-#ifdef USE_BEVEL_FRAME
-struct Library        *BevelBase=NULL;
-#endif
 /* this is the only global writable we should see in the whole class binary ! */
 struct IClass   *TimeRuleClassPtr=NULL;
 /* this 2 strings are also linked to the asm startup header ( in .gadget mode) */
 /* note: (const char *str="") would make str be a (char **) to the linker. so char str[] is linkable to asm startup */
-#ifndef TIMERULE_STATICLINK
-const char Class_ID[]= TimeRule_CLASS_ID;
-const char *VersionString = "timerule.gadget 1.0 "; /* add date */
-#endif
+
 /* TimeRule uses InfiniteScroll as superclass (class pointer, not string) */
 /* const char TimeRuleSuperClassID[]=TimeRule_SUPERCLASS_ID; -- not used, we use class pointer */
 
 
 
-
-// note: if other boopsi classes are dependences, they need to be opened here.
-#ifndef TIMERULE_STATICLINK
-    BOOL TimeRule_OpenLibs(void)
-    {
-      // if here, sysbase is already acquired from LibInit.
-      //NO: if(!SysBase) SysBase = *(( struct ExecBase **)4);
-       if(!DOSBase)  DOSBase = (struct DosLibrary *)OpenLibrary("dos.library",1);
-       if(!IntuitionBase)  IntuitionBase = (struct IntuitionBase *) OpenLibrary("intuition.library",39);
-       if(!GfxBase) GfxBase = (struct GfxBase *) OpenLibrary("graphics.library",39);
-       if(!UtilityBase) UtilityBase = OpenLibrary("utility.library",39);
-       if(!LayersBase) LayersBase = OpenLibrary("layers.library",39);
-    #if defined(__GNUC__) && (__GNUC__ < 3)
-        __UtilityBase = UtilityBase; // amiga gcc2.95 with noixemul and 68000, and our gadget startup needs that.
-    #endif
-        return TRUE;
-    }
-
-    void TimeRule_CloseLibs(void)
-    {
-        if(LayersBase) CloseLibrary(LayersBase);
-        if(DOSBase) CloseLibrary((struct Library *)DOSBase);
-        if(UtilityBase) CloseLibrary(UtilityBase);
-        if(GfxBase) CloseLibrary((struct Library *)GfxBase);
-        if(IntuitionBase) CloseLibrary((struct Library *)IntuitionBase);
-    }
-
-#endif
 BOOL TimeRule_OpenLibs_Dependencies(void)
 {
-#ifdef USE_BEVEL_FRAME
-    if(!BevelBase) BevelBase = OpenLibrary("images/bevel.image",44);
-    if(!BevelBase) return FALSE;
-#endif
+
     return TRUE;
 }
 
 void TimeRule_CloseLibs_Dependencies(void)
 {
-#ifdef USE_BEVEL_FRAME
-    if(BevelBase) CloseLibrary(BevelBase);
-    BevelBase = NULL;
-#endif
+
 }
 //==========================================================================================
 // does not need to be exact, we just want the function pointer:
@@ -119,60 +67,14 @@ ULONG ASM SAVEDS TimeRule_Dispatcher(
                     REG(a2,struct Gadget *Gad),
                     REG(a1,union MsgUnion *M));
 
-#ifndef TIMERULE_STATICLINK
-// called by shared Lib init to create class.
 
-int ASM CreateClass(REG(a6,struct ExtClassLib *LibBase))
-{
-  if(LibBase) SysBase = LibBase->cb_SysBase;
-  if(TimeRule_OpenLibs() && TimeRule_OpenLibs_Dependencies())
-  {
-    if(TimeRuleClassPtr=MakeClass(TimeRule_CLASS_ID,TimeRuleSuperClassID,0,sizeof(TimeRule),0))
-    {
-     if(LibBase) LibBase->cb_ClassLibrary.cl_Class = TimeRuleClassPtr;
-      TimeRuleClassPtr->cl_Dispatcher.h_Data=LibBase;
-      TimeRuleClassPtr->cl_Dispatcher.h_Entry=(REHOOKFUNC)TimeRule_Dispatcher;
-
-      AddClass(TimeRuleClassPtr);
-      /* Success */
-      return(0);
-    }
-    TimeRule_CloseLibs_Dependencies();
-    TimeRule_CloseLibs();
-  }
-  /* Fail */
-  return(-1);
-}
-// called by shared Lib expunge to dispose class.
-void ASM DestroyClass(REG(a6,struct ExtClassLib *LibBase))
-{
-    // note LibBase and TimeRuleClassPtr should be the same
-    if(TimeRuleClassPtr)
-    {
-      RemoveClass(TimeRuleClassPtr);
-      FreeClass(TimeRuleClassPtr);
-      TimeRuleClassPtr = NULL;
-    }
-  TimeRule_CloseLibs_Dependencies();
-  TimeRule_CloseLibs();
-}
-// first public lib function for boopsi classes
-Class * ASM GetClass(void)
-{
-    return (Class *)TimeRuleClassPtr;
-}
-// end if shared class
-#else
 // static version:
 struct IClass   *TIMERULE_GetClass()
 {
     return TimeRuleClassPtr;
 }
-#endif
 
 //====================================================================================
-
-#ifdef TIMERULE_STATICLINK
 
 /* just use this one once when static link */
 /* TimeRule inherits from InfiniteScroll - must be initialized first */
@@ -187,7 +89,7 @@ int TimeRuleStaticInit()
     if(!superClass) return 0;
 
     /* MakeClass with class pointer (not string) as superclass */
-    if(TimeRuleClassPtr = MakeClass(NULL, NULL, superClass, sizeof(TimeRule), 0))
+    if((TimeRuleClassPtr = MakeClass(NULL, NULL, superClass, sizeof(TimeRule), 0))!=NULL)
     {
         TimeRuleClassPtr->cl_Dispatcher.h_Entry = (REHOOKFUNC)TimeRule_Dispatcher;
         /* do not AddClass() when static, no need to publish, TimeRuleClassPtr will be enough. */
@@ -207,7 +109,5 @@ void TimeRuleStaticClose()
     }
 
 }
-
-#endif
 
 

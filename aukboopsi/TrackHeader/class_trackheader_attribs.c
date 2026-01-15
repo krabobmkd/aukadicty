@@ -4,13 +4,8 @@
 #include <proto/dos.h>
 #include <stdio.h>
 #include <string.h>
-#ifdef __SASC
-//    #include "minialib.h"
-    #include <clib/alib_protos.h>
-#else
-    // GCC
-    #include "minialib.h"
-#endif
+
+#include <clib/alib_protos.h>
 
 #include <intuition/classes.h>
 #include <intuition/classusr.h>

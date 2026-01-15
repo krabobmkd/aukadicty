@@ -3,13 +3,8 @@
 #include <proto/intuition.h>
 #include <proto/dos.h>
 
-#ifdef __SASC
-//    #include "minialib.h"
-    #include <clib/alib_protos.h>
-#else
-    // GCC
-    #include "minialib.h"
-#endif
+
+#include <clib/alib_protos.h>
 
 #include <intuition/classes.h>
 #include <intuition/classusr.h>
@@ -20,6 +15,7 @@
 
 #include <utility/tagitem.h>
 
+#include "bdbprintf.h"
 
 ULONG TrackArea_GetAttr(Class *C, struct Gadget *Gad, struct opGet *Get)
 {
