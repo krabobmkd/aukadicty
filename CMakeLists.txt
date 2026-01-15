@@ -128,8 +128,8 @@ set(AUKADICTY_HEADERS
 )
 if(ENABLEJSONSERIAL)
     list(APPEND AUKADICTY_HEADERS
-        src/aukjson.h
-        src/aukjsonserializer.h
+        include/aukjson.h
+        include/aukjsonserializer.h
         cjson/cJSON.h
     )
 endif()

@@ -218,7 +218,6 @@ ULONG ASM SAVEDS AppModelDispatch(
                     REG(a2,Object *obj),
                     REG(a1,union MsgUnion *M))
 {
-    // Warning: this is executed on "intuition's context", can't use dos nor print, like for interupts.
   ULONG retval=0;
   switch(M->MethodID)
   {
@@ -390,7 +389,7 @@ int main(int argc, char **argv)
     {
         app->mainvlayout = (Object *)NewObject( LAYOUT_GetClass(), NULL,
             GA_DrawInfo, app->drawInfo,
-            LAYOUT_DeferLayout, TRUE, // Layout refreshes done on task's context (by thewindow class)
+            LAYOUT_DeferLayout, TRUE, /* Layout refreshes done on task's context (by thewindow class)*/
             LAYOUT_SpaceOuter, TRUE,
             LAYOUT_BottomSpacing, 2,
             LAYOUT_TopSpacing,0,
@@ -593,7 +592,7 @@ void exitclose(void)
     /* Delete message port */
     if (app->app_port) DeleteMsgPort(app->app_port);
 
-    closeAppModel(); // thi is meant to close app implicitely, If i'm correct...
+    closeAppModel();
 
     CloseTrackListView_StaticClasses();
 
