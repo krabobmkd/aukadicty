@@ -432,7 +432,7 @@ void TrackListArea_DisposeGadgets(TrackListArea *gdata)
     gdata->_trackCount = 0;
 
 }
-extern Class *AppModelClass;
+extern Object *AppInstance;
 static int TrackListArea_CreateTrackLine(
             struct Gadget *Gad,
             TrackListArea *gdata,
@@ -452,7 +452,7 @@ static int TrackListArea_CreateTrackLine(
                                     TRACKHEADER_StyleSheet, (ULONG)styleSheet,
                                     LAYOUT_FillPen, gdata->_styleSheet->trackHeaderBG.pen,
                                     TRACKHEADER_TrackIndex,iTrack,
-                                    ICA_TARGET,AppModelClass,
+                                    ICA_TARGET,AppInstance,
                                     GA_DrawInfo, (ULONG)gdata->_drawInfo,
                                     TRACKHEADER_Nametag,trackname, // optional, must be last
                                     TAG_END);

@@ -43,6 +43,7 @@ enum {
 
     /* Menu: Project */
     MSG_MENU_PROJECT,
+    MSG_FILE_NEW,
     MSG_FILE_OPEN,
     MSG_FILE_SAVEAS,
     MSG_FILE_SAVE,
@@ -52,6 +53,8 @@ enum {
 
     /* Menu: Edition */
     MSG_MENU_EDITION,
+    MSG_EDIT_UNDO,
+    MSG_EDIT_REDO,
     MSG_EDIT_SELECTALL,
     MSG_EDIT_SELECTNONE,
     MSG_EDIT_COPY,

@@ -16,7 +16,7 @@ STATICDEFS = -DTRACKLIST_STATICLINK=1 -DINFINITESCROLL_STATICLINK=1 -DUSE_DEBUG_
 
 # -I../include
 CFLAGS = -$(MCPU) -O2 -noixemul -Wall -ITrackArea -I. $(STATICDEFS)
-LIBS = ../build-gcc/libaukproject.a
+LIBS = ../build-gcc-$(MCPU)/libaukproject$(MCPU).a
 
 HEADERS = \
  aukstylesheet.h aukstyle.h gadgetid.h bdbprintf.h \

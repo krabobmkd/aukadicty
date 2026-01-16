@@ -97,6 +97,12 @@ ULONG InfiniteScroll_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
                    needsRefresh = TRUE;
                 }
             } break;
+            case INFINITESCROLL_FullTilesRefresh:
+            {
+                // this is enough to flush the cache at rendering.
+                gdata->_currentLeftBorderTileIndex = -1;
+                needsRefresh = TRUE;
+            } break;
             default:
                 break;
         }

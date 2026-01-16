@@ -12,6 +12,12 @@
 
 /* Action implementations - stubs for now */
 
+BOOL Action_ProjectNew(AukActionContext *context) {
+    printf("Action: Project New\n");
+    /* TODO: Implement new project creation */
+    return TRUE;
+}
+
 BOOL Action_ProjectOpen(AukActionContext *context) {
     printf("Action: Project Open\n");
     /* TODO: Implement file requester and project loading */
@@ -50,6 +56,18 @@ BOOL Action_ProjectQuit(AukActionContext *context) {
     /* atexit() magic */
     exit(0);
 
+    return TRUE;
+}
+
+BOOL Action_EditUndo(AukActionContext *context) {
+    printf("Action: Undo\n");
+    /* TODO: Implement undo */
+    return TRUE;
+}
+
+BOOL Action_EditRedo(AukActionContext *context) {
+    printf("Action: Redo\n");
+    /* TODO: Implement redo */
     return TRUE;
 }
 
@@ -114,6 +132,7 @@ BOOL Action_HelpHelp(AukActionContext *context) {
 /* Global action table */
 static AukAction actionTable[ACTION_COUNT] = {
     /* Project actions */
+    [ACTION_PROJECT_NEW]    = {Action_ProjectNew,    MSG_FILE_NEW,    NULL, 0, 0},
     [ACTION_PROJECT_OPEN]   = {Action_ProjectOpen,   MSG_FILE_OPEN,   NULL, 0, 0},
     [ACTION_PROJECT_SAVE]   = {Action_ProjectSave,   MSG_FILE_SAVE,   NULL, 0, 0},
     [ACTION_PROJECT_SAVEAS] = {Action_ProjectSaveAs, MSG_FILE_SAVEAS, NULL, 0, 0},
@@ -122,6 +141,8 @@ static AukAction actionTable[ACTION_COUNT] = {
     [ACTION_PROJECT_QUIT]   = {Action_ProjectQuit,   MSG_MENU_QUIT,   NULL, 0x45, 0}, /* ESC key */
 
     /* Edition actions */
+    [ACTION_EDIT_UNDO]       = {Action_EditUndo,       MSG_EDIT_UNDO,       NULL, 0, 0},
+    [ACTION_EDIT_REDO]       = {Action_EditRedo,       MSG_EDIT_REDO,       NULL, 0, 0},
     [ACTION_EDIT_SELECTALL]  = {Action_EditSelectAll,  MSG_EDIT_SELECTALL,  NULL, 0, 0},
     [ACTION_EDIT_SELECTNONE] = {Action_EditSelectNone, MSG_EDIT_SELECTNONE, NULL, 0, 0},
     [ACTION_EDIT_COPY]       = {Action_EditCopy,       MSG_EDIT_COPY,       NULL, 0, 0},

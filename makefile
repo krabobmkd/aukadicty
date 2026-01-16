@@ -2,13 +2,14 @@
 # Use with command "make"
 # Place this file in the aukadicty root directory as "makefile"
 
+MCPU ?= m68030
 USEJSON = 0
 CC = gcc
 AR = ar
-BUILDDIRAUK = build-gcc
+BUILDDIRAUK = build-gcc-$(MCPU)
 BUILDDIRSTRCA = build-stc-gcc
 #  -Wall
-CFLAGS = -m68030 -O2 -noixemul -Iinclude -Ios-include -Icjson -Iaukstreamcache/include
+CFLAGS = -$(MCPU) -O2 -noixemul -Iinclude -Ios-include -Icjson -Iaukstreamcache/include
 
 HEADERS = \
  include/aukadicty.h include/aukobject.h include/aukmutex.h \
@@ -53,7 +54,7 @@ STREAMLIBOBJS = \
  $(BUILDDIRSTRCA)/aukstreamconvert.o \
  $(BUILDDIRSTRCA)/aukstreamloader.o
 
-all: $(BUILDDIRAUK)/libaukproject.a $(BUILDDIRSTRCA)/libaukstreamcache.a
+all: $(BUILDDIRAUK)/libaukproject$(MCPU).a $(BUILDDIRSTRCA)/libaukstreamcache.a
 
 $(BUILDDIRAUK):
 	#-makedir $(BUILDDIRAUK)
@@ -69,7 +70,7 @@ $(BUILDDIRSTRCA)/%.o: aukstreamcache/src/%.c $(BUILDDIRSTRCA) $(HEADERS)
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 # Create static libraries
-$(BUILDDIRAUK)/libaukproject.a: $(LIBOBJS)
+$(BUILDDIRAUK)/libaukproject$(MCPU).a: $(LIBOBJS)
 	$(AR) rcs $@ $(LIBOBJS)
 
 $(BUILDDIRSTRCA)/libaukstreamcache.a: $(STREAMLIBOBJS)

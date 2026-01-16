@@ -118,7 +118,7 @@ ULONG ASM SAVEDS TrackHeader_Dispatcher(
         {
             target = ptag->ti_Data;
         }
-
+bdbprintf("omnew th target %08x\n",target);
         {
           if((Gad=(struct Gadget *)DoSuperMethodA(C,(Object *)Gad,(Msg)M))!=NULL)
           {
@@ -140,16 +140,16 @@ ULONG ASM SAVEDS TrackHeader_Dispatcher(
             gdata->subs[THS_CloseButton] = NewObject( BUTTON_GetClass(),NULL,
                                         GA_Text, "X",
                                         GA_ID,GAD_TRACKHEADER_BASE|GAD_TRACKHEADER_CLOSE|(iTrack<<4),
-                                      //  ICA_TARGET,target,
-                                       // GA_DrawInfo,(ULONG)drawInfo,
-                                      //  GA_RelVerify, TRUE,
+                                        ICA_TARGET,target,
+                                        GA_DrawInfo,(ULONG)drawInfo,
+                                        GA_RelVerify, TRUE,
                                     TAG_END);
 
             gdata->subs[THS_NameButton] = NewObject( BUTTON_GetClass(),NULL,
                                         GA_Text,trackname,
                                         GA_ID,GAD_TRACKHEADER_BASE|GAD_TRACKHEADER_NAME|(iTrack<<4),
-                                      //  ICA_TARGET,target,
-                                       // GA_DrawInfo,(ULONG)drawInfo,
+                                        ICA_TARGET,target,
+                                        GA_DrawInfo,(ULONG)drawInfo,
                                       //  GA_RelVerify, TRUE,
                                     TAG_END);
 

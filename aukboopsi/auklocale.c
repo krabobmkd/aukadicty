@@ -44,6 +44,7 @@ static const char *defaultStrings[MSG_COUNT] = {
 
     /* Menu: Project */
     [MSG_MENU_PROJECT] = "Project",
+    [MSG_FILE_NEW] = "New",
     [MSG_FILE_OPEN] = "Open",
     [MSG_FILE_SAVEAS] = "Save as",
     [MSG_FILE_SAVE] = "Save",
@@ -53,6 +54,8 @@ static const char *defaultStrings[MSG_COUNT] = {
 
     /* Menu: Edition */
     [MSG_MENU_EDITION] = "Edition",
+    [MSG_EDIT_UNDO] = "Undo",
+    [MSG_EDIT_REDO] = "Redo",
     [MSG_EDIT_SELECTALL] = "Select All",
     [MSG_EDIT_SELECTNONE] = "Select None",
     [MSG_EDIT_COPY] = "Copy",

@@ -20,6 +20,7 @@ void cleanexit(const char *pmessage);
 static struct NewMenu menuTemplate[] = {
     /* Project menu */
     {NM_TITLE, NULL, 0, 0, 0, (APTR)MSG_MENU_PROJECT},  /* Title uses string ID */
+        {NM_ITEM, NULL,"N",0, 0, (APTR)ACTION_PROJECT_NEW},
         {NM_ITEM, NULL,"O",0, 0, (APTR)ACTION_PROJECT_OPEN},
         {NM_ITEM, NULL,"S",0, 0, (APTR)ACTION_PROJECT_SAVEAS},
         {NM_ITEM, NULL,"s",0, 0, (APTR)ACTION_PROJECT_SAVE},
@@ -31,6 +32,9 @@ static struct NewMenu menuTemplate[] = {
 
     /* Edition menu */
     {NM_TITLE, NULL, 0, 0, 0, (APTR)MSG_MENU_EDITION},
+        {NM_ITEM, NULL,"Z",0, 0, (APTR)ACTION_EDIT_UNDO},
+        {NM_ITEM, NULL,"Y",0, 0, (APTR)ACTION_EDIT_REDO},
+        {NM_ITEM, NM_BARLABEL, 0, 0, 0, NULL},
         {NM_ITEM, NULL, 0, 0, 0, (APTR)ACTION_EDIT_SELECTALL},
         {NM_ITEM, NULL, 0, 0, 0, (APTR)ACTION_EDIT_SELECTNONE},
         {NM_ITEM, NM_BARLABEL, 0, 0, 0, NULL},

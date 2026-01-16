@@ -42,10 +42,10 @@
 //#define GAD_TRACKAREA_BASE      4096
 
 /* Individual track header gadgets start from this base */
-#define GAD_TRACKHEADER_BASE        0x10000
+#define GAD_TRACKHEADER_BASE        0x08000
 
 #define GAD_TRACKHEADER_IDMASK      0x0000f
-#define GAD_TRACKHEADER_TRACKMASK   0x0fff0
+#define GAD_TRACKHEADER_TRACKMASK   0x07ff0
 
 #define GAD_TRACKHEADER_CLOSE    1
 #define GAD_TRACKHEADER_NAME    2

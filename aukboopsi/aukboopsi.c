@@ -219,6 +219,7 @@ ULONG ASM SAVEDS AppModelDispatch(
                     REG(a1,union MsgUnion *M))
 {
   ULONG retval=0;
+
   switch(M->MethodID)
   {
     case OM_NEW:
@@ -232,11 +233,13 @@ ULONG ASM SAVEDS AppModelDispatch(
     case OM_DISPOSE:
         retval=DoSuperMethodA(C,(Object *)obj,(Msg)M);
       break;
+    case OM_NOTIFY:
     case OM_UPDATE:
         {
             struct TagItem *ptag;
             // here receive events from gadgets which ICA_TARGET is appModel.
             ULONG sender_ID=0;
+
             if((ptag = FindTagItem( GA_ID,M->opUpdate.opu_AttrList ))!=NULL) sender_ID = ptag->ti_Data;
             // our gadget is notifying new clicked coordinates!
             // note any button action is either managed here or in more generic main loop
@@ -252,7 +255,7 @@ ULONG ASM SAVEDS AppModelDispatch(
             /* Handle HeaderView edit mode buttons */
             if (sender_ID >= GAD_HEADER_EDITMODE1 && sender_ID <= GAD_HEADER_EDITMODE6)
             {
-                //bdbprintf("Edit mode button pressed: %d\n", sender_ID);
+                bdbprintf("Edit mode button pressed: %08x\n", sender_ID);
                 // receive GA_ID, GA_SELECTED, GA_DISABLED  , GA_SELECTED=1 when clicked, but manyyyy times with the moves (relverify?).
 //                ptag = M->opUpdate.opu_AttrList;
 //                while(ptag->ti_Tag)
@@ -366,7 +369,7 @@ int main(int argc, char **argv)
     AukAction_Init();
 
     if(!initAppModel())  cleanexit("Can't create app");
-
+printf("AppInstance %08x\n",AppInstance);
     /* BOOPSI needs */
     app->lockedscreen = LockPubScreen(NULL);
     if (!app->lockedscreen) cleanexit("Can't lock screen");
@@ -477,7 +480,6 @@ int main(int argc, char **argv)
             while ((result = DoMethod(app->window_obj, WM_HANDLEINPUT, /*code*/NULL)) != WMHI_LASTMSG)
             {
             flushbdbprint();
-            // printf("result:%08x\n",(int)result);
                 switch(result & WMHI_CLASSMASK)
                 {
                    case WMHI_RAWKEY:
@@ -491,6 +493,10 @@ int main(int argc, char **argv)
 
                     case WMHI_GADGETUP:
                     {
+                        if((result>>16) >=GAD_TRACKHEADER_BASE)
+                        {
+                        printf("WMHI_GADGETUP:%08x\n",result>>16);
+                        }
 //                        if(gid == GAD_BUTTON_ABOUT)
 //                        {
 //                            openAboutReq();

@@ -111,11 +111,11 @@ ULONG TimeRule_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
             if( gdata->_timePerPixelWidth != *pv) fullRedraw=1;
             gdata->_timePerPixelWidth = *pv;
 
-//        bdbprintf("gdata %08x TIMERULE_TimePerPixelWidth set %08x.%08x\n",
-//            (int)gdata,
-//         (int)(gdata->_timePerPixelWidth>>32),(int)gdata->_timePerPixelWidth);
+        // bdbprintf(" TIMERULE_TimePerPixelWidth set %08x.%08x\n",
+        //  (int)(gdata->_timePerPixelWidth>>32),(int)gdata->_timePerPixelWidth);
 
             TimeRule_UpdateTimeInterval(gdata);
+
             used=1;
         }
         break;
@@ -183,6 +183,15 @@ ULONG TimeRule_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
     } /* end switch */
   } /* end for */
 
+ if(fullRedraw)
+ {
+    ULONG atr[]={INFINITESCROLL_FullTilesRefresh,TRUE,TAG_END};
+    struct opSet sSet;
+    sSet.MethodID = OM_SET;
+    sSet.ops_AttrList = &atr[0];
+    sSet.ops_GInfo = Set->ops_GInfo;
+    DoSuperMethodA(C,(Object *)Gad,(Msg)&sSet);
+ }
 
     if((justScroll|fullRedraw)!=0)
     {
@@ -195,7 +204,6 @@ ULONG TimeRule_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
             if(gpr.gpr_RPort)
             {
                 gpr.gpr_Redraw = 1;
-                //Do(C,Gad,&gpr);
                 DoSuperMethodA(C,(APTR)Gad,(Msg)&gpr );
                 ReleaseGIRPort(gpr.gpr_RPort);
             }

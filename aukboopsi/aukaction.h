@@ -36,7 +36,8 @@ struct AukAction {
 /* Action IDs - used to reference actions */
 enum {
     /* Project actions */
-    ACTION_PROJECT_OPEN = 0,
+    ACTION_PROJECT_NEW = 0,
+    ACTION_PROJECT_OPEN,
     ACTION_PROJECT_SAVE,
     ACTION_PROJECT_SAVEAS,
     ACTION_PROJECT_EXPORT,
@@ -44,6 +45,8 @@ enum {
     ACTION_PROJECT_QUIT,
 
     /* Edition actions */
+    ACTION_EDIT_UNDO,
+    ACTION_EDIT_REDO,
     ACTION_EDIT_SELECTALL,
     ACTION_EDIT_SELECTNONE,
     ACTION_EDIT_COPY,
@@ -74,6 +77,7 @@ AukAction *AukAction_Get(ULONG actionID);
 BOOL AukAction_Execute(ULONG actionID, AukActionContext *context);
 
 /* Action function declarations */
+BOOL Action_ProjectNew(AukActionContext *context);
 BOOL Action_ProjectOpen(AukActionContext *context);
 BOOL Action_ProjectSave(AukActionContext *context);
 BOOL Action_ProjectSaveAs(AukActionContext *context);
@@ -81,6 +85,8 @@ BOOL Action_ProjectExport(AukActionContext *context);
 BOOL Action_ProjectAbout(AukActionContext *context);
 BOOL Action_ProjectQuit(AukActionContext *context);
 
+BOOL Action_EditUndo(AukActionContext *context);
+BOOL Action_EditRedo(AukActionContext *context);
 BOOL Action_EditSelectAll(AukActionContext *context);
 BOOL Action_EditSelectNone(AukActionContext *context);
 BOOL Action_EditCopy(AukActionContext *context);

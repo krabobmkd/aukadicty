@@ -28,6 +28,9 @@
 
 #include <proto/layout.h>
 #include <gadgets/layout.h>
+// to read properties
+#include <gadgets/button.h>
+#include <gadgets/slider.h>
 
 #include "TimeRule/class_timerule.h"
 #include "TimeRule/class_timerule_private.h"
@@ -575,9 +578,22 @@ void TrackListView_ListenScrollHMessage(TrackListView *pm, struct opUpdate *M)
 
 void TrackListView_ListenTrackHeaderMessage(TrackListView *pm,struct opUpdate *M, ULONG gadId)
 {
+
     ULONG buttonId = gadId & GAD_TRACKHEADER_IDMASK;
     ULONG trackId = (gadId & GAD_TRACKHEADER_TRACKMASK)>>4; // 4096 tracks possible, 16 buttons
-
+ bdbprintf("header bt GID:%08x trackId:%d\n",buttonId,trackId);
+ // struct TagItem*p = M->opu_AttrList;
+ // while(p->ti_Tag != 0)
+ // {
+ //    bdbprintf("tag:%08x %08x\n",p->ti_Tag,p->ti_Data);
+ //    p++;
+ // }
+ // $10 ->id
+// $13 GA_Selected ->1 0 state
+// GA_Disabled state
+// --- slider 8502803
+// send GA_ID, SLIDER_Level, SLIDER_Min, SLIDER_Max and
+//	 * GA_UserInput and lots of things
     switch(buttonId)
     {
         case GAD_TRACKHEADER_CLOSE:
@@ -586,6 +602,13 @@ void TrackListView_ListenTrackHeaderMessage(TrackListView *pm,struct opUpdate *M
         case GAD_TRACKHEADER_NAME:
             // TODO track name edit.
         break;
+        case GAD_TRACKHEADER_SILENCER:
+
+        break;
+        case GAD_TRACKHEADER_SOLO:
+
+        break;
+
         case GAD_TRACKHEADER_VOL:
             // TODO volume slide has changed
         break;

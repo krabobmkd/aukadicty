@@ -123,8 +123,13 @@ typedef void (*InfiniteScrollRenderf)(InfiniteScrollRenderParams *p);
 */
 #define	INFINITESCROLL_RenderFunction		(INFINITESCROLL_Dummy+3)
 
+/*
+ Tell next rendering can't use the tile cache, redraw all.
+*/
+#define	INFINITESCROLL_FullTilesRefresh		(INFINITESCROLL_Dummy+4)
+
 /* external layout to render us, as notify message. */
-#define	INFINITESCROLL_Redraw		(INFINITESCROLL_Dummy+4)
+#define	INFINITESCROLL_Redraw		(INFINITESCROLL_Dummy+5)
 
 /* Methods */
 #define INFINITESCROLL_GMDummy			(INFINITESCROLL_Dummy+0x100)
