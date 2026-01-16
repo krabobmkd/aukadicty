@@ -140,6 +140,7 @@ int TrackListStaticInit()
 //    if(TrackListClassPtr=MakeClass(NULL,TrackListSuperClassID,0,sizeof(TrackListArea),0))
     if((TrackListClassPtr=MakeClass(NULL,NULL,LAYOUT_GetClass(),sizeof(TrackListArea),0))!=NULL)
     {
+      bdbprintf_makeclass("TrackList", TrackListClassPtr);
       TrackListClassPtr->cl_Dispatcher.h_Entry=(REHOOKFUNC)TrackListArea_Dispatcher;
      // do not AddClass() when static, no need to publish, TrackListClassPtr will be enough.
       /* Success */
@@ -153,6 +154,7 @@ void TrackListStaticClose()
     TrackList_CloseLibs_Dependencies();
     if(TrackListClassPtr)
     {
+      bdbprintf_freeclass("TrackList", TrackListClassPtr);
       FreeClass(TrackListClassPtr);
       TrackListClassPtr = NULL;
     }

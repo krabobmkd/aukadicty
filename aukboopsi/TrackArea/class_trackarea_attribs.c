@@ -80,45 +80,24 @@ ULONG TrackArea_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
         /* data points to AukStyle */
          bdbprintf(" **** setattr TRACKAREA_StyleSheet %08x\n",data);
         gdata->_style = (struct AukStyle *)data;
+        redraw = 1;
         break;
 
       case TRACKAREA_PTimeProjection:
         /* data is a pointer to TimeProjection in TrackListArea */
        //  bdbprintf(" **** TimeProjection %08x\n",data);
         gdata->_pTimeProjection = (TimeProjection *)data;
+        redraw = 1;
         break;
 
       case TRACKAREA_DataTrack:
         /* data is a pointer to AukTrack - use AukObjectPtr_Set for reference counting */
          bdbprintf(" **** TRACKAREA_DataTrack %08x\n",data);
         AukObjectPtr_Set((AukObjectPtr*)&gdata->_dataTrack, (AukObject*)data);
+        redraw = 1;
         break;
 
-      /* - - - actually we have to manage super class attribs:
-       * with GA_XXX and struct Gadget members...
-       */
-    //   case GA_Disabled:
-    //     {
-    //         if(data) Gad->Flags |= GFLG_DISABLED; /* set bit */
-    //         else Gad->Flags &= ~GFLG_DISABLED; /* remove bit. */
-    //         redraw=1;
-    //     }
-    //     break;
-    //   case GA_Highlight:
-    //     {
-    //         if(data) Gad->Flags |= GFLG_GADGHBOX; /* set bit */
-    //         else Gad->Flags &= ~GFLG_GADGHBOX; /* remove bit. */
-    //         redraw=1;
-    //     }
-    //     break;
-    //   case GA_Selected:
-    //     {
-    //         if(data) Gad->Flags |= GFLG_SELECTED; /* set bit */
-    //         else Gad->Flags &= ~GFLG_SELECTED; /* remove bit. */
-    //         redraw=1;
-    //     }
-    //     break;
-    // default:
+     default:
         /* other attribs handled by InfiniteScroll superclass */
         break;
 

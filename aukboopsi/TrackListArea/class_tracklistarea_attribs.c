@@ -231,7 +231,7 @@ void TrackListArea_SetTrackName(struct Gadget *Gad,struct Window *window,int itr
     TrackChild *strack;
     if(!Gad) return;
     gdata=INST_DATA(OCLASS(Gad), Gad);
-
+    bdbprintf(" oooooo TrackListArea_SetTrackName trackname:%s\n",name);
 
     if(itrack>= (int)gdata->_trackCount) return;
 

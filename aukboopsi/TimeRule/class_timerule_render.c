@@ -53,7 +53,7 @@ ULONG TimeRule_Domain(Class *C, struct Gadget *Gad, struct gpDomain *D)
 
     case GDOMAIN_MAXIMUM:
       D->gpd_Domain.Width = 16000;
-      D->gpd_Domain.Height =  16;
+      D->gpd_Domain.Height =  24;
       break;
 
     case GDOMAIN_MINIMUM:
@@ -73,8 +73,8 @@ ULONG TimeRule_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout)
   gdata=INST_DATA(C, Gad);
 //  bdbprintf("TimeRule_Layout\n");
   /* Lines are drawn from bottom - make them short */
-  gdata->majorTickHeight = Gad->Height/3;
-  gdata->minorTickHeight = Gad->Height/6;
+  gdata->majorTickHeight = (Gad->Height/3)+2;
+  gdata->minorTickHeight = (Gad->Height/6)+1;
 
    return DoSuperMethodA(C,Gad,(Msg)layout);
 }

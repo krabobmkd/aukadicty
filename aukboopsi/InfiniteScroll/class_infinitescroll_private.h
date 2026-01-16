@@ -81,7 +81,7 @@ ULONG InfiniteScroll_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set);
 ULONG InfiniteScroll_GetAttr(Class *C, struct Gadget *Gad, struct opGet *Get);
 ULONG InfiniteScroll_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout);
 ULONG InfiniteScroll_Render(Class *C, struct Gadget *Gad, struct gpRender *Render);
-ULONG InfiniteScroll_HandleInput(Class *C, struct Gadget *Gad, struct gpInput *Input);
+//ULONG InfiniteScroll_HandleInput(Class *C, struct Gadget *Gad, struct gpInput *Input);
 ULONG InfiniteScroll_Domain(Class *C, struct Gadget *Gad, struct gpDomain *D);
 
 /* Tile management helpers */

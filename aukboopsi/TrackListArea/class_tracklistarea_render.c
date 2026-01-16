@@ -333,7 +333,6 @@ ULONG TrackListArea_Render(Class *C, struct Gadget *Gad, struct gpRender *Render
 
     gdata=INST_DATA(C, Gad);
 
-
     topedge = Gad->TopEdge;
     leftedge = Gad->LeftEdge;
     width = Gad->Width;
@@ -370,7 +369,13 @@ ULONG TrackListArea_Render(Class *C, struct Gadget *Gad, struct gpRender *Render
           // recurse
         if(headerGad && ((filter & 2)!=0) && bLayerUpdating == 0) // if layouted && selected for refresh
         {
-          DoMethodA((Object*)headerGad, (Msg)Render); // not DoGadgetMethodA in that case
+//            SetAPen(rp, gdata->_styleSheet->trackHeaderBG.pen);
+//            RectFill(rp,headerGad->LeftEdge,
+//                        headerGad->TopEdge,
+//                        headerGad->LeftEdge + headerGad->Width -1,
+//                        headerGad->TopEdge + headerGad->Height -1);
+
+            DoMethodA((Object*)headerGad, (Msg)Render); // not DoGadgetMethodA in that case
         }
          if(trackGad && ((filter & 1)!=0)) // if layouted && selected for refresh
          {
@@ -440,11 +445,12 @@ static int TrackListArea_CreateTrackLine(
 
     if(dataTrack && dataTrack->name) trackname = dataTrack->name;
     if(trackname) TRACKHEADER_Nametag = TRACKHEADER_Name;
- //   bdbprintf("TrackListArea_CreateTrackLine styleSheet:%08x\n",(int)styleSheet);
+    bdbprintf("TrackListArea_CreateTrackLine trackname:%s\n",trackname);
     /* Create TrackHeader gadget */
     strack->_trackHeader =
        NewObject(TRACKHEADER_GetClass(), NULL,
                                     TRACKHEADER_StyleSheet, (ULONG)styleSheet,
+                                    LAYOUT_FillPen, gdata->_styleSheet->trackHeaderBG.pen,
                                     TRACKHEADER_TrackIndex,iTrack,
                                     ICA_TARGET,AppModelClass,
                                     GA_DrawInfo, (ULONG)gdata->_drawInfo,

@@ -117,8 +117,20 @@ ULONG ASM SAVEDS TimeRule_Dispatcher(
    case GM_LAYOUT:
       retval = TimeRule_Layout(C,(Object *)Gad,(struct gpLayout *)M);
         break;
+    case GM_HITTEST:
+      retval = 0; // no interaction by default GMR_GADGETHIT;
+      break;
+    case GM_GOACTIVE:
+      return 0;
+      break;
+    case GM_HANDLEINPUT:
+     return 0;
+      break;
+    case GM_GOINACTIVE:
+     return 0;
+      break;
 
-    /* Let InfiniteScroll handle these: GM_LAYOUT, GM_RENDER, GM_HITTEST, etc */
+    /* Let InfiniteScroll superclass handle these: GM_LAYOUT, GM_RENDER,... */
     default:
       retval=DoSuperMethodA(C,(Object *)Gad,(Msg)M);
       break;

@@ -168,4 +168,65 @@ void bdbprintf_report_leaks(void)
         flushbdbprint();
     }
 }
+
+/* Class tracking for MakeClass/FreeClass pairing verification */
+static volatile int classes_made = 0;
+static volatile int classes_freed = 0;
+
+/*
+ * bdbprintf_makeclass - Track MakeClass call
+ */
+int bdbprintf_makeclass(const char *className, void *classPtr)
+{
+    int result;
+
+    classes_made++;
+
+//    result = bdbprintf("[MAKECLASS] %s class:%lx (total made:%ld)\n",
+//                       className, (unsigned long)classPtr, (long)classes_made);
+
+    return result;
+}
+
+/*
+ * bdbprintf_freeclass - Track FreeClass call
+ */
+int bdbprintf_freeclass(const char *className, void *classPtr)
+{
+    int result;
+
+    classes_freed++;
+
+//    result = bdbprintf("[FREECLASS] %s class:%lx (total freed:%ld)\n",
+//                       className, (unsigned long)classPtr, (long)classes_freed);
+
+    return result;
+}
+
+/*
+ * bdbprintf_report_classes - Report any unfreed classes
+ */
+void bdbprintf_report_classes(void)
+{
+    long leaked;
+
+    leaked = classes_made - classes_freed;
+
+    if(leaked != 0)
+    {
+        bdbprintf("\n*** CLASS LEAK DETECTED ***\n");
+        bdbprintf("  Classes Made (MakeClass):  %ld\n", (long)classes_made);
+        bdbprintf("  Classes Freed (FreeClass): %ld\n", (long)classes_freed);
+        bdbprintf("  LEAKED CLASSES:            %ld\n", leaked);
+        bdbprintf("*** END CLASS LEAK REPORT ***\n\n");
+        flushbdbprint();
+    }
+    else if(classes_made > 0)
+    {
+        bdbprintf("\nClass Tracking (MakeClass/FreeClass): OK\n");
+        bdbprintf("  Total classes made and freed: %ld\n", (long)classes_made);
+        bdbprintf("  No class leaks detected.\n\n");
+        flushbdbprint();
+    }
+}
 #endif

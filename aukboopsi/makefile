@@ -1,8 +1,10 @@
 # Makefile for AukBoopsi - Amiga GCC 2.95
 # Use with command "make"
 
+#ô this is an optin with a default value
+MCPU ?= m68030
 CC = gcc
-BUILDDIR = build-gcc
+BUILDDIR = build-gcc-$(MCPU)
 BUILDDIRIS = $(BUILDDIR)/is
 BUILDDIRTA = $(BUILDDIR)/ta
 BUILDDIRTLA = $(BUILDDIR)/tla
@@ -13,7 +15,7 @@ BUILDDIRVOLR = $(BUILDDIR)/vr
 STATICDEFS = -DTRACKLIST_STATICLINK=1 -DINFINITESCROLL_STATICLINK=1 -DUSE_DEBUG_BDBPRINT=1
 
 # -I../include
-CFLAGS = -m68030 -O2 -noixemul -Wall -ITrackArea -I. $(STATICDEFS)
+CFLAGS = -$(MCPU) -O2 -noixemul -Wall -ITrackArea -I. $(STATICDEFS)
 LIBS = ../build-gcc/libaukproject.a
 
 HEADERS = \

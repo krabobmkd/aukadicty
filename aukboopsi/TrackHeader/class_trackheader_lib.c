@@ -65,11 +65,8 @@ typedef ULONG (*REHOOKFUNC)();
 
 // this is the only global writtable we should see in the whole class binary !
 struct IClass   *TrackHeaderClassPtr=NULL;
-struct IClass   *HeaderButtonClassPtr=NULL;
-struct IClass   *HeaderSliderClassPtr=NULL;
 
 const char TrackHeaderSuperClassID[]=TrackHeader_SUPERCLASS_ID;
-
 
 BOOL TrackHeader_OpenLibs_Dependencies(void)
 {
@@ -88,28 +85,10 @@ ULONG ASM SAVEDS TrackHeader_Dispatcher(
                     REG(a2,struct Gadget *Gad),
                     REG(a1,union MsgUnion *M));
 
-ULONG ASM SAVEDS HeaderButton_Dispatcher(
-                    REG(a0,struct IClass *C),
-                    REG(a2,struct Gadget *Gad),
-                    REG(a1,union MsgUnion *M));
-
-ULONG ASM SAVEDS HeaderSlider_Dispatcher(
-                    REG(a0,struct IClass *C),
-                    REG(a2,struct Gadget *Gad),
-                    REG(a1,union MsgUnion *M));
-
 // static version:
 struct IClass   *TRACKHEADER_GetClass()
 {
     return TrackHeaderClassPtr;
-}
-struct IClass   *HEADERBUTTON_GetClass()
-{
-    return HeaderButtonClassPtr;
-}
-struct IClass   *HEADERSLIDER_GetClass()
-{
-    return HeaderSliderClassPtr;
 }
 
 //====================================================================================
@@ -119,27 +98,14 @@ struct IClass   *HEADERSLIDER_GetClass()
 int TrackHeaderStaticInit()
 { 
    if(!TrackHeader_OpenLibs_Dependencies()) return 0;
-    //if(TrackHeaderClassPtr=MakeClass(NULL,TrackHeaderSuperClassID,0,sizeof(TrackHeader),0))
-    // MakeClass( ClassID, SuperClassID, SuperClassPtr,InstanceSize, Flags )
 
-
+    // extends layout
     if((TrackHeaderClassPtr=MakeClass(NULL,NULL,LAYOUT_GetClass(),sizeof(TrackHeader),0))!=NULL)
-//    if(TrackHeaderClassPtr=MakeClass(NULL,"gadgetclass",0,sizeof(TrackHeader),0))
     {
+      bdbprintf_makeclass("TrackHeader", TrackHeaderClassPtr);
       TrackHeaderClassPtr->cl_Dispatcher.h_Entry=(REHOOKFUNC)TrackHeader_Dispatcher;
      // do not AddClass() when static, no need to publish, TrackHeaderClassPtr will be enough.
 
-        HeaderButtonClassPtr=MakeClass(NULL,NULL,BUTTON_GetClass(),sizeof(TrackHeaderButton),0);
-        if(HeaderButtonClassPtr)
-        {
-            HeaderButtonClassPtr->cl_Dispatcher.h_Entry=(REHOOKFUNC)HeaderButton_Dispatcher;
-        }
-
-        HeaderSliderClassPtr=MakeClass(NULL,NULL,SLIDER_GetClass(),sizeof(TrackHeaderSlider),0);
-        if(HeaderSliderClassPtr)
-        {
-            HeaderSliderClassPtr->cl_Dispatcher.h_Entry=(REHOOKFUNC)HeaderSlider_Dispatcher;
-        }
       /* Success */
       return(1);
     }
@@ -149,18 +115,10 @@ int TrackHeaderStaticInit()
 void TrackHeaderStaticClose()
 {
     TrackHeader_CloseLibs_Dependencies();
-    if(HeaderSliderClassPtr)
-    {
-      FreeClass(HeaderSliderClassPtr);
-      HeaderSliderClassPtr = NULL;
-    }
-    if(HeaderButtonClassPtr)
-    {
-      FreeClass(HeaderButtonClassPtr);
-      HeaderButtonClassPtr = NULL;
-    }
+  
     if(TrackHeaderClassPtr)
     {
+      bdbprintf_freeclass("TrackHeader", TrackHeaderClassPtr);
       FreeClass(TrackHeaderClassPtr);
       TrackHeaderClassPtr = NULL;
     }

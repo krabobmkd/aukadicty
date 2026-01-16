@@ -86,7 +86,6 @@ set(AUKBOOPSI_SOURCES
     InfiniteScroll/class_infinitescroll_dispatch.c
     InfiniteScroll/class_infinitescroll_lib.c
     InfiniteScroll/class_infinitescroll_render.c
-    InfiniteScroll/class_infinitescroll_handleinput.c
     InfiniteScroll/class_infinitescroll_private.h
     InfiniteScroll/class_infinitescroll.h
 
@@ -111,7 +110,7 @@ set(AUKBOOPSI_SOURCES
     TimeRule/class_timerule_dispatch.c
     TimeRule/class_timerule_lib.c
     TimeRule/class_timerule_render.c
-    TimeRule/class_timerule_handleinput.c
+#    TimeRule/class_timerule_handleinput.c
     TimeRule/class_timerule_private.h
     TimeRule/class_timerule.h
 

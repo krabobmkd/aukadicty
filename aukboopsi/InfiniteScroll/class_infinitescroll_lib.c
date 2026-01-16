@@ -169,6 +169,7 @@ int InfiniteScrollStaticInit()
    if(!InfiniteScroll_OpenLibs_Dependencies()) return 0;
     if((InfiniteScrollClassPtr=MakeClass(NULL,InfiniteScrollSuperClassID,0,sizeof(InfiniteScroll),0))!=NULL)
     {
+      bdbprintf_makeclass("InfiniteScroll", InfiniteScrollClassPtr);
       InfiniteScrollClassPtr->cl_Dispatcher.h_Entry=(REHOOKFUNC)InfiniteScroll_Dispatcher;
      /* do not AddClass() when static, no need to publish, InfiniteScrollClassPtr will be enough. */
       /* Success */
@@ -182,6 +183,7 @@ void InfiniteScrollStaticClose()
     InfiniteScroll_CloseLibs_Dependencies();
     if(InfiniteScrollClassPtr)
     {
+      bdbprintf_freeclass("InfiniteScroll", InfiniteScrollClassPtr);
       FreeClass(InfiniteScrollClassPtr);
       InfiniteScrollClassPtr = NULL;
     }

@@ -77,6 +77,7 @@ int VolumeRuleStaticInit()
     /* MakeClass with superclass string (gadgetclass) */
     if((VolumeRuleClassPtr = MakeClass(NULL, VolumeRuleSuperClassID, 0, sizeof(VolumeRule), 0))!=NULL)
     {
+        bdbprintf_makeclass("VolumeRule", VolumeRuleClassPtr);
         VolumeRuleClassPtr->cl_Dispatcher.h_Entry = (REHOOKFUNC)VolumeRule_Dispatcher;
         return(1);
     }
@@ -88,6 +89,7 @@ void VolumeRuleStaticClose()
     VolumeRule_CloseLibs_Dependencies();
     if(VolumeRuleClassPtr)
     {
+      bdbprintf_freeclass("VolumeRule", VolumeRuleClassPtr);
       FreeClass(VolumeRuleClassPtr);
       VolumeRuleClassPtr = NULL;
     }

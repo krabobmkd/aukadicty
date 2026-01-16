@@ -91,6 +91,7 @@ int TimeRuleStaticInit()
     /* MakeClass with class pointer (not string) as superclass */
     if((TimeRuleClassPtr = MakeClass(NULL, NULL, superClass, sizeof(TimeRule), 0))!=NULL)
     {
+        bdbprintf_makeclass("TimeRule", TimeRuleClassPtr);
         TimeRuleClassPtr->cl_Dispatcher.h_Entry = (REHOOKFUNC)TimeRule_Dispatcher;
         /* do not AddClass() when static, no need to publish, TimeRuleClassPtr will be enough. */
         /* Success */
@@ -104,6 +105,7 @@ void TimeRuleStaticClose()
     TimeRule_CloseLibs_Dependencies();
     if(TimeRuleClassPtr)
     {
+      bdbprintf_freeclass("TimeRule", TimeRuleClassPtr);
       FreeClass(TimeRuleClassPtr);
       TimeRuleClassPtr = NULL;
     }

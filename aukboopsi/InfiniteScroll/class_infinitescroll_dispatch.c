@@ -110,17 +110,16 @@ ULONG ASM SAVEDS InfiniteScroll_Dispatcher(
       break;
 
     case GM_HITTEST:
-      retval = GMR_GADGETHIT;
+      retval = 0; // no interaction by default GMR_GADGETHIT;
       break;
-
     case GM_GOACTIVE:
-      Gad->Flags |= GFLG_SELECTED;
-      retval=InfiniteScroll_HandleInput(C,Gad,(struct gpInput *)M);
+      return 0;
       break;
-
+    case GM_HANDLEINPUT:
+     return 0;
+      break;
     case GM_GOINACTIVE:
-      Gad->Flags &= ~GFLG_SELECTED;
-     // InfiniteScroll_Render(C,Gad,(APTR)M,GREDRAW_UPDATE);
+     return 0;
       break;
 
     case GM_LAYOUT:
@@ -129,10 +128,6 @@ ULONG ASM SAVEDS InfiniteScroll_Dispatcher(
 
     case GM_RENDER:
       retval=InfiniteScroll_Render(C,Gad,(struct gpRender *)M);
-      break;
-
-    case GM_HANDLEINPUT:
-      retval=InfiniteScroll_HandleInput(C,Gad,(struct gpInput *)M);
       break;
 
     case GM_DOMAIN:

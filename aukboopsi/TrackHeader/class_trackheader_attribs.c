@@ -6,7 +6,7 @@
 #include <string.h>
 
 #include <clib/alib_protos.h>
-
+#include <intuition/intuition.h>
 #include <intuition/classes.h>
 #include <intuition/classusr.h>
 #include <intuition/gadgetclass.h>
@@ -92,7 +92,7 @@ ULONG TrackHeader_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
         break;
        case  TRACKHEADER_Name:
        {
-          struct Gadget *btname =   gdata->subs[THS_NameButton];
+          struct Gadget *btname =  (struct Gadget *) gdata->subs[THS_NameButton];
           if(btname && data!=0)
           {
             char tname[32];
@@ -103,9 +103,8 @@ ULONG TrackHeader_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
                 strcat(tname,"..");
                 name = &tname[0];
             }
-
+ bdbprintf("*** TRACKHEADER_Name %s\n",name);
             SetAttrs(btname,GA_Text,(ULONG)name,TAG_END);
-            HeaderButton_Notify(OCLASS(btname),btname,Set->ops_GInfo);
           }
           actuallydone = 1;
        }

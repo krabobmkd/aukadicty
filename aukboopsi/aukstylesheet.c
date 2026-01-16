@@ -139,6 +139,7 @@ void AukStyleSheet_Serialize(AukObject* This, ISerializer* ser, const char* pNam
     ser->t_uint(ser, "selectedBackground", &styleSheet->style.selectedBackground.rgbcolor);
     ser->t_uint(ser, "waveformDark", &styleSheet->style.waveformDark.rgbcolor);
     ser->t_uint(ser, "waveformLight", &styleSheet->style.waveformLight.rgbcolor);
+    ser->t_uint(ser, "thbg", &styleSheet->style.waveformLight.rgbcolor);
     ser->t_uint(ser, "textColor", &styleSheet->style.textColor.rgbcolor);
 
     /* Serialize font specifications (name + height for each font) */
@@ -280,6 +281,7 @@ int AukStyleSheet_ApplyStyle(void* This, struct Screen *scr) {
         ObtainPenForRGB(cm, &styleSheet->style.selectedBackground);
         ObtainPenForRGB(cm, &styleSheet->style.waveformDark);
         ObtainPenForRGB(cm, &styleSheet->style.waveformLight);
+        ObtainPenForRGB(cm, &styleSheet->style.trackHeaderBG);
         ObtainPenForRGB(cm, &styleSheet->style.textColor);
         ObtainPenForRGB(cm, &styleSheet->style.white);
         ObtainPenForRGB(cm, &styleSheet->style.black);
@@ -336,6 +338,7 @@ void AukStyleSheet_ReleasePens(void* This) {
     ReleasePenIfValid(cm, &styleSheet->style.selectedBackground);
     ReleasePenIfValid(cm, &styleSheet->style.waveformDark);
     ReleasePenIfValid(cm, &styleSheet->style.waveformLight);
+    ReleasePenIfValid(cm, &styleSheet->style.trackHeaderBG);
     ReleasePenIfValid(cm, &styleSheet->style.textColor);
     ReleasePenIfValid(cm, &styleSheet->style.white);
     ReleasePenIfValid(cm, &styleSheet->style.black);
@@ -472,6 +475,11 @@ void AukStyleSheet_Init(AukStyleSheet* styleSheet) {
         styleSheet->style.waveformLight.rgbcolor = 0x004464C0;   /* Lighter blue for waveform RMS */
         styleSheet->style.waveformLight.pen = -1;
         styleSheet->style.waveformLight.allocated = 0;
+
+
+        styleSheet->style.trackHeaderBG.rgbcolor = 0x008888FF;   /* Lighter blue for waveform RMS */
+        styleSheet->style.trackHeaderBG.pen = -1;
+        styleSheet->style.trackHeaderBG.allocated = 0;
 
         styleSheet->style.textColor.rgbcolor = 0x00FFFFFF;       /* White */
         styleSheet->style.textColor.pen = -1;

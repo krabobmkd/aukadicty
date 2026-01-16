@@ -17,6 +17,8 @@
 
 #include "class_trackarea_private.h"
 
+#include "bdbprintf.h"
+
 #ifdef USE_BEVEL_FRAME
     #include <proto/bevel.h>
 #endif
@@ -89,6 +91,7 @@ int TrackAreaStaticInit()
     /* MakeClass with class pointer (not string) as superclass */
     if((TrackAreaClassPtr = MakeClass(NULL, NULL, superClass, sizeof(TrackArea), 0))!=NULL)
     {
+        bdbprintf_makeclass("TrackArea", TrackAreaClassPtr);
         TrackAreaClassPtr->cl_Dispatcher.h_Entry = (REHOOKFUNC)TrackArea_Dispatcher;
         /* do not AddClass() when static, no need to publish, TrackAreaClassPtr will be enough. */
         /* Success */
@@ -102,6 +105,7 @@ void TrackAreaStaticClose()
     TrackArea_CloseLibs_Dependencies();
     if(TrackAreaClassPtr)
     {
+      bdbprintf_freeclass("TrackArea", TrackAreaClassPtr);
       FreeClass(TrackAreaClassPtr);
       TrackAreaClassPtr = NULL;
     }

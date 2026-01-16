@@ -1,7 +1,7 @@
 
 #include <stdio.h>
 #include <string.h>
-
+#include <stdlib.h>
 #include <proto/exec.h>
 #include <proto/intuition.h>
 #include <devices/inputevent.h>
@@ -43,8 +43,13 @@ BOOL Action_ProjectAbout(AukActionContext *context) {
 }
 
 BOOL Action_ProjectQuit(AukActionContext *context) {
-    printf("Action: Quit\n");
-    /* TODO: Confirm and quit application */
+    //printf("Action: Quit\n");
+
+    /* TODO: Confirm and quit application -> if modified */
+
+    /* atexit() magic */
+    exit(0);
+
     return TRUE;
 }
 

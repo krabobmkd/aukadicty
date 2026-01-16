@@ -80,6 +80,40 @@ int bdbprintf_dispose(const char *className, void *instance);
  */
 void bdbprintf_report_leaks(void);
 
+/*
+ * bdbprintf_makeclass - Track MakeClass call
+ *
+ * Logs class creation for verifying MakeClass/FreeClass pairing.
+ *
+ * Parameters:
+ *   className - Name of the class being created
+ *   classPtr  - Pointer returned by MakeClass
+ *
+ * Returns: number of characters written
+ */
+int bdbprintf_makeclass(const char *className, void *classPtr);
+
+/*
+ * bdbprintf_freeclass - Track FreeClass call
+ *
+ * Logs class disposal for verifying MakeClass/FreeClass pairing.
+ *
+ * Parameters:
+ *   className - Name of the class being freed
+ *   classPtr  - Pointer being passed to FreeClass
+ *
+ * Returns: number of characters written
+ */
+int bdbprintf_freeclass(const char *className, void *classPtr);
+
+/*
+ * bdbprintf_report_classes - Report any unfreed classes
+ *
+ * Called at exit to report if any MakeClass calls were not
+ * matched by FreeClass calls (class leaks).
+ */
+void bdbprintf_report_classes(void);
+
 #else
 INLINE int bdbprintf(const char *format, ...) { return 0; }
 INLINE void flushbdbprint(void) {}
@@ -88,6 +122,9 @@ INLINE int bdbavailable(void)  { return 0; }
 INLINE int bdbprintf_new(const char *className, void *instance) { return 0; }
 INLINE int bdbprintf_dispose(const char *className, void *instance) { return 0; }
 INLINE void bdbprintf_report_leaks(void) {}
+INLINE int bdbprintf_makeclass(const char *className, void *classPtr) { return 0; }
+INLINE int bdbprintf_freeclass(const char *className, void *classPtr) { return 0; }
+INLINE void bdbprintf_report_classes(void) {}
 #endif
 
 #endif /* BDBPRINTF_H */

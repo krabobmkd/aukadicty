@@ -315,6 +315,7 @@ int initAppModel(void)
     // a super class name or pointer must always be provided.
     AppModelClass = MakeClass(NULL,"modelclass",NULL,sizeof(struct App),0);
     if(!AppModelClass) return 0;
+    bdbprintf_makeclass("AppModel", AppModelClass);
 
     AppModelClass->cl_Dispatcher.h_Entry = (REHOOKFUNC) &AppModelDispatch;
 
@@ -328,7 +329,11 @@ void closeAppModel(void)
     if(AppInstance) DisposeObject(AppInstance);
     AppInstance = NULL;
     app=NULL;
-    if(AppModelClass) FreeClass(AppModelClass);
+    if(AppModelClass)
+    {
+        bdbprintf_freeclass("AppModel", AppModelClass);
+        FreeClass(AppModelClass);
+    }
     AppModelClass = NULL;
 }
 static int testprojectinited=0;
@@ -531,23 +536,24 @@ int main(int argc, char **argv)
 
             } // end while messages
 
- if(!testprojectinited)
- {
-    initProject();
-    TrackListView_UpdateTrackList(&app->tracksListView);
-    TrackListView_UpdateTimeRule(&app->tracksListView);
-    testprojectinited = 1;
- }
-
-            // delay some messages to avoid big graphic update recursion
+            // delay some tracklayout messages to avoid big graphic update recursion
             if(app->tracksListView.updateBits)
             {
                 TrackListView_CheckUpdates(&app->tracksListView);
             }
+
+
+     /* debug purpose: init a project after all boopsi inits and starting messages proceceed once*/
+     if(!testprojectinited)
+     {
+        initProject();
+        TrackListView_UpdateTrackList(&app->tracksListView);
+        TrackListView_UpdateTimeRule(&app->tracksListView);
+        testprojectinited = 1;
+     }
+
         } // end while app loop
     } // loop paragraph end
-
-           flushbdbprint();
 
     // all close done in exitclose().
     return 0;
@@ -577,8 +583,6 @@ void exitclose(void)
         // this should cascade all OM_DISPOSE:
         if(app->window_obj) DisposeObject(app->window_obj);
 
-        // debug mode, check private class gadgets instance areall closed.
-        bdbprintf_report_leaks();
 
         /* Release stylesheet object (will close fonts automatically) */
         if (app->styleSheet) {
@@ -595,6 +599,10 @@ void exitclose(void)
     closeAppModel();
 
     CloseTrackListView_StaticClasses();
+
+    // debug mode, check private class gadgets instance areall closed.
+    bdbprintf_report_leaks();
+    bdbprintf_report_classes();
 
     /* Close localization system */
     AukLocale_Close();

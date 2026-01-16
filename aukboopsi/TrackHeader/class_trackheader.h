@@ -7,7 +7,9 @@
 #include <exec/types.h>
 #include <intuition/gadgetclass.h>
 #include <intuition/classes.h>
-            #include <inline/macros.h>
+
+#include <inline/macros.h>
+#include <gadgets/layout.h>
 #define VERSION_TRACKHEADER 1
 #define TrackHeader_SUPERCLASS_ID "layout.gadget"
 

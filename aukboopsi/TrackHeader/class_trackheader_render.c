@@ -117,7 +117,7 @@ ULONG TrackHeader_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout)
 
     gdata=INST_DATA(C, Gad);
 
-    bdbprintf(" $$$ TrackHeader_Layout\n");
+    //bdbprintf(" $$$ TrackHeader_Layout\n");
 
     topedge = Gad->TopEdge;
     leftedge = Gad->LeftEdge;
@@ -265,10 +265,10 @@ ULONG TrackHeader_Render(Class *C, struct Gadget *Gad, struct gpRender *Render)
 
     gdata=INST_DATA(C, Gad);
 
-    // also sent from GM_GOINACTIVE (4).
-    if(Render->MethodID!=GM_RENDER || !Render->gpr_RPort) return 1;
+//    // also sent from GM_GOINACTIVE (4).
+//    if(Render->MethodID!=GM_RENDER || !Render->gpr_RPort) return 1;
 
-    rp = Render->gpr_RPort;
+//    rp = Render->gpr_RPort;
 
 //    topedge = Gad->TopEdge;
 //    leftedge = Gad->LeftEdge;
@@ -287,14 +287,14 @@ ULONG TrackHeader_Render(Class *C, struct Gadget *Gad, struct gpRender *Render)
 //                  gdata->_framerec.MaxX,
 //                  gdata->_framerec.MaxY) ;
 
-    /* Forward GM_RENDER to all child gadgets */
-    for(i=0; i<THS_Total; i++)
-    {
-        if(gdata->subs[i])
-        {
-            DoMethodA((Object*)gdata->subs[i], (Msg)Render);
-        }
-    }
+//    /* Forward GM_RENDER to all child gadgets */
+//    for(i=0; i<THS_Total; i++)
+//    {
+//        if(gdata->subs[i])
+//        {
+//            DoMethodA((Object*)gdata->subs[i], (Msg)Render);
+//        }
+//    }
 
 
 

@@ -664,6 +664,7 @@ void CloseTrackListView_StaticClasses()
 {
     TrackListStaticClose();
     TrackHeaderStaticClose();
+    VolumeRuleStaticClose();
     TrackAreaStaticClose();
     TimeRuleStaticClose();
     InfiniteScrollStaticClose();

@@ -16,27 +16,27 @@
 extern struct Library *GadToolsBase;
 
 void cleanexit(const char *pmessage);
-
+// type, label, key, flag
 static struct NewMenu menuTemplate[] = {
     /* Project menu */
     {NM_TITLE, NULL, 0, 0, 0, (APTR)MSG_MENU_PROJECT},  /* Title uses string ID */
-        {NM_ITEM, NULL, 0, 0, 0, (APTR)ACTION_PROJECT_OPEN},
-        {NM_ITEM, NULL, 0, 0, 0, (APTR)ACTION_PROJECT_SAVEAS},
-        {NM_ITEM, NULL, 0, 0, 0, (APTR)ACTION_PROJECT_SAVE},
+        {NM_ITEM, NULL,"O",0, 0, (APTR)ACTION_PROJECT_OPEN},
+        {NM_ITEM, NULL,"S",0, 0, (APTR)ACTION_PROJECT_SAVEAS},
+        {NM_ITEM, NULL,"s",0, 0, (APTR)ACTION_PROJECT_SAVE},
         {NM_ITEM, NULL, 0, 0, 0, (APTR)ACTION_PROJECT_EXPORT},
         {NM_ITEM, NM_BARLABEL, 0, 0, 0, NULL},
         {NM_ITEM, NULL, 0, 0, 0, (APTR)ACTION_PROJECT_ABOUT},
         {NM_ITEM, NM_BARLABEL, 0, 0, 0, NULL},
-        {NM_ITEM, NULL, 0, 0, 0, (APTR)ACTION_PROJECT_QUIT},
+        {NM_ITEM, NULL,"Q", 0, 0, (APTR)ACTION_PROJECT_QUIT},
 
     /* Edition menu */
     {NM_TITLE, NULL, 0, 0, 0, (APTR)MSG_MENU_EDITION},
         {NM_ITEM, NULL, 0, 0, 0, (APTR)ACTION_EDIT_SELECTALL},
         {NM_ITEM, NULL, 0, 0, 0, (APTR)ACTION_EDIT_SELECTNONE},
         {NM_ITEM, NM_BARLABEL, 0, 0, 0, NULL},
-        {NM_ITEM, NULL, 0, 0, 0, (APTR)ACTION_EDIT_COPY},
-        {NM_ITEM, NULL, 0, 0, 0, (APTR)ACTION_EDIT_CUT},
-        {NM_ITEM, NULL, 0, 0, 0, (APTR)ACTION_EDIT_PASTE},
+        {NM_ITEM, NULL,"C",0, 0, (APTR)ACTION_EDIT_COPY},
+        {NM_ITEM, NULL,"X",0, 0, (APTR)ACTION_EDIT_CUT},
+        {NM_ITEM, NULL,"P",0, 0, (APTR)ACTION_EDIT_PASTE},
 
     /* Tracks menu */
     {NM_TITLE, NULL, 0, 0, 0, (APTR)MSG_MENU_TRACKS},

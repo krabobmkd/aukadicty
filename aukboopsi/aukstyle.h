@@ -38,6 +38,9 @@ struct AukStyle
     ManagedColor selectedBackground;   /* Selected region background */
     ManagedColor waveformDark;         /* Waveform min/max dark blue */
     ManagedColor waveformLight;        /* Waveform RMS lighter blue */
+
+    ManagedColor trackHeaderBG;        /*  */
+
     ManagedColor textColor;            /* Text color */
     ManagedColor white;                /* Always white */
     ManagedColor black;                /* Always black */
