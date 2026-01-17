@@ -86,7 +86,8 @@ typedef struct InfiniteScrollRenderParams {
     InfiniteScrollPosition _start;
     /* rectangle to render in Rastport */
     WORD destX,destY,destWidth,destHeight;
-
+    // debug purpose
+    int _itile;
 } InfiniteScrollRenderParams;
 
 /**

@@ -100,6 +100,7 @@ ULONG InfiniteScroll_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
             case INFINITESCROLL_FullTilesRefresh:
             {
                 // this is enough to flush the cache at rendering.
+                   bdbprintf(" //// set INFINITESCROLL_FullTilesRefresh:\n");
                 gdata->_currentLeftBorderTileIndex = -1;
                 needsRefresh = TRUE;
             } break;
@@ -135,7 +136,7 @@ ULONG InfiniteScroll_GetAttr(Class *C, struct Gadget *Gad, struct opGet *Get)
             if(pp)
             {
                // pp->_scrollx = gdata->_position._scrollx;
-               *pp = gdata->_position; // copy all struct
+               *pp = *gdata->_pposition; // copy all struct
             }
         }
         break;

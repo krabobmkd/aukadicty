@@ -599,7 +599,7 @@ void TrackListArea_insertTrack(struct Gadget *Gad, AukTrack *track, int indexToI
     {
         return;
     }
- return;
+
     /* Check capacity */
     if(gdata->_trackCount >= gdata->_trackCapacity)
     {
