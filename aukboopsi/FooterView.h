@@ -20,7 +20,8 @@ typedef struct FooterView
     Object *mainHl;             /* Main horizontal layout containing all labels */
 
     Object *appModel;           /* Reference to application model */
-    struct Window *window;      /* Reference to main window */
+
+    //NEVER KEEP WINDOW !struct Window *window;      /* Reference to main window */
 
     /* Visual style configuration */
     AukStyle *pstyleSheet;

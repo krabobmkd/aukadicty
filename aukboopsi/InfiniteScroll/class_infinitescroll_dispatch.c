@@ -77,6 +77,9 @@ ULONG ASM SAVEDS InfiniteScroll_Dispatcher(
         gdata->_position._scrollx = 0;
         gdata->_pposition = &gdata->_position;
 
+        gdata->_layoutedForWidth = 0;
+        gdata->_layoutedForHeight = 0;
+
         gdata->_renderFunction = NULL;
 
         /* Process initial attributes */

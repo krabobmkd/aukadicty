@@ -185,13 +185,20 @@ ULONG InfiniteScroll_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layou
   ULONG i;
 
     gdata=INST_DATA(C, Gad);
+    if(gdata->_layoutedForWidth == Gad->Width &&
+        gdata->_layoutedForHeight == Gad->Height)
+        {
+            // already ok
+         bdbprintf("InfiniteScroll_Layout saved\n");
+            return 1;
+        }
 
     topedge = Gad->TopEdge;
     leftedge = Gad->LeftEdge;
     width = Gad->Width;
     height = Gad->Height;
 
-// bdbprintf("InfiniteScroll_Layout renderf: %08x\n",(int)gdata->_renderFunction);
+ bdbprintf("InfiniteScroll_Layout ->realloc\n");
 
 
     /* Calculate needed tile count: (width / tileWidth) + 2 */
@@ -250,12 +257,13 @@ ULONG InfiniteScroll_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layou
                 gdata->_tiles[i].isRendered = FALSE;
                 gdata->_tiles[i].position._scrollx = 0;
             }
-            gdata->_currentLeftBorderTileIndex = -1; // means, no tile affected yet.
+
  //           bdbprintf("allocated tiles:%d\n",gdata->_tileCount);
         }
     }
 
-
+    // in all case, layout size changed, so reset tiles
+    gdata->_currentLeftBorderTileIndex = -1;
   return(1);
 }
 
@@ -287,7 +295,7 @@ static void InfiniteScroll_RenderTilesRow(
         int iTile = i+itileStart;
         if(iTile>=gdata->_tileCount) iTile -=gdata->_tileCount;
         tile = &gdata->_tiles[iTile];
- //    bdbprintf(" ask render tile %d -> %d _tileCount:%d nbTilesAsked:%d  scrollpos:%lld\n",i,iTile,gdata->_tileCount,nbTiles,pos._scrollx );
+     bdbprintf(" ask render tile %d -> %d _tileCount:%d nbTilesAsked:%d  scrollpos:%lld\n",i,iTile,gdata->_tileCount,nbTiles,pos._scrollx );
         if(gdata->_renderFunction)
         {
 
@@ -317,7 +325,7 @@ static void InfiniteScroll_FullRedraw(
     gdata->_pposition);
     gdata->_currentLeftBorderTileIndex = 0;
     gdata->_renderedTilesCount =  (WORD)nbTilesX;
-//    bdbprintf("full redraw nbt:%d\n",nbTilesX);
+    bdbprintf("full redraw nbt:%d\n",nbTilesX);
 }
 /**
  * Draw yourself, in the appropriate state
@@ -336,8 +344,13 @@ ULONG InfiniteScroll_Render(Class *C, struct Gadget *Gad, struct gpRender *Rende
 
     gdata=INST_DATA(C, Gad);
 
-// bdbprintf("InfiniteScroll_Render renderf: %08x\n",(int)gdata->_renderFunction);
+ bdbprintf("InfiniteScroll_Render renderf: width:%d\n",(int)Gad->Width);
 
+           SetAPen(rp, 2);
+           RectFill(rp,Gad->LeftEdge,
+                       Gad->TopEdge,
+                       Gad->LeftEdge + Gad->Width -1,
+                       Gad->TopEdge + Gad->Height -1);
 
 
     if( !gdata->_tiles) return retval;
@@ -348,7 +361,7 @@ ULONG InfiniteScroll_Render(Class *C, struct Gadget *Gad, struct gpRender *Rende
     //no InfiniteScroll_FullRedraw(Gad,gdata,&renderParams);
     if(gdata->_currentLeftBorderTileIndex<0)
     {
-//bdbprintf(" oooo full first:\n");
+bdbprintf(" oooo full first:\n");
         InfiniteScroll_FullRedraw(Gad,gdata,&renderParams);
     }
     else
@@ -374,12 +387,13 @@ ULONG InfiniteScroll_Render(Class *C, struct Gadget *Gad, struct gpRender *Rende
             /* Ranges intersect if:  */
             if( newStart >= oldStart && newStart < oldEnd )
             {
-                InfiniteScrollTile *tile;
+                InfiniteScrollTile *tile,*tileEnd;
                 /* Scroll to right, need render at right */
                 tile = &gdata->_tiles[gdata->_currentLeftBorderTileIndex];
 
                 // do nothing if scroll, but still within range of current rendered tiles.
-                if(newStart >= (tile->position._scrollx + gdata->_tileWidth))
+                //if(newStart >= (tile->position._scrollx + gdata->_tileWidth))
+                if(oldEnd<newEnd)
                 {
                     // this part looks validated
                     int firstdirty;
@@ -395,7 +409,7 @@ ULONG InfiniteScroll_Render(Class *C, struct Gadget *Gad, struct gpRender *Rende
                     }
                     firstdirty = gdata->_currentLeftBorderTileIndex + gdata->_renderedTilesCount;
                     if(firstdirty >= (int)gdata->_tileCount) firstdirty -= gdata->_tileCount;
-// bdbprintf(" oooo scroll right re-use tiles, number of tiles to render:%d\n",nbTileToRender);
+ bdbprintf(" oooo scroll right re-use tiles, number of tiles to render:%d\n",nbTileToRender);
                     InfiniteScroll_RenderTilesRow(&renderParams, gdata,firstdirty,nbTileToRender, &prevEnd);
 
                     gdata->_currentLeftBorderTileIndex = nextLeftBorderTileIndex;
@@ -403,7 +417,7 @@ ULONG InfiniteScroll_Render(Class *C, struct Gadget *Gad, struct gpRender *Rende
                 }// end if scroll right *and* tile index change
                 else
                 {
-                 // bdbprintf("scroll right no render\n");
+                  bdbprintf("scroll right no render\n");
 
                 }
 
@@ -437,15 +451,14 @@ ULONG InfiniteScroll_Render(Class *C, struct Gadget *Gad, struct gpRender *Rende
                     /* First tile to render is the new left border */
                     firstRenderTileIndex = nextLeftBorderTileIndex;
 
-                  //  bdbprintf(" oooo scroll left reuse , number of tiles to render:%d\n", nbTileToRender);
+                    bdbprintf(" oooo scroll left reuse , number of tiles to render:%d\n", nbTileToRender);
                     InfiniteScroll_RenderTilesRow(&renderParams, gdata, firstRenderTileIndex, nbTileToRender,
                        &renderStartPos);
 
-                    //InfiniteScroll_FullRedraw(Gad,gdata,&renderParams);
                     gdata->_currentLeftBorderTileIndex = nextLeftBorderTileIndex;
                 } else
                 {
-                   //  bdbprintf(" oooo scroll left no render\n");
+                     bdbprintf(" oooo scroll left no render\n");
 
                 }
             } else
@@ -472,10 +485,11 @@ ULONG InfiniteScroll_Render(Class *C, struct Gadget *Gad, struct gpRender *Rende
 
         tile = &gdata->_tiles[j];
         if(!tile->isRendered) continue;
+
         dx = (int)(tile->position._scrollx - gdata->_pposition->_scrollx);
         if(dx+gdata->_tileWidth <=0 || dx>=Gad->Width) continue;
 
-        /* we have to do a bit of clipping ourselves */
+        /* it's better to do a bit of clipping ourselves */
         {
             int width = gdata->_tileWidth;
             int sourcex = 0;
@@ -488,6 +502,9 @@ ULONG InfiniteScroll_Render(Class *C, struct Gadget *Gad, struct gpRender *Rende
             {
                 width = Gad->Width-dx;
             }
+
+
+ bdbprintf("tile%d dx:%d w:%d->%d - ",(int)j,dx,width,(dx+width));
             BltBitMapRastPort(tile->bitmap._bm,
                               sourcex, 0,  /* source x, y */
                               rp,
@@ -496,7 +513,7 @@ ULONG InfiniteScroll_Render(Class *C, struct Gadget *Gad, struct gpRender *Rende
                               0xC0);  /* minterm: straight copy */
         }
     }
-
+ bdbprintf("\n");
     /* Also need bottom marge */
     SetAPen(rp, 1);
     Move(rp, Gad->LeftEdge, Gad->TopEdge + Gad->Height -1);

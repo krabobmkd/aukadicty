@@ -121,9 +121,10 @@ typedef struct TimeProjection {
 
 // set main project - tracklist NULL means clean everything, back to empty state.
 void TrackListArea_setTrackList(struct Gadget *Gad,AukAProject *tracklist);
-// events
-void TrackListArea_addTrack( struct Gadget *Gad,AukTrack *track);
-void TrackListArea_removeTrack( struct Gadget *Gad,AukTrack *track);
+// events - insert/remove with index-based shifting
+void TrackListArea_insertTrack( struct Gadget *Gad,AukTrack *track, int indexToInsert);
+void TrackListArea_removeTrack( struct Gadget *Gad,AukTrack *track, int indexToRemove);
+void TrackListArea_swapTracks( struct Gadget *Gad, int indexA, int indexB);
 void TrackListArea_trackModified( struct Gadget *Gad,AukTrack *track);
 
 

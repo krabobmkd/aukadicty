@@ -225,7 +225,7 @@ ULONG TrackListArea_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
 }
 
 
-void TrackListArea_SetTrackName(struct Gadget *Gad,struct Window *window,int itrack, const char *name)
+void TrackListArea_SetTrackName(struct Gadget *Gad,int itrack, const char *name)
 {
     TrackListArea *gdata;
     TrackChild *strack;

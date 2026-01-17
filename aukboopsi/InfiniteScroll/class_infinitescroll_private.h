@@ -70,6 +70,8 @@ typedef struct IInfiniteScroll {
      */
     WORD _currentLeftBorderTileIndex,_renderedTilesCount;
 
+    WORD _layoutedForWidth,_layoutedForHeight;
+
     /* The actual render function of the inherited implementation. */
     InfiniteScrollRenderf _renderFunction;
 

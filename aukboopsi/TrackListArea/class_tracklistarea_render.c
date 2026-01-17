@@ -33,6 +33,11 @@
 
 // memcpy
 #include <string.h>
+
+/* Default capacity for track array allocation */
+#define TRACKLIST_DEFAULT_CAPACITY 32
+
+#include "aukerrors.h"
 /* Most of the calls to boopsi methods are not done from the App's context,
  * but from a specific intuition context, and because of that we can't use DOS calls
  * like dos/Printf() , and also stdlib printf().
@@ -63,6 +68,8 @@ extern struct IClass   *TrackListClassPtr;
 extern struct IClass   *TrackHeaderClassPtr;
 extern struct IClass   *TrackAreaClassPtr;
 
+/* This can be reallocated, so this is shared like this */
+extern struct Window *CurrentMainWindow;
 
 //static ULONG TrackListArea_NotifyChangeWidth(struct Gadget *Gad, struct GadgetInfo	*GInfo)
 //{
@@ -339,12 +346,12 @@ ULONG TrackListArea_Render(Class *C, struct Gadget *Gad, struct gpRender *Render
     height = Gad->Height;
 
 
-	if( ( rp->Layer->Flags & LAYERUPDATING ) != 0L )
-	{
-		bLayerUpdating = TRUE;
-		EndUpdate(rp->Layer, FALSE);
-		bdbprintf(" ****Render->MethodID:%08lx LAYERUPDATING\n",(int)Render->MethodID);
-	}
+	// if( ( rp->Layer->Flags & LAYERUPDATING ) != 0L )
+	// {
+	// 	bLayerUpdating = TRUE;
+	// 	EndUpdate(rp->Layer, FALSE);
+	// 	bdbprintf(" ****Render->MethodID:%08lx LAYERUPDATING\n",(int)Render->MethodID);
+	// }
 
     oldClipRegion = InstallClipRegion( rp->Layer, gdata->_clipRegion);
 
@@ -386,10 +393,10 @@ ULONG TrackListArea_Render(Class *C, struct Gadget *Gad, struct gpRender *Render
 
     InstallClipRegion( rp->Layer,oldClipRegion); // important to pass NULL if oldClipRegion is NULL.
 
-    if(bLayerUpdating)
-    {
-        BeginUpdate(rp->Layer);
-    }
+    // if(bLayerUpdating)
+    // {
+    //     BeginUpdate(rp->Layer);
+    // }
 
     // if (Render->MethodID != GM_RENDER)
     //   ReleaseGIRPort(rp);
@@ -404,34 +411,54 @@ ULONG TrackListArea_Render(Class *C, struct Gadget *Gad, struct gpRender *Render
 
 
 
-/** Helper - dispose all allocated gadgets */
-void TrackListArea_DisposeGadgets(TrackListArea *gdata)
+/** Helper - dispose all allocated gadgets and free array */
+void TrackListArea_DisposeGadgets(struct Gadget *Gad,TrackListArea *gdata)
 {
     ULONG i;
     if(!gdata) return;
-
-    /* Dispose all TrackHeader gadgets */
+    bdbprintf("TrackListArea_DisposeGadgets() ->all\n");
+    /* Dispose all active TrackHeader/TrackArea gadgets */
     if(gdata->_tracks)
     {
-// now use AddChild...
-//        for(i = 0; i < gdata->_trackCount; i++)
-//        {
-//            if(gdata->_tracks[i]._trackHeader)
-//            {
-//                DisposeObject(gdata->_tracks[i]._trackHeader);
-//            }
-//            if(gdata->_tracks[i]._trackArea)
-//            {
-//                DisposeObject(gdata->_tracks[i]._trackArea);
-//            }
-//        }
+        for(i = 0; i < gdata->_trackCount; i++)
+        {
+            if(gdata->_tracks[i]._trackHeader)
+            {
+                /* LAYOUT_RemoveChild: This will destroy the object as well. */
+                SetGadgetAttrs(Gad,CurrentMainWindow,NULL,
+                            LAYOUT_RemoveChild,(ULONG)gdata->_tracks[i]._trackHeader,TAG_END);
+            }
+            if(gdata->_tracks[i]._trackArea)
+            {
+                SetGadgetAttrs(Gad,CurrentMainWindow,NULL,
+                            LAYOUT_RemoveChild,(ULONG)gdata->_tracks[i]._trackArea,TAG_END);
+            }
+            /* Clear the slot */
+            gdata->_tracks[i]._trackHeader = NULL;
+            gdata->_tracks[i]._trackArea = NULL;
+            gdata->_tracks[i]._dataTrack = NULL;
+        }
 
         FreeVec(gdata->_tracks);
         gdata->_tracks = NULL;
     }
     gdata->_trackCount = 0;
-
+    gdata->_trackCapacity = 0;
 }
+
+/** Helper - ensure track array is allocated with default capacity */
+static int TrackListArea_EnsureTrackArray(TrackListArea *gdata)
+{
+    if(gdata->_tracks != NULL) return 1; /* Already allocated */
+
+    gdata->_tracks = (TrackChild*)AllocVec(TRACKLIST_DEFAULT_CAPACITY * sizeof(TrackChild), MEMF_CLEAR);
+    if(!gdata->_tracks) return 0; /* Allocation failed */
+
+    gdata->_trackCapacity = TRACKLIST_DEFAULT_CAPACITY;
+    gdata->_trackCount = 0;
+    return 1;
+}
+
 extern Object *AppInstance;
 static int TrackListArea_CreateTrackLine(
             struct Gadget *Gad,
@@ -482,16 +509,15 @@ static int TrackListArea_CreateTrackLine(
 }
 
 /** private,
-* manage synchronisation of tracks
-* alloc/free/realloc Tracks, when needed and recursively
-* implicitely ask for sounds ...
+* Full sync of track UI to data.
+* Called on project set or when incremental updates can't handle changes.
 */
 static void TrackListArea_updateTrackListUiToData(struct Gadget *Gad)
 {
     TrackListArea *gdata;
     AukAProject *project;
     ULONG dataTrackCount;
-    ULONG i,nbTracksAlreadyInSync;
+    ULONG i;
 
     if(!TrackListClassPtr || !Gad) return;
     gdata = INST_DATA(TrackListClassPtr, Gad);
@@ -500,56 +526,48 @@ static void TrackListArea_updateTrackListUiToData(struct Gadget *Gad)
     if(!project)
     {
         /* No project, clean up everything */
-        TrackListArea_DisposeGadgets(gdata);
+        TrackListArea_DisposeGadgets(Gad,gdata);
         return;
     }
 
     /* Get the track count from project */
     dataTrackCount = AukArray_GetCount(project->tracks);
 
-    /* verify how much it changes */
-//    nbTracksAlreadyInSyncAtStart=0;
-//    nbTracksMinusOneAtEnd=0;
-//    for(i = 0; i < trackCount; i++)
-//    {
-//        _trackCount
-//    }
+    /* Check capacity - if data exceeds our capacity, we need a full rebuild */
+    if(dataTrackCount > TRACKLIST_DEFAULT_CAPACITY)
+    {
+        AukLog_MessageInt(AUKLOG_WARNING, AUKERR_TRACKLIST_CAPACITY_REACHED, TRACKLIST_DEFAULT_CAPACITY);
+        /* For now, just handle up to capacity */
+        dataTrackCount = TRACKLIST_DEFAULT_CAPACITY;
+    }
 
-    /* If count changed, reallocate arrays */
+    /* If count changed, rebuild UI */
     if(dataTrackCount != gdata->_trackCount)
-    {       
-        /* Dispose old gadgets first */
-        TrackListArea_DisposeGadgets(gdata);
+    {
+        /* Dispose old gadgets first (keeps array if allocated) */
+        TrackListArea_DisposeGadgets(Gad, gdata);
 
         if(dataTrackCount > 0)
         {
-            // UWORD ipos = 65534;
-
-            /* Allocate new arrays */
-            gdata->_tracks = (TrackChild*)AllocVec(dataTrackCount * sizeof(TrackChild), MEMF_CLEAR);
-
-            if(!gdata->_tracks)
+            /* Ensure array is allocated */
+            if(!TrackListArea_EnsureTrackArray(gdata))
             {
-                /* Allocation failed, cleanup */
-                TrackListArea_DisposeGadgets(gdata);
                 return;
             }
-
-            gdata->_trackCount = dataTrackCount;
 
             /* Create gadgets for each track */
             for(i = 0; i < dataTrackCount; i++)
             {
-                if(!TrackListArea_CreateTrackLine(Gad,gdata, &gdata->_tracks[i], project->tracks->items[i],i ))
+                if(!TrackListArea_CreateTrackLine(Gad, gdata, &gdata->_tracks[i], project->tracks->items[i], i))
                 {
                     /* Failed to create gadgets, cleanup and abort */
-                    TrackListArea_DisposeGadgets(gdata);
+                    TrackListArea_DisposeGadgets(Gad, gdata);
                     return;
                 }
             }
+            gdata->_trackCount = dataTrackCount;
         }
     }
-
 }
 
 
@@ -567,75 +585,167 @@ void TrackListArea_setTrackList(struct Gadget *Gad,AukAProject *tracklist)
     TrackListArea_updateTrackListUiToData(Gad);
 }
 
-/* events */
-void TrackListArea_addTrack( struct Gadget *Gad,AukTrack *track)
+/* Insert track at specified index, shifting existing tracks up */
+void TrackListArea_insertTrack(struct Gadget *Gad, AukTrack *track, int indexToInsert)
 {
-    /* When a track is added, resync the entire gadget array */
-    //TrackListArea_updateTrackListUiToData(Gad);
     TrackListArea *gdata;
-    AukAProject *project;
-    ULONG dataTrackCount;
-    ULONG i,nbTracksAlreadyInSync;
-    TrackChild*ntracks;
+    ULONG i;
+
+    if(!TrackListClassPtr || !Gad || !track) return;
+    gdata = INST_DATA(TrackListClassPtr, Gad);
+
+    /* Ensure array is allocated */
+    if(!TrackListArea_EnsureTrackArray(gdata))
+    {
+        return;
+    }
+ return;
+    /* Check capacity */
+    if(gdata->_trackCount >= gdata->_trackCapacity)
+    {
+        AukLog_MessageInt(AUKLOG_WARNING, AUKERR_TRACKLIST_CAPACITY_REACHED, gdata->_trackCapacity);
+        return;
+    }
+
+    /* Validate index */
+    if(indexToInsert < 0) indexToInsert = 0;
+    if((ULONG)indexToInsert > gdata->_trackCount) indexToInsert = gdata->_trackCount;
+
+    bdbprintf("TrackListArea_insertTrack index:%d count:%ld\n", indexToInsert, gdata->_trackCount);
+
+    /* Shift existing tracks up to make room */
+    if((ULONG)indexToInsert < gdata->_trackCount)
+    {
+        /* Shift from end to insert position */
+        for(i = gdata->_trackCount; i > (ULONG)indexToInsert; i--)
+        {
+            gdata->_tracks[i] = gdata->_tracks[i-1];
+        }
+    }
+
+    /* Clear the slot for new track */
+    memset(&gdata->_tracks[indexToInsert], 0, sizeof(TrackChild));
+
+    /* Create gadgets for the new track at the insert position */
+    if(!TrackListArea_CreateTrackLine(Gad, gdata, &gdata->_tracks[indexToInsert], track, indexToInsert))
+    {
+        /* Failed - shift back down and return */
+        for(i = indexToInsert; i < gdata->_trackCount; i++)
+        {
+            gdata->_tracks[i] = gdata->_tracks[i+1];
+        }
+        memset(&gdata->_tracks[gdata->_trackCount], 0, sizeof(TrackChild));
+        return;
+    }
+
+    gdata->_trackCount++;
+
+    /* Update track indices for shifted TrackHeaders */
+    for(i = indexToInsert + 1; i < gdata->_trackCount; i++)
+    {
+        if(gdata->_tracks[i]._trackHeader)
+        {
+            SetAttrs(gdata->_tracks[i]._trackHeader, TRACKHEADER_TrackIndex, i, TAG_END);
+        }
+    }
+}
+
+/* Remove track at specified index, shifting remaining tracks down */
+void TrackListArea_removeTrack(struct Gadget *Gad, AukTrack *track, int indexToRemove)
+{
+    TrackListArea *gdata;
+    ULONG i;
 
     if(!TrackListClassPtr || !Gad) return;
     gdata = INST_DATA(TrackListClassPtr, Gad);
 
-    project = gdata->_project;
-    if(!project)
+    /* Nothing to remove */
+    if(!gdata->_tracks || gdata->_trackCount == 0) return;
+
+    /* Validate index */
+    if(indexToRemove < 0 || (ULONG)indexToRemove >= gdata->_trackCount)
     {
-        /* No project, clean up everything */
-        TrackListArea_DisposeGadgets(gdata);
+        AukLog_MessageInt(AUKLOG_WARNING, AUKERR_TRACKLIST_INVALID_INDEX, indexToRemove);
         return;
     }
 
-    /* Get the track count from project */
-    dataTrackCount = AukArray_GetCount(project->tracks);
-    if(dataTrackCount != gdata->_trackCount +1 )
+    bdbprintf("TrackListArea_removeTrack index:%d count:%ld\n", indexToRemove, gdata->_trackCount);
+
+    /* Dispose gadgets at this index using LAYOUT_RemoveChild */
+    if(gdata->_tracks[indexToRemove]._trackHeader)
     {
-        // general update
-        TrackListArea_updateTrackListUiToData(Gad);
-        return;
+        SetGadgetAttrs(Gad, CurrentMainWindow, NULL,
+                    LAYOUT_RemoveChild, (ULONG)gdata->_tracks[indexToRemove]._trackHeader, TAG_END);
+        gdata->_tracks[indexToRemove]._trackHeader = NULL;
+    }
+    if(gdata->_tracks[indexToRemove]._trackArea)
+    {
+        SetGadgetAttrs(Gad, CurrentMainWindow, NULL,
+                    LAYOUT_RemoveChild, (ULONG)gdata->_tracks[indexToRemove]._trackArea, TAG_END);
+        gdata->_tracks[indexToRemove]._trackArea = NULL;
+    }
+    gdata->_tracks[indexToRemove]._dataTrack = NULL;
+
+    /* Shift remaining tracks down */
+    for(i = indexToRemove; i < gdata->_trackCount - 1; i++)
+    {
+        gdata->_tracks[i] = gdata->_tracks[i+1];
     }
 
-    /* If count changed, reallocate arrays */
+    /* Clear the last slot (now unused) */
+    memset(&gdata->_tracks[gdata->_trackCount - 1], 0, sizeof(TrackChild));
 
-    /* Allocate new arrays */
-    ntracks = (TrackChild*)AllocVec(dataTrackCount * sizeof(TrackChild), MEMF_CLEAR);
-    if(!ntracks)
+    gdata->_trackCount--;
+
+    /* Update track indices for shifted TrackHeaders */
+    for(i = indexToRemove; i < gdata->_trackCount; i++)
     {
-        /* Allocation failed, cleanup */
-        TrackListArea_DisposeGadgets(gdata);
-        return;
+        if(gdata->_tracks[i]._trackHeader)
+        {
+            SetAttrs(gdata->_tracks[i]._trackHeader, TRACKHEADER_TrackIndex, i, TAG_END);
+        }
     }
-    if( gdata->_trackCount>0)
-    {
-        memcpy(ntracks,gdata->_tracks,sizeof(TrackChild)*gdata->_trackCount);
-    }
-    FreeVec(gdata->_tracks);
-
-    gdata->_tracks = ntracks;
-
-    /* Create gadgets for this track */
-    i =  gdata->_trackCount;
-    if(!TrackListArea_CreateTrackLine(Gad, gdata, &gdata->_tracks[i], project->tracks->items[i], i ))
-    {
-        /* Failed to create gadgets, cleanup and abort */
-        TrackListArea_DisposeGadgets(gdata);
-        return;
-    }
-
-    gdata->_trackCount = dataTrackCount;
-
-    // - - - - -
-
-
 }
 
-void TrackListArea_removeTrack(struct Gadget *Gad,AukTrack *track)
+/* Swap two tracks by their indices */
+void TrackListArea_swapTracks(struct Gadget *Gad, int indexA, int indexB)
 {
-    /* When a track is removed, resync the entire gadget array */
-    TrackListArea_updateTrackListUiToData(Gad);
+    TrackListArea *gdata;
+    TrackChild temp;
+
+    if(!TrackListClassPtr || !Gad) return;
+    gdata = INST_DATA(TrackListClassPtr, Gad);
+
+    /* Nothing to swap */
+    if(!gdata->_tracks || gdata->_trackCount == 0) return;
+
+    /* Same index, nothing to do */
+    if(indexA == indexB) return;
+
+    /* Validate indices */
+    if(indexA < 0 || (ULONG)indexA >= gdata->_trackCount ||
+       indexB < 0 || (ULONG)indexB >= gdata->_trackCount)
+    {
+        AukLog_Message(AUKLOG_WARNING, AUKERR_TRACKLIST_INVALID_INDEX);
+        return;
+    }
+
+    bdbprintf("TrackListArea_swapTracks %d <-> %d\n", indexA, indexB);
+
+    /* Swap the TrackChild entries */
+    temp = gdata->_tracks[indexA];
+    gdata->_tracks[indexA] = gdata->_tracks[indexB];
+    gdata->_tracks[indexB] = temp;
+
+    /* Update track indices for swapped TrackHeaders */
+    if(gdata->_tracks[indexA]._trackHeader)
+    {
+        SetAttrs(gdata->_tracks[indexA]._trackHeader, TRACKHEADER_TrackIndex, indexA, TAG_END);
+    }
+    if(gdata->_tracks[indexB]._trackHeader)
+    {
+        SetAttrs(gdata->_tracks[indexB]._trackHeader, TRACKHEADER_TrackIndex, indexB, TAG_END);
+    }
 }
 
 void TrackListArea_trackModified(struct Gadget *Gad,AukTrack *track)
@@ -643,7 +753,7 @@ void TrackListArea_trackModified(struct Gadget *Gad,AukTrack *track)
     /* Track content modified - for now we don't need to do anything
      * as the TrackGadgets will handle their own rendering based on data */
 }
-// void TrackListArea_Refresh(struct Gadget *Gad, struct Window *window)
+// void TrackListArea_Refresh(struct Gadget *Gad)
 // {
 //     RethinkLayout(Gad,window,NULL,0);
 // }

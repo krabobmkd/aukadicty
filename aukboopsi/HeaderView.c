@@ -31,7 +31,6 @@ void CreateHeaderView(HeaderView *hv, struct DrawInfo *drawInfo,
 
     hv->pstyleSheet = stylesheet;
     hv->appModel = appModel;
-    hv->window = NULL;
 
     /* Transport control buttons */
     hv->btRewind = NewObject(BUTTON_GetClass(), NULL,

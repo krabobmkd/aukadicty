@@ -29,7 +29,7 @@ typedef struct TrackListView
     AukObjectPtr project;
 
     Object *appModel;
-    struct Window *window;
+    //NEVER KEEP WINDOW, VOLATILE struct Window *window;
 
     /* Visual style configuration */
     AukStyle *pstyleSheet;

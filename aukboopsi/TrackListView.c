@@ -53,6 +53,9 @@
 #undef Remove
 #endif
 
+/* This can be reallocated, so this is shared like this */
+extern struct Window *CurrentMainWindow;
+
 // because it's word and we need precision on large domain...
 #define SCROLLERH_FIXEDTOTAL 16384
 
@@ -219,7 +222,7 @@ static void AukUpdate_Track(AukObject* listenerObject, AukObject* modifiedObject
         {
             const char *name;
             projmess = (AukMessage_AProject *)message;
-            TrackListArea_SetTrackName(pm->trackList, pm->window, projmess->_track_id,projmess->_track->name);
+            TrackListArea_SetTrackName(pm->trackList, projmess->_track_id,projmess->_track->name);
         }
         break;
         default:
@@ -252,7 +255,7 @@ static void AukUpdate_TrackList(AukObject* listenerObject, AukObject* modifiedOb
                   );
 
             // update GUI, add ui track
-            TrackListArea_addTrack(trackListAreaUi,track);
+            TrackListArea_insertTrack(trackListAreaUi,track,track->trackIndex);
 
             /* Track added may affect project duration, update horizontal scroll domain */
             pm->updateBits |= TLVB_UPDATE_HORIZSCROLLDOMAIN;
@@ -269,7 +272,7 @@ static void AukUpdate_TrackList(AukObject* listenerObject, AukObject* modifiedOb
                         pm->updateListener // AukObject* listenerObject,
                   );
             // update GUI, remove ui track
-            TrackListArea_removeTrack(trackListAreaUi,track);
+            TrackListArea_removeTrack(trackListAreaUi,track,track->trackIndex);
 
             /* Track removed may affect project duration, update horizontal scroll domain */
             pm->updateBits |= TLVB_UPDATE_HORIZSCROLLDOMAIN;
@@ -326,7 +329,7 @@ void updateVerticalScrollDomain(TrackListView *pm)
         tags[3] = visibleHeight;
 
 
-        SetGadgetAttrsA((struct Gadget *)pm->scrollerV, pm->window, NULL,&tags[0]);
+        SetGadgetAttrsA((struct Gadget *)pm->scrollerV, CurrentMainWindow, NULL,&tags[0]);
     }
 
 }
@@ -372,7 +375,7 @@ void updateHorizontalScrollDomain(TrackListView *pm)
 
     if(duration <= 0) {
         /* No duration, set scroller to full visible (disabled state) */
-        SetGadgetAttrs((struct Gadget *)pm->scrollerH,(struct Window *) pm->window, NULL,
+        SetGadgetAttrs((struct Gadget *)pm->scrollerH,CurrentMainWindow, NULL,
             SCROLLER_Total, 1,
             SCROLLER_Visible, 1,
             SCROLLER_ArrowDelta,1,
@@ -433,12 +436,12 @@ void updateHorizontalScrollDomain(TrackListView *pm)
     //     scrollerTop = SCROLLERH_FIXEDTOTAL-visibleWidthRelative;
 
 
-    SetGadgetAttrs((struct Gadget *)pm->timerule, pm->window, NULL,
+    SetGadgetAttrs((struct Gadget *)pm->timerule, CurrentMainWindow, NULL,
         TIMERULE_TimePerPixelWidth,&timePerPixelWidth,
         // not here INFINITESCROLL_Position, &trackListTimeproj._timeAtLeft,
         TAG_END);
 
-    SetGadgetAttrs((struct Gadget *)pm->scrollerH, pm->window, NULL,
+    SetGadgetAttrs((struct Gadget *)pm->scrollerH, CurrentMainWindow, NULL,
         SCROLLER_Total,/* totalScroll*/ SCROLLERH_FIXEDTOTAL, // WORD 16384
         SCROLLER_Visible, visibleWidthRelative,
         SCROLLER_Top,scrollerTop,
@@ -479,7 +482,6 @@ void TrackListView_ListenTrackListMessage(TrackListView *pm,struct opUpdate *M)
     if((ptag = FindTagItem( TRACKLIST_DomainHeight,M->opu_AttrList ))!=NULL) changedDomainHeight = ptag->ti_Data;
     if(changedDomainHeight >0)
     {
-        pm->window = M->opu_GInfo->gi_Window;
         pm->updateBits |= TLVB_UPDATE_VERTSCROLLDOMAIN;
         /* Layout changed, also update horizontal scroll domain
          * (visible width may have changed due to window resize)
@@ -511,7 +513,7 @@ void TrackListView_ListenScrollVMessage(TrackListView *pm,struct opUpdate *M)
     if((ptag = FindTagItem( SCROLLER_Top,M->opu_AttrList ))!=NULL)
     {
         LONG scrollY = ptag->ti_Data;
-        SetGadgetAttrs((struct Gadget *)pm->trackList, pm->window, NULL,
+        SetGadgetAttrs((struct Gadget *)pm->trackList, CurrentMainWindow, NULL,
                     TRACKLIST_ScrollY,scrollY,
                     TAG_END
                 );
@@ -524,14 +526,14 @@ static void TrackListView_SetHScrollPos(TrackListView *pm,TimeProjection *timepr
     ULONG headerWidth = 0;
     GetAttr(TRACKLIST_HeaderWidth, pm->trackList, &headerWidth);
 
-    SetGadgetAttrs((struct Gadget *)pm->trackList, pm->window, NULL,
+    SetGadgetAttrs((struct Gadget *)pm->trackList, CurrentMainWindow, NULL,
                 TRACKLIST_TimeProjection,(ULONG *) timeproj,
                 TAG_END
             );
 
     timeproj->_pixAtLeft -= (long long)headerWidth;
 
-    SetGadgetAttrs((struct Gadget *)pm->timerule, pm->window, NULL,
+    SetGadgetAttrs((struct Gadget *)pm->timerule, CurrentMainWindow, NULL,
         TIMERULE_TimePerPixelWidth,&timeproj->_timePerPixelWidth,
         INFINITESCROLL_Position, &timeproj->_pixAtLeft,
         TAG_END);
@@ -629,17 +631,17 @@ void TrackListView_CheckUpdates(TrackListView *pm)
     if(pm->updateBits & TLVB_UPDATE_REDRAW_TRACKLIST)
     {
         // also apply
-        SetGadgetAttrs((struct Gadget *)pm->trackList,(struct Window *) pm->window, NULL,TRACKLIST_Refresh,TRUE,TAG_END);
+        SetGadgetAttrs((struct Gadget *)pm->trackList,CurrentMainWindow, NULL,TRACKLIST_Refresh,TRUE,TAG_END);
     } else
     if(pm->updateBits & TLVB_UPDATE_REDRAW_JUSTTRACKS)
     {
         // same as TLVB_UPDATE_REDRAW_TRACKLIST, but do not redraw headers
-        SetGadgetAttrs(pm->trackList, pm->window, NULL,TRACKLIST_JustTracksRefresh,TRUE,TAG_END);
+        SetGadgetAttrs(pm->trackList, CurrentMainWindow, NULL,TRACKLIST_JustTracksRefresh,TRUE,TAG_END);
     }
 
     if(pm->updateBits & TLVB_UPDATE_REDRAW_TIMERULE)
     {
-        SetGadgetAttrs(pm->timerule, pm->window, NULL,TIMERULE_Refresh,TRUE,TAG_END);
+        SetGadgetAttrs(pm->timerule,CurrentMainWindow, NULL,TIMERULE_Refresh,TRUE,TAG_END);
     }
 
 
@@ -649,7 +651,7 @@ void TrackListView_CheckUpdates(TrackListView *pm)
 void TrackListView_UpdateTrackList(TrackListView *pm)
 {
     if(!pm->trackList) return;
-    SetGadgetAttrs(pm->trackList, pm->window, NULL,TRACKLIST_Refresh,TRUE,TAG_END);
+    SetGadgetAttrs(pm->trackList, CurrentMainWindow, NULL,TRACKLIST_Refresh,TRUE,TAG_END);
 }
 void TrackListView_UpdateTimeRule(TrackListView *pm)
 {

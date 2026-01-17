@@ -65,6 +65,7 @@
 #include "HeaderView.h"
 #include "FooterView.h"
 #include "auklocale.h"
+#include "aukerrors.h"
 #include "aukaction.h"
 #include "aukstylesheet.h"
 #include "aukmenu.h"
@@ -179,7 +180,7 @@ typedef union MsgUnion
 struct App
 {
     Object *window_obj; // window as boopsi object
-    struct Window *win; // current re-opened windows, as a classic intuition Window.
+    // now it's CurrentMainWindow struct Window *win; // current re-opened windows, as a classic intuition Window.
 
     struct MsgPort *app_port;
 
@@ -212,6 +213,11 @@ Class *AppModelClass = NULL;
 Object *AppInstance = NULL;
 // App Modelinstance as our private struct.
 struct App *app=NULL;
+// This is the intuition level Window, on OS3 it's recreated when iconizing/reopening !
+// when  iconizing/reopening BOOPSI objects are kept, but Intuition level instances and buffers are wiped out.
+// Yet, it's needed for most Gadget method calls, and this is not retained by boopsi objects.
+// note there vould be many windows.
+struct Window *CurrentMainWindow=NULL;
 
 ULONG ASM SAVEDS AppModelDispatch(
                     REG(a0,struct IClass *C),
@@ -445,12 +451,11 @@ printf("AppInstance %08x\n",AppInstance);
     if(!app->window_obj) cleanexit("can't create window");
 
     /*  Open the window. */
-    app->win = boopsi_OpenWindow(app->window_obj);
-    if(!app->win) cleanexit("can't open window");
-    app->tracksListView.window = app->win;
+    CurrentMainWindow = boopsi_OpenWindow(app->window_obj);
+    if(!CurrentMainWindow) cleanexit("can't open window");
 
     /* Create and attach menus */
-    if (!AukMenu_Create(&app->appMenu, app->lockedscreen, app->win)) {
+    if (!AukMenu_Create(&app->appMenu, app->lockedscreen, CurrentMainWindow)) {
         printf("Warning: Could not create menus\n");
     }
 
@@ -505,18 +510,17 @@ printf("AppInstance %08x\n",AppInstance);
                     }
                     case WMHI_ICONIFY:
                         {
-                            AukMenu_Close(&app->appMenu, app->win);
-                            if(DoMethod(app->window_obj, WM_ICONIFY, NULL)) app->win = NULL;
+                            AukMenu_Close(&app->appMenu, CurrentMainWindow);
+                            if(DoMethod(app->window_obj, WM_ICONIFY, NULL)) CurrentMainWindow = NULL;
                         }
                         break;
 
                     case WMHI_UNICONIFY:
                         {
-                            app->win = boopsi_OpenWindow(app->window_obj);
-                            app->tracksListView.window = app->win;
-                            if (!app->win) cleanexit("can't re-open window");
+                            CurrentMainWindow = boopsi_OpenWindow(app->window_obj);
+                            if (!CurrentMainWindow) cleanexit("can't re-open window");
                             /* re-Create and attach menus */
-                            if (!AukMenu_Create(&app->appMenu, app->lockedscreen, app->win)) {
+                            if (!AukMenu_Create(&app->appMenu, app->lockedscreen,CurrentMainWindow)) {
                                 cleanexit("Warning: Could not re-create menus\n");
                             }
                         }
@@ -528,7 +532,7 @@ printf("AppInstance %08x\n",AppInstance);
                             {
                                 struct AukActionContext actionContext;
                                 actionContext.project = app->_project;
-                                actionContext.appWindow = app->win;
+                                actionContext.appWindow = CurrentMainWindow;
                                 actionContext.appData = AppInstance;
                                 action->func(&actionContext);
                             }
@@ -577,7 +581,7 @@ void exitclose(void)
         CloseFooterView(&app->footerView);
 
         /* Close menus before closing window */
-        AukMenu_Close(&app->appMenu, app->win);
+        AukMenu_Close(&app->appMenu, CurrentMainWindow);
 
         /* Disposing of the window object will also close the
          * window if it is already opened and it will dispose of
@@ -588,6 +592,7 @@ void exitclose(void)
 
         // this should cascade all OM_DISPOSE:
         if(app->window_obj) DisposeObject(app->window_obj);
+        CurrentMainWindow = NULL;
 
 
         /* Release stylesheet object (will close fonts automatically) */
@@ -642,7 +647,7 @@ void openAboutReq()
 
     SetAttrs(app->reportReq,REQ_BodyText,(ULONG)p,TAG_END);
 
-    OpenRequester(app->reportReq,app->win);
+    OpenRequester(app->reportReq,CurrentMainWindow);
 
 }
 
@@ -766,4 +771,20 @@ void TrackListView_UpdateTrackList_Generic()
     //TrackListView_UpdateTrackList(&app->tracksListView);
         app->tracksListView.updateBits |= TLVB_UPDATE_REDRAW_TRACKLIST;
         if(myTask) Signal(myTask,SIGBREAKF_CTRL_F);
+}
+
+/* GUI Error/Log system - stub implementations for now */
+void AukLog_Message(AukLogLevel level, AukErrorID errorID)
+{
+    /* TODO: Implement actual logging/display */
+    (void)level;
+    (void)errorID;
+}
+
+void AukLog_MessageInt(AukLogLevel level, AukErrorID errorID, LONG param)
+{
+    /* TODO: Implement actual logging/display with parameter */
+    (void)level;
+    (void)errorID;
+    (void)param;
 }

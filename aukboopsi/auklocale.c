@@ -88,6 +88,16 @@ static const char *defaultStrings[MSG_COUNT] = {
     [MSG_ERROR_SAVEFILE] = "Cannot save file",
     [MSG_ERROR_NOMEMORY] = "Out of memory",
     [MSG_ERROR_INVALIDFILE] = "Invalid file format",
+
+    /* GUI Error/Log messages */
+    [MSG_GUI_TRACKLIST_CAPACITY_REACHED] = "Maximum track count reached",
+    [MSG_GUI_TRACKLIST_ALLOC_FAILED] = "Track array allocation failed",
+    [MSG_GUI_TRACKLIST_INVALID_INDEX] = "Invalid track index",
+    [MSG_GUI_TRACKLIST_INSERT_FAILED] = "Failed to insert track",
+    [MSG_GUI_TRACKLIST_REMOVE_FAILED] = "Failed to remove track",
+    [MSG_GUI_TRACKLIST_SWAP_FAILED] = "Failed to swap tracks",
+    [MSG_GUI_GADGET_CREATE_FAILED] = "Failed to create gadget",
+    [MSG_GUI_LAYOUT_FAILED] = "Layout operation failed",
 };
 
 /* Global locale state */

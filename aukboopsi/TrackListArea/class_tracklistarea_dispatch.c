@@ -121,7 +121,7 @@ ULONG ASM SAVEDS TrackListArea_Dispatcher(
 
         if(gdata->_clipRegion) DisposeRegion(gdata->_clipRegion);
         /* Dispose all track gadgets */
-        TrackListArea_DisposeGadgets(gdata);
+        TrackListArea_DisposeGadgets(Gad,gdata);
 
         AukObjectPtr_Release( &gdata->_project);
 

@@ -61,8 +61,10 @@ typedef struct TrackListArea {
 
     /* retain the synchronisation to data track list to gadgets... */
     TrackChild *_tracks;
-    /* Number of allocated track gadgets/headers */
+    /* Number of active track gadgets/headers */
     ULONG _trackCount;
+    /* Allocated capacity of _tracks array (default 32) */
+    ULONG _trackCapacity;
 
     /* Fixed width for track headers on the left */
     UWORD _headerWidth;
@@ -111,13 +113,13 @@ ULONG TrackListArea_HandleHitTest(Class *C, struct Gadget *Gad, struct gpHitTest
 ULONG TrackListArea_Domain(Class *C, struct Gadget *Gad, struct gpDomain *D);
 
 /* esxternal way to refresh (experimental */
-//void TrackListArea_Refresh(struct Gadget *Gad, struct Window *window);
+//void TrackListArea_Refresh(struct Gadget *Gad);
 
 /* Helper to dispose all gadget arrays */
-void TrackListArea_DisposeGadgets(TrackListArea *gdata);
+void TrackListArea_DisposeGadgets( struct Gadget *Gad,TrackListArea *gdata);
 
 
-void TrackListArea_SetTrackName( struct Gadget *Gad,struct Window *window,int itrack,const char *name);
+void TrackListArea_SetTrackName( struct Gadget *Gad,int itrack,const char *name);
 
 /* - - - - -- - */
 

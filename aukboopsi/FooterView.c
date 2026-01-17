@@ -20,6 +20,9 @@
 #include "compilers.h"
 #include "FooterView.h"
 
+/* This can be reallocated, so this is shared like this */
+extern struct Window *CurrentMainWindow;
+
 void cleanexit(const char *pmessage);
 
 void CreateFooterView(FooterView *fv, struct DrawInfo *drawInfo,
@@ -28,7 +31,6 @@ void CreateFooterView(FooterView *fv, struct DrawInfo *drawInfo,
 {
     fv->pstyleSheet = style;
     fv->appModel = appModel;
-    fv->window = NULL;
 
     /* Mixing frequency label */
     fv->labelFrequency = NewObject(BUTTON_GetClass(), NULL,
@@ -96,7 +98,7 @@ void FooterView_UpdateFrequency(FooterView *fv, ULONG frequency)
     if (!fv || !fv->labelFrequency) return;
 
     snprintf(buffer, 31, "%lu Hz", frequency);
-    SetGadgetAttrs((struct Gadget *)fv->labelFrequency, fv->window, NULL,
+    SetGadgetAttrs((struct Gadget *)fv->labelFrequency, CurrentMainWindow, NULL,
                    GA_Text, (ULONG)buffer,
                    TAG_END);
 }
@@ -109,14 +111,14 @@ void FooterView_UpdateSelection(FooterView *fv, const char *startTime, const cha
 
     if (fv->labelSelStart && startTime) {
         snprintf(bufferStart, 63, "Start: %s", startTime);
-        SetGadgetAttrs((struct Gadget *)fv->labelSelStart, fv->window, NULL,
+        SetGadgetAttrs((struct Gadget *)fv->labelSelStart, CurrentMainWindow, NULL,
                        GA_Text, (ULONG)bufferStart,
                        TAG_END);
     }
 
     if (fv->labelSelEnd && endTime) {
         snprintf(bufferEnd, 63, "End: %s", endTime);
-        SetGadgetAttrs((struct Gadget *)fv->labelSelEnd, fv->window, NULL,
+        SetGadgetAttrs((struct Gadget *)fv->labelSelEnd, CurrentMainWindow, NULL,
                        GA_Text, (ULONG)bufferEnd,
                        TAG_END);
     }
@@ -128,7 +130,7 @@ void FooterView_UpdatePlayPosition(FooterView *fv, const char *position)
     if (!fv || !fv->labelPlayPos || !position) return;
 
     snprintf(buffer, 63, "Pos: %s", position);
-    SetGadgetAttrs((struct Gadget *)fv->labelPlayPos, fv->window, NULL,
+    SetGadgetAttrs((struct Gadget *)fv->labelPlayPos, CurrentMainWindow, NULL,
                    GA_Text, (ULONG)buffer,
                    TAG_END);
 }
