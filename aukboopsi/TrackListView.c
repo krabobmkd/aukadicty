@@ -181,11 +181,10 @@ void CreateTrackListView(TrackListView *pm,struct DrawInfo *drawInfo,
 }
 
 /* receive update message for within a track */
-static void AukUpdate_Track(AukObject* listenerObject, AukObject* modifiedObject,void *userData, AukMessage *message)
+static void AukUpdate_Track(AukObject* listenerObject, AukObject* modifiedObject,void *userData, AukMessage_AProject *message)
 {
     TrackListView *pm = (TrackListView *)userData;
-    AukTrack *track = (AukTrack*)modifiedObject;
-    AukMessage_AProject *projmess;
+    AukTrack *track = message->_track;
     if(!pm || !track) return;
     bdbprintf(" **** AukUpdate_Track ! \n");
     switch(message->type)
@@ -221,24 +220,23 @@ static void AukUpdate_Track(AukObject* listenerObject, AukObject* modifiedObject
         case AUK_MSG_TRACKMODIFIED_NAMECHANGE:
         {
             const char *name;
-            projmess = (AukMessage_AProject *)message;
-            TrackListArea_SetTrackName(pm->trackList, projmess->_track_id,projmess->_track->name);
+            TrackListArea_SetTrackName(pm->trackList, message->_track_id,message->_track->name);
         }
         break;
         case AUK_MSG_TRACKMODIFIED_CHANGEVol:
         {
-            projmess = (AukMessage_AProject *)message;
+
+
          }
         break;
         case AUK_MSG_TRACKMODIFIED_CHANGEPan:
         {
-            projmess = (AukMessage_AProject *)message;
+
         }
         break;
         case AUK_MSG_TRACKMODIFIED_CHANGEFlags:
         {
-            projmess = (AukMessage_AProject *)message;
-
+            TrackListArea_SetTrackFlags(pm->trackList,message->_track_id,track->stateFlags);
         }
         break;
         default:
@@ -283,10 +281,11 @@ static void AukUpdate_TrackList(AukObject* listenerObject, AukObject* modifiedOb
             AukMessage_AProject *m = (AukMessage_AProject *)message;
             AukTrack *track = m->_track;
 
-    bdbprintf(" **** AUK_MSG_TRACKREMOVED ! \n");
+    bdbprintf(" **** receive from data AUK_MSG_TRACKREMOVED ! \n");
             if(track)  AukObject_RemoveListener(track,
                         pm->updateListener // AukObject* listenerObject,
                   );
+
             // update GUI, remove ui track
             TrackListArea_removeTrack(trackListAreaUi,track,track->trackIndex);
 
@@ -621,46 +620,26 @@ void TrackListView_ListenTrackHeaderMessage(TrackListView *pm,struct opUpdate *M
     if(!pm || !pm->project) return;
     project = (AukAProject*)pm->project;
 
-    bdbprintf("ListenTrackHeaderMessage project:%08x\n",(int)project);
-
-    return;
-
- bdbprintf("ListenTrackHeaderMessage bt GID:%08x trackId:%d\n",buttonId,trackId);
     /* Most likely, actions will affect a given track:
      Note this must be paired with a release call later.
      */
-printf("bef GetTrack:\n");
+
     project->GetTrack(project,&track,trackId);
-printf("aft GetTrack:%08x\n",(int)track);
     if(!track) return;
 
-
-/* some code to watch the message OM_NOTIFY taglists...
- struct TagItem*p = M->opu_AttrList;
- while(p->ti_Tag != 0)
- {
-    bdbprintf("tag:%08x %08x\n",p->ti_Tag,p->ti_Data);
-    p++;
- }
-$13 GA_Selected ->1 0 state
-GA_Disabled state
---- slider 8502803
-send GA_ID, SLIDER_Level, SLIDER_Min, SLIDER_Max and
-	 * GA_UserInput and lots of things
-*/
     switch(buttonId)
     {
         case GAD_TRACKHEADER_CLOSE:
         {
         printf("go project->RemoveTrack %d\n",trackId);
-            // int buttonstate = getGadgetMessageAttrib(M,GA_SELECTED);
-            // /* Close track at data level */
-            // if(buttonstate)
-            // {
-            //  printf("go RemoveTrack\n");
-            //  AukObjectPtr_Release(&track);
-            //     project->RemoveTrack(project,track);
-            // }
+            int buttonstate = getGadgetMessageAttrib(M,GA_SELECTED);
+            /* Close track at data level */
+            if(buttonstate)
+            {
+             printf("go RemoveTrack\n");
+             AukObjectPtr_Release(&track);
+                project->RemoveTrack(project,track);
+            }
         }
         break;
         case GAD_TRACKHEADER_NAME:
@@ -672,42 +651,40 @@ send GA_ID, SLIDER_Level, SLIDER_Min, SLIDER_Max and
         break;
         case GAD_TRACKHEADER_SILENCER:
         {
-        printf("AukTrack_SetSilent %d\n",trackId);
+
             int buttonstate = getGadgetMessageAttrib(M,GA_SELECTED);
-           // if(buttonstate !=-1)AukTrack_SetSilent(track,buttonstate);
+        printf("AukTrack_SetSilent %d\n",buttonstate);
+         if(buttonstate !=-1) AukTrack_SetSilent(track,buttonstate);
         }
         break;
         case GAD_TRACKHEADER_SOLO:
         {
             int buttonstate = getGadgetMessageAttrib(M,GA_SELECTED);
-        bdbprintf("AukTrack_SetSolo %d\n",trackId);
-          //  if(buttonstate !=-1) AukTrack_SetSolo(track,buttonstate);
+            bdbprintf("AukTrack_SetSolo %d\n",buttonstate);
+            if(buttonstate !=-1) AukTrack_SetSolo(track,buttonstate);
         }
         break;
         case GAD_TRACKHEADER_VOL:
         {
             int sliderlevel = getGadgetMessageAttrib(M,SLIDER_Level);
-        bdbprintf("AukTrack_SetOwnVolume %d\n",trackId);
-          //  if(sliderlevel !=-1) AukTrack_SetOwnVolume(track,sliderlevel<<9);
+        bdbprintf("AukTrack_SetOwnVolume %d\n",sliderlevel);
+            if(sliderlevel !=-1) AukTrack_SetOwnVolume(track,sliderlevel<<9);
         }
         break;
         case GAD_TRACKHEADER_PAN:
         {
             int sliderlevel = getGadgetMessageAttrib(M,SLIDER_Level);
-        bdbprintf("AukTrack_SetStereoPan %d\n",trackId);
-           // if(sliderlevel !=-1) AukTrack_SetStereoPan(track,sliderlevel<<9);
+        bdbprintf("AukTrack_SetStereoPan %d\n",sliderlevel);
+            if(sliderlevel !=-1) AukTrack_SetStereoPan(track,sliderlevel<<9);
         }
         break;
         default:
         break;
 
     }
-    if(track)
-    {
-    printf("bef AukObjectPtr_Release track:\n");
-        AukObjectPtr_Release(&track);
-    }
-    printf("quit ListenTrackHeaderMessage:\n");
+
+    AukObjectPtr_Release(&track);
+
 }
 void TrackListView_CheckUpdates(TrackListView *pm)
 {

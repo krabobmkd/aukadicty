@@ -78,6 +78,9 @@ set(AUKBOOPSI_SOURCES
     bdbprintf.c
     bdbprintf.h
 
+    boopsidelay.c
+    boopsidelay.h
+
     offscreenbm.c
     offscreenbm.h
 

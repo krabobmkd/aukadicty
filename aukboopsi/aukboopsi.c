@@ -69,7 +69,8 @@
 #include "aukaction.h"
 #include "aukstylesheet.h"
 #include "aukmenu.h"
-
+#include "boopsidelay.h"
+#include "TrackListArea/class_tracklistarea.h"
 //#include "aukaproject.h"
 #include <aukadicty.h>
 
@@ -204,6 +205,8 @@ struct App
      // - - - retain document object
      AukAProjectPtr _project;
 
+     // - - - delayed BOOPSI notification queue
+     BoopsiDelayQueue delayQueue;
 };
 // - - - note having a private "boopsi object class and instance"
 // - - - makes it fancy to connect values and receive events.
@@ -219,6 +222,14 @@ struct App *app=NULL;
 // note there vould be many windows.
 struct Window *CurrentMainWindow=NULL;
 
+/* The attribs we actually delay
+*/
+static ULONG delayedAttribs[]={
+    GA_Selected,SLIDER_Level,SCROLLER_Top,
+    TRACKLIST_ScrollY,TRACKLIST_TimeProjection,TRACKLIST_DomainHeight
+};
+#define nbDelayedAttribs (sizeof(delayedAttribs)/sizeof(ULONG))
+
 ULONG ASM SAVEDS AppModelDispatch(
                     REG(a0,struct IClass *C),
                     REG(a2,Object *obj),
@@ -233,6 +244,7 @@ ULONG ASM SAVEDS AppModelDispatch(
         {
             app=(struct App *)INST_DATA(C, obj);
             memset(app,0,sizeof(struct App)); // absolutely *NOT* sure about this being cleaned, more secure.
+            BoopsiDelay_Init(&app->delayQueue);
             retval = (ULONG)obj;
         }
     break;
@@ -243,69 +255,27 @@ ULONG ASM SAVEDS AppModelDispatch(
     case OM_UPDATE:
         {
             struct TagItem *ptag;
-            // here receive events from gadgets which ICA_TARGET is appModel.
             ULONG sender_ID=0;
 
             if((ptag = FindTagItem( GA_ID,M->opUpdate.opu_AttrList ))!=NULL) sender_ID = ptag->ti_Data;
-            // our gadget is notifying new clicked coordinates!
-            // note any button action is either managed here or in more generic main loop
 
-            /* Handle HeaderView transport control buttons */
-            if (sender_ID >= GAD_HEADER_REWIND && sender_ID <= GAD_HEADER_FORWARD)
+            /* Queue message if sender_ID != 0 */
+            if (sender_ID != 0)
             {
-                //TOO MUCH MESSAGES !!!
-              //  bdbprintf("Transport button pressed: %d\n", sender_ID);
-                /* TODO: Implement transport control actions */
-                retval = 1;
-            } else
-            /* Handle HeaderView edit mode buttons */
-            if (sender_ID >= GAD_HEADER_EDITMODE1 && sender_ID <= GAD_HEADER_EDITMODE6)
-            {
-                bdbprintf("Edit mode button pressed: %08x\n", sender_ID);
-                // receive GA_ID, GA_SELECTED, GA_DISABLED  , GA_SELECTED=1 when clicked, but manyyyy times with the moves (relverify?).
-//                ptag = M->opUpdate.opu_AttrList;
-//                while(ptag->ti_Tag)
-//                {
-//                    bdbprintf("    tag:%08x %08x\n", (int)ptag->ti_Tag, (int)ptag->ti_Data);
-//                    ptag++;
-//                }
-
-
-                /* TODO: Implement edit mode switching */
-                retval = 1;
-            } else
-            if( sender_ID == GAD_TRACKLIST )
-            {
-                //   bdbprintf(" ( sender_ID == GAD_TRACKLIST )\n");
-                TrackListView_ListenTrackListMessage( &app->tracksListView, &M->opUpdate );
-                retval = 1;
-            } else
-            if( sender_ID == GAD_SCROLLER_V )
-            {
-            // bdbprintf(" ( sender_ID == GAD_SCROLLER_V )\n");
-                TrackListView_ListenScrollVMessage( &app->tracksListView, &M->opUpdate );
-                retval=1;
-            } else
-            if( sender_ID == GAD_SCROLLER_H )
-            {
-             // bdbprintf(" ( sender_ID == GAD_SCROLLER_H )\n");
-                TrackListView_ListenScrollHMessage( &app->tracksListView, &M->opUpdate );
-                retval=1;
-            } else
-            if( sender_ID >= GAD_TRACKHEADER_BASE)
-            {
-                TrackListView_ListenTrackHeaderMessage( &app->tracksListView, &M->opUpdate,sender_ID);
-                retval=1;
-            }
-            //else{...}
-            else
-            {
-                if(sender_ID != 0)
+                int i;
+                BoopsiDelay_BeginMessage(&app->delayQueue, sender_ID);
+                for(i=0;i<nbDelayedAttribs;i++)
                 {
-                    bdbprintf(" ( sender_ID == %d )\n",sender_ID);
+                    if ((ptag = FindTagItem(delayedAttribs[i], M->opUpdate.opu_AttrList)) != NULL)
+                        BoopsiDelay_AddTag(&app->delayQueue, delayedAttribs[i], ptag->ti_Data);
                 }
 
-                retval=DoSuperMethodA(C,(Object *)obj,(Msg)M);
+                BoopsiDelay_EndMessage(&app->delayQueue);
+
+                /* Signal main loop to process queue */
+                if (myTask) Signal(myTask, SIGBREAKF_CTRL_F);
+
+                retval = 1;
             }
         }
         break;
@@ -439,7 +409,7 @@ printf("AppInstance %08x\n",AppInstance);
         WA_Width,320,
         WA_Height,240,
         WA_CustomScreen, (ULONG) app->lockedscreen,
-        WA_IDCMP, IDCMP_CLOSEWINDOW | IDCMP_MENUPICK | IDCMP_RAWKEY ,
+        WA_IDCMP, IDCMP_CLOSEWINDOW | IDCMP_MENUPICK | IDCMP_RAWKEY | IDCMP_IDCMPUPDATE ,
         WA_Flags, WFLG_DRAGBAR | WFLG_DEPTHGADGET | WFLG_CLOSEGADGET | WFLG_SIZEGADGET | WFLG_ACTIVATE | WFLG_SMART_REFRESH,
         WA_Title,(ULONG) "Aukadicty",
         WINDOW_ParentGroup,(ULONG) app->mainvlayout,
@@ -471,12 +441,20 @@ printf("AppInstance %08x\n",AppInstance);
         /* Input Event Loop */
         while (ok)
         {
-            ULONG result,currentSignal;
+            ULONG result,currentSignals,waitedSignals;
 
-            currentSignal = Wait(winsignal | (1L << app->app_port->mp_SigBit) | SIGBREAKF_CTRL_C | SIGBREAKF_CTRL_F);
-            if(currentSignal & SIGBREAKF_CTRL_C) exit(0);
+            flushbdbprint();
+            /* What to wait for ? */
+            waitedSignals = winsignal |  // window boopsi level wait port (different than intuition level ?)
+                        (1L << app->app_port->mp_SigBit) |
+                        SIGBREAKF_CTRL_C |  // quit on Ctrl-C
+                        SIGBREAKF_CTRL_F    // we use that as special refresh if something happen.
+                        ;
 
-           flushbdbprint();
+            currentSignals = Wait(waitedSignals);
+
+            if(currentSignals & SIGBREAKF_CTRL_C) exit(0);
+
             /* CA_HandleInput() returns the gadget ID of a clicked
              * gadget, or one of several pre-defined values.  For
              * this demo, we're only actually interested in a
@@ -546,21 +524,69 @@ printf("AppInstance %08x\n",AppInstance);
 
             } // end while messages
 
+            /* Process delayed BOOPSI notifications
+                So now, we are in the main process where
+                all buttons, sliders, and other UI action
+                should be applied !
+            */
+            if (BoopsiDelay_HasMessages(&app->delayQueue))
+            {
+                struct TagItem *msg;
+                while ((msg = BoopsiDelay_NextMessage(&app->delayQueue)) != NULL)
+                {
+                    struct opUpdate opUpd;
+                    struct TagItem *ptag;
+                    ULONG sender_ID = 0;
+
+                    opUpd.MethodID = OM_UPDATE;
+                    opUpd.opu_AttrList = msg;
+                    opUpd.opu_GInfo = NULL;
+                    opUpd.opu_Flags = 0;
+
+                    if ((ptag = FindTagItem(GA_ID, msg)) != NULL)
+                        sender_ID = ptag->ti_Data;
+
+                    if (sender_ID >= GAD_HEADER_REWIND && sender_ID <= GAD_HEADER_FORWARD)
+                    {
+                        /* TODO: transport buttons */
+                    }
+                    else if (sender_ID >= GAD_HEADER_EDITMODE1 && sender_ID <= GAD_HEADER_EDITMODE6)
+                    {
+                        bdbprintf("Edit mode button: %08x\n", sender_ID);
+                    }
+                    else if (sender_ID == GAD_TRACKLIST)
+                    {
+                        TrackListView_ListenTrackListMessage(&app->tracksListView, &opUpd);
+                    }
+                    else if (sender_ID == GAD_SCROLLER_V)
+                    {
+                        TrackListView_ListenScrollVMessage(&app->tracksListView, &opUpd);
+                    }
+                    else if (sender_ID == GAD_SCROLLER_H)
+                    {
+                        TrackListView_ListenScrollHMessage(&app->tracksListView, &opUpd);
+                    }
+                    else if (sender_ID >= GAD_TRACKHEADER_BASE)
+                    {
+                        TrackListView_ListenTrackHeaderMessage(&app->tracksListView, &opUpd, sender_ID);
+                    }
+                }
+            } // end if any delayed messages
+
             // delay some tracklayout messages to avoid big graphic update recursion
             if(app->tracksListView.updateBits)
             {
                 TrackListView_CheckUpdates(&app->tracksListView);
             }
 
-
-     /* debug purpose: init a project after all boopsi inits and starting messages proceceed once*/
-     if(!testprojectinited)
-     {
-        initProject();
-        TrackListView_UpdateTrackList(&app->tracksListView);
-        TrackListView_UpdateTimeRule(&app->tracksListView);
-        testprojectinited = 1;
-     }
+             /* debug purpose: init a project after all boopsi inits and starting messages proceceed once*/
+             if(!testprojectinited)
+             {
+                initProject();
+                TrackListView_UpdateTrackList(&app->tracksListView);
+                TrackListView_UpdateTimeRule(&app->tracksListView);
+                testprojectinited = 1;
+             }
 
         } // end while app loop
     } // loop paragraph end

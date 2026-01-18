@@ -94,6 +94,14 @@ ULONG TrackHeader_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
         gdata->_style = (struct AukStyle *)data;
         actuallydone = 1;
         break;
+        case TRACKHEADER_TrackIndex:
+        {
+            gdata->_trackIndex = data;
+            TODO propagate and change GA_ID to all subbuttons
+like       GA_ID,GAD_TRACKHEADER_BASE|GAD_TRACKHEADER_NAME|(iTrack<<4),
+
+
+        } break;
        case  TRACKHEADER_Name:
        {
           struct Gadget *btname =  (struct Gadget *) gdata->subs[THS_NameButton];
@@ -149,10 +157,11 @@ ULONG TrackHeader_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
             int flags = data;
             struct Gadget *silbt =  (struct Gadget *) gdata->subs[THS_SilencerBt];
             struct Gadget *solobt =  (struct Gadget *) gdata->subs[THS_SoloBt];
+            bdbprintf(" * * * set TRACKHEADER_Flags:%08x\n",flags);
             if(silbt)
             {
                 int curstate;
-                int setstate = (flags & 1) !=0; // AukTrack AukTrackFlag_Silent
+                int setstate = flags & 1; // AukTrack AukTrackFlag_Silent
                 GetAttr(GA_SELECTED,silbt,&curstate);
                 if(curstate != setstate)
                 {

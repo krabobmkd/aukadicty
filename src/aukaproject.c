@@ -234,7 +234,7 @@ int AukAProject_RemoveTrack(void* This, AukTrack* track) {
 void AukAProject_GetTrack(void* This, AukTrack**ptr, unsigned int index) {
     AukAProject* project = (AukAProject*)This;
     AukArray* tracksArray;
-printf(" AukAProject_GetTrack:\n");
+
     if(!ptr) return;
     AukObjectPtr_Release((AukObjectPtr*)ptr);
 
@@ -243,9 +243,9 @@ printf(" AukAProject_GetTrack:\n");
     }
 
     tracksArray = (AukArray*)project->tracks;
-printf(" AukAProject_GetTrack: 2\n");
+
     tracksArray->Get(tracksArray, (AukObjectPtr*)ptr, index);
-printf(" AukAProject_GetTrack: 3\n");
+
 }
 
 unsigned int AukAProject_GetTrackCount(void* This) {

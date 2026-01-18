@@ -280,17 +280,17 @@ void TrackListArea_SetTrackStereoPan( struct Gadget *Gad,int itrack,int ipan)
 }
 void TrackListArea_SetTrackFlags( struct Gadget *Gad,int itrack,int flags)
 {
-
-        bdbprintf("TrackListArea_SetTrackFlags\n");
     TrackListArea *gdata;
     TrackChild *strack;
+        bdbprintf("TrackListArea_SetTrackFlags1 %08x\n",Gad);
     if(!Gad) return;
     gdata=INST_DATA(OCLASS(Gad), Gad);
-
+        bdbprintf("TrackListArea_SetTrackFlags1b %d %d\n",itrack,gdata->_trackCount);
     if(itrack>= (int)gdata->_trackCount) return;
 
     strack = &gdata->_tracks[itrack];
     if(!strack->_trackHeader) return;
-
+        bdbprintf("TrackListArea_SetTrackFlags2 %d\n",flags);
     SetAttrs(strack->_trackHeader,TRACKHEADER_Flags,(ULONG)flags,TAG_END);
+
 }

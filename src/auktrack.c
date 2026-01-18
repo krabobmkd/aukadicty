@@ -108,6 +108,7 @@ static void emitMemberChange(AukTrack* track,int  changeEnum)
     msg._track_id = track->trackIndex;
     msg._track = track;
     msg._timeStart = 0;
+
     track->base.SendUpdate(&track->base, (AukMessage*)&msg);
 }
 
@@ -765,6 +766,7 @@ int AukTrack_GetChannelCount(AukTrack* track)
 void AukTrack_SetSilent(AukTrack* track, int isSilent)
 {
     if (!track) return;
+    printf("AukTrack_SetSilent track trackIndex:%d\n",track->trackIndex);
     if(((track->stateFlags & AukTrackFlag_Silent)!=0) ==
        (isSilent !=0) ) return;
     if(isSilent)
