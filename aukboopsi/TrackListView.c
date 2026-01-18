@@ -225,6 +225,22 @@ static void AukUpdate_Track(AukObject* listenerObject, AukObject* modifiedObject
             TrackListArea_SetTrackName(pm->trackList, projmess->_track_id,projmess->_track->name);
         }
         break;
+        case AUK_MSG_TRACKMODIFIED_CHANGEVol:
+        {
+            projmess = (AukMessage_AProject *)message;
+         }
+        break;
+        case AUK_MSG_TRACKMODIFIED_CHANGEPan:
+        {
+            projmess = (AukMessage_AProject *)message;
+        }
+        break;
+        case AUK_MSG_TRACKMODIFIED_CHANGEFlags:
+        {
+            projmess = (AukMessage_AProject *)message;
+
+        }
+        break;
         default:
         break;
     }
@@ -465,6 +481,7 @@ void TrackListView_setProject(TrackListView *pm,AukAProject *project)
     }
     // retain project
     AukObjectPtr_Set(&pm->project,&project->base.base);
+    printf("  ////// TrackListView_setProject:%08x\n",(int)project);
 
     // link data to UI
     TrackListArea_setTrackList(pm->trackList ,project );
@@ -578,50 +595,119 @@ void TrackListView_ListenScrollHMessage(TrackListView *pm, struct opUpdate *M)
     }
 }
 
+/* return -1 if no */
+int getGadgetMessageAttrib(struct opUpdate *M, int attrib)
+{
+    struct TagItem *ptag;
+    if(!M || !M->opu_AttrList) return -1;
+    if((ptag = FindTagItem( attrib,M->opu_AttrList))!=NULL)
+    {
+        return ptag->ti_Data;
+    }
+    return -1;
+}
+
+/*
+    Here, UI ask actions on the data, data modify and send update messages,
+    event listeners then adapt UI.
+*/
 void TrackListView_ListenTrackHeaderMessage(TrackListView *pm,struct opUpdate *M, ULONG gadId)
 {
-
+    AukAProject *project;
+    AukTrackPtr track=NULL;
     ULONG buttonId = gadId & GAD_TRACKHEADER_IDMASK;
     ULONG trackId = (gadId & GAD_TRACKHEADER_TRACKMASK)>>4; // 4096 tracks possible, 16 buttons
- bdbprintf("header bt GID:%08x trackId:%d\n",buttonId,trackId);
- // struct TagItem*p = M->opu_AttrList;
- // while(p->ti_Tag != 0)
- // {
- //    bdbprintf("tag:%08x %08x\n",p->ti_Tag,p->ti_Data);
- //    p++;
- // }
- // $10 ->id
-// $13 GA_Selected ->1 0 state
-// GA_Disabled state
-// --- slider 8502803
-// send GA_ID, SLIDER_Level, SLIDER_Min, SLIDER_Max and
-//	 * GA_UserInput and lots of things
+
+    if(!pm || !pm->project) return;
+    project = (AukAProject*)pm->project;
+
+    bdbprintf("ListenTrackHeaderMessage project:%08x\n",(int)project);
+
+    return;
+
+ bdbprintf("ListenTrackHeaderMessage bt GID:%08x trackId:%d\n",buttonId,trackId);
+    /* Most likely, actions will affect a given track:
+     Note this must be paired with a release call later.
+     */
+printf("bef GetTrack:\n");
+    project->GetTrack(project,&track,trackId);
+printf("aft GetTrack:%08x\n",(int)track);
+    if(!track) return;
+
+
+/* some code to watch the message OM_NOTIFY taglists...
+ struct TagItem*p = M->opu_AttrList;
+ while(p->ti_Tag != 0)
+ {
+    bdbprintf("tag:%08x %08x\n",p->ti_Tag,p->ti_Data);
+    p++;
+ }
+$13 GA_Selected ->1 0 state
+GA_Disabled state
+--- slider 8502803
+send GA_ID, SLIDER_Level, SLIDER_Min, SLIDER_Max and
+	 * GA_UserInput and lots of things
+*/
     switch(buttonId)
     {
         case GAD_TRACKHEADER_CLOSE:
-        // TODO close track
+        {
+        printf("go project->RemoveTrack %d\n",trackId);
+            // int buttonstate = getGadgetMessageAttrib(M,GA_SELECTED);
+            // /* Close track at data level */
+            // if(buttonstate)
+            // {
+            //  printf("go RemoveTrack\n");
+            //  AukObjectPtr_Release(&track);
+            //     project->RemoveTrack(project,track);
+            // }
+        }
         break;
         case GAD_TRACKHEADER_NAME:
-            // TODO track name edit.
+        {
+        printf("todoAukTrack_SetName %d\n",trackId);
+            // TODO use requester for the name, then send new name.
+            //AukTrack_SetName(track,)
+        }
         break;
         case GAD_TRACKHEADER_SILENCER:
-
+        {
+        printf("AukTrack_SetSilent %d\n",trackId);
+            int buttonstate = getGadgetMessageAttrib(M,GA_SELECTED);
+           // if(buttonstate !=-1)AukTrack_SetSilent(track,buttonstate);
+        }
         break;
         case GAD_TRACKHEADER_SOLO:
-
+        {
+            int buttonstate = getGadgetMessageAttrib(M,GA_SELECTED);
+        bdbprintf("AukTrack_SetSolo %d\n",trackId);
+          //  if(buttonstate !=-1) AukTrack_SetSolo(track,buttonstate);
+        }
         break;
-
         case GAD_TRACKHEADER_VOL:
-            // TODO volume slide has changed
+        {
+            int sliderlevel = getGadgetMessageAttrib(M,SLIDER_Level);
+        bdbprintf("AukTrack_SetOwnVolume %d\n",trackId);
+          //  if(sliderlevel !=-1) AukTrack_SetOwnVolume(track,sliderlevel<<9);
+        }
         break;
         case GAD_TRACKHEADER_PAN:
-            // TODO pan slide has changed
+        {
+            int sliderlevel = getGadgetMessageAttrib(M,SLIDER_Level);
+        bdbprintf("AukTrack_SetStereoPan %d\n",trackId);
+           // if(sliderlevel !=-1) AukTrack_SetStereoPan(track,sliderlevel<<9);
+        }
         break;
         default:
         break;
 
     }
-
+    if(track)
+    {
+    printf("bef AukObjectPtr_Release track:\n");
+        AukObjectPtr_Release(&track);
+    }
+    printf("quit ListenTrackHeaderMessage:\n");
 }
 void TrackListView_CheckUpdates(TrackListView *pm)
 {

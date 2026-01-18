@@ -234,7 +234,7 @@ int AukAProject_RemoveTrack(void* This, AukTrack* track) {
 void AukAProject_GetTrack(void* This, AukTrack**ptr, unsigned int index) {
     AukAProject* project = (AukAProject*)This;
     AukArray* tracksArray;
-
+printf(" AukAProject_GetTrack:\n");
     if(!ptr) return;
     AukObjectPtr_Release((AukObjectPtr*)ptr);
 
@@ -243,7 +243,9 @@ void AukAProject_GetTrack(void* This, AukTrack**ptr, unsigned int index) {
     }
 
     tracksArray = (AukArray*)project->tracks;
+printf(" AukAProject_GetTrack: 2\n");
     tracksArray->Get(tracksArray, (AukObjectPtr*)ptr, index);
+printf(" AukAProject_GetTrack: 3\n");
 }
 
 unsigned int AukAProject_GetTrackCount(void* This) {
@@ -330,6 +332,11 @@ void AukAProject_Init(AukAProject* project) {
             AukArray_SetType(project->tracks, AukTrack_New, AukTrack_GetTypeName(NULL));
             project->tracks->base._project = (AukProject*)project;
         }
+
+        /* Initialize selection state (not serialized) */
+        project->hasSelection = 0;
+        project->selectionStart = 0;
+        project->selectionEnd = 0;
     }
 }
 
@@ -450,4 +457,72 @@ void AukProject_SetProjectContext(AukProject* project) {
             }
         }
     }
+}
+
+/* Selection accessors (not serialized) */
+
+void AukAProject_SetSelection(AukAProject* project, AukFixed start, AukFixed end)
+{
+    AukMessage_AProject msg;
+
+    if (!project) return;
+
+    /* Check if values actually changed */
+    if (project->hasSelection &&
+        project->selectionStart == start &&
+        project->selectionEnd == end) {
+        return; /* No change */
+    }
+
+    project->hasSelection = 1;
+    project->selectionStart = start;
+    project->selectionEnd = end;
+
+    /* Send update notification */
+    msg.type = AUK_MSG_SELECTIONCHANGED;
+    msg._track_id = -1;
+    msg._track = NULL;
+    msg._timeStart = start;
+    project->base.base.SendUpdate(&project->base.base, (AukMessage*)&msg);
+}
+
+void AukAProject_ClearSelection(AukAProject* project)
+{
+    AukMessage_AProject msg;
+
+    if (!project) return;
+
+    /* Check if already cleared */
+    if (!project->hasSelection) {
+        return; /* No change */
+    }
+
+    project->hasSelection = 0;
+    project->selectionStart = 0;
+    project->selectionEnd = 0;
+
+    /* Send update notification */
+    msg.type = AUK_MSG_SELECTIONCHANGED;
+    msg._track_id = -1;
+    msg._track = NULL;
+    msg._timeStart = 0;
+    project->base.base.SendUpdate(&project->base.base, (AukMessage*)&msg);
+}
+
+int AukAProject_HasSelection(AukAProject* project)
+{
+    if (!project) return 0;
+    return project->hasSelection;
+}
+
+AukFixed AukAProject_GetSelectionStart(AukAProject* project)
+{
+    if (!project) return 0;
+    return project->selectionStart;
+}
+
+AukFixed AukAProject_GetSelectionEnd(AukAProject* project)
+{
+    if (!project) return 0;
+    return project->selectionEnd;
 }

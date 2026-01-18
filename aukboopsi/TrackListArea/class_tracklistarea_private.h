@@ -121,6 +121,11 @@ void TrackListArea_DisposeGadgets( struct Gadget *Gad,TrackListArea *gdata);
 
 void TrackListArea_SetTrackName( struct Gadget *Gad,int itrack,const char *name);
 
+void TrackListArea_SetTrackOwnVolume( struct Gadget *Gad,int itrack,int ivol);
+void TrackListArea_SetTrackStereoPan( struct Gadget *Gad,int itrack,int ipan);
+void TrackListArea_SetTrackFlags( struct Gadget *Gad,int itrack,int flags);
+
+
 /* - - - - -- - */
 
 /** for dispatcher, very wise use of union.

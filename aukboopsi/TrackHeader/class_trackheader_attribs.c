@@ -14,7 +14,11 @@
 #include "class_trackheader.h"
 #include "class_trackheader_private.h"
 
+#include <gadgets/slider.h>
 #include <utility/tagitem.h>
+
+/* This can be reallocated, so this is shared like this */
+extern struct Window *CurrentMainWindow;
 
 /* Most of the calls to boopsi methods are not done from the App's context,
  * but from a specific intuition context, and because of that we can't use DOS calls
@@ -109,7 +113,64 @@ ULONG TrackHeader_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
           actuallydone = 1;
        }
        break;
+       case TRACKHEADER_Pan:
+       {
+            ULONG prevSliderLevel;
+            ULONG newlevel = data>>9; // data scale is 1<<16 , slider is 1<<7
+            struct Gadget *slider =  (struct Gadget *) gdata->subs[THS_PanSlider];
+            if(slider)
+            {
+                GetAttr(SLIDER_Level,slider,&prevSliderLevel);
+                if(prevSliderLevel != newlevel)
+                {
+                    SetGadgetAttrs(slider,CurrentMainWindow,NULL,SLIDER_Level,newlevel);
+                }
+            }
+       }
+       break;
+       case TRACKHEADER_Volume:
+       {
+            ULONG prevSliderLevel;
+            ULONG newlevel = data>>9; // data scale is 1<<16 , slider is 1<<7
+            struct Gadget *slider =  (struct Gadget *) gdata->subs[THS_VolumeSlider];
+            if(slider)
+            {
+                GetAttr(SLIDER_Level,slider,&prevSliderLevel);
+                if(prevSliderLevel != newlevel)
+                {
+                    SetGadgetAttrs(slider,CurrentMainWindow,NULL,SLIDER_Level,newlevel);
+                }
+            }
 
+       }
+       break;
+       case TRACKHEADER_Flags:
+        {
+            int flags = data;
+            struct Gadget *silbt =  (struct Gadget *) gdata->subs[THS_SilencerBt];
+            struct Gadget *solobt =  (struct Gadget *) gdata->subs[THS_SoloBt];
+            if(silbt)
+            {
+                int curstate;
+                int setstate = (flags & 1) !=0; // AukTrack AukTrackFlag_Silent
+                GetAttr(GA_SELECTED,silbt,&curstate);
+                if(curstate != setstate)
+                {
+                    SetGadgetAttrs(silbt,CurrentMainWindow,NULL,GA_SELECTED,setstate);
+                }
+            }
+            if(solobt)
+            {
+                int curstate;
+                int setstate = (flags & 2) !=0; // AukTrack AukTrackFlag_Silent
+                GetAttr(GA_SELECTED,solobt,&curstate);
+                if(curstate != setstate)
+                {
+                    SetGadgetAttrs(solobt,CurrentMainWindow,NULL,GA_SELECTED,setstate);
+                }
+            }
+        }
+       break;
     default:
         break;
 

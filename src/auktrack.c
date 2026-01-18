@@ -78,8 +78,14 @@ void AukTrack_Serialize(AukObject* This, ISerializer* ser, const char* pName) {
     ser->t_arrayobj(ser, "sounds", &track->sounds, AukSound_New, AukSound_GetTypeName(NULL));
 
     /* Serialize envelope scalar arrays */
-    ser->t_scalararray(ser, "envelopeTime", &track->envelopeTime);
-    ser->t_scalararray(ser, "envelopeValue", &track->envelopeValue);
+    ser->t_scalararray(ser, "nvlTime", &track->envelopeTime);
+    ser->t_scalararray(ser, "nvlValue", &track->envelopeValue);
+
+    ser->t_int(ser, "vol", &track->ownVolume);
+    ser->t_int(ser, "pan", &track->stereoPan);
+    ser->t_int(ser, "stf", &track->stateFlags);
+    ser->t_int(ser, "chc", &track->channelCount);
+
 }
 
 void AukTrack_SetProject(AukTrack* track, AukProject* project) {
@@ -93,9 +99,20 @@ void AukTrack_SetProject(AukTrack* track, AukProject* project) {
     }
 }
 
+/* Internal, Send update notification */
+static void emitMemberChange(AukTrack* track,int  changeEnum)
+{
+    AukMessage_AProject msg;
+    /* Send update notification */
+    msg.type = changeEnum;
+    msg._track_id = track->trackIndex;
+    msg._track = track;
+    msg._timeStart = 0;
+    track->base.SendUpdate(&track->base, (AukMessage*)&msg);
+}
+
 int AukTrack_SetName(AukTrack* track, const char* name) {
     int changed;
-    AukMessage_AProject msg;
 
     if (!track || !name) {
         return 0;
@@ -118,11 +135,7 @@ int AukTrack_SetName(AukTrack* track, const char* name) {
 
     if (track->name) {
         /* Send update notification */
-        msg.type = AUK_MSG_TRACKMODIFIED_NAMECHANGE;
-        msg._track_id = track->trackIndex;
-        msg._track = track;
-        msg._timeStart = 0;
-        track->base.SendUpdate(&track->base, (AukMessage*)&msg);
+        emitMemberChange(track,AUK_MSG_TRACKMODIFIED_NAMECHANGE);
     }
 
     return track->name != NULL;
@@ -691,5 +704,136 @@ void AukTrack_Init(AukTrack* track) {
         /* Initialize envelope scalar arrays (start empty) */
         track->envelopeTime = NULL;
         track->envelopeValue = NULL;
+
+        /* Initialize channel count (default stereo) */
+        track->channelCount = 2;
+
+        /* Initialize selection state (not serialized) */
+        track->selectionFlags = 0;
     }
 }
+
+
+
+/* accessors */
+void AukTrack_SetOwnVolume(AukTrack* track,AukFixed16 v)
+{
+    if (!track) return;
+    if(track->ownVolume == v) return;
+    track->ownVolume = v;
+    /* Send update notification */
+    emitMemberChange(track,AUK_MSG_TRACKMODIFIED_CHANGEVol);
+}
+void AukTrack_SetStereoPan(AukTrack* track,AukFixed16 v)
+{
+    if (!track) return;
+    if(track->stereoPan == v) return;
+    track->stereoPan = v;
+    /* Send update notification */
+    emitMemberChange(track,AUK_MSG_TRACKMODIFIED_CHANGEPan);
+}
+AukFixed16 AukTrack_GetOwnVolume(AukTrack* track)
+{
+    if (!track) return 0;
+    return track->ownVolume;
+}
+AukFixed16 AukTrack_GetStereoPan(AukTrack* track)
+{
+    if (!track) return 0;
+    return track->stereoPan;
+}
+
+void AukTrack_SetChannelCount(AukTrack* track, int count)
+{
+    AukMessage msg;
+    if (!track) return;
+    if (count < 1) count = 1; /* Minimum 1 channel */
+    if (track->channelCount == count) return;
+    track->channelCount = count;
+    /* Send update notification */
+    msg.type = AUK_MSG_MODIFY;
+    track->base.SendUpdate(&track->base, &msg);
+}
+
+int AukTrack_GetChannelCount(AukTrack* track)
+{
+    if (!track) return 0;
+    return track->channelCount;
+}
+
+/* These 2 are exclusives, bool is passed */
+void AukTrack_SetSilent(AukTrack* track, int isSilent)
+{
+    if (!track) return;
+    if(((track->stateFlags & AukTrackFlag_Silent)!=0) ==
+       (isSilent !=0) ) return;
+    if(isSilent)
+    {
+        track->stateFlags |= AukTrackFlag_Silent;
+        /* set silent remove solo */
+        track->stateFlags &= ~AukTrackFlag_Solo;
+    } else
+    {
+        track->stateFlags &= ~AukTrackFlag_Silent;
+    }
+
+    /* Send update notification */
+    emitMemberChange(track,AUK_MSG_TRACKMODIFIED_CHANGEFlags);
+
+}
+void AukTrack_SetSolo(AukTrack* track, int isSolo)
+{
+    if (!track) return;
+    if(((track->stateFlags & AukTrackFlag_Solo)!=0) ==
+       (isSolo !=0) ) return;
+
+    if(isSolo)
+    {
+        track->stateFlags |= AukTrackFlag_Solo;
+        /* set solo remove silent */
+        track->stateFlags &= ~AukTrackFlag_Silent;
+    } else
+    {
+        track->stateFlags &= ~AukTrackFlag_Solo;
+    }
+
+    /* Send update notification */
+    emitMemberChange(track,AUK_MSG_TRACKMODIFIED_CHANGEFlags);
+}
+
+int AukTrack_isSilent(AukTrack* track)
+{
+    if (!track) return 0;
+    return ((track->stateFlags & AukTrackFlag_Silent)!=0);
+
+}
+int AukTrack_isSolo(AukTrack* track)
+{
+    if (!track) return 0;
+    return ((track->stateFlags & AukTrackFlag_Solo)!=0);
+}
+
+/* Selection accessors (not serialized) */
+void AukTrack_SetSelected(AukTrack* track, int isSelected)
+{
+    if (!track) return;
+    if(((track->selectionFlags & AukTrackSelFlag_Selected)!=0) ==
+       (isSelected !=0) ) return;
+    if(isSelected)
+    {
+        track->selectionFlags |= AukTrackSelFlag_Selected;
+    } else
+    {
+        track->selectionFlags &= ~AukTrackSelFlag_Selected;
+    }
+
+    /* Send update notification */
+    emitMemberChange(track,AUK_MSG_TRACKMODIFIED_CHANGESelection);
+}
+
+int AukTrack_isSelected(AukTrack* track)
+{
+    if (!track) return 0;
+    return ((track->selectionFlags & AukTrackSelFlag_Selected)!=0);
+}
+

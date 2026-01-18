@@ -232,6 +232,8 @@ void TrackListArea_SetTrackName(struct Gadget *Gad,int itrack, const char *name)
     if(!Gad) return;
     gdata=INST_DATA(OCLASS(Gad), Gad);
 
+        bdbprintf("TrackListArea_SetTrackName\n");
+
     if(itrack>= (int)gdata->_trackCount) return;
 
     strack = &gdata->_tracks[itrack];
@@ -239,9 +241,56 @@ void TrackListArea_SetTrackName(struct Gadget *Gad,int itrack, const char *name)
 
     // could be SetGadgetAttrs(), but it's better for header layout component so they don't render under SetAttrs().
     SetAttrs(strack->_trackHeader,TRACKHEADER_Name,(ULONG)name,TAG_END);
-    // test
-  //  SetGadgetAttrs(strack->_trackHeader,window,NULL, TRACKHEADER_Name,(ULONG)name,TAG_END);
-  //  RethinkLayout(strack->_trackHeader,window,NULL,0);
 
 }
 
+
+void TrackListArea_SetTrackOwnVolume( struct Gadget *Gad,int itrack,int ivol)
+{
+    TrackListArea *gdata;
+    TrackChild *strack;
+
+        bdbprintf("TrackListArea_SetTrackOwnVolume\n");
+    if(!Gad) return;
+    gdata=INST_DATA(OCLASS(Gad), Gad);
+
+    if(itrack>= (int)gdata->_trackCount) return;
+
+    strack = &gdata->_tracks[itrack];
+    if(!strack->_trackHeader) return;
+
+    SetAttrs(strack->_trackHeader,TRACKHEADER_Volume,(ULONG)ivol,TAG_END);
+}
+
+void TrackListArea_SetTrackStereoPan( struct Gadget *Gad,int itrack,int ipan)
+{
+    TrackListArea *gdata;
+    TrackChild *strack;
+
+        bdbprintf("TrackListArea_SetTrackStereoPan\n");
+    if(!Gad) return;
+    gdata=INST_DATA(OCLASS(Gad), Gad);
+
+    if(itrack>= (int)gdata->_trackCount) return;
+
+    strack = &gdata->_tracks[itrack];
+    if(!strack->_trackHeader) return;
+    SetAttrs(strack->_trackHeader,TRACKHEADER_Pan,(ULONG)ipan,TAG_END);
+
+}
+void TrackListArea_SetTrackFlags( struct Gadget *Gad,int itrack,int flags)
+{
+
+        bdbprintf("TrackListArea_SetTrackFlags\n");
+    TrackListArea *gdata;
+    TrackChild *strack;
+    if(!Gad) return;
+    gdata=INST_DATA(OCLASS(Gad), Gad);
+
+    if(itrack>= (int)gdata->_trackCount) return;
+
+    strack = &gdata->_tracks[itrack];
+    if(!strack->_trackHeader) return;
+
+    SetAttrs(strack->_trackHeader,TRACKHEADER_Flags,(ULONG)flags,TAG_END);
+}

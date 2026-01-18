@@ -162,6 +162,7 @@ bdbprintf("omnew th target %08x\n",target);
                                        // GA_DrawInfo,(ULONG)drawInfo,
                                         GA_RelVerify, TRUE,
                                         BUTTON_BevelStyle, BVS_THIN,
+                                        BUTTON_PushButton,TRUE, // aka toggle button
                                     TAG_END);
 
             gdata->subs[THS_SoloBt] = NewObject( BUTTON_GetClass(),NULL,
@@ -172,6 +173,7 @@ bdbprintf("omnew th target %08x\n",target);
                                        // GA_DrawInfo,(ULONG)drawInfo,
                                         GA_RelVerify, TRUE,
                                         BUTTON_BevelStyle, BVS_THIN,
+                                        BUTTON_PushButton,TRUE, // aka toggle button
                                     TAG_END);
 
             /* Row 3: Vol label and slider */

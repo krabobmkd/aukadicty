@@ -36,6 +36,11 @@ struct AukAProject {
     AukProjectPrefsPtr prefs;  /* Audio project preferences */
     AukArrayPtr tracks;        /* Array of audio tracks (AukArray) */
 
+    /* Selection state (not serialized) */
+    int hasSelection;          /* Boolean: 1 if time selection exists, 0 otherwise */
+    AukFixed selectionStart;   /* Start time of selection */
+    AukFixed selectionEnd;     /* End time of selection (exclusive) */
+
     /* Virtual methods specific to audio projects */
     AukTrack* (*CreateTrack)(void* This);
     int (*RemoveTrack)(void* This, AukTrack* track);
@@ -60,6 +65,13 @@ void AukAProject_GetTrack(void* This, AukTrack**ptr, unsigned int index);
 unsigned int AukAProject_GetTrackCount(void* This);
 AukFixed AukAProject_GetDuration(void* This);
 
+/* Selection accessors (not serialized) */
+void AukAProject_SetSelection(AukAProject* project, AukFixed start, AukFixed end);
+void AukAProject_ClearSelection(AukAProject* project);
+int AukAProject_HasSelection(AukAProject* project);
+AukFixed AukAProject_GetSelectionStart(AukAProject* project);
+AukFixed AukAProject_GetSelectionEnd(AukAProject* project);
+
 
 /* Message type enumeration that are AukAProject specific  */
 typedef enum {
@@ -68,7 +80,13 @@ typedef enum {
     AUK_MSG_TRACKMODIFIED_SOUNDADDED,
     AUK_MSG_TRACKMODIFIED_SOUNDREMOVED,
     AUK_MSG_TRACKMODIFIED_NAMECHANGE,
+    AUK_MSG_TRACKMODIFIED_CHANGEVol,
+    AUK_MSG_TRACKMODIFIED_CHANGEPan,
+    AUK_MSG_TRACKMODIFIED_CHANGEFlags,
+    AUK_MSG_TRACKMODIFIED_CHANGESelection,
+
     AUK_MSG_TRACKREMOVED,
+    AUK_MSG_SELECTIONCHANGED,
 } AukAProjectMessageType;
 
 typedef struct AukMessage_AProject {

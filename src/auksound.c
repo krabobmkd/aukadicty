@@ -51,6 +51,9 @@ void AukSound_Serialize(AukObject* This, ISerializer* ser, const char* pName) {
     /* Serialize sound file reference */
     ser->t_object(ser, "soundFile", (AukObjectPtr*)&sound->soundFile);
 
+    /* Serialize channel mask */
+    ser->t_uint(ser, "chMask", (unsigned int*)&sound->channelMask);
+
     /* Serialize timing information */
     ser->t_fixed(ser, "startTime", &sound->startTime);
     ser->t_fixed(ser, "endTime", &sound->endTime);
@@ -185,10 +188,32 @@ void AukSound_Init(AukSound* sound) {
 
         /* Initialize data members */
         sound->soundFile = NULL;
+        sound->channelMask = 3; /* Default stereo (bits 0 and 1) */
         sound->startTime = 0;
         sound->endTime = 0;
         sound->fileStartFrame = 0;
         sound->fileEndFrame = 0;
         sound->loopCount = 0;
     }
+}
+
+void AukSound_SetChannelMask(AukSound* sound, unsigned long mask)
+{
+    if (!sound) return;
+    if (sound->channelMask == mask) return;
+
+    sound->channelMask = mask;
+
+    /* Send update notification */
+    {
+        AukMessage msg;
+        msg.type = AUK_MSG_MODIFY;
+        sound->base.SendUpdate(&sound->base, &msg);
+    }
+}
+
+unsigned long AukSound_GetChannelMask(AukSound* sound)
+{
+    if (!sound) return 0;
+    return sound->channelMask;
 }

@@ -14,6 +14,7 @@ extern "C" {
 
 /* Fixed-point type: 32.32 format */
 typedef long long AukFixed;
+typedef int  AukFixed16;
 
 /* Constants */
 #define AUK_FIXED_SHIFT 32

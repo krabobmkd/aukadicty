@@ -30,6 +30,21 @@ struct AukTrack {
     AukScalarArray *envelopeTime;  /* Time points (8-byte AukFixed) */
     AukScalarArray *envelopeValue; /* Volume values (2-byte fixed point, 0x0100 = 1.0) */
 
+    AukFixed16  stereoPan; /* 0 Right, 32768 middle 65536 Left */
+    AukFixed16  ownVolume; /* 0 silent, 65536 Full. Multiply envelope signal */
+
+    int         channelCount; /* Number of audio channels this track manages (1=mono, 2=stereo, etc.) */
+
+    #define AukTrackFlag_Silent 1
+    #define AukTrackFlag_Solo 2
+
+    int         stateFlags;
+
+    /* Selection state (not serialized) */
+    #define AukTrackSelFlag_Selected 1
+
+    int         selectionFlags;
+
     /* Virtual methods specific to AukTrack */
     AukSound* (*CreateSound)(void* This, AukSoundFilePtr soundFile, AukFixed startTime, AukFixed endTime);
     int (*RemoveSound)(void* This, AukSound* sound);
@@ -74,6 +89,26 @@ int AukTrack_RemoveEnvelopePointAt(void* This, unsigned int index);
 int AukTrack_GetEnvelopePointAt(void* This, unsigned int index, AukFixed* time, unsigned short* value);
 unsigned int AukTrack_GetEnvelopePointCount(void* This);
 AukFixed AukTrack_GetEnvelopeValue(void* This, AukFixed time);
+
+/* accessors */
+void AukTrack_SetOwnVolume(AukTrack* track,AukFixed16 v);
+void AukTrack_SetStereoPan(AukTrack* track,AukFixed16 v);
+AukFixed16 AukTrack_GetOwnVolume(AukTrack* track);
+AukFixed16 AukTrack_GetStereoPan(AukTrack* track);
+
+void AukTrack_SetChannelCount(AukTrack* track, int count);
+int AukTrack_GetChannelCount(AukTrack* track);
+
+/* These 2 are exclusives, bool is passed */
+void AukTrack_SetSilent(AukTrack* track, int isSilent);
+void AukTrack_SetSolo(AukTrack* track, int isSolo);
+
+int AukTrack_isSilent(AukTrack* track);
+int AukTrack_isSolo(AukTrack* track);
+
+/* Selection accessors (not serialized) */
+void AukTrack_SetSelected(AukTrack* track, int isSelected);
+int AukTrack_isSelected(AukTrack* track);
 
 #ifdef __cplusplus
 }

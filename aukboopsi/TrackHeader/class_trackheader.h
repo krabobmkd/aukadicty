@@ -39,8 +39,11 @@
 /* */
 #define TRACKHEADER_Volume (TRACKHEADER_Dummy+4)
 
+/* silent and solo, ... boolean states */
+#define TRACKHEADER_Flags (TRACKHEADER_Dummy+5)
+
 /* Pointer to AukStyle for visual styling */
-#define	TRACKHEADER_StyleSheet		(TRACKHEADER_Dummy+5)
+#define	TRACKHEADER_StyleSheet		(TRACKHEADER_Dummy+6)
 
 
 /** DEVTODO: adds attributes definitions here and

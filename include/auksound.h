@@ -21,6 +21,11 @@ struct AukSound {
     /* Data members */
     AukSoundFile *soundFile;   /* Shared pointer to AukSoundFile */
 
+    /* Channel mask: 32-bit bitmask of channels used from soundFile.
+     * Bit 0 = channel 0, Bit 1 = channel 1, etc.
+     * Examples: 1 = mono (channel 0), 3 = stereo (channels 0+1), 31 = 5 channels */
+    unsigned long channelMask;
+
     AukFixed startTime;      /* Start time in project timeline (inclusive) */
     AukFixed endTime;        /* End time in project timeline (exclusive - first value NOT in sound) */
 
@@ -50,6 +55,9 @@ void AukSound_SetTimeRange(void* This, AukFixed start, AukFixed end);
 void AukSound_SetFileRange(void* This, unsigned long startFrame, unsigned long endFrame);
 void AukSound_SetLoopCount(void* This, unsigned long count);
 AukFixed AukSound_GetDuration(void* This);
+
+void AukSound_SetChannelMask(AukSound* sound, unsigned long mask);
+unsigned long AukSound_GetChannelMask(AukSound* sound);
 
 #ifdef __cplusplus
 }
