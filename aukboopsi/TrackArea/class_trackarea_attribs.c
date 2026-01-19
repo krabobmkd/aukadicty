@@ -78,7 +78,7 @@ ULONG TrackArea_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
     {
       case TRACKAREA_StyleSheet:
         /* data points to AukStyle */
-         bdbprintf(" **** setattr TRACKAREA_StyleSheet %08x\n",data);
+         //bdbprintf(" **** setattr TRACKAREA_StyleSheet %08x\n",data);
         gdata->_style = (struct AukStyle *)data;
         redraw = 1;
         break;

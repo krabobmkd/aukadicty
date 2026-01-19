@@ -480,7 +480,7 @@ void TrackListView_setProject(TrackListView *pm,AukAProject *project)
     }
     // retain project
     AukObjectPtr_Set(&pm->project,&project->base.base);
-    printf("  ////// TrackListView_setProject:%08x\n",(int)project);
+   // printf("  ////// TrackListView_setProject:%08x\n",(int)project);
 
     // link data to UI
     TrackListArea_setTrackList(pm->trackList ,project );
@@ -606,6 +606,10 @@ int getGadgetMessageAttrib(struct opUpdate *M, int attrib)
     return -1;
 }
 
+
+/* taken out of context, code that tells a button is released */
+#define WMHI_GADGETUP        (2<<16)
+
 /*
     Here, UI ask actions on the data, data modify and send update messages,
     event listeners then adapt UI.
@@ -631,10 +635,14 @@ void TrackListView_ListenTrackHeaderMessage(TrackListView *pm,struct opUpdate *M
     {
         case GAD_TRACKHEADER_CLOSE:
         {
-            // wtach out receive events that are not necessarily "button action"
-            int buttonstate = getGadgetMessageAttrib(M,GA_SELECTED);
-            /* Close track at data level */
-            if(buttonstate >0)
+            // watch out receive events that are not necessarily "button action"
+            // buttonState is sent all the time button is pressed
+//            int buttonstate = getGadgetMessageAttrib(M,GA_SELECTED);
+            int buttonReleased = getGadgetMessageAttrib(M,WMHI_GADGETUP);
+
+           // printf("GAD_TRACKHEADER_CLOSE buttonReleased:%d\n",buttonReleased);
+            // /* Close track at data level */
+            if(buttonReleased >0)
             {
                 printf("go project->RemoveTrack %d %08x %08x\n",trackId,project,track);
                 project->RemoveTrack(project,track);

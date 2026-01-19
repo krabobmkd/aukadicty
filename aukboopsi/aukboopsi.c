@@ -70,6 +70,7 @@
 #include "aukstylesheet.h"
 #include "aukmenu.h"
 #include "boopsidelay.h"
+#include "boopsidispose.h"
 #include "TrackListArea/class_tracklistarea.h"
 //#include "aukaproject.h"
 #include <aukadicty.h>
@@ -222,6 +223,8 @@ struct App *app=NULL;
 // note there vould be many windows.
 struct Window *CurrentMainWindow=NULL;
 
+BoopsiDisposeQueue *ObjectLateDisposer=NULL;
+
 /* The attribs we actually delay
 */
 static ULONG delayedAttribs[]={
@@ -256,6 +259,18 @@ ULONG ASM SAVEDS AppModelDispatch(
         {
             struct TagItem *ptag;
             ULONG sender_ID=0;
+
+
+            /* active this to trace messages sent by gadgets
+             {
+                ptag = M->opUpdate.opu_AttrList;
+                while(ptag->ti_Tag != 0)
+                {
+                    bdbprintf("n:%08x %08x\n",ptag->ti_Tag,ptag->ti_Data);
+                    ptag++;
+                }
+                bdbprintf("\n");
+            }*/
 
             if((ptag = FindTagItem( GA_ID,M->opUpdate.opu_AttrList ))!=NULL) sender_ID = ptag->ti_Data;
 
@@ -343,6 +358,9 @@ int main(int argc, char **argv)
 
     /* Initialize action system (after locale init) */
     AukAction_Init();
+
+    ObjectLateDisposer = (BoopsiDisposeQueue *)AllocVec(sizeof(BoopsiDisposeQueue),MEMF_CLEAR);
+    if(!ObjectLateDisposer) exit(0);
 
     if(!initAppModel())  cleanexit("Can't create app");
 printf("AppInstance %08x\n",AppInstance);
@@ -476,14 +494,13 @@ printf("AppInstance %08x\n",AppInstance);
 
                     case WMHI_GADGETUP: /* the quick way to get button events at this level. */
                     {
-                        if((result>>16) >=GAD_TRACKHEADER_BASE)
-                        {
-                            printf("WMHI_GADGETUP:%08x\n",result>>16);
-                        }
-//                        if(gid == GAD_BUTTON_ABOUT)
-//                        {
-//                            openAboutReq();
-//                        }
+                        /* releasing a button is only sent here
+                          Pass it the same way gadget details are sent to
+                          AppInstance  OM_NOTIFY.*/
+                        ULONG senderId = result & WMHI_GADGETMASK;
+                        BoopsiDelay_BeginMessage(&app->delayQueue, senderId);
+                        BoopsiDelay_AddTag(&app->delayQueue,WMHI_GADGETUP,1);
+                        BoopsiDelay_EndMessage(&app->delayQueue);
                         break;
                     }
                     case WMHI_ICONIFY:
@@ -524,6 +541,13 @@ printf("AppInstance %08x\n",AppInstance);
 
             } // end while messages
 
+            /* removing gadgets children that are currently in action may crash when disposed
+                    ie: the trackheader exit button. In a general way it's better to do
+                    the effective DisposeObject() on detached gadget, a round later.
+              */
+            if(ObjectLateDisposer->count>0) BoopsiDispose_Flush(ObjectLateDisposer);
+
+
             /* Process delayed BOOPSI notifications
                 So now, we are in the main process where
                 all buttons, sliders, and other UI action
@@ -552,7 +576,7 @@ printf("AppInstance %08x\n",AppInstance);
                     }
                     else if (sender_ID >= GAD_HEADER_EDITMODE1 && sender_ID <= GAD_HEADER_EDITMODE6)
                     {
-                        bdbprintf("Edit mode button: %08x\n", sender_ID);
+                       // bdbprintf("Edit mode button: %08x\n", sender_ID);
                     }
                     else if (sender_ID == GAD_TRACKLIST)
                     {
@@ -620,6 +644,12 @@ void exitclose(void)
         if(app->window_obj) DisposeObject(app->window_obj);
         CurrentMainWindow = NULL;
 
+        if( ObjectLateDisposer)
+        {
+            BoopsiDispose_Flush(ObjectLateDisposer);
+            FreeVec(ObjectLateDisposer);
+         }
+        ObjectLateDisposer = NULL;
 
         /* Release stylesheet object (will close fonts automatically) */
         if (app->styleSheet) {

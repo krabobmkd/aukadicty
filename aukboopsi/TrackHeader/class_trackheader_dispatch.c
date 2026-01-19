@@ -118,7 +118,7 @@ ULONG ASM SAVEDS TrackHeader_Dispatcher(
         {
             target = ptag->ti_Data;
         }
-bdbprintf("omnew th target %08x\n",target);
+
         {
           if((Gad=(struct Gadget *)DoSuperMethodA(C,(Object *)Gad,(Msg)M))!=NULL)
           {

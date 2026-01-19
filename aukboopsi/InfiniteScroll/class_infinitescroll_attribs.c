@@ -90,7 +90,7 @@ ULONG InfiniteScroll_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
             case INFINITESCROLL_RenderFunction:
             {
                 InfiniteScrollRenderf f = (InfiniteScrollRenderf)tag->ti_Data;
-                bdbprintf(" //// set INFINITESCROLL_RenderFunction:%08x\n",(int)f);
+               // bdbprintf(" //// set INFINITESCROLL_RenderFunction:%08x\n",(int)f);
                 if(f !=  gdata->_renderFunction)
                 {
                    gdata->_renderFunction = f;
@@ -100,7 +100,7 @@ ULONG InfiniteScroll_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
             case INFINITESCROLL_FullTilesRefresh:
             {
                 // this is enough to flush the cache at rendering.
-                   bdbprintf(" //// set INFINITESCROLL_FullTilesRefresh:\n");
+               //    bdbprintf(" //// set INFINITESCROLL_FullTilesRefresh:\n");
                 gdata->_currentLeftBorderTileIndex = -1;
                 needsRefresh = TRUE;
             } break;

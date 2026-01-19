@@ -31,6 +31,8 @@
 #include <aukarray.h>
 #include <auktrack.h>
 
+#include "boopsidispose.h"
+
 // memcpy
 #include <string.h>
 
@@ -71,6 +73,8 @@ extern struct IClass   *TrackAreaClassPtr;
 /* This can be reallocated, so this is shared like this */
 extern struct Window *CurrentMainWindow;
 
+
+extern BoopsiDisposeQueue *ObjectLateDisposer;
 //static ULONG TrackListArea_NotifyChangeWidth(struct Gadget *Gad, struct GadgetInfo	*GInfo)
 //{
 //    struct opUpdate notifymsg;
@@ -391,6 +395,20 @@ ULONG TrackListArea_Render(Class *C, struct Gadget *Gad, struct gpRender *Render
         } // end loop per track
     } // end if any track
 
+    /* may render empty space */
+    {
+        int lasttrackY = topedge - gdata->_scrollY + gdata->_domainHeight;
+        if(lasttrackY<gdata->_framerec.MaxY)
+        {
+           SetAPen(rp, gdata->_styleSheet->trackBackground.pen);
+           RectFill(rp,gdata->_framerec.MinX,
+                       lasttrackY,
+                       gdata->_framerec.MaxX,
+                       gdata->_framerec.MaxY);
+        }
+    }
+
+
     InstallClipRegion( rp->Layer,oldClipRegion); // important to pass NULL if oldClipRegion is NULL.
 
     // if(bLayerUpdating)
@@ -422,16 +440,20 @@ void TrackListArea_DisposeGadgets(struct Gadget *Gad,TrackListArea *gdata)
     {
         for(i = 0; i < gdata->_trackCount; i++)
         {
-            if(gdata->_tracks[i]._trackHeader)
+            Object *trackHeader = gdata->_tracks[i]._trackHeader;
+            Object *trackArea = gdata->_tracks[i]._trackArea;
+            if(trackHeader)
             {
                 /* LAYOUT_RemoveChild: This will destroy the object as well. */
                 SetGadgetAttrs(Gad,CurrentMainWindow,NULL,
-                            LAYOUT_RemoveChild,(ULONG)gdata->_tracks[i]._trackHeader,TAG_END);
+                            LAYOUT_RemoveChild,(ULONG)trackHeader,TAG_END);
+                BoopsiDispose_Later( ObjectLateDisposer, trackHeader);
             }
-            if(gdata->_tracks[i]._trackArea)
+            if(trackArea)
             {
                 SetGadgetAttrs(Gad,CurrentMainWindow,NULL,
-                            LAYOUT_RemoveChild,(ULONG)gdata->_tracks[i]._trackArea,TAG_END);
+                            LAYOUT_RemoveChild,(ULONG)trackArea,TAG_END);
+                BoopsiDispose_Later( ObjectLateDisposer, trackArea);
             }
              /* release data we sync: */
             AukObjectPtr_Release(&gdata->_tracks[i]._dataTrack);
@@ -491,7 +513,10 @@ static int TrackListArea_CreateTrackLine(
 
     if(strack->_trackHeader)
     {
-        SetAttrs(Gad,LAYOUT_AddChild,(ULONG)strack->_trackHeader,TAG_END);
+        /* CHILD_NoDispose superimportant, to manage smooth detach  */
+        SetAttrs(Gad,LAYOUT_AddChild,(ULONG)strack->_trackHeader,
+                    CHILD_NoDispose,TRUE,
+                    TAG_END);
     }
     //if(!strack->_trackHeader ) return 0;
     /* Create TrackArea - pass data track for reference counted retention */
@@ -503,7 +528,9 @@ static int TrackListArea_CreateTrackLine(
                                    TAG_END);
     if(strack->_trackArea)
     {
-        SetAttrs(Gad,LAYOUT_AddChild,(ULONG)strack->_trackArea,TAG_END);
+        SetAttrs(Gad,LAYOUT_AddChild,(ULONG)strack->_trackArea,
+                            CHILD_NoDispose,TRUE,
+                            TAG_END);
     }
 
     /* retain data we sync: */
@@ -684,9 +711,12 @@ void TrackListArea_removeTrack(struct Gadget *Gad, AukTrack *track, int indexToR
     if(trackheader)
     {   // do that first !
         gdata->_tracks[indexToRemove]._trackHeader = NULL;
-    // CHILD_NoDispose
-        SetGadgetAttrs(Gad, CurrentMainWindow, NULL,
-                    LAYOUT_RemoveChild, (ULONG)trackheader, TAG_END);
+        // SetGadgetAttrs(Gad, CurrentMainWindow, NULL,
+        //             LAYOUT_RemoveChild, (ULONG)trackheader, TAG_END);
+        SetAttrs(Gad, LAYOUT_RemoveChild, (ULONG)trackheader, TAG_END);
+        BoopsiDispose_Later( ObjectLateDisposer, trackheader);
+
+//        DisposeObject(trackheader);
 //struct GadgetInfo
 //        struct gpGoInactive ina;
 //        ina.MethodID = GM_GOINACTIVE;
@@ -698,18 +728,18 @@ void TrackListArea_removeTrack(struct Gadget *Gad, AukTrack *track, int indexToR
 //        SetAttrs(Gad, CHILD_NoDispose, TRUE, LAYOUT_RemoveChild, (ULONG)trackheader, TAG_END);
 
     }
- exit(0);
+
     trackarea = gdata->_tracks[indexToRemove]._trackArea;
     if(trackarea)
     {
          // do that first !
         gdata->_tracks[indexToRemove]._trackArea = NULL;
-        SetGadgetAttrs(Gad, CurrentMainWindow, NULL,
-                    LAYOUT_RemoveChild, (ULONG)trackarea, TAG_END);
-//        SetAttrs(Gad, LAYOUT_RemoveChild, (ULONG)trackarea, TAG_END);
-
+        // SetGadgetAttrs(Gad, CurrentMainWindow, NULL,
+        //             LAYOUT_RemoveChild, (ULONG)trackarea, TAG_END);
+        SetAttrs(Gad, LAYOUT_RemoveChild, (ULONG)trackarea, TAG_END);
+        BoopsiDispose_Later( ObjectLateDisposer, trackarea);
     }
- exit(0);
+
     AukObjectPtr_Release(&gdata->_tracks[indexToRemove]._dataTrack);
 
     /* Shift remaining tracks down */
@@ -731,8 +761,9 @@ void TrackListArea_removeTrack(struct Gadget *Gad, AukTrack *track, int indexToR
             SetAttrs(gdata->_tracks[i]._trackHeader, TRACKHEADER_TrackIndex, i, TAG_END);
         }
     }
-    /* Will need big refesh with alyout and render */
-    /*TODO->message it*/
+    /* Will need big refesh with layout and render */
+    SetGadgetAttrs(Gad,CurrentMainWindow, NULL,TRACKLIST_Refresh,TRUE,TAG_END);
+
 }
 
 /* Swap two tracks by their indices */

@@ -81,6 +81,9 @@ set(AUKBOOPSI_SOURCES
     boopsidelay.c
     boopsidelay.h
 
+    boopsidispose.c
+    boopsidispose.h
+
     offscreenbm.c
     offscreenbm.h
 
