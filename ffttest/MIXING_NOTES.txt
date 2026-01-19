@@ -1,0 +1,165 @@
+Mixing Audio Tracks: Time-Domain vs Frequency-Domain
+=====================================================
+
+QUESTION
+--------
+Is it meaningful to mix multiple audio tracks in the frequency domain
+by taking the max magnitude at each frequency bin, then doing inverse FFT?
+Is it better than just adding signals?
+
+
+STANDARD MIXING (TIME-DOMAIN ADDITION)
+--------------------------------------
+    output[i] = track1[i] + track2[i] + track3[i]...
+
+This matches physical reality - sound waves obey superposition.
+When two speakers play simultaneously, air pressure variations add together.
+It's also trivial to compute (one ADD per sample).
+
+
+FREQUENCY-DOMAIN "MAX" MIXING
+-----------------------------
+    for each bin k:
+        output_bin[k] = track with highest |magnitude| at k
+
+Then perform inverse FFT on result.
+
+
+PROBLEMS WITH MAX-FREQUENCY APPROACH
+------------------------------------
+
+1. Phase Incoherence
+   Each FFT bin has magnitude AND phase. If you take bin 10 from track A
+   and bin 11 from track B, their phases likely don't form a coherent signal.
+   The IFFT will produce something, but it won't sound like either source.
+
+2. Doesn't Preserve Acoustic Reality
+   Two violins playing the same note don't "mask" each other - you hear both,
+   richer. Max-mixing would discard one violin's contribution at each frequency.
+
+3. Harmonic Destruction
+   A trumpet note has fundamental + harmonics at specific phase relationships.
+   If the fundamental comes from track A but the 3rd harmonic from track B
+   (because B was louder there), you get a frankenstein timbre that sounds
+   like neither instrument.
+
+4. Block Discontinuities
+   The "winner" at each bin may flip between tracks from block to block,
+   causing clicks and artifacts at block boundaries.
+
+5. Much More CPU
+   Two FFTs + comparison + IFFT vs. simple addition.
+   On 68000: ~100ms for FFT approach vs ~1ms for addition per block.
+
+
+WHERE MAX-BASED APPROACHES ARE USEFUL
+-------------------------------------
+
+Application              Why it works
+-----------              ------------
+Noise reduction          Subtract estimated noise spectrum,
+                         keep max(0, signal-noise)
+
+Perceptual coding        Quieter frequencies masked by louder ones -
+(MP3, AAC)               discard them for compression, saves bits
+
+Source separation        Binary masking assigns each bin to one source,
+                         useful for isolating vocals/instruments
+
+Creative effects         "Spectral freeze", weird morphing sounds,
+                         experimental electronic music
+
+
+VERDICT
+-------
+For mixing audio tracks in a DAW/editor: SIMPLE ADDITION IS CORRECT AND BETTER.
+
+Reasons:
+- Physically accurate (matches how sound actually combines)
+- Preserves all information (no phase loss)
+- Fast (no FFT needed)
+- Predictable behavior
+- Industry standard for decades
+
+The only problem with addition is clipping when combined amplitude exceeds
+16-bit range.
+
+Solutions:
+- Scale down inputs before mixing
+- Use headroom (mix at lower levels)
+- Apply limiter on output
+- Use 32-bit intermediate accumulator
+
+
+CORRECT MIXING CODE (C)
+-----------------------
+
+    /* Simple time-domain mixing */
+    for (i = 0; i < length; i++) {
+        long sum = (long)track1[i] + (long)track2[i];
+
+        /* Simple hard clip */
+        if (sum > 32767) sum = 32767;
+        if (sum < -32768) sum = -32768;
+
+        output[i] = (short)sum;
+    }
+
+For multiple tracks with scaling:
+
+    /* Mix N tracks with automatic headroom */
+    for (i = 0; i < length; i++) {
+        long sum = 0;
+        for (t = 0; t < num_tracks; t++) {
+            sum += tracks[t][i];
+        }
+
+        /* Scale down by number of tracks to prevent clipping */
+        sum /= num_tracks;
+
+        output[i] = (short)sum;
+    }
+
+
+WHEN FFT-DOMAIN PROCESSING IS USEFUL FOR MIXING
+-----------------------------------------------
+Not for the actual mix, but for effects applied before mixing:
+
+- EQ (equalization) - boost/cut frequency bands
+- Spectral gate - remove frequencies below threshold
+- Convolution reverb - multiply spectra for room simulation
+- Pitch shifting - shift bins up/down
+- Time stretching - modify phase progression
+- Noise reduction - subtract noise profile
+- Spectral visualization - show frequency content
+
+
+CREATIVE USES OF SPECTRAL COMPOSITING
+-------------------------------------
+As an EFFECT (not standard mixing), max-based spectral mixing could be
+offered as a creative tool:
+
+- "Spectral composite" mode for alien/experimental textures
+- Frequency-selective ducking (sidechain by frequency band)
+- Visualize which track dominates which frequency
+- Sound design for electronic/experimental music
+
+But this should be clearly labeled as an effect, not the default mix mode.
+
+
+CONCLUSION
+----------
+Use time-domain addition for mixing. It's correct, fast, and predictable.
+
+Use FFT for:
+- Analysis and visualization
+- Frequency-domain effects (EQ, filtering)
+- Creative spectral manipulation
+- Compression algorithms
+
+Don't use FFT max-mixing as a replacement for standard mixing.
+
+
+AUTHOR
+------
+Notes for Aukadicty project, January 2026.
