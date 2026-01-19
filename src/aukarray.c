@@ -186,10 +186,12 @@ int AukArray_Remove(void* This, AukObject* item) {
     if (!array || !item) {
         return 0;
     }
+
     aukMutex_lock(&array->mutex);
     /* Find and remove item */
     for (i = 0; i < array->count; i++) {
         if (array->items[i] == item) {
+            aukMutex_unlock(&array->mutex);
             return AukArray_RemoveAt(This, i);
         }
     }

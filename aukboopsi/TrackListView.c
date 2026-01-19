@@ -268,7 +268,7 @@ static void AukUpdate_TrackList(AukObject* listenerObject, AukObject* modifiedOb
                   &AukUpdate_Track //AukUpdateCallback callback
                   );
 
-            // update GUI, add ui track
+            // update GUI, add ui track. This retain the track.
             TrackListArea_insertTrack(trackListAreaUi,track,track->trackIndex);
 
             /* Track added may affect project duration, update horizontal scroll domain */
@@ -631,20 +631,20 @@ void TrackListView_ListenTrackHeaderMessage(TrackListView *pm,struct opUpdate *M
     {
         case GAD_TRACKHEADER_CLOSE:
         {
-        printf("go project->RemoveTrack %d\n",trackId);
+            // wtach out receive events that are not necessarily "button action"
             int buttonstate = getGadgetMessageAttrib(M,GA_SELECTED);
             /* Close track at data level */
-            if(buttonstate)
+            if(buttonstate >0)
             {
-             printf("go RemoveTrack\n");
-             AukObjectPtr_Release(&track);
+                printf("go project->RemoveTrack %d %08x %08x\n",trackId,project,track);
                 project->RemoveTrack(project,track);
+                AukObjectPtr_Release(&track);
             }
         }
         break;
         case GAD_TRACKHEADER_NAME:
         {
-        printf("todoAukTrack_SetName %d\n",trackId);
+       // printf("todoAukTrack_SetName %d\n",trackId);
             // TODO use requester for the name, then send new name.
             //AukTrack_SetName(track,)
         }
@@ -653,28 +653,28 @@ void TrackListView_ListenTrackHeaderMessage(TrackListView *pm,struct opUpdate *M
         {
 
             int buttonstate = getGadgetMessageAttrib(M,GA_SELECTED);
-        printf("AukTrack_SetSilent %d\n",buttonstate);
+      //  printf("AukTrack_SetSilent %d\n",buttonstate);
          if(buttonstate !=-1) AukTrack_SetSilent(track,buttonstate);
         }
         break;
         case GAD_TRACKHEADER_SOLO:
         {
             int buttonstate = getGadgetMessageAttrib(M,GA_SELECTED);
-            bdbprintf("AukTrack_SetSolo %d\n",buttonstate);
+           // bdbprintf("AukTrack_SetSolo %d\n",buttonstate);
             if(buttonstate !=-1) AukTrack_SetSolo(track,buttonstate);
         }
         break;
         case GAD_TRACKHEADER_VOL:
         {
             int sliderlevel = getGadgetMessageAttrib(M,SLIDER_Level);
-        bdbprintf("AukTrack_SetOwnVolume %d\n",sliderlevel);
+      //  bdbprintf("AukTrack_SetOwnVolume %d\n",sliderlevel);
             if(sliderlevel !=-1) AukTrack_SetOwnVolume(track,sliderlevel<<9);
         }
         break;
         case GAD_TRACKHEADER_PAN:
         {
             int sliderlevel = getGadgetMessageAttrib(M,SLIDER_Level);
-        bdbprintf("AukTrack_SetStereoPan %d\n",sliderlevel);
+       // bdbprintf("AukTrack_SetStereoPan %d\n",sliderlevel);
             if(sliderlevel !=-1) AukTrack_SetStereoPan(track,sliderlevel<<9);
         }
         break;

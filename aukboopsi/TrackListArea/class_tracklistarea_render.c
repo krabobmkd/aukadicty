@@ -433,10 +433,12 @@ void TrackListArea_DisposeGadgets(struct Gadget *Gad,TrackListArea *gdata)
                 SetGadgetAttrs(Gad,CurrentMainWindow,NULL,
                             LAYOUT_RemoveChild,(ULONG)gdata->_tracks[i]._trackArea,TAG_END);
             }
+             /* release data we sync: */
+            AukObjectPtr_Release(&gdata->_tracks[i]._dataTrack);
+
             /* Clear the slot */
             gdata->_tracks[i]._trackHeader = NULL;
             gdata->_tracks[i]._trackArea = NULL;
-            gdata->_tracks[i]._dataTrack = NULL;
         }
 
         FreeVec(gdata->_tracks);
@@ -500,8 +502,8 @@ static int TrackListArea_CreateTrackLine(
         SetAttrs(Gad,LAYOUT_AddChild,(ULONG)strack->_trackArea,TAG_END);
     }
 
-    /* data we sync (weak reference for quick access): */
-    strack->_dataTrack = dataTrack;
+    /* retain data we sync: */
+    AukObjectPtr_Set(&strack->_dataTrack,dataTrack);
     // default value
     strack->_prefHeight = 96;
 
@@ -648,12 +650,14 @@ void TrackListArea_insertTrack(struct Gadget *Gad, AukTrack *track, int indexToI
             SetAttrs(gdata->_tracks[i]._trackHeader, TRACKHEADER_TrackIndex, i, TAG_END);
         }
     }
+
 }
 
 /* Remove track at specified index, shifting remaining tracks down */
 void TrackListArea_removeTrack(struct Gadget *Gad, AukTrack *track, int indexToRemove)
 {
     TrackListArea *gdata;
+    Object *trackheader,*trackarea;
     ULONG i;
 
     if(!TrackListClassPtr || !Gad) return;
@@ -672,19 +676,35 @@ void TrackListArea_removeTrack(struct Gadget *Gad, AukTrack *track, int indexToR
     bdbprintf("TrackListArea_removeTrack index:%d count:%ld\n", indexToRemove, gdata->_trackCount);
 
     /* Dispose gadgets at this index using LAYOUT_RemoveChild */
-    if(gdata->_tracks[indexToRemove]._trackHeader)
+    trackheader = gdata->_tracks[indexToRemove]._trackHeader;
+    if(trackheader)
     {
-        SetGadgetAttrs(Gad, CurrentMainWindow, NULL,
-                    LAYOUT_RemoveChild, (ULONG)gdata->_tracks[indexToRemove]._trackHeader, TAG_END);
+    // CHILD_NoDispose
+//        SetGadgetAttrs(Gad, CurrentMainWindow, NULL,
+//                    LAYOUT_RemoveChild, (ULONG)gdata->_tracks[indexToRemove]._trackHeader, TAG_END);
+//struct GadgetInfo
+        struct gpGoInactive ina;
+        ina.MethodID = GM_GOINACTIVE;
+        ina.gpgi_GInfo = NULL;
+        ina.gpgi_Abort = 1;
+
+        DoMethodA(trackheader,&ina);
+
+        SetAttrs(Gad, LAYOUT_RemoveChild, (ULONG)trackheader, TAG_END);
         gdata->_tracks[indexToRemove]._trackHeader = NULL;
     }
-    if(gdata->_tracks[indexToRemove]._trackArea)
+ exit(0);
+    trackarea = gdata->_tracks[indexToRemove]._trackArea;
+    if(trackarea)
     {
-        SetGadgetAttrs(Gad, CurrentMainWindow, NULL,
-                    LAYOUT_RemoveChild, (ULONG)gdata->_tracks[indexToRemove]._trackArea, TAG_END);
+//        SetGadgetAttrs(Gad, CurrentMainWindow, NULL,
+//                    LAYOUT_RemoveChild, (ULONG)gdata->_tracks[indexToRemove]._trackArea, TAG_END);
+
+        SetAttrs(Gad, LAYOUT_RemoveChild, (ULONG)trackarea, TAG_END);
         gdata->_tracks[indexToRemove]._trackArea = NULL;
     }
-    gdata->_tracks[indexToRemove]._dataTrack = NULL;
+ exit(0);
+    AukObjectPtr_Release(&gdata->_tracks[indexToRemove]._dataTrack);
 
     /* Shift remaining tracks down */
     for(i = indexToRemove; i < gdata->_trackCount - 1; i++)
@@ -705,6 +725,8 @@ void TrackListArea_removeTrack(struct Gadget *Gad, AukTrack *track, int indexToR
             SetAttrs(gdata->_tracks[i]._trackHeader, TRACKHEADER_TrackIndex, i, TAG_END);
         }
     }
+    /* Will need big refesh with alyout and render */
+    /*TODO->message it*/
 }
 
 /* Swap two tracks by their indices */

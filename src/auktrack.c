@@ -766,7 +766,7 @@ int AukTrack_GetChannelCount(AukTrack* track)
 void AukTrack_SetSilent(AukTrack* track, int isSilent)
 {
     if (!track) return;
-    printf("AukTrack_SetSilent track trackIndex:%d\n",track->trackIndex);
+   // printf("AukTrack_SetSilent track trackIndex:%d\n",track->trackIndex);
     if(((track->stateFlags & AukTrackFlag_Silent)!=0) ==
        (isSilent !=0) ) return;
     if(isSilent)

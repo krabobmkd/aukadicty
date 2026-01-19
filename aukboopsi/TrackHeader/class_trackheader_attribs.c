@@ -17,6 +17,8 @@
 #include <gadgets/slider.h>
 #include <utility/tagitem.h>
 
+#include "gadgetid.h"
+
 /* This can be reallocated, so this is shared like this */
 extern struct Window *CurrentMainWindow;
 
@@ -96,10 +98,40 @@ ULONG TrackHeader_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
         break;
         case TRACKHEADER_TrackIndex:
         {
-            gdata->_trackIndex = data;
-            TODO propagate and change GA_ID to all subbuttons
-like       GA_ID,GAD_TRACKHEADER_BASE|GAD_TRACKHEADER_NAME|(iTrack<<4),
+            ULONG iTrack = data;
+            gdata->_trackIndex = iTrack;
 
+            /* track id shifted, propagate and change GA_ID to all active children */
+            if(gdata->subs[THS_CloseButton])
+                SetAttrs(gdata->subs[THS_CloseButton],GA_ID,
+                    GAD_TRACKHEADER_BASE|GAD_TRACKHEADER_CLOSE|(iTrack<<4),
+                    TAG_END);
+
+            if(gdata->subs[THS_NameButton])
+                SetAttrs(gdata->subs[THS_NameButton],GA_ID,
+                    GAD_TRACKHEADER_BASE|GAD_TRACKHEADER_NAME|(iTrack<<4),
+                    TAG_END);
+
+            if(gdata->subs[THS_SilencerBt])
+                SetAttrs(gdata->subs[THS_SilencerBt],GA_ID,
+                    GAD_TRACKHEADER_BASE|GAD_TRACKHEADER_SILENCER|(iTrack<<4),
+                    TAG_END);
+
+            if(gdata->subs[THS_SoloBt])
+                SetAttrs(gdata->subs[THS_SoloBt],GA_ID,
+                    GAD_TRACKHEADER_BASE|GAD_TRACKHEADER_SOLO|(iTrack<<4),
+                    TAG_END);
+
+
+            if(gdata->subs[THS_VolumeSlider])
+                SetAttrs(gdata->subs[THS_VolumeSlider],GA_ID,
+                    GAD_TRACKHEADER_BASE|GAD_TRACKHEADER_VOL|(iTrack<<4),
+                    TAG_END);
+
+            if(gdata->subs[THS_PanSlider])
+                SetAttrs(gdata->subs[THS_PanSlider],GA_ID,
+                    GAD_TRACKHEADER_BASE|GAD_TRACKHEADER_PAN|(iTrack<<4),
+                    TAG_END);
 
         } break;
        case  TRACKHEADER_Name:

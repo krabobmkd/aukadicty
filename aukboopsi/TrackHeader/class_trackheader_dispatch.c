@@ -127,7 +127,8 @@ bdbprintf("omnew th target %08x\n",target);
             bdbprintf_new("TrackHeader", Gad);
             Gad->GadgetID = GAD_TRACKHEADER_BASE+(iTrack<<4);
 
-           //not sure SetSuperAttrs(C,Gad,LAYOUT_DeferLayout,TRUE,TAG_END);
+           //not sure
+           SetSuperAttrs(C,Gad,LAYOUT_DeferLayout,TRUE,TAG_END);
             /* Initialize all child pointers to NULL */
             for(i=0; i<THS_Total; i++) gdata->subs[i] = NULL;
 
@@ -142,7 +143,7 @@ bdbprintf("omnew th target %08x\n",target);
                                         GA_ID,GAD_TRACKHEADER_BASE|GAD_TRACKHEADER_CLOSE|(iTrack<<4),
                                         ICA_TARGET,target,
                                         GA_DrawInfo,(ULONG)drawInfo,
-                                        GA_RelVerify, TRUE,
+                                       // GA_RelVerify, TRUE,
                                     TAG_END);
 
             gdata->subs[THS_NameButton] = NewObject( BUTTON_GetClass(),NULL,
@@ -150,7 +151,7 @@ bdbprintf("omnew th target %08x\n",target);
                                         GA_ID,GAD_TRACKHEADER_BASE|GAD_TRACKHEADER_NAME|(iTrack<<4),
                                         ICA_TARGET,target,
                                         GA_DrawInfo,(ULONG)drawInfo,
-                                      //  GA_RelVerify, TRUE,
+                                        GA_RelVerify, TRUE,
                                     TAG_END);
 
             /* Row 2: Silencer and Solo buttons */

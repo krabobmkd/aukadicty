@@ -409,7 +409,7 @@ printf("AppInstance %08x\n",AppInstance);
         WA_Width,320,
         WA_Height,240,
         WA_CustomScreen, (ULONG) app->lockedscreen,
-        WA_IDCMP, IDCMP_CLOSEWINDOW | IDCMP_MENUPICK | IDCMP_RAWKEY | IDCMP_IDCMPUPDATE ,
+        WA_IDCMP, IDCMP_CLOSEWINDOW | IDCMP_MENUPICK | IDCMP_RAWKEY ,
         WA_Flags, WFLG_DRAGBAR | WFLG_DEPTHGADGET | WFLG_CLOSEGADGET | WFLG_SIZEGADGET | WFLG_ACTIVATE | WFLG_SMART_REFRESH,
         WA_Title,(ULONG) "Aukadicty",
         WINDOW_ParentGroup,(ULONG) app->mainvlayout,
@@ -445,7 +445,7 @@ printf("AppInstance %08x\n",AppInstance);
 
             flushbdbprint();
             /* What to wait for ? */
-            waitedSignals = winsignal |  // window boopsi level wait port (different than intuition level ?)
+            waitedSignals = winsignal |  // window boopsi level wait port (different than Window->UserPort ?)
                         (1L << app->app_port->mp_SigBit) |
                         SIGBREAKF_CTRL_C |  // quit on Ctrl-C
                         SIGBREAKF_CTRL_F    // we use that as special refresh if something happen.
@@ -474,11 +474,11 @@ printf("AppInstance %08x\n",AppInstance);
                         ok = FALSE;
                         break;
 
-                    case WMHI_GADGETUP:
+                    case WMHI_GADGETUP: /* the quick way to get button events at this level. */
                     {
                         if((result>>16) >=GAD_TRACKHEADER_BASE)
                         {
-                        printf("WMHI_GADGETUP:%08x\n",result>>16);
+                            printf("WMHI_GADGETUP:%08x\n",result>>16);
                         }
 //                        if(gid == GAD_BUTTON_ABOUT)
 //                        {
