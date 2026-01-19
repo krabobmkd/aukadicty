@@ -478,13 +478,17 @@ static int TrackListArea_CreateTrackLine(
     /* Create TrackHeader gadget */
     strack->_trackHeader =
        NewObject(TRACKHEADER_GetClass(), NULL,
+                                   LAYOUT_DeferLayout,TRUE,
+                                  // CHILD_NoDispose,TRUE,
                                     TRACKHEADER_StyleSheet, (ULONG)styleSheet,
-                                    LAYOUT_FillPen, gdata->_styleSheet->trackHeaderBG.pen,
+                                   //test LAYOUT_FillPen, gdata->_styleSheet->trackHeaderBG.pen,
                                     TRACKHEADER_TrackIndex,iTrack,
                                     ICA_TARGET,AppInstance,
                                     GA_DrawInfo, (ULONG)gdata->_drawInfo,
                                     TRACKHEADER_Nametag,trackname, // optional, must be last
                                     TAG_END);
+    //TODO TRACKHEADER_TrackIndex TRACKHEADER_Name should be later setAttribs()
+
     if(strack->_trackHeader)
     {
         SetAttrs(Gad,LAYOUT_AddChild,(ULONG)strack->_trackHeader,TAG_END);
@@ -678,30 +682,32 @@ void TrackListArea_removeTrack(struct Gadget *Gad, AukTrack *track, int indexToR
     /* Dispose gadgets at this index using LAYOUT_RemoveChild */
     trackheader = gdata->_tracks[indexToRemove]._trackHeader;
     if(trackheader)
-    {
-    // CHILD_NoDispose
-//        SetGadgetAttrs(Gad, CurrentMainWindow, NULL,
-//                    LAYOUT_RemoveChild, (ULONG)gdata->_tracks[indexToRemove]._trackHeader, TAG_END);
-//struct GadgetInfo
-        struct gpGoInactive ina;
-        ina.MethodID = GM_GOINACTIVE;
-        ina.gpgi_GInfo = NULL;
-        ina.gpgi_Abort = 1;
-
-        DoMethodA(trackheader,&ina);
-
-        SetAttrs(Gad, LAYOUT_RemoveChild, (ULONG)trackheader, TAG_END);
+    {   // do that first !
         gdata->_tracks[indexToRemove]._trackHeader = NULL;
+    // CHILD_NoDispose
+        SetGadgetAttrs(Gad, CurrentMainWindow, NULL,
+                    LAYOUT_RemoveChild, (ULONG)trackheader, TAG_END);
+//struct GadgetInfo
+//        struct gpGoInactive ina;
+//        ina.MethodID = GM_GOINACTIVE;
+//        ina.gpgi_GInfo = NULL;
+//        ina.gpgi_Abort = 1;
+
+//        DoMethodA(trackheader,&ina);
+
+//        SetAttrs(Gad, CHILD_NoDispose, TRUE, LAYOUT_RemoveChild, (ULONG)trackheader, TAG_END);
+
     }
  exit(0);
     trackarea = gdata->_tracks[indexToRemove]._trackArea;
     if(trackarea)
     {
-//        SetGadgetAttrs(Gad, CurrentMainWindow, NULL,
-//                    LAYOUT_RemoveChild, (ULONG)gdata->_tracks[indexToRemove]._trackArea, TAG_END);
-
-        SetAttrs(Gad, LAYOUT_RemoveChild, (ULONG)trackarea, TAG_END);
+         // do that first !
         gdata->_tracks[indexToRemove]._trackArea = NULL;
+        SetGadgetAttrs(Gad, CurrentMainWindow, NULL,
+                    LAYOUT_RemoveChild, (ULONG)trackarea, TAG_END);
+//        SetAttrs(Gad, LAYOUT_RemoveChild, (ULONG)trackarea, TAG_END);
+
     }
  exit(0);
     AukObjectPtr_Release(&gdata->_tracks[indexToRemove]._dataTrack);
