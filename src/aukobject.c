@@ -136,7 +136,7 @@ void AukObject_SendUpdate(AukObject* obj, AukMessage* message) {
     AukListener* current;
     AukObject* listenerPtr;
 
-    if (!obj) {
+    if (!obj || obj->_blockUpdates) {
         return;
     }
     if(obj->listeners_mutex.n>0) return; // recursive message shouldnt happen !

@@ -47,6 +47,17 @@ typedef struct ITimeRule {
     int  tickSubDiv; /* basically  majorTickInterval/minorTickInterval */
 
     UWORD majorTickHeight, minorTickHeight;
+
+    /* Pointer to time cursor position (64-bit fixed-point seconds).
+     * NULL means no cursor displayed.
+     */
+    AukTimeCursor *_timeCursor;
+
+    /* Pointer to time selection span (start and end times).
+     * NULL or both values == 0 means no selection.
+     */
+    AukTimeSpan *_timeSelection;
+
 } TimeRule;
 
 ULONG TimeRule_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set);

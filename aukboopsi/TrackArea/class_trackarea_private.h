@@ -54,6 +54,16 @@ typedef struct ITrackArea {
     /* next GM_RENDER will do accordingly */
     WORD _justScroll, _fullRedraw;
 
+    /* Pointer to time cursor position (64-bit fixed-point seconds).
+     * NULL means no cursor displayed.
+     */
+    AukTimeCursor *_timeCursor;
+
+    /* Pointer to time selection span (start and end times).
+     * NULL or both values == 0 means no selection.
+     */
+    AukTimeSpan *_timeSelection;
+
 } TrackArea;
 
 ULONG TrackArea_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set);

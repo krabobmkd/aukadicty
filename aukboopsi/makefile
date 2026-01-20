@@ -6,13 +6,14 @@ MCPU ?= m68030
 CC = gcc
 BUILDDIR = build-gcc-$(MCPU)
 BUILDDIRIS = $(BUILDDIR)/is
+BUILDDIRIS2D = $(BUILDDIR)/is2d
 BUILDDIRTA = $(BUILDDIR)/ta
 BUILDDIRTLA = $(BUILDDIR)/tla
 BUILDDIRTR = $(BUILDDIR)/tr
 BUILDDIRTH = $(BUILDDIR)/th
 BUILDDIRVOLR = $(BUILDDIR)/vr
 
-STATICDEFS = -DTRACKLIST_STATICLINK=1 -DINFINITESCROLL_STATICLINK=1 -DUSE_DEBUG_BDBPRINT=1
+STATICDEFS = -DTRACKLIST_STATICLINK=1 -DINFINITESCROLL_STATICLINK=1 -DINFINITESCROLL2D_STATICLINK=1 -DUSE_DEBUG_BDBPRINT=1
 
 # -I../include
 CFLAGS = -$(MCPU) -O2 -noixemul -Wall -ITrackArea -I. $(STATICDEFS)
@@ -23,6 +24,7 @@ HEADERS = \
  TrackListView.h HeaderView.h FooterView.h \
  auklocale.h aukaction.h aukmenu.h offscreenbm.h \
  InfiniteScroll/class_infinitescroll.h InfiniteScroll/class_infinitescroll_private.h \
+ InfiniteScroll2D/class_infinitescroll2d.h InfiniteScroll2D/class_infinitescroll2d_private.h \
  TrackArea/class_trackarea.h TrackArea/class_trackarea_private.h \
  TrackListArea/class_tracklistarea.h TrackListArea/class_tracklistarea_private.h \
  TimeRule/class_timerule.h TimeRule/class_timerule_private.h \
@@ -45,6 +47,11 @@ OBJS = \
  $(BUILDDIRIS)/class_infinitescroll_lib.o \
  $(BUILDDIRIS)/class_infinitescroll_render.o \
  $(BUILDDIRIS)/class_infinitescroll_handleinput.o \
+ $(BUILDDIRIS2D)/class_infinitescroll2d_attribs.o \
+ $(BUILDDIRIS2D)/class_infinitescroll2d_dispatch.o \
+ $(BUILDDIRIS2D)/class_infinitescroll2d_lib.o \
+ $(BUILDDIRIS2D)/class_infinitescroll2d_render.o \
+ $(BUILDDIRIS2D)/class_infinitescroll2d_handleinput.o \
  $(BUILDDIRTA)/class_trackarea_attribs.o \
  $(BUILDDIRTA)/class_trackarea_dispatch.o \
  $(BUILDDIRTA)/class_trackarea_lib.o \
@@ -77,6 +84,9 @@ $(BUILDDIR):
 $(BUILDDIRIS):
 	-makedir $(BUILDDIRIS)
 
+$(BUILDDIRIS2D):
+	-makedir $(BUILDDIRIS2D)
+
 $(BUILDDIRTA):
 	-makedir $(BUILDDIRTA)
 
@@ -97,6 +107,9 @@ $(BUILDDIR)/%.o: %.c $(BUILDDIR) $(HEADERS)
 	$(CC) -c -o $@ $< $(CFLAGS) -I../include
 
 $(BUILDDIRIS)/%.o: InfiniteScroll/%.c $(BUILDDIRIS) $(HEADERS)
+	$(CC) -c -o $@ $< $(CFLAGS) -I../../include
+
+$(BUILDDIRIS2D)/%.o: InfiniteScroll2D/%.c $(BUILDDIRIS2D) $(HEADERS)
 	$(CC) -c -o $@ $< $(CFLAGS) -I../../include
 
 $(BUILDDIRTA)/%.o: TrackArea/%.c $(BUILDDIRTA) $(HEADERS)

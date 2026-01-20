@@ -14,6 +14,7 @@
 
 /* Include TrackListArea header for TimeProjection definition */
 #include "../TrackListArea/class_tracklistarea.h"
+#include "../auktimesel.h"
 
 #define VERSION_TRACKAREA 1
 /* TrackArea inherits from InfiniteScroll (class pointer, not string) */
@@ -46,5 +47,16 @@
  */
 #define	TRACKAREA_DataTrack		(TRACKAREA_Dummy+3)
 
+/* Pointer to AukTimeCursor (64-bit fixed-point time position).
+ * NULL means no cursor displayed. Used for playback/edit cursor.
+ * Apply to OM_NEW OM_SET OM_GET.
+ */
+#define TRACKAREA_TimeCursor (TRACKAREA_Dummy+4)
+
+/* Pointer to AukTimeSpan (selection start and end times).
+ * NULL or both values == 0 means no selection.
+ * Apply to OM_NEW OM_SET OM_GET.
+ */
+#define TRACKAREA_TimeSelection (TRACKAREA_Dummy+5)
 
 #endif

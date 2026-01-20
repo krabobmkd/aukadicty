@@ -2,7 +2,7 @@
 # Use with command "smake"
 
 SCOPTS = OPTIMIZE CPU=68030 NOSTKCHK STRMERGE UNSCHAR DATA=FAR IDIR=//include IDIR=TrackArea IDIR=.
-STATICDEFS = DEFINE=TRACKAREA_STATICLINK=1 DEFINE=TRACKHEADER_STATICLINK=1 DEFINE=TIMERULE_STATICLINK=1 DEFINE=TRACKLIST_STATICLINK=1 DEFINE=INFINITESCROLL_STATICLINK=1 DEFINE=VOLUMERULE_STATICLINK=1 DEFINE=USE_DEBUG_BDBPRINT=1
+STATICDEFS = DEFINE=TRACKAREA_STATICLINK=1 DEFINE=TRACKHEADER_STATICLINK=1 DEFINE=TIMERULE_STATICLINK=1 DEFINE=TRACKLIST_STATICLINK=1 DEFINE=INFINITESCROLL_STATICLINK=1 DEFINE=INFINITESCROLL2D_STATICLINK=1 DEFINE=VOLUMERULE_STATICLINK=1 DEFINE=USE_DEBUG_BDBPRINT=1
 LIBS = LIB:sc.lib LIB:amiga.lib
 
 BUILDDIR = build-sasc
@@ -28,6 +28,11 @@ OBJS = \
  $(BUILDDIR)/class_infinitescroll_lib.o \
  $(BUILDDIR)/class_infinitescroll_render.o \
  $(BUILDDIR)/class_infinitescroll_handleinput.o \
+ $(BUILDDIR)/class_infinitescroll2d_attribs.o \
+ $(BUILDDIR)/class_infinitescroll2d_dispatch.o \
+ $(BUILDDIR)/class_infinitescroll2d_lib.o \
+ $(BUILDDIR)/class_infinitescroll2d_render.o \
+ $(BUILDDIR)/class_infinitescroll2d_handleinput.o \
  $(BUILDDIR)/class_trackarea_attribs.o \
  $(BUILDDIR)/class_trackarea_dispatch.o \
  $(BUILDDIR)/class_trackarea_lib.o \
@@ -103,6 +108,22 @@ $(BUILDDIR)/class_infinitescroll_render.o: InfiniteScroll/class_infinitescroll_r
 
 $(BUILDDIR)/class_infinitescroll_handleinput.o: InfiniteScroll/class_infinitescroll_handleinput.c $(BUILDDIR)
 	sc InfiniteScroll/class_infinitescroll_handleinput.c $(SCOPTS) $(STATICDEFS) OBJNAME=$@
+
+# InfiniteScroll2D class
+$(BUILDDIR)/class_infinitescroll2d_attribs.o: InfiniteScroll2D/class_infinitescroll2d_attribs.c $(BUILDDIR)
+	sc InfiniteScroll2D/class_infinitescroll2d_attribs.c $(SCOPTS) $(STATICDEFS) OBJNAME=$@
+
+$(BUILDDIR)/class_infinitescroll2d_dispatch.o: InfiniteScroll2D/class_infinitescroll2d_dispatch.c $(BUILDDIR)
+	sc InfiniteScroll2D/class_infinitescroll2d_dispatch.c $(SCOPTS) $(STATICDEFS) OBJNAME=$@
+
+$(BUILDDIR)/class_infinitescroll2d_lib.o: InfiniteScroll2D/class_infinitescroll2d_lib.c $(BUILDDIR)
+	sc InfiniteScroll2D/class_infinitescroll2d_lib.c $(SCOPTS) $(STATICDEFS) OBJNAME=$@
+
+$(BUILDDIR)/class_infinitescroll2d_render.o: InfiniteScroll2D/class_infinitescroll2d_render.c $(BUILDDIR)
+	sc InfiniteScroll2D/class_infinitescroll2d_render.c $(SCOPTS) $(STATICDEFS) OBJNAME=$@
+
+$(BUILDDIR)/class_infinitescroll2d_handleinput.o: InfiniteScroll2D/class_infinitescroll2d_handleinput.c $(BUILDDIR)
+	sc InfiniteScroll2D/class_infinitescroll2d_handleinput.c $(SCOPTS) $(STATICDEFS) OBJNAME=$@
 
 # TrackArea class
 $(BUILDDIR)/class_trackarea_attribs.o: TrackArea/class_trackarea_attribs.c $(BUILDDIR)

@@ -72,6 +72,12 @@ ULONG TimeRule_GetAttr(Class *C, struct Gadget *Gad, struct opGet *Get)
     case TIMERULE_StyleSheet:
         *data = (ULONG)gdata->_style;
         break;
+    case TIMERULE_TimeCursor:
+        *data = (ULONG)gdata->_timeCursor;
+        break;
+    case TIMERULE_TimeSelection:
+        *data = (ULONG)gdata->_timeSelection;
+        break;
 
     /* super class gadget things. would manage attribs selected/highlighted, ... */
     /* InfiniteScroll attribs are also handled by supercall */
@@ -133,6 +139,26 @@ ULONG TimeRule_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
         }
 
        }break;
+      case TIMERULE_TimeCursor:
+      {
+        AukTimeCursor *newCursor = (AukTimeCursor *)data;
+        if(newCursor != gdata->_timeCursor)
+        {
+            gdata->_timeCursor = newCursor;
+            fullRedraw = 1;
+            used = 1;
+        }
+      }break;
+      case TIMERULE_TimeSelection:
+      {
+        AukTimeSpan *newSelection = (AukTimeSpan *)data;
+        if(newSelection != gdata->_timeSelection)
+        {
+            gdata->_timeSelection = newSelection;
+            fullRedraw = 1;
+            used = 1;
+        }
+      }break;
        case TIMERULE_Refresh:
        {
             // layout should be ok

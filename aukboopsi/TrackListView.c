@@ -662,28 +662,49 @@ void TrackListView_ListenTrackHeaderMessage(TrackListView *pm,struct opUpdate *M
 
             int buttonstate = getGadgetMessageAttrib(M,GA_SELECTED);
       //  printf("AukTrack_SetSilent %d\n",buttonstate);
-         if(buttonstate !=-1) AukTrack_SetSilent(track,buttonstate);
+         if(buttonstate !=-1)
+         {
+            track->base._blockUpdates = TRUE;
+                AukTrack_SetSilent(track,buttonstate);
+            track->base._blockUpdates = FALSE;
+         }
         }
         break;
         case GAD_TRACKHEADER_SOLO:
         {
             int buttonstate = getGadgetMessageAttrib(M,GA_SELECTED);
            // bdbprintf("AukTrack_SetSolo %d\n",buttonstate);
-            if(buttonstate !=-1) AukTrack_SetSolo(track,buttonstate);
+            if(buttonstate !=-1)
+            {
+            //TODO
+//                track->base._blockUpdates = TRUE;
+//                 AukTrack_SetSolo(track,buttonstate);
+//                track->base._blockUpdates = FALSE;
+            }
         }
         break;
         case GAD_TRACKHEADER_VOL:
         {
             int sliderlevel = getGadgetMessageAttrib(M,SLIDER_Level);
       //  bdbprintf("AukTrack_SetOwnVolume %d\n",sliderlevel);
-            if(sliderlevel !=-1) AukTrack_SetOwnVolume(track,sliderlevel<<9);
+            if(sliderlevel !=-1)
+            {
+                track->base._blockUpdates = TRUE;
+                 AukTrack_SetOwnVolume(track,sliderlevel<<9);
+                track->base._blockUpdates = FALSE;
+            }
         }
         break;
         case GAD_TRACKHEADER_PAN:
         {
             int sliderlevel = getGadgetMessageAttrib(M,SLIDER_Level);
        // bdbprintf("AukTrack_SetStereoPan %d\n",sliderlevel);
-            if(sliderlevel !=-1) AukTrack_SetStereoPan(track,sliderlevel<<9);
+            if(sliderlevel !=-1)
+            {
+                track->base._blockUpdates = TRUE;
+                 AukTrack_SetStereoPan(track,sliderlevel<<9);
+                track->base._blockUpdates = FALSE;
+            }
         }
         break;
         default:

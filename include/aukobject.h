@@ -64,6 +64,7 @@ struct AukObject {
     int (*AddListener)(AukObject* This, AukObject* listenerObject, void* userData, AukUpdateCallback callback);
     int (*RemoveListener)(AukObject* This, AukObject* listenerObject);
     void (*SendUpdate)(AukObject* This, AukMessage* message);        /* Notify all listeners of change */
+    int _blockUpdates; /* Set TRUE and SendUpdate() will do nothing, you must then set FALSE after. Useful when UI<->Data mirroring. */
 
     /* Listener list - managed by base object */
     AukListener* listeners;
