@@ -8,6 +8,7 @@
 #include <string.h>
 #include "serializer.h"
 
+#include <stdio.h>
 #ifdef Remove
 #undef Remove
 #endif
@@ -337,6 +338,8 @@ void AukAProject_Init(AukAProject* project) {
         project->hasSelection = 0;
         project->selectionStart = 0;
         project->selectionEnd = 0;
+
+        project->soloTrack = -1;
     }
 }
 
@@ -525,4 +528,33 @@ AukFixed AukAProject_GetSelectionEnd(AukAProject* project)
 {
     if (!project) return 0;
     return project->selectionEnd;
+}
+
+/* -1 means no solo, else track id */
+void AukAProject_SetSoloTrack(AukAProject* project, int soloTrackId)
+{
+
+    AukMessage_AProject msg;
+    if (!project || !project->tracks) return;
+    if(project->soloTrack == soloTrackId) return;
+    if(soloTrackId<-1 || soloTrackId>=(int)project->tracks->count) return;
+     project->soloTrack = soloTrackId;
+
+    /* Send update notification */
+    msg.type = AUK_MSG_TRACKMODIFIED_CHANGESoloTrack;
+    msg._track_id = soloTrackId;
+    msg._track = NULL;
+    msg._timeStart = 0;
+    if(project->tracks && soloTrackId>-1)
+    {
+         msg._track =project->tracks->items[soloTrackId];
+    }
+
+    project->base.base.SendUpdate(&project->base.base, (AukMessage*)&msg);
+
+}
+int AukAProject_SoloTrack(AukAProject* project)
+{
+    if (!project) return -1;
+    return project->soloTrack;
 }

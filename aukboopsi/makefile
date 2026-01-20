@@ -42,16 +42,13 @@ OBJS = \
  $(BUILDDIR)/aukstylesheet.o \
  $(BUILDDIR)/bdbprintf.o \
  $(BUILDDIR)/offscreenbm.o \
+ $(BUILDDIR)/boopsidelay.o \
+ $(BUILDDIR)/boopsidispose.o \
  $(BUILDDIRIS)/class_infinitescroll_attribs.o \
  $(BUILDDIRIS)/class_infinitescroll_dispatch.o \
  $(BUILDDIRIS)/class_infinitescroll_lib.o \
  $(BUILDDIRIS)/class_infinitescroll_render.o \
  $(BUILDDIRIS)/class_infinitescroll_handleinput.o \
- $(BUILDDIRIS2D)/class_infinitescroll2d_attribs.o \
- $(BUILDDIRIS2D)/class_infinitescroll2d_dispatch.o \
- $(BUILDDIRIS2D)/class_infinitescroll2d_lib.o \
- $(BUILDDIRIS2D)/class_infinitescroll2d_render.o \
- $(BUILDDIRIS2D)/class_infinitescroll2d_handleinput.o \
  $(BUILDDIRTA)/class_trackarea_attribs.o \
  $(BUILDDIRTA)/class_trackarea_dispatch.o \
  $(BUILDDIRTA)/class_trackarea_lib.o \

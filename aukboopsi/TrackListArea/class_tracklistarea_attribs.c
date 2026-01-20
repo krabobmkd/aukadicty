@@ -17,7 +17,7 @@
 #include <proto/layout.h>
 #include <gadgets/layout.h>
 
-
+#include "auktrack.h"
 #include <utility/tagitem.h>
 
 /* Most of the calls to boopsi methods are not done from the App's context,
@@ -292,5 +292,31 @@ void TrackListArea_SetTrackFlags( struct Gadget *Gad,int itrack,int flags)
     if(!strack->_trackHeader) return;
         bdbprintf("TrackListArea_SetTrackFlags2 %d\n",flags);
     SetAttrs(strack->_trackHeader,TRACKHEADER_Flags,(ULONG)flags,TAG_END);
+
+}
+void TrackListArea_SetSoloTrack( struct Gadget *Gad,int iSoloedTrack)
+{
+    int i;
+    TrackListArea *gdata;
+    TrackChild *strack;
+    if(!Gad) return;
+    gdata=INST_DATA(OCLASS(Gad), Gad);
+
+    if(iSoloedTrack>= (int)gdata->_trackCount) return;
+
+
+    for(i=0;i<gdata->_trackCount;i++)
+    {
+        TrackChild *strack =  &gdata->_tracks[i];
+        if(!strack || !strack->_dataTrack) continue;
+        if( strack->_trackHeader )
+        {
+            ULONG solostate =
+                (iSoloedTrack==-1)?0:
+                (iSoloedTrack==strack->_dataTrack->trackIndex)?1:2;
+         printf("TrackListArea_SetSoloTrack%d with iSoloedTrack:%d\n",solostate, iSoloedTrack);
+            SetAttrs(strack->_trackHeader,TRACKHEADER_SoloState,solostate,TAG_END);
+        }
+    }
 
 }

@@ -247,6 +247,7 @@ static void AukUpdate_Track(AukObject* listenerObject, AukObject* modifiedObject
 
 static void AukUpdate_TrackList(AukObject* listenerObject, AukObject* modifiedObject,void *userData, AukMessage *message)
 {
+    int signalupdate=0;
     struct Gadget *trackListAreaUi;
     AukAProject *tracklist = (AukAProject*)modifiedObject;
     TrackListView *pm = (TrackListView *)userData;
@@ -273,7 +274,7 @@ static void AukUpdate_TrackList(AukObject* listenerObject, AukObject* modifiedOb
 
             /* Track added may affect project duration, update horizontal scroll domain */
             pm->updateBits |= TLVB_UPDATE_HORIZSCROLLDOMAIN;
-            if(myTask) Signal(myTask, SIGBREAKF_CTRL_F);
+            if(myTask) signalupdate=1;
         }
         break;
         case AUK_MSG_TRACKREMOVED:
@@ -291,14 +292,26 @@ static void AukUpdate_TrackList(AukObject* listenerObject, AukObject* modifiedOb
 
             /* Track removed may affect project duration, update horizontal scroll domain */
             pm->updateBits |= TLVB_UPDATE_HORIZSCROLLDOMAIN;
-            if(myTask) Signal(myTask, SIGBREAKF_CTRL_F);
+            if(myTask) signalupdate=1;
+        }
+        break;
+        case AUK_MSG_TRACKMODIFIED_CHANGESoloTrack:
+        {
+            /* affect all headers */
+            AukMessage_AProject *m = (AukMessage_AProject *)message;
+
+ printf(" *** DATA-> UI TRACKMODIFIED_CHANGESoloTrack %d\n",m->_track_id);
+            TrackListArea_SetSoloTrack(trackListAreaUi, m->_track_id);
+
+            // pm->updateBits |= TLVB_UPDATE_REDRAW_JUSTHEADERS;
+            // if(myTask) signalupdate=1;
         }
         break;
         default:
   //note: does things  bdbprintf(" **** AUK_MSG_XXX %d! \n",(int)message->type);
         break;
     }
-
+    if(signalupdate) Signal(myTask, SIGBREAKF_CTRL_F);
 }
 
 
@@ -673,13 +686,22 @@ void TrackListView_ListenTrackHeaderMessage(TrackListView *pm,struct opUpdate *M
         case GAD_TRACKHEADER_SOLO:
         {
             int buttonstate = getGadgetMessageAttrib(M,GA_SELECTED);
-           // bdbprintf("AukTrack_SetSolo %d\n",buttonstate);
-            if(buttonstate !=-1)
+            printf("GAD_TRACKHEADER_SOLO sel state: trackId:%d %d\n",trackId,buttonstate);
+            if(buttonstate != -1)
             {
-            //TODO
-//                track->base._blockUpdates = TRUE;
-//                 AukTrack_SetSolo(track,buttonstate);
-//                track->base._blockUpdates = FALSE;
+                // don't block update, change affect all UI
+                //  we receive 0 for the other solo bt state that we put off !
+                // only send of to the track which is on
+                if(project->soloTrack != -1 &&
+                    project->soloTrack == trackId &&
+                    buttonstate == 0 )
+                    {
+                        AukAProject_SetSoloTrack(project,-1);
+                    } else if(buttonstate == 1)
+                    {
+                        AukAProject_SetSoloTrack(project,trackId);
+                    }
+
             }
         }
         break;

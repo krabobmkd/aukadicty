@@ -188,7 +188,7 @@ ULONG TrackHeader_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
         {
             int flags = data;
             struct Gadget *silbt =  (struct Gadget *) gdata->subs[THS_SilencerBt];
-            struct Gadget *solobt =  (struct Gadget *) gdata->subs[THS_SoloBt];
+
             bdbprintf(" * * * set TRACKHEADER_Flags:%08x\n",flags);
             if(silbt)
             {
@@ -200,18 +200,41 @@ ULONG TrackHeader_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
                     SetGadgetAttrs(silbt,CurrentMainWindow,NULL,GA_SELECTED,setstate);
                 }
             }
-            if(solobt)
-            {
-                int curstate;
-                int setstate = (flags & 2) !=0; // AukTrack AukTrackFlag_Silent
-                GetAttr(GA_SELECTED,solobt,&curstate);
-                if(curstate != setstate)
-                {
-                    SetGadgetAttrs(solobt,CurrentMainWindow,NULL,GA_SELECTED,setstate);
-                }
-            }
+
         }
        break;
+       case TRACKHEADER_SoloState:
+        {
+            ULONG selected = 0;
+            ULONG silDisabled = 0;
+            int soloState = data; // 0 no solo, 1 itsme 2 itsanother
+            struct Gadget *silbt =  (struct Gadget *) gdata->subs[THS_SilencerBt];
+            struct Gadget *solobt =  (struct Gadget *) gdata->subs[THS_SoloBt];
+            if(solobt && silbt)
+            {
+                int curstate;
+                switch(soloState)
+                {
+                    default:
+                    case 0: break;
+                    case 1: selected=1; silDisabled=1; break;
+                    case 2: silDisabled=1;  break;
+                }
+                GetAttr(GA_SELECTED,solobt,&curstate);
+                if(curstate != selected)
+                {
+                    SetGadgetAttrs(solobt,CurrentMainWindow,NULL,GA_SELECTED,selected);
+                }
+
+                GetAttr(GA_DISABLED,silbt,&curstate);
+                if(curstate != silDisabled)
+                {
+                    SetGadgetAttrs(silbt,CurrentMainWindow,NULL,GA_DISABLED,silDisabled);
+                }
+
+
+            }
+        } break;
     default:
         break;
 

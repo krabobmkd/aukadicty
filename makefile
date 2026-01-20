@@ -77,4 +77,4 @@ $(BUILDDIRSTRCA)/libaukstreamcache.a: $(STREAMLIBOBJS)
 	$(AR) rcs $@ $(STREAMOBJS)
 
 clean:
-	-delete ALL FORCE $(BUILDDIR)
+	-delete ALL FORCE $(BUILDDIRAUK)

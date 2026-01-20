@@ -27,6 +27,8 @@ extern "C" {
 /** retain gadget children for a given data track */
 typedef struct TrackChild{
     AukTrack *_dataTrack; // corresponding data
+    int     _channel; // this ui track maps a given channel in the track, 0 default.
+
     Object *_trackHeader; // TrackHeader gadget
     Object *_trackArea; // TrackArea gadget
     /* configurable height for this track, pixel. */
@@ -124,7 +126,7 @@ void TrackListArea_SetTrackName( struct Gadget *Gad,int itrack,const char *name)
 void TrackListArea_SetTrackOwnVolume( struct Gadget *Gad,int itrack,int ivol);
 void TrackListArea_SetTrackStereoPan( struct Gadget *Gad,int itrack,int ipan);
 void TrackListArea_SetTrackFlags( struct Gadget *Gad,int itrack,int flags);
-
+void TrackListArea_SetSoloTrack( struct Gadget *Gad,int iSoloedTrack); // or -1 if not
 
 /* - - - - -- - */
 

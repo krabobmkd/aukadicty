@@ -42,8 +42,11 @@
 /* silent and solo, ... boolean states */
 #define TRACKHEADER_Flags (TRACKHEADER_Dummy+5)
 
+/* at that level, 0 no solo , 1 you are soloed, 2 other is soloed */
+#define TRACKHEADER_SoloState (TRACKHEADER_Dummy+6)
+
 /* Pointer to AukStyle for visual styling */
-#define	TRACKHEADER_StyleSheet		(TRACKHEADER_Dummy+6)
+#define	TRACKHEADER_StyleSheet		(TRACKHEADER_Dummy+7)
 
 
 /** DEVTODO: adds attributes definitions here and

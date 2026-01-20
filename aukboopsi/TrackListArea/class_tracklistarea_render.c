@@ -247,9 +247,6 @@ ULONG TrackListArea_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout
             trackHeight = strack->_prefHeight;
             if(trackHeight==0) trackHeight = gdata->_defaulTrackHeight;
 
-            /* Accumulate total domain height */
-
-
             /* Skip tracks that are scrolled out of view (above visible area)
             disable also if is below visible area
             */
@@ -257,7 +254,19 @@ ULONG TrackListArea_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout
                 (trackTop > topedge + height)
                  )
             {
-                if(headerGad) headerGad->Width = 4; // how we say it's not layouted.
+                if(headerGad)
+                {
+                    headerGad->TopEdge = 0;
+                    headerGad->LeftEdge = 0;
+                    headerGad->Width = 4; // how we say it's not layouted.
+                    headerGad->Height = 2;
+
+                    // ignoble clipping trick
+                    headerGad->UserData = (topedge<<16)|(topedge+height);
+
+                    // V47
+                    SetAttrs(headerGad,GA_Hidden,TRUE,TAG_END);
+                }
                 trackGad->Width = 4;
                 trackTop += trackHeight ;
                 continue;
@@ -265,11 +274,14 @@ ULONG TrackListArea_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout
 
             if(headerGad )
             {
+                SetAttrs(headerGad,GA_Hidden,FALSE,TAG_END);
                 /* Position TrackHeader on the left */
                 headerGad->LeftEdge = leftedge;
                 headerGad->TopEdge = trackTop;
                 headerGad->Width = gdata->_headerWidth;
                 headerGad->Height = trackHeight;
+                // ignoble clipping trick
+                headerGad->UserData = (topedge<<16)|(topedge+height);
 
                 /* Call child's GM_LAYOUT */
                 DoMethodA((Object*)headerGad, (Msg)layout);

@@ -114,8 +114,10 @@ ULONG TrackHeader_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout)
   LONG curY;
   LONG closeW, labelW, sliderX, sliderW;
   struct Gadget *sub;
-
+    int clipTop = ((ULONG)Gad->UserData)>>16;
+    int clipBottom = ((ULONG)Gad->UserData) & 0x0ffff;
     gdata=INST_DATA(C, Gad);
+
 
     //bdbprintf(" $$$ TrackHeader_Layout\n");
 
@@ -167,21 +169,35 @@ ULONG TrackHeader_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout)
     sub = (struct Gadget *)gdata->subs[THS_SilencerBt];
     if(sub)
     {
-        sub->LeftEdge = leftedge + 1;
-        sub->TopEdge = curY;
-        sub->Width = (leftPartWidth - 3) / 2;
-        sub->Height = rowHeight;
-        DoMethodA((Object*)sub, (Msg)layout);
+        if(curY>=clipBottom || (curY+rowHeight)<clipTop)
+        {
+            SetAttrs(sub,GA_Hidden,TRUE,TAG_END);
+        } else
+        {
+            SetAttrs(sub,GA_Hidden,FALSE,TAG_END);
+            sub->LeftEdge = leftedge + 1;
+            sub->TopEdge = curY;
+            sub->Width = (leftPartWidth - 3) / 2;
+            sub->Height = rowHeight;
+            DoMethodA((Object*)sub, (Msg)layout);
+        }
     }
 
     sub = (struct Gadget *)gdata->subs[THS_SoloBt];
     if(sub)
     {
-        sub->LeftEdge = leftedge + 1 + (leftPartWidth - 3) / 2 + 1;
-        sub->TopEdge = curY;
-        sub->Width = (leftPartWidth - 3) / 2;
-        sub->Height = rowHeight;
-        DoMethodA((Object*)sub, (Msg)layout);
+        if(curY>=clipBottom || (curY+rowHeight)<clipTop)
+        {
+            SetAttrs(sub,GA_Hidden,TRUE,TAG_END);
+        } else
+        {
+            SetAttrs(sub,GA_Hidden,FALSE,TAG_END);
+            sub->LeftEdge = leftedge + 1 + (leftPartWidth - 3) / 2 + 1;
+            sub->TopEdge = curY;
+            sub->Width = (leftPartWidth - 3) / 2;
+            sub->Height = rowHeight;
+            DoMethodA((Object*)sub, (Msg)layout);
+        }
     }
     curY += rowHeight;
 

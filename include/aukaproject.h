@@ -41,6 +41,9 @@ struct AukAProject {
     AukFixed selectionStart;   /* Start time of selection */
     AukFixed selectionEnd;     /* End time of selection (exclusive) */
 
+    /* soloed track -1 means no solo (not serialized)  */
+    int  soloTrack;
+
     /* Virtual methods specific to audio projects */
     AukTrack* (*CreateTrack)(void* This);
     int (*RemoveTrack)(void* This, AukTrack* track);
@@ -72,6 +75,9 @@ int AukAProject_HasSelection(AukAProject* project);
 AukFixed AukAProject_GetSelectionStart(AukAProject* project);
 AukFixed AukAProject_GetSelectionEnd(AukAProject* project);
 
+/* -1 means no solo, else track id */
+void AukAProject_SetSoloTrack(AukAProject* project, int soloTrackId);
+int AukAProject_SoloTrack(AukAProject* project);
 
 /* Message type enumeration that are AukAProject specific  */
 typedef enum {
@@ -82,6 +88,7 @@ typedef enum {
     AUK_MSG_TRACKMODIFIED_NAMECHANGE,
     AUK_MSG_TRACKMODIFIED_CHANGEVol,
     AUK_MSG_TRACKMODIFIED_CHANGEPan,
+    AUK_MSG_TRACKMODIFIED_CHANGESoloTrack,
     AUK_MSG_TRACKMODIFIED_CHANGEFlags,
     AUK_MSG_TRACKMODIFIED_CHANGESelection,
 

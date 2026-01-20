@@ -36,7 +36,6 @@ struct AukTrack {
     int         channelCount; /* Number of audio channels this track manages (1=mono, 2=stereo, etc.) */
 
     #define AukTrackFlag_Silent 1
-    #define AukTrackFlag_Solo 2
 
     int         stateFlags;
 
@@ -101,10 +100,7 @@ int AukTrack_GetChannelCount(AukTrack* track);
 
 /* These 2 are exclusives, bool is passed */
 void AukTrack_SetSilent(AukTrack* track, int isSilent);
-void AukTrack_SetSolo(AukTrack* track, int isSolo);
-
 int AukTrack_isSilent(AukTrack* track);
-int AukTrack_isSolo(AukTrack* track);
 
 /* Selection accessors (not serialized) */
 void AukTrack_SetSelected(AukTrack* track, int isSelected);

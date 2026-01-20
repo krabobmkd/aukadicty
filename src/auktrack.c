@@ -762,7 +762,6 @@ int AukTrack_GetChannelCount(AukTrack* track)
     return track->channelCount;
 }
 
-/* These 2 are exclusives, bool is passed */
 void AukTrack_SetSilent(AukTrack* track, int isSilent)
 {
     if (!track) return;
@@ -772,8 +771,6 @@ void AukTrack_SetSilent(AukTrack* track, int isSilent)
     if(isSilent)
     {
         track->stateFlags |= AukTrackFlag_Silent;
-        /* set silent remove solo */
-        track->stateFlags &= ~AukTrackFlag_Solo;
     } else
     {
         track->stateFlags &= ~AukTrackFlag_Silent;
@@ -782,25 +779,6 @@ void AukTrack_SetSilent(AukTrack* track, int isSilent)
     /* Send update notification */
     emitMemberChange(track,AUK_MSG_TRACKMODIFIED_CHANGEFlags);
 
-}
-void AukTrack_SetSolo(AukTrack* track, int isSolo)
-{
-    if (!track) return;
-    if(((track->stateFlags & AukTrackFlag_Solo)!=0) ==
-       (isSolo !=0) ) return;
-
-    if(isSolo)
-    {
-        track->stateFlags |= AukTrackFlag_Solo;
-        /* set solo remove silent */
-        track->stateFlags &= ~AukTrackFlag_Silent;
-    } else
-    {
-        track->stateFlags &= ~AukTrackFlag_Solo;
-    }
-
-    /* Send update notification */
-    emitMemberChange(track,AUK_MSG_TRACKMODIFIED_CHANGEFlags);
 }
 
 int AukTrack_isSilent(AukTrack* track)
@@ -808,11 +786,6 @@ int AukTrack_isSilent(AukTrack* track)
     if (!track) return 0;
     return ((track->stateFlags & AukTrackFlag_Silent)!=0);
 
-}
-int AukTrack_isSolo(AukTrack* track)
-{
-    if (!track) return 0;
-    return ((track->stateFlags & AukTrackFlag_Solo)!=0);
 }
 
 /* Selection accessors (not serialized) */
