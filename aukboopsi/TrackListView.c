@@ -23,6 +23,9 @@
 #include <proto/scroller.h>
 #include <gadgets/scroller.h>
 
+#include <proto/requester.h>
+#include <classes/requester.h>
+
 #include <proto/label.h>
 #include <images/label.h>
 
@@ -47,6 +50,7 @@
 // audio tracks project
 #include <aukaproject.h>
 #include <auktrack.h>
+#include "auklocale.h"
 #include "bdbprintf.h"
 
 #ifdef Remove
@@ -219,19 +223,19 @@ static void AukUpdate_Track(AukObject* listenerObject, AukObject* modifiedObject
         break;
         case AUK_MSG_TRACKMODIFIED_NAMECHANGE:
         {
-            const char *name;
+           //const char *name;
             TrackListArea_SetTrackName(pm->trackList, message->_track_id,message->_track->name);
         }
         break;
         case AUK_MSG_TRACKMODIFIED_CHANGEVol:
         {
-
-
+            TrackListArea_SetTrackOwnVolume(pm->trackList,message->_track_id,track->ownVolume);
+            //to validate printf("track->ownVolume:%d\n",track->ownVolume);
          }
         break;
         case AUK_MSG_TRACKMODIFIED_CHANGEPan:
         {
-
+            TrackListArea_SetTrackStereoPan(pm->trackList,message->_track_id,track->stereoPan);
         }
         break;
         case AUK_MSG_TRACKMODIFIED_CHANGEFlags:
@@ -623,6 +627,62 @@ int getGadgetMessageAttrib(struct opUpdate *M, int attrib)
 /* taken out of context, code that tells a button is released */
 #define WMHI_GADGETUP        (2<<16)
 
+/* Trim whitespace (spaces, tabs, newlines, carriage returns) from both ends of string.
+ * Modifies string in-place and returns pointer to trimmed start.
+ */
+static char *aukTrimString(char *str)
+{
+    char *end;
+
+    if(!str || *str == 0) return str;
+
+    /* Trim leading whitespace */
+    while(*str == ' ' || *str == '\t' || *str == '\n' || *str == '\r')
+        str++;
+
+    if(*str == 0) return str;
+
+    /* Trim trailing whitespace */
+    end = str + strlen(str) - 1;
+    while(end > str && (*end == ' ' || *end == '\t' || *end == '\n' || *end == '\r'))
+        end--;
+
+    /* Write new null terminator */
+    *(end + 1) = 0;
+
+    return str;
+}
+
+int requesterName(char *buffer, int charmax,
+            const char *requesterTitle,
+            const char *interfaceString)
+{
+    Object *reqobj;
+    int result;
+
+    // default
+    *buffer =0;
+
+    // Create a string requester
+    reqobj = NewObject(REQUESTER_GetClass(), NULL,
+        REQ_Type, REQTYPE_STRING,
+        REQ_TitleText,(ULONG) requesterTitle,
+        REQ_BodyText,(ULONG) interfaceString,
+        REQS_Buffer, buffer,
+        REQS_MaxChars, charmax - 1,
+        TAG_END);
+
+    if (!reqobj) return 0;
+
+     // Show the requester
+    result = DoMethod(reqobj, RM_OPENREQ, NULL, NULL, NULL);
+
+    // Clean up
+    DisposeObject(reqobj);
+
+    return result;
+}
+
 /*
     Here, UI ask actions on the data, data modify and send update messages,
     event listeners then adapt UI.
@@ -665,9 +725,21 @@ void TrackListView_ListenTrackHeaderMessage(TrackListView *pm,struct opUpdate *M
         break;
         case GAD_TRACKHEADER_NAME:
         {
-       // printf("todoAukTrack_SetName %d\n",trackId);
-            // TODO use requester for the name, then send new name.
-            //AukTrack_SetName(track,)
+            int buttonReleased = getGadgetMessageAttrib(M,WMHI_GADGETUP);
+            if(buttonReleased >0)
+            {
+                char name[32];
+                char *trimmed;
+                name[0]=0;
+                requesterName(name, 31,
+                        LOC(MSG_TRACK_RENAME_TITLE),
+                        LOC(MSG_TRACK_RENAME_PROMPT));
+                trimmed = aukTrimString(name);
+                if(trimmed[0] != 0)
+                {
+                    AukTrack_SetName(track, trimmed);
+                }
+            }
         }
         break;
         case GAD_TRACKHEADER_SILENCER:
@@ -708,8 +780,8 @@ void TrackListView_ListenTrackHeaderMessage(TrackListView *pm,struct opUpdate *M
         case GAD_TRACKHEADER_VOL:
         {
             int sliderlevel = getGadgetMessageAttrib(M,SLIDER_Level);
-      //  bdbprintf("AukTrack_SetOwnVolume %d\n",sliderlevel);
-            if(sliderlevel !=-1)
+       // bdbprintf("AukTrack_SetOwnVolume %d\n",sliderlevel);
+            if(sliderlevel !=-1) // -1 means slider released
             {
                 track->base._blockUpdates = TRUE;
                  AukTrack_SetOwnVolume(track,sliderlevel<<9);

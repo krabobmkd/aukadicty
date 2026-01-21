@@ -40,6 +40,8 @@ enum {
     MSG_TRACK_NAME,
     MSG_TRACK_VOCALS,
     MSG_TRACK_MUSIC,
+    MSG_TRACK_RENAME_TITLE,
+    MSG_TRACK_RENAME_PROMPT,
 
     /* Menu: Project */
     MSG_MENU_PROJECT,

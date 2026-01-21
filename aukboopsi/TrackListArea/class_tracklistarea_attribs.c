@@ -317,7 +317,7 @@ void TrackListArea_SetSoloTrack( struct Gadget *Gad,int iSoloedTrack)
             ULONG solostate =
                 (iSoloedTrack==-1)?0:
                 (iSoloedTrack==strack->_dataTrack->trackIndex)?1:2;
-         printf("TrackListArea_SetSoloTrack%d with iSoloedTrack:%d\n",solostate, iSoloedTrack);
+       //  printf("TrackListArea_SetSoloTrack%d with iSoloedTrack:%d\n",solostate, iSoloedTrack);
             SetAttrs(strack->_trackHeader,TRACKHEADER_SoloState,solostate,TAG_END);
         }
     }

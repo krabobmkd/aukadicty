@@ -41,6 +41,8 @@ static const char *defaultStrings[MSG_COUNT] = {
     [MSG_TRACK_NAME] = "Track",
     [MSG_TRACK_VOCALS] = "Vocals",
     [MSG_TRACK_MUSIC] = "Music",
+    [MSG_TRACK_RENAME_TITLE] = "Rename Track",
+    [MSG_TRACK_RENAME_PROMPT] = "Enter a new name for the track:",
 
     /* Menu: Project */
     [MSG_MENU_PROJECT] = "Project",

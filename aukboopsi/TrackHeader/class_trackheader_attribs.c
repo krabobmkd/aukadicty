@@ -141,9 +141,9 @@ ULONG TrackHeader_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
           {
             char tname[32];
             char *name= (char *)data;
-            if(strlen(name)>7)
+            if(strlen(name)>9)
             {
-                snprintf(tname,7,"%s",name);
+                snprintf(tname,9,"%s",name);
                 strcat(tname,"..");
                 name = &tname[0];
             }

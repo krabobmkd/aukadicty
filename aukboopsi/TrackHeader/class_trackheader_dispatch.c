@@ -369,7 +369,7 @@ ULONG ASM SAVEDS HeaderButton_Dispatcher(
 
         gdata=INST_DATA(C, Gad);
 
-      bdbprintf("hbt GOA isPushButton:%d\n",gdata->_isPushButton);
+      //bdbprintf("hbt GOA isPushButton:%d\n",gdata->_isPushButton);
         /* Only become active if the GM_GOACTIVE   */
         /* was triggered by direct user input.     */
         if (((struct gpInput *)M)->gpi_IEvent)
@@ -378,7 +378,7 @@ ULONG ASM SAVEDS HeaderButton_Dispatcher(
             ULONG prevselected;
             GetAttr(GA_Selected, Gad,&prevselected );
             // = Gad->Flags & GFLG_SELECTED;
-      bdbprintf("hbt GOA isPushButton:2 prevselected %08x \n",(int)prevselected);
+      //bdbprintf("hbt GOA isPushButton:2 prevselected %08x \n",(int)prevselected);
             /* This gadget is now active, change    */
             /* visual state to selected and render. */
             if(gdata->_isPushButton)
@@ -432,7 +432,7 @@ ULONG ASM SAVEDS HeaderButton_Dispatcher(
                 /* to deactivate and to tell Intuition not to reuse       */
                 /* this Input Event as we have already processed it.      */
 
-      bdbprintf("hbt selup isPushButton:%d state %d\n",gdata->_isPushButton,(int)((Gad->Flags &GFLG_SELECTED)!=0) );
+      //bdbprintf("hbt selup isPushButton:%d state %d\n",gdata->_isPushButton,(int)((Gad->Flags &GFLG_SELECTED)!=0) );
                 /*If the user let go of the gadget while the mouse was    */
                 /*over it, mask GMR_VERIFY into the return value so       */
                 /*Intuition will send a Release Verify (GADGETUP).        */
