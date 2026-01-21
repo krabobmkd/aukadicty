@@ -374,22 +374,31 @@ ULONG ASM SAVEDS HeaderButton_Dispatcher(
         /* was triggered by direct user input.     */
         if (((struct gpInput *)M)->gpi_IEvent)
         {
-
-            UWORD prevselected = Gad->Flags & GFLG_SELECTED;
+            int changed = 0;
+            ULONG prevselected;
+            GetAttr(GA_Selected, Gad,&prevselected );
+            // = Gad->Flags & GFLG_SELECTED;
       bdbprintf("hbt GOA isPushButton:2 prevselected %08x \n",(int)prevselected);
             /* This gadget is now active, change    */
             /* visual state to selected and render. */
             if(gdata->_isPushButton)
-            {
-                Gad->Flags ^= GFLG_SELECTED;
+            {            
+                changed = 1;
+                SetAttrs(Gad,GA_Selected,prevselected ^1,TAG_END );
+               // Gad->Flags ^= GFLG_SELECTED;
             } else
             {
-                Gad->Flags |= GFLG_SELECTED;
+                if(!prevselected)
+                {
+                    changed = 1;
+                    SetAttrs(Gad,GA_Selected,1,TAG_END );
+                }
+                //Gad->Flags |= GFLG_SELECTED;
             }
- bdbprintf("hbt GOA isPushButton:3 now %08x \n",(int)(Gad->Flags & GFLG_SELECTED));
-            if(prevselected != (Gad->Flags & GFLG_SELECTED))
+ // bdbprintf("hbt GOA isPushButton:3 now %08x \n",(int)(Gad->Flags & GFLG_SELECTED));
+            if(changed)
             {
-                HeaderButton_Notify(C ,Gad,gpi->gpi_GInfo);
+              //  HeaderButton_Notify(C ,Gad,gpi->gpi_GInfo);
                 /* delay drawing, button change color ! */
                 TrackListView_UpdateTrackList_Headers();
             }
@@ -412,10 +421,14 @@ ULONG ASM SAVEDS HeaderButton_Dispatcher(
 
         if (ie->ie_Class == IECLASS_RAWMOUSE)
         {
-            UWORD prevselected = Gad->Flags & GFLG_SELECTED;
+
             switch (ie->ie_Code)
             {
-            case SELECTUP: /* The user let go of the gadget so return GMR_NOREUSE    */
+            case SELECTUP:
+            {
+                ULONG prevselected; // = Gad->Flags & GFLG_SELECTED;
+                GetAttr(GA_Selected, Gad,&prevselected );
+            /* The user let go of the gadget so return GMR_NOREUSE    */
                 /* to deactivate and to tell Intuition not to reuse       */
                 /* this Input Event as we have already processed it.      */
 
@@ -440,15 +453,16 @@ ULONG ASM SAVEDS HeaderButton_Dispatcher(
                     // keep state
                 } else
                 {
-                     Gad->Flags &= ~GFLG_SELECTED;
+                    SetAttrs(Gad,GA_Selected,0,TAG_END );
+                     //Gad->Flags &= ~GFLG_SELECTED;
                 }
                 if(prevselected != (Gad->Flags & GFLG_SELECTED))
                 {
-                    HeaderButton_Notify(C ,Gad,gpi->gpi_GInfo);
+                    //HeaderButton_Notify(C ,Gad,gpi->gpi_GInfo);
                     /* modified to delay drawing, button turns back unselected color ! */
                     TrackListView_UpdateTrackList_Headers();
                 }
-
+            }
                 break;
             // case MENUDOWN: /* The user hit the menu button. Go inactive and let      */
             //     /* Intuition reuse the menu button event so Intuition can */

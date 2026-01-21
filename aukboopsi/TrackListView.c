@@ -686,7 +686,7 @@ void TrackListView_ListenTrackHeaderMessage(TrackListView *pm,struct opUpdate *M
         case GAD_TRACKHEADER_SOLO:
         {
             int buttonstate = getGadgetMessageAttrib(M,GA_SELECTED);
-            printf("UI->data GAD_TRACKHEADER_SOLO: trackId:%d bt selstate%d\n",trackId,buttonstate);
+           // printf("UI->data GAD_TRACKHEADER_SOLO: trackId:%d bt selstate%d\n",trackId,buttonstate);
             if(buttonstate != -1)
             {
                 // don't block update, change affect all UI

@@ -497,12 +497,12 @@ printf("AppInstance %08x\n",AppInstance);
                         /* releasing a button is only sent here
                           Pass it the same way gadget details are sent to
                           AppInstance  OM_NOTIFY.*/
-/*
+
                         ULONG senderId = result & WMHI_GADGETMASK;
                         BoopsiDelay_BeginMessage(&app->delayQueue, senderId);
                         BoopsiDelay_AddTag(&app->delayQueue,WMHI_GADGETUP,1);
                         BoopsiDelay_EndMessage(&app->delayQueue);
-*/
+
                         break;
                     }
                     case WMHI_ICONIFY:
