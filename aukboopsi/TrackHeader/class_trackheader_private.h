@@ -57,7 +57,7 @@ typedef struct ITrackHeader {
 } TrackHeader;
 
 typedef struct TrackHeaderButton {
-    int _d;
+    int _isPushButton;
 } TrackHeaderButton;
 
 typedef struct TrackHeaderSlider {

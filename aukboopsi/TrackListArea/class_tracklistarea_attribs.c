@@ -186,9 +186,11 @@ ULONG TrackListArea_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
         }
         break;
     case TRACKLIST_JustTracksRefresh:
+    case TRACKLIST_JustHeadersRefresh:
     case TRACKLIST_Refresh:
     {
         int filter=(tag->ti_Tag==TRACKLIST_JustTracksRefresh)?1:3;
+        if(tag->ti_Tag==TRACKLIST_JustHeadersRefresh) filter=2;
         //bdbprintf("TrackListArea_SetAttrs TRACKLIST_Refresh:%08x\n",(int)Set->ops_GInfo);
         // goes layout...
         {
@@ -213,6 +215,7 @@ ULONG TrackListArea_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
         }
     }
     break;
+
     default:
         //does not seems to do anything for gadgets.... DoSuperMethodA(C,(APTR)Gad,(Msg)Set);
         //note: apparently super call is not to be managed here (not sure !!!)

@@ -686,7 +686,7 @@ void TrackListView_ListenTrackHeaderMessage(TrackListView *pm,struct opUpdate *M
         case GAD_TRACKHEADER_SOLO:
         {
             int buttonstate = getGadgetMessageAttrib(M,GA_SELECTED);
-            printf("GAD_TRACKHEADER_SOLO sel state: trackId:%d %d\n",trackId,buttonstate);
+            printf("UI->data GAD_TRACKHEADER_SOLO: trackId:%d bt selstate%d\n",trackId,buttonstate);
             if(buttonstate != -1)
             {
                 // don't block update, change affect all UI
@@ -747,10 +747,18 @@ void TrackListView_CheckUpdates(TrackListView *pm)
         // also apply
         SetGadgetAttrs((struct Gadget *)pm->trackList,CurrentMainWindow, NULL,TRACKLIST_Refresh,TRUE,TAG_END);
     } else
-    if(pm->updateBits & TLVB_UPDATE_REDRAW_JUSTTRACKS)
     {
-        // same as TLVB_UPDATE_REDRAW_TRACKLIST, but do not redraw headers
-        SetGadgetAttrs(pm->trackList, CurrentMainWindow, NULL,TRACKLIST_JustTracksRefresh,TRUE,TAG_END);
+        if(pm->updateBits & TLVB_UPDATE_REDRAW_JUSTTRACKS)
+        {
+            // same as TLVB_UPDATE_REDRAW_TRACKLIST, but do not redraw headers
+            SetGadgetAttrs(pm->trackList, CurrentMainWindow, NULL,TRACKLIST_JustTracksRefresh,TRUE,TAG_END);
+        } else
+        if(pm->updateBits & TLVB_UPDATE_REDRAW_JUSTHEADERS)
+        {
+            // same as TLVB_UPDATE_REDRAW_TRACKLIST, but do not redraw headers
+            SetGadgetAttrs(pm->trackList, CurrentMainWindow, NULL,TRACKLIST_JustHeadersRefresh,TRUE,TAG_END);
+        }
+
     }
 
     if(pm->updateBits & TLVB_UPDATE_REDRAW_TIMERULE)

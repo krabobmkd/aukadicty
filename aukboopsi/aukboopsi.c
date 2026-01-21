@@ -497,10 +497,12 @@ printf("AppInstance %08x\n",AppInstance);
                         /* releasing a button is only sent here
                           Pass it the same way gadget details are sent to
                           AppInstance  OM_NOTIFY.*/
+/*
                         ULONG senderId = result & WMHI_GADGETMASK;
                         BoopsiDelay_BeginMessage(&app->delayQueue, senderId);
                         BoopsiDelay_AddTag(&app->delayQueue,WMHI_GADGETUP,1);
                         BoopsiDelay_EndMessage(&app->delayQueue);
+*/
                         break;
                     }
                     case WMHI_ICONIFY:
@@ -826,6 +828,14 @@ void TrackListView_UpdateTrackList_Generic()
     if(!app) return;
     //TrackListView_UpdateTrackList(&app->tracksListView);
         app->tracksListView.updateBits |= TLVB_UPDATE_REDRAW_TRACKLIST;
+        if(myTask) Signal(myTask,SIGBREAKF_CTRL_F);
+}
+
+void TrackListView_UpdateTrackList_Headers()
+{
+    if(!app) return;
+    //TrackListView_UpdateTrackList(&app->tracksListView);
+        app->tracksListView.updateBits |= TLVB_UPDATE_REDRAW_JUSTHEADERS;
         if(myTask) Signal(myTask,SIGBREAKF_CTRL_F);
 }
 

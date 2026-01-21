@@ -99,16 +99,18 @@ typedef struct TimeProjection {
 /* force redraw trick */
 #define	TRACKLIST_JustTracksRefresh		(TRACKLIST_Dummy+8)
 
+#define	TRACKLIST_JustHeadersRefresh		(TRACKLIST_Dummy+9)
+
 /* Time projection, knows everything about current view scroll and zoom.
  * Use a pointer to TimeProjection struct.
  * Apply to OM_NEW OM_SET OM_GET
  */
-#define	TRACKLIST_TimeProjection		(TRACKLIST_Dummy+9)
+#define	TRACKLIST_TimeProjection		(TRACKLIST_Dummy+10)
 
 /* Header width in pixels (read-only, set internally based on TrackHeader width) */
-#define	TRACKLIST_HeaderWidth		(TRACKLIST_Dummy+10)
+#define	TRACKLIST_HeaderWidth		(TRACKLIST_Dummy+11)
 
-#define	TRACKLIST_TrackAreaWidth		(TRACKLIST_Dummy+11)
+#define	TRACKLIST_TrackAreaWidth		(TRACKLIST_Dummy+12)
 
 // GM_METHODS
 //

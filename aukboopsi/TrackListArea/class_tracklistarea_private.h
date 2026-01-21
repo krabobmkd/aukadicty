@@ -24,6 +24,7 @@ extern "C" {
 // enable or not some parts of code...
 #define USE_REGION_CLIPPING 1
 
+
 /** retain gadget children for a given data track */
 typedef struct TrackChild{
     AukTrack *_dataTrack; // corresponding data

@@ -75,6 +75,8 @@ extern struct Window *CurrentMainWindow;
 
 
 extern BoopsiDisposeQueue *ObjectLateDisposer;
+
+struct Region *TrackListArea_clipRegion=NULL;
 //static ULONG TrackListArea_NotifyChangeWidth(struct Gadget *Gad, struct GadgetInfo	*GInfo)
 //{
 //    struct opUpdate notifymsg;
@@ -330,6 +332,7 @@ ULONG TrackListArea_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout
     {
         ClearRegion(gdata->_clipRegion);
         OrRectRegion(gdata->_clipRegion, &gdata->_framerec);
+        TrackListArea_clipRegion = gdata->_clipRegion;
     }
 
   return(1);
