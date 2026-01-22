@@ -37,7 +37,7 @@ ULONG TrackListArea_HandleHitTest(Class *C, struct Gadget *Gad,struct gpHitTest 
         {
             TrackChild *strack;
             strack = &gdata->_tracks[itrack];
-
+            if(!strack->_layouted) continue;
             for(iChannel = 0; iChannel < strack->_nbChannels; iChannel++)
             {
                 TrackChannelChild *chan = &strack->_channels[iChannel];
@@ -46,7 +46,7 @@ ULONG TrackListArea_HandleHitTest(Class *C, struct Gadget *Gad,struct gpHitTest 
 
                 headerGad = (struct Gadget*)chan->_trackHeader;
                 trackGad = (struct Gadget*)chan->_trackArea;
-                if(!chan->_layouted) continue;
+
 
                 if(y>=chan->_top && y< chan->_bottom )
                 {
@@ -62,7 +62,7 @@ ULONG TrackListArea_HandleHitTest(Class *C, struct Gadget *Gad,struct gpHitTest 
                          r = DoMethodA((Object*)headerGad, (Msg)&n);
                         return r;
                     } else
-                    if(trackGad && x>=chan->_xmid)
+                    if(chan->_layouted && trackGad && x>=chan->_xmid)
                     {
                         struct gpHitTest n;
                         n.MethodID = GM_HITTEST;
@@ -112,7 +112,7 @@ ULONG TrackListArea_HandleInput(Class *C, struct Gadget *Gad,struct gpInput *M, 
         {
             TrackChild *strack;
             strack = &gdata->_tracks[itrack];
-
+            if(!strack->_layouted) continue;
             for(iChannel = 0; iChannel < strack->_nbChannels; iChannel++)
             {
                 TrackChannelChild *chan = &strack->_channels[iChannel];
@@ -121,7 +121,7 @@ ULONG TrackListArea_HandleInput(Class *C, struct Gadget *Gad,struct gpInput *M, 
 
                 headerGad = (struct Gadget*)chan->_trackHeader;
                 trackGad = (struct Gadget*)chan->_trackArea;
-                if(!chan->_layouted) continue;
+                //if(!chan->_layouted) continue;
 
                 if(y>=chan->_top && y< chan->_bottom )
                 {
@@ -176,7 +176,7 @@ window or screen, an application removed the active gadget with RemoveGList(),
         {
             TrackChild *strack;
             strack = &gdata->_tracks[itrack];
-
+            if(!strack->_layouted) continue;
             for(iChannel = 0; iChannel < strack->_nbChannels; iChannel++)
             {
                 TrackChannelChild *chan = &strack->_channels[iChannel];
@@ -185,7 +185,7 @@ window or screen, an application removed the active gadget with RemoveGList(),
 
                 headerGad = (struct Gadget*)chan->_trackHeader;
                 trackGad = (struct Gadget*)chan->_trackArea;
-                if(!chan->_layouted) continue;
+               // if(!chan->_layouted) continue;
 
                 if(headerGad && headerGad->Activation & GACT_ACTIVEGADGET)
                 {

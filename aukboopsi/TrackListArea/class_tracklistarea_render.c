@@ -247,17 +247,21 @@ ULONG TrackListArea_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout
 
         for(itrack = 0; itrack < gdata->_trackCount; itrack++)
         {
+            LONG headerTop = trackTop;
             TrackChild *strack;
-            strack = &gdata->_tracks[itrack];   
+            struct Gadget *headerGad = NULL;
+            strack = &gdata->_tracks[itrack];
+            strack->_layouted = 0; // if any chan layouted...
             for(iChannel = 0; iChannel < strack->_nbChannels; iChannel++)
             {
-                struct Gadget *headerGad;
                 struct Gadget *trackGad;
                 //TrackArea *trackArea;
                 TrackChannelChild *chan = &strack->_channels[iChannel];
                 UWORD trackHeight=0;
-
-                headerGad = (struct Gadget *) chan->_trackHeader;
+                if(iChannel == 0)
+                {   /* the header is always only on tyhe first chan */
+                    headerGad = (struct Gadget *) chan->_trackHeader;
+                }
                 trackGad = (struct Gadget *) chan->_trackArea;
                 chan->_layouted = 0;
 
@@ -275,34 +279,10 @@ ULONG TrackListArea_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout
                     (trackTop > topedge + height)
                      )
                 {
-//                if(headerGad)
-//                {
-//                    headerGad->TopEdge = 0;
-//                    headerGad->LeftEdge = 0;
-//                    headerGad->Width = 4; // how we say it's not layouted.
-//                    headerGad->Height = 2;
-
-//                }
-//                if(trackGad)
-//                {
-//                    trackGad->Width = 4;
-//                }
                     trackTop += trackHeight ;
                     continue;
                 }
-
-                if(headerGad )
-                {
-                    /* Position TrackHeader on the left */
-                    headerGad->LeftEdge = leftedge;
-                    headerGad->TopEdge = trackTop;
-                    headerGad->Width = gdata->_headerWidth;
-                    headerGad->Height = trackHeight;
-
-                    /* Call child's GM_LAYOUT */
-                    DoMethodA((Object*)headerGad, (Msg)layout);
-                }
-
+                // now header is layout after all chans trackareas
                 if(trackGad)
                 {
 
@@ -316,13 +296,28 @@ ULONG TrackListArea_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout
                    DoMethodA((Object*)trackGad, (Msg)layout);
                 }
                 chan->_layouted = 1;
+                strack->_layouted = 1;
                 chan->_top = trackTop;
                 chan->_bottom = trackTop+trackHeight;
                 chan->_xmid = leftedge+ gdata->_headerWidth;
 
                 trackTop += trackHeight;
+            } // end loop per chan
+
+            // headerTop
+            if(headerGad )
+            {
+                /* Position TrackHeader on the left */
+                headerGad->LeftEdge = leftedge;
+                headerGad->TopEdge = headerTop;
+                headerGad->Width = gdata->_headerWidth;
+                headerGad->Height = trackTop-headerTop;
+
+                /* Call child's GM_LAYOUT */
+                DoMethodA((Object*)headerGad, (Msg)layout);
             }
-        }
+
+        } // end loop per track
 
         /* Store the calculated domain height */
         gdata->_domainHeight = totalDomainHeight;
@@ -406,11 +401,11 @@ ULONG TrackListArea_Render(Class *C, struct Gadget *Gad, struct gpRender *Render
             trackGad = (struct Gadget *) chan->_trackArea;
 
             // if layouted
-            if(!chan->_layouted) continue;
 
             /* Call child's GM_RENDER */
 
-            if(headerGad && ((filter & 2)!=0) && bLayerUpdating == 0) // if layouted && selected for refresh
+            if(strack->_layouted &&
+                 headerGad && ((filter & 2)!=0) && bLayerUpdating == 0) // if layouted && selected for refresh
             {
                 //            SetAPen(rp, gdata->_styleSheet->trackHeaderBG.pen);
                 //            RectFill(rp,headerGad->LeftEdge,
@@ -420,6 +415,7 @@ ULONG TrackListArea_Render(Class *C, struct Gadget *Gad, struct gpRender *Render
 
                 DoMethodA((Object*)headerGad, (Msg)Render); // not DoGadgetMethodA in that case
             }
+            if(!chan->_layouted) continue;
             if(trackGad && ((filter & 1)!=0)) // if layouted && selected for refresh
             {
                 DoMethodA((Object*)trackGad, (Msg)Render); // not DoGadgetMethodA in that case

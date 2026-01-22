@@ -43,6 +43,8 @@ typedef struct TrackChild{
     AukTrack *_dataTrack; // corresponding data, track is is from there
     ULONG     _nbChannels; // should be same as _dataTrack->channels
     TrackChannelChild *_channels;
+    // if any chan layouted (whcih means header layouted)...
+    UWORD _layouted;
 } TrackChild;
 
 /**
