@@ -33,8 +33,14 @@ struct AukTrack {
     AukFixed16  stereoPan; /* 0 Right, 32768 middle 65536 Left */
     AukFixed16  ownVolume; /* 0 silent, 65536 Full. Multiply envelope signal */
 
-    int         channelCount; /* Number of audio channels this track manages (1=mono, 2=stereo, etc.) */
-
+    /* Number of audio channels this track manages (1=mono, 2=stereo, etc.)
+        This is set at the first AddSound and shouldnt change (or heavy op.)
+        If another sound copied, may need conversion. 1 by default.
+    */
+    unsigned int    channelCount;
+    /* finally not, we'll consider current sampleRate is the one of sound we point.
+     * unsigned long sampleRate; /* Sample rate (e.g., 44100) sound refered  may differ,
+    */
     #define AukTrackFlag_Silent 1
 
     int         stateFlags;

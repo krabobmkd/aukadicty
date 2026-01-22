@@ -125,7 +125,7 @@ typedef struct TimeProjection {
 void TrackListArea_setTrackList(struct Gadget *Gad,AukAProject *tracklist);
 // events - insert/remove with index-based shifting
 void TrackListArea_insertTrack( struct Gadget *Gad,AukTrack *track, int indexToInsert);
-void TrackListArea_removeTrack( struct Gadget *Gad,AukTrack *track, int indexToRemove);
+void TrackListArea_removeTrack( struct Gadget *Gad, int indexToRemove);
 void TrackListArea_swapTracks( struct Gadget *Gad, int indexA, int indexB);
 void TrackListArea_trackModified( struct Gadget *Gad,AukTrack *track);
 

@@ -37,7 +37,7 @@
 #include <string.h>
 
 /* Default capacity for track array allocation */
-#define TRACKLIST_DEFAULT_CAPACITY 32
+#define TRACKLIST_DEFAULT_CAPACITY 64
 
 #include "aukerrors.h"
 /* Most of the calls to boopsi methods are not done from the App's context,
@@ -179,7 +179,7 @@ ULONG TrackListArea_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout
   TrackListArea *gdata;
   LONG topedge,leftedge,width,height;
   LONG trackTop;
-  ULONG i;
+  ULONG itrack,iChannel;
  ULONG prevDomainHeight;
 // ULONG prevHeight;
     gdata=INST_DATA(C, Gad);
@@ -200,7 +200,7 @@ ULONG TrackListArea_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout
     /* Layout child gadgets (TrackHeaders and TrackGadgets) */
     if(gdata->_tracks && gdata->_trackCount > 0)
     {
-        ULONG totalDomainHeight = 0;
+        LONG totalDomainHeight = 0;
 
         /* Default track height if not set */
         if(gdata->_defaulTrackHeight == 0) gdata->_defaulTrackHeight = 40;
@@ -209,14 +209,20 @@ ULONG TrackListArea_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout
 
 
         /* count total height first */
-        for(i = 0; i < gdata->_trackCount; i++)
-        {
-            UWORD trackHeight=0;
+        for(itrack = 0; itrack < gdata->_trackCount; itrack++)
+        {            
             TrackChild *strack;
-            strack = &gdata->_tracks[i];
-            trackHeight = strack->_prefHeight;
-            if(trackHeight==0) trackHeight = gdata->_defaulTrackHeight;
-            totalDomainHeight += trackHeight;
+            strack = &gdata->_tracks[itrack];
+
+            for(iChannel = 0; iChannel < strack->_nbChannels; iChannel++)
+            {
+                TrackChannelChild *chan = &strack->_channels[iChannel];
+                UWORD trackHeight=0;
+
+                trackHeight = chan->_prefHeight;
+                if(trackHeight==0) trackHeight = gdata->_defaulTrackHeight;
+                totalDomainHeight += trackHeight;
+            }
         }
 
         if((totalDomainHeight-gdata->_scrollY) < height)
@@ -229,84 +235,93 @@ ULONG TrackListArea_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout
 
 
         /* Layout each track row */
-        for(i = 0; i < gdata->_trackCount; i++)
+//        for(i = 0; i < gdata->_trackCount; i++)
+//        {
+//            TrackArea *trackArea;
+//            TrackChild *strack;
+//            struct Gadget *headerGad;
+//            struct Gadget *trackGad;
+//            UWORD trackHeight=0;
+
+//            strack = &gdata->_tracks[i];
+
+        for(itrack = 0; itrack < gdata->_trackCount; itrack++)
         {
-            TrackArea *trackArea;
             TrackChild *strack;
-            struct Gadget *headerGad;
-            struct Gadget *trackGad;
-            UWORD trackHeight=0;
-
-            strack = &gdata->_tracks[i];
-            headerGad = (struct Gadget *) strack->_trackHeader;
-            trackGad = (struct Gadget *) strack->_trackArea;
-            strack->_layouted = 0;
-
-            if(trackGad)
+            strack = &gdata->_tracks[itrack];   
+            for(iChannel = 0; iChannel < strack->_nbChannels; iChannel++)
             {
-                trackArea = INST_DATA(TrackAreaClassPtr, trackGad);
-            }
-            trackHeight = strack->_prefHeight;
-            if(trackHeight==0) trackHeight = gdata->_defaulTrackHeight;
+                struct Gadget *headerGad;
+                struct Gadget *trackGad;
+                //TrackArea *trackArea;
+                TrackChannelChild *chan = &strack->_channels[iChannel];
+                UWORD trackHeight=0;
 
-            /* Skip tracks that are scrolled out of view (above visible area)
-            disable also if is below visible area
-            */
-            if((trackTop + trackHeight < topedge ) ||
-                (trackTop > topedge + height)
-                 )
-            {
-                if(headerGad)
+                headerGad = (struct Gadget *) chan->_trackHeader;
+                trackGad = (struct Gadget *) chan->_trackArea;
+                chan->_layouted = 0;
+
+//            if(trackGad)
+//            {
+//                trackArea = INST_DATA(TrackAreaClassPtr, trackGad);
+//            }
+                trackHeight = chan->_prefHeight;
+                if(trackHeight==0) trackHeight = gdata->_defaulTrackHeight;
+
+                /* Skip tracks that are scrolled out of view (above visible area)
+                disable also if is below visible area
+                */
+                if((trackTop + trackHeight < topedge ) ||
+                    (trackTop > topedge + height)
+                     )
                 {
-                    headerGad->TopEdge = 0;
-                    headerGad->LeftEdge = 0;
-                    headerGad->Width = 4; // how we say it's not layouted.
-                    headerGad->Height = 2;
+//                if(headerGad)
+//                {
+//                    headerGad->TopEdge = 0;
+//                    headerGad->LeftEdge = 0;
+//                    headerGad->Width = 4; // how we say it's not layouted.
+//                    headerGad->Height = 2;
 
-                    // ignoble clipping trick
-                    headerGad->UserData = (topedge<<16)|(topedge+height);
-
-                    // V47
-                    SetAttrs(headerGad,GA_Hidden,TRUE,TAG_END);
+//                }
+//                if(trackGad)
+//                {
+//                    trackGad->Width = 4;
+//                }
+                    trackTop += trackHeight ;
+                    continue;
                 }
-                trackGad->Width = 4;
-                trackTop += trackHeight ;
-                continue;
+
+                if(headerGad )
+                {
+                    /* Position TrackHeader on the left */
+                    headerGad->LeftEdge = leftedge;
+                    headerGad->TopEdge = trackTop;
+                    headerGad->Width = gdata->_headerWidth;
+                    headerGad->Height = trackHeight;
+
+                    /* Call child's GM_LAYOUT */
+                    DoMethodA((Object*)headerGad, (Msg)layout);
+                }
+
+                if(trackGad)
+                {
+
+                    /* Position TrackArea on the right, after header */
+                    trackGad->LeftEdge = leftedge + gdata->_headerWidth;
+                    trackGad->TopEdge = trackTop;
+                    trackGad->Width = width - gdata->_headerWidth;
+                    trackGad->Height = trackHeight;
+
+                    /* Call child's GM_LAYOUT */
+                   DoMethodA((Object*)trackGad, (Msg)layout);
+                }
+                chan->_layouted = 1;
+                chan->_top = trackTop;
+                chan->_bottom = trackTop+trackHeight;
+                chan->_xmid = leftedge+ gdata->_headerWidth;
+
+                trackTop += trackHeight;
             }
-
-            if(headerGad )
-            {
-                SetAttrs(headerGad,GA_Hidden,FALSE,TAG_END);
-                /* Position TrackHeader on the left */
-                headerGad->LeftEdge = leftedge;
-                headerGad->TopEdge = trackTop;
-                headerGad->Width = gdata->_headerWidth;
-                headerGad->Height = trackHeight;
-                // ignoble clipping trick
-                headerGad->UserData = (topedge<<16)|(topedge+height);
-
-                /* Call child's GM_LAYOUT */
-                DoMethodA((Object*)headerGad, (Msg)layout);
-            }
-
-            if(trackGad)
-            {
-
-                /* Position TrackArea on the right, after header */
-                trackGad->LeftEdge = leftedge + gdata->_headerWidth;
-                trackGad->TopEdge = trackTop;
-                trackGad->Width = width - gdata->_headerWidth;
-                trackGad->Height = trackHeight;
-
-                /* Call child's GM_LAYOUT */
-               DoMethodA((Object*)trackGad, (Msg)layout);
-            }
-            strack->_layouted = 1;
-            strack->_top = trackTop;
-            strack->_bottom = trackTop+trackHeight;
-            strack->_xmid = leftedge+ gdata->_headerWidth;
-// _defaulTrackHeight
-            trackTop += trackHeight;
         }
 
         /* Store the calculated domain height */
@@ -345,8 +360,8 @@ ULONG TrackListArea_Render(Class *C, struct Gadget *Gad, struct gpRender *Render
     TrackListArea *gdata;
     struct RastPort *rp;
     int bLayerUpdating=FALSE;
-    LONG i;
-    LONG topedge,leftedge,width,height;
+    LONG itrack,iChannel;
+    LONG topedge; //,leftedge,width,height;
 
     if(Render->MethodID==GM_RENDER &&  Render->gpr_RPort )
     {
@@ -360,9 +375,9 @@ ULONG TrackListArea_Render(Class *C, struct Gadget *Gad, struct gpRender *Render
     gdata=INST_DATA(C, Gad);
 
     topedge = Gad->TopEdge;
-    leftedge = Gad->LeftEdge;
-    width = Gad->Width;
-    height = Gad->Height;
+//    leftedge = Gad->LeftEdge;
+//    width = Gad->Width;
+//    height = Gad->Height;
 
 
 	// if( ( rp->Layer->Flags & LAYERUPDATING ) != 0L )
@@ -374,41 +389,44 @@ ULONG TrackListArea_Render(Class *C, struct Gadget *Gad, struct gpRender *Render
 
     oldClipRegion = InstallClipRegion( rp->Layer, gdata->_clipRegion);
 
-    if(gdata->_tracks && gdata->_trackCount > 0)
-    {
 
-        /* Layout each track row */
-        for(i = 0; i < gdata->_trackCount; i++)
+    for(itrack = 0; itrack < (int)gdata->_trackCount; itrack++)
+    {
+        TrackChild *strack;
+        strack = &gdata->_tracks[itrack];
+
+        for(iChannel = 0; iChannel < (int)strack->_nbChannels; iChannel++)
         {
-            TrackChild *strack;
             struct Gadget *headerGad;
             struct Gadget *trackGad;
-            strack = &gdata->_tracks[i];
-            headerGad = (struct Gadget*)strack->_trackHeader;
-            trackGad = (struct Gadget*)strack->_trackArea;
+          //  TrackArea *trackArea;
+            TrackChannelChild *chan = &strack->_channels[iChannel];
+
+            headerGad = (struct Gadget *) chan->_trackHeader;
+            trackGad = (struct Gadget *) chan->_trackArea;
 
             // if layouted
-            if(!strack->_layouted) continue;
+            if(!chan->_layouted) continue;
 
             /* Call child's GM_RENDER */
 
-          // recurse
-        if(headerGad && ((filter & 2)!=0) && bLayerUpdating == 0) // if layouted && selected for refresh
-        {
-//            SetAPen(rp, gdata->_styleSheet->trackHeaderBG.pen);
-//            RectFill(rp,headerGad->LeftEdge,
-//                        headerGad->TopEdge,
-//                        headerGad->LeftEdge + headerGad->Width -1,
-//                        headerGad->TopEdge + headerGad->Height -1);
+            if(headerGad && ((filter & 2)!=0) && bLayerUpdating == 0) // if layouted && selected for refresh
+            {
+                //            SetAPen(rp, gdata->_styleSheet->trackHeaderBG.pen);
+                //            RectFill(rp,headerGad->LeftEdge,
+                //                        headerGad->TopEdge,
+                //                        headerGad->LeftEdge + headerGad->Width -1,
+                //                        headerGad->TopEdge + headerGad->Height -1);
 
-            DoMethodA((Object*)headerGad, (Msg)Render); // not DoGadgetMethodA in that case
-        }
-         if(trackGad && ((filter & 1)!=0)) // if layouted && selected for refresh
-         {
-            DoMethodA((Object*)trackGad, (Msg)Render); // not DoGadgetMethodA in that case
-         }
+                DoMethodA((Object*)headerGad, (Msg)Render); // not DoGadgetMethodA in that case
+            }
+            if(trackGad && ((filter & 1)!=0)) // if layouted && selected for refresh
+            {
+                DoMethodA((Object*)trackGad, (Msg)Render); // not DoGadgetMethodA in that case
+            }
+         } // end loop per chan
         } // end loop per track
-    } // end if any track
+
 
     /* may render empty space */
     {
@@ -447,35 +465,56 @@ ULONG TrackListArea_Render(Class *C, struct Gadget *Gad, struct gpRender *Render
 /** Helper - dispose all allocated gadgets and free array */
 void TrackListArea_DisposeGadgets(struct Gadget *Gad,TrackListArea *gdata)
 {
-    ULONG i;
+    ULONG itrack,iChannel;
     if(!gdata) return;
     bdbprintf("TrackListArea_DisposeGadgets() ->all\n");
     /* Dispose all active TrackHeader/TrackArea gadgets */
     if(gdata->_tracks)
     {
-        for(i = 0; i < gdata->_trackCount; i++)
+//        for(i = 0; i < gdata->_trackCount; i++)
+//        {
+//            Object *trackHeader = gdata->_tracks[i]._trackHeader;
+//            Object *trackArea = gdata->_tracks[i]._trackArea;
+        for(itrack = 0; itrack < gdata->_trackCount; itrack++)
         {
-            Object *trackHeader = gdata->_tracks[i]._trackHeader;
-            Object *trackArea = gdata->_tracks[i]._trackArea;
-            if(trackHeader)
+            TrackChild *strack;
+            strack = &gdata->_tracks[itrack];
+
+            for(iChannel = 0; iChannel < strack->_nbChannels; iChannel++)
             {
-                /* LAYOUT_RemoveChild: This will destroy the object as well. */
-                SetGadgetAttrs(Gad,CurrentMainWindow,NULL,
-                            LAYOUT_RemoveChild,(ULONG)trackHeader,TAG_END);
-                BoopsiDispose_Later( ObjectLateDisposer, trackHeader);
-            }
-            if(trackArea)
-            {
-                SetGadgetAttrs(Gad,CurrentMainWindow,NULL,
-                            LAYOUT_RemoveChild,(ULONG)trackArea,TAG_END);
-                BoopsiDispose_Later( ObjectLateDisposer, trackArea);
+                struct Gadget *trackHeader;
+                struct Gadget *trackArea;
+                TrackChannelChild *chan = &strack->_channels[iChannel];
+
+                trackHeader = (struct Gadget *) chan->_trackHeader;
+                trackArea = (struct Gadget *) chan->_trackArea;
+
+                if(trackHeader)
+                {
+                    /* LAYOUT_RemoveChild: This will destroy the object as well. */
+                    SetGadgetAttrs(Gad,CurrentMainWindow,NULL,
+                                LAYOUT_RemoveChild,(ULONG)trackHeader,TAG_END);
+                    BoopsiDispose_Later( ObjectLateDisposer, (Object *)trackHeader);
+                }
+                if(trackArea)
+                {
+                    SetGadgetAttrs(Gad,CurrentMainWindow,NULL,
+                                LAYOUT_RemoveChild,(ULONG)trackArea,TAG_END);
+                    BoopsiDispose_Later( ObjectLateDisposer,(Object *)trackArea);
+                }
+
+
+                /* Clear the slot */
+                chan->_trackHeader = NULL;
+                chan->_trackArea = NULL;
+
             }
              /* release data we sync: */
-            AukObjectPtr_Release(&gdata->_tracks[i]._dataTrack);
-
-            /* Clear the slot */
-            gdata->_tracks[i]._trackHeader = NULL;
-            gdata->_tracks[i]._trackArea = NULL;
+            AukObjectPtr_Release((AukObjectPtr *)&strack->_dataTrack);
+            /* free channels base */
+            if(strack->_channels) FreeVec(strack->_channels);
+            strack->_channels = NULL;
+            strack->_nbChannels = 0;
         }
 
         FreeVec(gdata->_tracks);
@@ -499,10 +538,15 @@ static int TrackListArea_EnsureTrackArray(TrackListArea *gdata)
 }
 
 extern Object *AppInstance;
-static int TrackListArea_CreateTrackLine(
+//static int TrackListArea_CreateTrackLine(
+//            struct Gadget *Gad,
+//            TrackListArea *gdata,
+//            TrackChild *strack, AukTrack *dataTrack, int iTrack)
+static int TrackListArea_CreateTrackChannelLine(
             struct Gadget *Gad,
             TrackListArea *gdata,
-            TrackChild *strack, AukTrack *dataTrack, int iTrack)
+            TrackChild *strack,
+            TrackChannelChild *schan, AukTrack *dataTrack, int iTrack, int iChannel)
 {
     char *trackname=NULL;
     ULONG TRACKHEADER_Nametag =TAG_END;
@@ -513,45 +557,50 @@ static int TrackListArea_CreateTrackLine(
     if(trackname) TRACKHEADER_Nametag = TRACKHEADER_Name;
     bdbprintf("TrackListArea_CreateTrackLine trackname:%s\n",trackname);
     /* Create TrackHeader gadget */
-    strack->_trackHeader =
-       NewObject(TRACKHEADER_GetClass(), NULL,
-                                   LAYOUT_DeferLayout,TRUE,
-                                  // CHILD_NoDispose,TRUE,
-                                    TRACKHEADER_StyleSheet, (ULONG)styleSheet,
-                                   //test LAYOUT_FillPen, gdata->_styleSheet->trackHeaderBG.pen,
-                                    TRACKHEADER_TrackIndex,iTrack,
-                                    ICA_TARGET,AppInstance,
-                                    GA_DrawInfo, (ULONG)gdata->_drawInfo,
-                                    TRACKHEADER_Nametag,trackname, // optional, must be last
-                                    TAG_END);
+    if(iChannel ==0)
+    {
+        schan->_trackHeader =
+            NewObject(TRACKHEADER_GetClass(), NULL,
+                           LAYOUT_DeferLayout,TRUE,
+                          // CHILD_NoDispose,TRUE,
+                            TRACKHEADER_StyleSheet, (ULONG)styleSheet,
+                           //test LAYOUT_FillPen, gdata->_styleSheet->trackHeaderBG.pen,
+                            TRACKHEADER_TrackIndex,iTrack,
+                            ICA_TARGET,AppInstance,
+                            GA_DrawInfo, (ULONG)gdata->_drawInfo,
+                            TRACKHEADER_Nametag,trackname, // optional, must be last
+                            TAG_END);
+
+        if(schan->_trackHeader)
+        {
+            /* CHILD_NoDispose superimportant, to manage smooth detach  */
+            SetAttrs(Gad,LAYOUT_AddChild,(ULONG)schan->_trackHeader,
+                        CHILD_NoDispose,TRUE,
+                        TAG_END);
+        }
+    }
     //TODO TRACKHEADER_TrackIndex TRACKHEADER_Name should be later setAttribs()
 
-    if(strack->_trackHeader)
-    {
-        /* CHILD_NoDispose superimportant, to manage smooth detach  */
-        SetAttrs(Gad,LAYOUT_AddChild,(ULONG)strack->_trackHeader,
-                    CHILD_NoDispose,TRUE,
-                    TAG_END);
-    }
+
     //if(!strack->_trackHeader ) return 0;
     /* Create TrackArea - pass data track for reference counted retention */
-    strack->_trackArea = NewObject(TRACKAREA_GetClass(), NULL,
+    schan->_trackArea = NewObject(TRACKAREA_GetClass(), NULL,
                                    INFINITESCROLL_PPosition,(ULONG) &gdata->_timeProjection._pixAtLeft,
                                    TRACKAREA_StyleSheet, (ULONG)styleSheet,
                                    TRACKAREA_PTimeProjection,(ULONG)&gdata->_timeProjection,
                                    TRACKAREA_DataTrack,(ULONG)dataTrack,
                                    TAG_END);
-    if(strack->_trackArea)
+    if(schan->_trackArea)
     {
-        SetAttrs(Gad,LAYOUT_AddChild,(ULONG)strack->_trackArea,
+        SetAttrs(Gad,LAYOUT_AddChild,(ULONG)schan->_trackArea,
                             CHILD_NoDispose,TRUE,
                             TAG_END);
     }
 
     /* retain data we sync: */
-    AukObjectPtr_Set(&strack->_dataTrack,dataTrack);
+    AukObjectPtr_Set((AukObjectPtr *)&strack->_dataTrack,dataTrack);
     // default value
-    strack->_prefHeight = 96;
+    schan->_prefHeight = 96;
 
     return 1;
 }
@@ -560,63 +609,68 @@ static int TrackListArea_CreateTrackLine(
 * Full sync of track UI to data.
 * Called on project set or when incremental updates can't handle changes.
 */
-static void TrackListArea_updateTrackListUiToData(struct Gadget *Gad)
-{
-    TrackListArea *gdata;
-    AukAProject *project;
-    ULONG dataTrackCount;
-    ULONG i;
+//static void TrackListArea_updateTrackListUiToData(struct Gadget *Gad)
+//{
+//    TrackListArea *gdata;
+//    AukAProject *project;
+//    ULONG dataTrackCount;
+//    ULONG i;
 
-    if(!TrackListClassPtr || !Gad) return;
-    gdata = INST_DATA(TrackListClassPtr, Gad);
+//    if(!TrackListClassPtr || !Gad) return;
+//    gdata = INST_DATA(TrackListClassPtr, Gad);
 
-    project = gdata->_project;
-    if(!project)
-    {
-        /* No project, clean up everything */
-        TrackListArea_DisposeGadgets(Gad,gdata);
-        return;
-    }
+//    project = gdata->_project;
+//    if(!project)
+//    {
+//        /* No project, clean up everything */
+//        TrackListArea_DisposeGadgets(Gad,gdata);
+//        return;
+//    }
 
-    /* Get the track count from project */
-    dataTrackCount = AukArray_GetCount(project->tracks);
+//    /* Get the track count from project */
+//    dataTrackCount = AukArray_GetCount(project->tracks);
 
-    /* Check capacity - if data exceeds our capacity, we need a full rebuild */
-    if(dataTrackCount > TRACKLIST_DEFAULT_CAPACITY)
-    {
-        AukLog_MessageInt(AUKLOG_WARNING, AUKERR_TRACKLIST_CAPACITY_REACHED, TRACKLIST_DEFAULT_CAPACITY);
-        /* For now, just handle up to capacity */
-        dataTrackCount = TRACKLIST_DEFAULT_CAPACITY;
-    }
+//    /* Check capacity - if data exceeds our capacity, we need a full rebuild */
+//    if(dataTrackCount > TRACKLIST_DEFAULT_CAPACITY)
+//    {
+//        AukLog_MessageInt(AUKLOG_WARNING, AUKERR_TRACKLIST_CAPACITY_REACHED, TRACKLIST_DEFAULT_CAPACITY);
+//        /* For now, just handle up to capacity */
+//        dataTrackCount = TRACKLIST_DEFAULT_CAPACITY;
+//    }
 
-    /* If count changed, rebuild UI */
-    if(dataTrackCount != gdata->_trackCount)
-    {
-        /* Dispose old gadgets first (keeps array if allocated) */
-        TrackListArea_DisposeGadgets(Gad, gdata);
+//    /* If count changed, rebuild UI */
+//    if(dataTrackCount != gdata->_trackCount)
+//    {
+//        /* Dispose old gadgets first (keeps array if allocated) */
+//        TrackListArea_DisposeGadgets(Gad, gdata);
 
-        if(dataTrackCount > 0)
-        {
-            /* Ensure array is allocated */
-            if(!TrackListArea_EnsureTrackArray(gdata))
-            {
-                return;
-            }
+//        if(dataTrackCount > 0)
+//        {
+//            /* Ensure array is allocated */
+//            if(!TrackListArea_EnsureTrackArray(gdata))
+//            {
+//                return;
+//            }
 
-            /* Create gadgets for each track */
-            for(i = 0; i < dataTrackCount; i++)
-            {
-                if(!TrackListArea_CreateTrackLine(Gad, gdata, &gdata->_tracks[i], project->tracks->items[i], i))
-                {
-                    /* Failed to create gadgets, cleanup and abort */
-                    TrackListArea_DisposeGadgets(Gad, gdata);
-                    return;
-                }
-            }
-            gdata->_trackCount = dataTrackCount;
-        }
-    }
-}
+//            /* Create gadgets for each track */
+//            for(i = 0; i < dataTrackCount; i++)
+//            {
+
+//                        struct Gadget *Gad,
+//            TrackListArea *gdata,
+//            TrackChannelChild *strack, AukTrack *dataTrack, int iTrack, int iChannel)
+
+//                if(!TrackListArea_CreateTrackChannelLine(Gad, gdata, &gdata->_tracks[i], project->tracks->items[i], i))
+//                {
+//                    /* Failed to create gadgets, cleanup and abort */
+//                    TrackListArea_DisposeGadgets(Gad, gdata);
+//                    return;
+//                }
+//            }
+//            gdata->_trackCount = dataTrackCount;
+//        }
+//    }
+//}
 
 
 // set main project - TrackListArea NULL means clean everything, back to empty state.
@@ -630,17 +684,18 @@ void TrackListArea_setTrackList(struct Gadget *Gad,AukAProject *tracklist)
 
     AukObjectPtr_Set(&gdata->_project,tracklist);
 
-    TrackListArea_updateTrackListUiToData(Gad);
+   // TrackListArea_updateTrackListUiToData(Gad);
 }
 
 /* Insert track at specified index, shifting existing tracks up */
 void TrackListArea_insertTrack(struct Gadget *Gad, AukTrack *track, int indexToInsert)
 {
     TrackListArea *gdata;
-    ULONG i;
 
-    if(!TrackListClassPtr || !Gad || !track) return;
+    if(!TrackListClassPtr || !Gad || !track || track->channelCount<=0) return;
     gdata = INST_DATA(TrackListClassPtr, Gad);
+
+ printf("TrackListArea_insertTrack track->channelCount:%d\n",track->channelCount);
 
     /* Ensure array is allocated */
     if(!TrackListArea_EnsureTrackArray(gdata))
@@ -649,7 +704,7 @@ void TrackListArea_insertTrack(struct Gadget *Gad, AukTrack *track, int indexToI
     }
 
     /* Check capacity */
-    if(gdata->_trackCount >= gdata->_trackCapacity)
+    if((gdata->_trackCount+1) >= gdata->_trackCapacity)
     {
         AukLog_MessageInt(AUKLOG_WARNING, AUKERR_TRACKLIST_CAPACITY_REACHED, gdata->_trackCapacity);
         return;
@@ -664,6 +719,7 @@ void TrackListArea_insertTrack(struct Gadget *Gad, AukTrack *track, int indexToI
     /* Shift existing tracks up to make room */
     if((ULONG)indexToInsert < gdata->_trackCount)
     {
+        ULONG i;
         /* Shift from end to insert position */
         for(i = gdata->_trackCount; i > (ULONG)indexToInsert; i--)
         {
@@ -674,36 +730,72 @@ void TrackListArea_insertTrack(struct Gadget *Gad, AukTrack *track, int indexToI
     /* Clear the slot for new track */
     memset(&gdata->_tracks[indexToInsert], 0, sizeof(TrackChild));
 
-    /* Create gadgets for the new track at the insert position */
-    if(!TrackListArea_CreateTrackLine(Gad, gdata, &gdata->_tracks[indexToInsert], track, indexToInsert))
+    /* Create TrackChannelChild per channel */
     {
-        /* Failed - shift back down and return */
-        for(i = indexToInsert; i < gdata->_trackCount; i++)
+        ULONG ic;
+        TrackChild *pchild = &gdata->_tracks[indexToInsert];
+        pchild->_channels = (TrackChannelChild *)AllocVec(sizeof(TrackChannelChild)*track->channelCount, MEMF_CLEAR );
+        if(!pchild->_channels)
         {
-            gdata->_tracks[i] = gdata->_tracks[i+1];
+            /* Failed - shift back down and return */
+            for(ic = indexToInsert; ic < gdata->_trackCount; ic++)
+            {
+                gdata->_tracks[ic] = gdata->_tracks[ic+1];
+            }
+            memset(&gdata->_tracks[gdata->_trackCount], 0, sizeof(TrackChild));
+            return;
         }
-        memset(&gdata->_tracks[gdata->_trackCount], 0, sizeof(TrackChild));
-        return;
+        for(ic=0;ic<track->channelCount;ic++)
+        {
+            /* Create gadgets for the new track at the insert position */
+            if(!TrackListArea_CreateTrackChannelLine(Gad, gdata,
+                                    pchild,
+                                    &pchild->_channels[ic], track,indexToInsert ,ic))
+            {
+                /* Failed - shift back down and return */
+                //TODO well should delete create lines
+                FreeVec(pchild->_channels);
+                pchild->_channels = 0;
+
+                for(ic = indexToInsert; ic < gdata->_trackCount; ic++)
+                {
+                    gdata->_tracks[ic] = gdata->_tracks[ic+1];
+                }
+
+                memset(&gdata->_tracks[gdata->_trackCount], 0, sizeof(TrackChild));
+                return;
+            }
+
+        } // end loop per chan
+  printf("///// pchild->_nbChannels %d\n",track->channelCount);
+        pchild->_nbChannels = track->channelCount;
     }
 
     gdata->_trackCount++;
 
     /* Update track indices for shifted TrackHeaders */
-    for(i = indexToInsert + 1; i < gdata->_trackCount; i++)
     {
-        if(gdata->_tracks[i]._trackHeader)
+        ULONG i;
+        for(i = indexToInsert + 1; i < gdata->_trackCount; i++)
         {
-            SetAttrs(gdata->_tracks[i]._trackHeader, TRACKHEADER_TrackIndex, i, TAG_END);
+            TrackChannelChild *pc = &gdata->_tracks[i]._channels[0];
+            if(gdata->_tracks[i]._nbChannels==0) continue;
+            if(pc->_trackHeader)
+            {
+                SetAttrs(pc->_trackHeader, TRACKHEADER_TrackIndex, i, TAG_END);
+            }
         }
     }
 
 }
 
 /* Remove track at specified index, shifting remaining tracks down */
-void TrackListArea_removeTrack(struct Gadget *Gad, AukTrack *track, int indexToRemove)
+void TrackListArea_removeTrack(struct Gadget *Gad, int indexToRemove)
 {
     TrackListArea *gdata;
     Object *trackheader,*trackarea;
+    TrackChild *trackChild;
+    TrackChannelChild *chan;
     ULONG i;
 
     if(!TrackListClassPtr || !Gad) return;
@@ -721,41 +813,35 @@ void TrackListArea_removeTrack(struct Gadget *Gad, AukTrack *track, int indexToR
 
     bdbprintf("TrackListArea_removeTrack index:%d count:%ld\n", indexToRemove, gdata->_trackCount);
 
-    /* Dispose gadgets at this index using LAYOUT_RemoveChild */
-    trackheader = gdata->_tracks[indexToRemove]._trackHeader;
-    if(trackheader)
-    {   // do that first !
-        gdata->_tracks[indexToRemove]._trackHeader = NULL;
-        // SetGadgetAttrs(Gad, CurrentMainWindow, NULL,
-        //             LAYOUT_RemoveChild, (ULONG)trackheader, TAG_END);
-        SetAttrs(Gad, LAYOUT_RemoveChild, (ULONG)trackheader, TAG_END);
-        BoopsiDispose_Later( ObjectLateDisposer, trackheader);
-
-//        DisposeObject(trackheader);
-//struct GadgetInfo
-//        struct gpGoInactive ina;
-//        ina.MethodID = GM_GOINACTIVE;
-//        ina.gpgi_GInfo = NULL;
-//        ina.gpgi_Abort = 1;
-
-//        DoMethodA(trackheader,&ina);
-
-//        SetAttrs(Gad, CHILD_NoDispose, TRUE, LAYOUT_RemoveChild, (ULONG)trackheader, TAG_END);
-
-    }
-
-    trackarea = gdata->_tracks[indexToRemove]._trackArea;
-    if(trackarea)
+    trackChild = &gdata->_tracks[indexToRemove];
+    /* remove per chan */
+    for(i=0 ; i<trackChild->_nbChannels ; i++)
     {
-         // do that first !
-        gdata->_tracks[indexToRemove]._trackArea = NULL;
-        // SetGadgetAttrs(Gad, CurrentMainWindow, NULL,
-        //             LAYOUT_RemoveChild, (ULONG)trackarea, TAG_END);
-        SetAttrs(Gad, LAYOUT_RemoveChild, (ULONG)trackarea, TAG_END);
-        BoopsiDispose_Later( ObjectLateDisposer, trackarea);
-    }
+        chan = &trackChild->_channels[i];
 
-    AukObjectPtr_Release(&gdata->_tracks[indexToRemove]._dataTrack);
+        /* Dispose gadgets at this index using LAYOUT_RemoveChild */
+        trackheader = chan->_trackHeader;
+        if(trackheader)
+        {
+            /* do that first, may help messaging */
+            chan->_trackHeader = NULL;
+            SetAttrs(Gad, LAYOUT_RemoveChild, (ULONG)trackheader, TAG_END);
+            BoopsiDispose_Later( ObjectLateDisposer, trackheader);
+        }
+
+        trackarea =chan->_trackArea;
+        if(trackarea)
+        {
+             /* do that first, may help messaging */
+            chan->_trackArea = NULL;
+            SetAttrs(Gad, LAYOUT_RemoveChild, (ULONG)trackarea, TAG_END);
+            BoopsiDispose_Later( ObjectLateDisposer, trackarea);
+        }
+
+    } // end loop per chan
+
+
+    AukObjectPtr_Release((AukObjectPtr *)&trackChild->_dataTrack);
 
     /* Shift remaining tracks down */
     for(i = indexToRemove; i < gdata->_trackCount - 1; i++)
@@ -770,10 +856,14 @@ void TrackListArea_removeTrack(struct Gadget *Gad, AukTrack *track, int indexToR
 
     /* Update track indices for shifted TrackHeaders */
     for(i = indexToRemove; i < gdata->_trackCount; i++)
-    {
-        if(gdata->_tracks[i]._trackHeader)
+    {    
+        trackChild = &gdata->_tracks[i];
+
+        if( trackChild->_dataTrack &&
+            trackChild->_nbChannels>0 && trackChild->_channels[0]._trackHeader)
         {
-            SetAttrs(gdata->_tracks[i]._trackHeader, TRACKHEADER_TrackIndex, i, TAG_END);
+            SetAttrs( trackChild->_channels[0]._trackHeader, TRACKHEADER_TrackIndex,
+                trackChild->_dataTrack->trackIndex, TAG_END);
         }
     }
     /* Will need big refesh with layout and render */
@@ -811,14 +901,16 @@ void TrackListArea_swapTracks(struct Gadget *Gad, int indexA, int indexB)
     gdata->_tracks[indexA] = gdata->_tracks[indexB];
     gdata->_tracks[indexB] = temp;
 
-    /* Update track indices for swapped TrackHeaders */
-    if(gdata->_tracks[indexA]._trackHeader)
     {
-        SetAttrs(gdata->_tracks[indexA]._trackHeader, TRACKHEADER_TrackIndex, indexA, TAG_END);
-    }
-    if(gdata->_tracks[indexB]._trackHeader)
-    {
-        SetAttrs(gdata->_tracks[indexB]._trackHeader, TRACKHEADER_TrackIndex, indexB, TAG_END);
+        Object *trackHeaderA = (gdata->_tracks[indexA]._nbChannels>0)?
+            gdata->_tracks[indexA]._channels[0]._trackHeader:NULL;
+        Object *trackHeaderB = (gdata->_tracks[indexB]._nbChannels>0)?
+            gdata->_tracks[indexB]._channels[0]._trackHeader:NULL;
+
+        /* Update track indices for swapped TrackHeaders */
+        if(trackHeaderA) SetAttrs(trackHeaderA, TRACKHEADER_TrackIndex, indexA, TAG_END);
+        if(trackHeaderB) SetAttrs(trackHeaderB, TRACKHEADER_TrackIndex, indexB, TAG_END);
+
     }
 }
 
@@ -827,7 +919,46 @@ void TrackListArea_trackModified(struct Gadget *Gad,AukTrack *track)
     /* Track content modified - for now we don't need to do anything
      * as the TrackGadgets will handle their own rendering based on data */
 }
-// void TrackListArea_Refresh(struct Gadget *Gad)
-// {
-//     RethinkLayout(Gad,window,NULL,0);
-// }
+
+void TrackListArea_CheckTrackChannels( struct Gadget *Gad,int itrack)
+{
+   TrackListArea *gdata;
+    TrackChild *strack;
+    AukTrackPtr aukTrack;
+    ULONG nnbc;
+    //TrackChannelChild *schan;
+    if(!Gad) return;
+    gdata=INST_DATA(OCLASS(Gad), Gad);
+
+    if(itrack>= (int)gdata->_trackCount) return;
+    strack = &gdata->_tracks[itrack];
+    nnbc = strack->_dataTrack->channelCount;
+    if(strack->_nbChannels < nnbc)
+    {
+        TrackChannelChild *channels = (TrackChannelChild *)
+                AllocVec(sizeof(TrackChannelChild)*nnbc, MEMF_CLEAR );
+
+        memcpy(channels,strack->_channels,sizeof(TrackChannelChild) * strack->_nbChannels);
+        while(strack->_nbChannels<nnbc)
+        {
+            /* Create gadgets for the new track at the insert position */
+            int r = TrackListArea_CreateTrackChannelLine(Gad, gdata,
+                                strack,
+                                &channels[strack->_nbChannels], strack->_dataTrack,itrack , strack->_nbChannels);
+
+            strack->_nbChannels ++;
+        }
+        FreeVec(strack->_channels);
+        strack->_channels = channels;
+
+        // need relayout...s
+    }
+//    else
+//    if(strack->_nbChannels > strack->_dataTrack->channelCount)
+//    {
+
+//    }
+
+
+}
+

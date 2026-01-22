@@ -227,74 +227,57 @@ ULONG TrackListArea_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
   return(used);
 }
 
+static TrackChannelChild *getTrackFirstChanChild(struct Gadget *Gad,int itrack)
+{
+   TrackListArea *gdata;
+    TrackChild *strack;
+    TrackChannelChild *schan;
+    if(!Gad) return NULL;
+    gdata=INST_DATA(OCLASS(Gad), Gad);
+
+    if(itrack>= (int)gdata->_trackCount) return NULL;
+
+    strack = &gdata->_tracks[itrack];
+    if( strack->_nbChannels == 0 ) return NULL;
+    schan = &strack->_channels[0];
+    if(!schan->_trackHeader) return NULL;
+
+    return &strack->_channels[0];
+}
 
 void TrackListArea_SetTrackName(struct Gadget *Gad,int itrack, const char *name)
 {
-    TrackListArea *gdata;
-    TrackChild *strack;
-    if(!Gad) return;
-    gdata=INST_DATA(OCLASS(Gad), Gad);
-
-        bdbprintf("TrackListArea_SetTrackName\n");
-
-    if(itrack>= (int)gdata->_trackCount) return;
-
-    strack = &gdata->_tracks[itrack];
-    if(!strack->_trackHeader) return;
+    TrackChannelChild *ch = getTrackFirstChanChild(Gad,itrack);
+    if(!ch || !ch->_trackHeader) return;
 
     // could be SetGadgetAttrs(), but it's better for header layout component so they don't render under SetAttrs().
-    SetAttrs(strack->_trackHeader,TRACKHEADER_Name,(ULONG)name,TAG_END);
+    SetAttrs(ch->_trackHeader,TRACKHEADER_Name,(ULONG)name,TAG_END);
 
 }
 
 
 void TrackListArea_SetTrackOwnVolume( struct Gadget *Gad,int itrack,int ivol)
 {
-    TrackListArea *gdata;
-    TrackChild *strack;
+    TrackChannelChild *ch = getTrackFirstChanChild(Gad,itrack);
+    if(!ch || !ch->_trackHeader) return;
 
-        bdbprintf("TrackListArea_SetTrackOwnVolume\n");
-    if(!Gad) return;
-    gdata=INST_DATA(OCLASS(Gad), Gad);
-
-    if(itrack>= (int)gdata->_trackCount) return;
-
-    strack = &gdata->_tracks[itrack];
-    if(!strack->_trackHeader) return;
-
-    SetAttrs(strack->_trackHeader,TRACKHEADER_Volume,(ULONG)ivol,TAG_END);
+    SetAttrs(ch->_trackHeader,TRACKHEADER_Volume,(ULONG)ivol,TAG_END);
 }
 
 void TrackListArea_SetTrackStereoPan( struct Gadget *Gad,int itrack,int ipan)
 {
-    TrackListArea *gdata;
-    TrackChild *strack;
+    TrackChannelChild *ch = getTrackFirstChanChild(Gad,itrack);
+    if(!ch || !ch->_trackHeader) return;
 
-        bdbprintf("TrackListArea_SetTrackStereoPan\n");
-    if(!Gad) return;
-    gdata=INST_DATA(OCLASS(Gad), Gad);
-
-    if(itrack>= (int)gdata->_trackCount) return;
-
-    strack = &gdata->_tracks[itrack];
-    if(!strack->_trackHeader) return;
-    SetAttrs(strack->_trackHeader,TRACKHEADER_Pan,(ULONG)ipan,TAG_END);
+    SetAttrs(ch->_trackHeader,TRACKHEADER_Pan,(ULONG)ipan,TAG_END);
 
 }
 void TrackListArea_SetTrackFlags( struct Gadget *Gad,int itrack,int flags)
 {
-    TrackListArea *gdata;
-    TrackChild *strack;
-        bdbprintf("TrackListArea_SetTrackFlags1 %08x\n",Gad);
-    if(!Gad) return;
-    gdata=INST_DATA(OCLASS(Gad), Gad);
-        bdbprintf("TrackListArea_SetTrackFlags1b %d %d\n",itrack,gdata->_trackCount);
-    if(itrack>= (int)gdata->_trackCount) return;
+    TrackChannelChild *ch = getTrackFirstChanChild(Gad,itrack);
+    if(!ch || !ch->_trackHeader) return;
 
-    strack = &gdata->_tracks[itrack];
-    if(!strack->_trackHeader) return;
-        bdbprintf("TrackListArea_SetTrackFlags2 %d\n",flags);
-    SetAttrs(strack->_trackHeader,TRACKHEADER_Flags,(ULONG)flags,TAG_END);
+    SetAttrs(ch->_trackHeader,TRACKHEADER_Flags,(ULONG)flags,TAG_END);
 
 }
 void TrackListArea_SetSoloTrack( struct Gadget *Gad,int iSoloedTrack)
@@ -302,6 +285,7 @@ void TrackListArea_SetSoloTrack( struct Gadget *Gad,int iSoloedTrack)
     int i;
     TrackListArea *gdata;
     TrackChild *strack;
+    TrackChannelChild *schan;
     if(!Gad) return;
     gdata=INST_DATA(OCLASS(Gad), Gad);
 
@@ -310,16 +294,18 @@ void TrackListArea_SetSoloTrack( struct Gadget *Gad,int iSoloedTrack)
 
     for(i=0;i<gdata->_trackCount;i++)
     {
-        TrackChild *strack =  &gdata->_tracks[i];
-        if(!strack || !strack->_dataTrack) continue;
-        if( strack->_trackHeader )
-        {
-            ULONG solostate =
-                (iSoloedTrack==-1)?0:
-                (iSoloedTrack==strack->_dataTrack->trackIndex)?1:2;
-       //  printf("TrackListArea_SetSoloTrack%d with iSoloedTrack:%d\n",solostate, iSoloedTrack);
-            SetAttrs(strack->_trackHeader,TRACKHEADER_SoloState,solostate,TAG_END);
-        }
+        strack = &gdata->_tracks[i];
+        if( strack->_nbChannels == 0 ) continue;
+        schan = &strack->_channels[0];
+
+        if(!strack || !strack->_dataTrack || !schan->_trackHeader) continue;
+
+        ULONG solostate =
+            (iSoloedTrack==-1)?0:
+            (iSoloedTrack==strack->_dataTrack->trackIndex)?1:2;
+   //  printf("TrackListArea_SetSoloTrack%d with iSoloedTrack:%d\n",solostate, iSoloedTrack);
+        SetAttrs(schan->_trackHeader,TRACKHEADER_SoloState,solostate,TAG_END);
+
     }
 
 }

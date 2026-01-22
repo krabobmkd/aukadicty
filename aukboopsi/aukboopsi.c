@@ -716,6 +716,7 @@ int initProject()
     AukTrack* track1;
     AukTrack* track2;
     AukSoundFilePtr soundFile1 = NULL;
+    AukSoundFilePtr soundFile2 = NULL;
     AukSound* sound1;
     AukSound* sound2;
     AukFixed duration;
@@ -770,8 +771,18 @@ project->CreateTrack(project);
     AukSoundFile_SetFilename(soundFile1, "sounds/sample1.wav");
     AukSoundFile_SetProperties(soundFile1, 44100, 2, 88200);
 
+    AukSoundFile_New((AukObjectPtr*)&soundFile2);
+    if (!soundFile2) {
+        printf("Failed to create sound file\n");
+        AukObjectPtr_Release((AukObjectPtr*)&app->_project);
+        return 1;
+    }
+    AukSoundFile_SetFilename(soundFile2, "sounds/sample2.wav");
+    AukSoundFile_SetProperties(soundFile2, 22050, 1, 88200);
+
+
     /* Create sounds on tracks */
-    sound1 = track1->CreateSound(track1, soundFile1,
+    sound1 = track1->CreateSound(track1, soundFile2,
                                  AukFixed_FromInt(0),    /* Start at 0 seconds */
                                  AukFixed_FromInt(5));   /* End at 5 seconds */
 

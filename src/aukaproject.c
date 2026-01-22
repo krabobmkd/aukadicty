@@ -547,7 +547,7 @@ void AukAProject_SetSoloTrack(AukAProject* project, int soloTrackId)
     msg._timeStart = 0;
     if(project->tracks && soloTrackId>-1)
     {
-         msg._track =project->tracks->items[soloTrackId];
+         msg._track = (AukTrack *)project->tracks->items[soloTrackId];
     }
 
     project->base.base.SendUpdate(&project->base.base, (AukMessage*)&msg);

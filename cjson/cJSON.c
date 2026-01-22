@@ -675,16 +675,17 @@ static cJSON_bool print_number(const cJSON * const item, printbuffer * const out
 #else
 static cJSON_bool print_number(const cJSON * const item, printbuffer * const output_buffer)
 {
- size_t i;
+    size_t i;
     unsigned char *output_pointer = NULL;
- unsigned char number_buffer[26] = {0};
+    unsigned char number_buffer[26] = {0};
+    int length;
 
-     if (output_buffer == NULL)
+    if (output_buffer == NULL)
     {
         return false;
     }
 
-   int length = snprintf((char*)number_buffer,25, "%d", item->valueint);
+    length = snprintf((char*)number_buffer,25, "%d", item->valueint);
 
     /* reserve appropriate space in the output */
     output_pointer = ensure(output_buffer, (size_t)length + sizeof(""));
@@ -1191,6 +1192,7 @@ CJSON_PUBLIC(cJSON *) cJSON_ParseWithLengthOpts(const char *value, size_t buffer
 {
     parse_buffer buffer = { 0, 0, 0, 0, { 0, 0, 0 } };
     cJSON *item = NULL;
+    error local_error;
 
     /* reset error position */
     global_error.json = NULL;
@@ -1242,7 +1244,6 @@ fail:
 
     if (value != NULL)
     {
-        error local_error;
         local_error.json = (const unsigned char*)value;
         local_error.position = 0;
 
@@ -2659,17 +2660,18 @@ CJSON_PUBLIC(cJSON *) cJSON_CreateNumberFixed(AukFixed fixed)
         char buffer[18]; /* 16 hex chars + null terminator */
         unsigned long long value;
         int i;
+        int nibble;
 
-        // hack item->type = cJSON_Number;
+        /* hack item->type = cJSON_Number; */
         item->type = cJSON_String;
 
         /* Convert signed to unsigned for hex representation */
         value = (unsigned long long)fixed;
 
         /* Format as 16-character hexadecimal string (uppercase) */
-       // int ndbc = snprintf(buffer,17,"%d.%08x",(int)(fixed>>32),(unsigned int)fixed);
+       /* int ndbc = snprintf(buffer,17,"%d.%08x",(int)(fixed>>32),(unsigned int)fixed); */
         for (i = 15; i >= 0; i--) {
-            int nibble = (int)(value & 0xF);
+            nibble = (int)(value & 0xF);
             buffer[i] = (nibble < 10) ? ('0' + nibble) : ('A' + nibble - 10);
             value >>= 4;
         }
@@ -2860,45 +2862,47 @@ CJSON_PUBLIC(cJSON *) cJSON_CreateFloatArray(const float *numbers, int count)
     return a;
 }
 #endif
-//CJSON_PUBLIC(cJSON *) cJSON_CreateFloatArray(const float *numbers, int count)
-//{
-//    size_t i = 0;
-//    cJSON *n = NULL;
-//    cJSON *p = NULL;
-//    cJSON *a = NULL;
+/*
+CJSON_PUBLIC(cJSON *) cJSON_CreateFloatArray(const float *numbers, int count)
+{
+    size_t i = 0;
+    cJSON *n = NULL;
+    cJSON *p = NULL;
+    cJSON *a = NULL;
 
-//    if ((count < 0) || (numbers == NULL))
-//    {
-//        return NULL;
-//    }
+    if ((count < 0) || (numbers == NULL))
+    {
+        return NULL;
+    }
 
-//    a = cJSON_CreateArray();
+    a = cJSON_CreateArray();
 
-//    for(i = 0; a && (i < (size_t)count); i++)
-//    {
-//        n = cJSON_CreateNumber(numbers[i]);
-//        if(!n)
-//        {
-//            cJSON_Delete(a);
-//            return NULL;
-//        }
-//        if(!i)
-//        {
-//            a->child = n;
-//        }
-//        else
-//        {
-//            suffix_object(p, n);
-//        }
-//        p = n;
-//    }
+    for(i = 0; a && (i < (size_t)count); i++)
+    {
+        n = cJSON_CreateNumber(numbers[i]);
+        if(!n)
+        {
+            cJSON_Delete(a);
+            return NULL;
+        }
+        if(!i)
+        {
+            a->child = n;
+        }
+        else
+        {
+            suffix_object(p, n);
+        }
+        p = n;
+    }
 
-//    if (a && a->child) {
-//        a->child->prev = n;
-//    }
+    if (a && a->child) {
+        a->child->prev = n;
+    }
 
-//    return a;
-//}
+    return a;
+}
+*/
 
 CJSON_PUBLIC(cJSON *) cJSON_CreateStringArray(const char *const *strings, int count)
 {

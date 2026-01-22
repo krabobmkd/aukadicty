@@ -29,7 +29,7 @@ extern "C"
 {
 #endif
 
-//krb added, amiga usefull in some case.
+/* krb added, amiga usefull in some case. */
 #define JSON_DONTUSE_FLOAT 1
 
 /* AukFixed support - 64-bit fixed-point (32.32 format) */
@@ -243,7 +243,7 @@ CJSON_PUBLIC(cJSON *) cJSON_CreateIntArray(const int *numbers, int count);
 #ifndef JSON_DONTUSE_FLOAT
 CJSON_PUBLIC(cJSON *) cJSON_CreateFloatArray(const float *numbers, int count);
 #endif
-//CJSON_PUBLIC(cJSON *) cJSON_CreateDoubleArray(const double *numbers, int count);
+/* CJSON_PUBLIC(cJSON *) cJSON_CreateDoubleArray(const double *numbers, int count); */
 CJSON_PUBLIC(cJSON *) cJSON_CreateStringArray(const char *const *strings, int count);
 
 /* Append item to the specified array/object. */

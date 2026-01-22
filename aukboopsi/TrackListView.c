@@ -208,6 +208,8 @@ static void AukUpdate_Track(AukObject* listenerObject, AukObject* modifiedObject
             /* Sound added to track, may affect project duration.
              * Schedule horizontal scroll domain update.
              */
+            TrackListArea_CheckTrackChannels((struct Gadget *)pm->trackList,track->trackIndex);
+
             pm->updateBits |= TLVB_UPDATE_HORIZSCROLLDOMAIN;
             if(myTask) Signal(myTask, SIGBREAKF_CTRL_F);
         }
@@ -292,7 +294,7 @@ static void AukUpdate_TrackList(AukObject* listenerObject, AukObject* modifiedOb
                   );
 
             // update GUI, remove ui track
-            TrackListArea_removeTrack(trackListAreaUi,track,track->trackIndex);
+            TrackListArea_removeTrack(trackListAreaUi,track->trackIndex);
 
             /* Track removed may affect project duration, update horizontal scroll domain */
             pm->updateBits |= TLVB_UPDATE_HORIZSCROLLDOMAIN;

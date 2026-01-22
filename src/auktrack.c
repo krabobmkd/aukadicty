@@ -6,7 +6,7 @@
 #include "serializer.h"
 #include <proto/exec.h>
 #include <string.h>
-
+#include <stdio.h>
 #include "aukaproject.h"
 
 // resolve some amiga os include collisions
@@ -248,6 +248,15 @@ AukSound* AukTrack_CreateSound(void* This, AukSoundFilePtr soundFile, AukFixed s
     AukSound_SetSoundFile(sound, soundFile);
     AukSound_SetTimeRange(sound, adjustedStart, adjustedStart + duration);
 
+    /* if first sound on track, consider track format is the same */
+
+// printf("track->sounds->count %d soundFile->channels:%d\n",track->sounds->count,soundFile->channels);
+    if( track->sounds->count == 0 && soundFile->channels>0 )
+    {
+        track->channelCount = soundFile->channels;
+    }
+
+
     /* Find correct insertion index to maintain sorted order */
     insertIndex = FindInsertionIndex(track, adjustedStart);
 
@@ -260,8 +269,7 @@ AukSound* AukTrack_CreateSound(void* This, AukSoundFilePtr soundFile, AukFixed s
 
     AukObjectPtr_Release((AukObjectPtr*)&soundPtr);
 
-    msg.type = AUK_MSG_MODIFY;
-    track->base.SendUpdate(&track->base, &msg);
+   emitMemberChange(track,AUK_MSG_TRACKMODIFIED_SOUNDADDED);
 
     /* Return raw pointer - the track owns the reference, caller doesn't */
     return sound;
@@ -706,8 +714,8 @@ void AukTrack_Init(AukTrack* track) {
         track->envelopeTime = NULL;
         track->envelopeValue = NULL;
 
-        /* Initialize channel count (default stereo) */
-        track->channelCount = 2;
+        /* Initialize channel count (default mono) */
+        track->channelCount = 1;
 
         /* Initialize selection state (not serialized) */
         track->selectionFlags = 0;

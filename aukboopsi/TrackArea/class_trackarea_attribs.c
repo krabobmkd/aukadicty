@@ -70,7 +70,7 @@ ULONG TrackArea_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
 
   gdata=INST_DATA(C, Gad);
 
- bdbprintf(" **** TrackArea_SetAttrs\n");
+ //bdbprintf(" **** TrackArea_SetAttrs\n");
 
   /* set can use a list of attribs to change, so we manage this with a loop.
    * this also allows to have just one draw refresh for a set of change.

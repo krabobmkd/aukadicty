@@ -25,9 +25,8 @@ extern "C" {
 #define USE_REGION_CLIPPING 1
 
 
-/** retain gadget children for a given data track */
-typedef struct TrackChild{
-    AukTrack *_dataTrack; // corresponding data
+/** retain gadget children for a given data track channel */
+typedef struct TrackChannelChild{
     int     _channel; // this ui track maps a given channel in the track, 0 default.
 
     Object *_trackHeader; // TrackHeader gadget
@@ -38,6 +37,12 @@ typedef struct TrackChild{
     /* when layouted */
     int _top,_bottom,_xmid;
 
+} TrackChannelChild;
+
+typedef struct TrackChild{
+    AukTrack *_dataTrack; // corresponding data, track is is from there
+    ULONG     _nbChannels; // should be same as _dataTrack->channels
+    TrackChannelChild *_channels;
 } TrackChild;
 
 /**
@@ -129,6 +134,8 @@ void TrackListArea_SetTrackStereoPan( struct Gadget *Gad,int itrack,int ipan);
 void TrackListArea_SetTrackFlags( struct Gadget *Gad,int itrack,int flags);
 void TrackListArea_SetSoloTrack( struct Gadget *Gad,int iSoloedTrack); // or -1 if not
 
+/* track may have evolved and need new nb chans, ... */
+void TrackListArea_CheckTrackChannels( struct Gadget *Gad,int itrack);
 /* - - - - -- - */
 
 /** for dispatcher, very wise use of union.
