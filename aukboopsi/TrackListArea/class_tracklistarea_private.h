@@ -30,7 +30,9 @@ typedef struct TrackChannelChild{
     int     _channel; // this ui track maps a given channel in the track, 0 default.
 
     Object *_trackHeader; // TrackHeader gadget
+    Object *_volumeRule; // attached in _trackHeader layout.
     Object *_trackArea; // TrackArea gadget
+
     /* configurable height for this track, pixel. */
     UWORD _prefHeight;
     UWORD _layouted;
@@ -78,6 +80,9 @@ typedef struct TrackListArea {
 
     /* Fixed width for track headers on the left */
     UWORD _headerWidth;
+    /* Fixed width for _volruleWidth  */
+    UWORD _volruleWidth;
+
     /* Default height for each track row, then value in TrackArea gadget */
     UWORD _defaulTrackHeight;
 

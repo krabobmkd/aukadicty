@@ -38,9 +38,8 @@ extern "C" {
 #define THS_PanLabel      6
 #define THS_PanSlider     7
 #define THS_InfoLabel     8
-#define THS_VolumeRule    9
 
-#define THS_Total  10
+#define THS_Total  9
 
 typedef struct ITrackHeader {
 

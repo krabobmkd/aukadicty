@@ -109,7 +109,8 @@ ULONG TrackHeader_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout)
 {
   TrackHeader *gdata;
   LONG topedge,leftedge,width,height;
-  LONG leftPartWidth, volumeRuleWidth;
+  LONG leftPartWidth;
+  // volumeRuleWidth
   LONG rowHeight;
   LONG curY;
   LONG closeW, labelW, sliderX, sliderW;
@@ -133,8 +134,9 @@ ULONG TrackHeader_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout)
     gdata->_framerec.MaxY = topedge  + height -2;
 
     /* Layout constants */
-    volumeRuleWidth = 32;
-    leftPartWidth = width - volumeRuleWidth;
+   // volumeRuleWidth = 32;
+    leftPartWidth = width ;
+    //     leftPartWidth = width - volumeRuleWidth;
     rowHeight = height / 5;  /* 5 rows */
     closeW = 18;
     labelW = 28;  /* Width for "Vol." and "Pan" labels */
@@ -243,15 +245,15 @@ ULONG TrackHeader_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout)
     }
 
     /* Right side: VolumeRule (full height) */
-    sub = (struct Gadget *)gdata->subs[THS_VolumeRule];
-    if(sub)
-    {
-        sub->LeftEdge = leftedge + leftPartWidth;
-        sub->TopEdge = topedge;
-        sub->Width = volumeRuleWidth;
-        sub->Height = height;
-        DoMethodA((Object*)sub, (Msg)layout);
-    }
+    // sub = (struct Gadget *)gdata->subs[THS_VolumeRule];
+    // if(sub)
+    // {
+    //     sub->LeftEdge = leftedge + leftPartWidth;
+    //     sub->TopEdge = topedge;
+    //     sub->Width = volumeRuleWidth;
+    //     sub->Height = height;
+    //     DoMethodA((Object*)sub, (Msg)layout);
+    // }
 
   return(1);
 }

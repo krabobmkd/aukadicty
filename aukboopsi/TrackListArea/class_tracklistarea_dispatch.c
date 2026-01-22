@@ -73,7 +73,9 @@ ULONG ASM SAVEDS TrackListArea_Dispatcher(
         /* Initialize gadget arrays */
         gdata->_tracks = NULL;
         gdata->_trackCount = 0;
-        gdata->_headerWidth = 128;  /* default header width */
+        gdata->_headerWidth = 96;  /* default header width */
+        gdata->_volruleWidth = 32;
+
         gdata->_defaulTrackHeight = 40;   /* default track height */
         gdata->_scrollY = 0;
         gdata->_domainHeight = 0;

@@ -39,7 +39,7 @@ struct AukTrack {
     */
     unsigned int    channelCount;
     /* finally not, we'll consider current sampleRate is the one of sound we point.
-     * unsigned long sampleRate; /* Sample rate (e.g., 44100) sound refered  may differ,
+     * unsigned long sampleRate;  Sample rate (e.g., 44100) sound refered  may differ,
     */
     #define AukTrackFlag_Silent 1
 

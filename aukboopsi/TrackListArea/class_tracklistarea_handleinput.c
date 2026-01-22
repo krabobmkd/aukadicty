@@ -41,16 +41,17 @@ ULONG TrackListArea_HandleHitTest(Class *C, struct Gadget *Gad,struct gpHitTest 
             for(iChannel = 0; iChannel < strack->_nbChannels; iChannel++)
             {
                 TrackChannelChild *chan = &strack->_channels[iChannel];
-                struct Gadget *headerGad;
+                struct Gadget *headerGad,*volumeRule;
                 struct Gadget *trackGad;
 
                 headerGad = (struct Gadget*)chan->_trackHeader;
+                volumeRule =  (struct Gadget*)chan->_volumeRule;
                 trackGad = (struct Gadget*)chan->_trackArea;
 
 
                 if(y>=chan->_top && y< chan->_bottom )
                 {
-                    if(headerGad && x<chan->_xmid )
+                    if(headerGad && x</*chan->_xmid*/(headerGad->LeftEdge+headerGad->Width) )
                     {
 
                         struct gpHitTest n;
@@ -61,6 +62,9 @@ ULONG TrackListArea_HandleHitTest(Class *C, struct Gadget *Gad,struct gpHitTest 
                         n.gpht_Mouse.Y = y - headerGad->TopEdge;
                          r = DoMethodA((Object*)headerGad, (Msg)&n);
                         return r;
+                    } else if(volumeRule && x< (volumeRule->LeftEdge+volumeRule->Width) )
+                    {
+                        return GMR_NOREUSE;
                     } else
                     if(chan->_layouted && trackGad && x>=chan->_xmid)
                     {
@@ -116,16 +120,17 @@ ULONG TrackListArea_HandleInput(Class *C, struct Gadget *Gad,struct gpInput *M, 
             for(iChannel = 0; iChannel < strack->_nbChannels; iChannel++)
             {
                 TrackChannelChild *chan = &strack->_channels[iChannel];
-                struct Gadget *headerGad;
+                struct Gadget *headerGad,*volumeRule;
                 struct Gadget *trackGad;
 
                 headerGad = (struct Gadget*)chan->_trackHeader;
+                volumeRule =  (struct Gadget*)chan->_volumeRule;
                 trackGad = (struct Gadget*)chan->_trackArea;
                 //if(!chan->_layouted) continue;
 
                 if(y>=chan->_top && y< chan->_bottom )
                 {
-                    if(headerGad && x<chan->_xmid)
+                    if(headerGad && x< (headerGad->LeftEdge+headerGad->Width))
                     {
                         M->gpi_Mouse.X -= headerGad->LeftEdge -leftedge ;
                         M->gpi_Mouse.Y -= headerGad->TopEdge  - topedge;
@@ -133,6 +138,9 @@ ULONG TrackListArea_HandleInput(Class *C, struct Gadget *Gad,struct gpInput *M, 
                         M->gpi_Mouse.X += headerGad->LeftEdge-leftedge ;
                         M->gpi_Mouse.Y += headerGad->TopEdge- topedge;
                         break;
+                    } else if(volumeRule && x< (volumeRule->LeftEdge+volumeRule->Width) )
+                    {
+                        return 0; // dunno
                     } else
                     if(trackGad && x>=chan->_xmid )
                     {
@@ -180,17 +188,20 @@ window or screen, an application removed the active gadget with RemoveGList(),
             for(iChannel = 0; iChannel < strack->_nbChannels; iChannel++)
             {
                 TrackChannelChild *chan = &strack->_channels[iChannel];
-                struct Gadget *headerGad;
+                struct Gadget *headerGad,*volumeRule;
                 struct Gadget *trackGad;
 
                 headerGad = (struct Gadget*)chan->_trackHeader;
+                volumeRule = (struct Gadget*)chan->_volumeRule;
                 trackGad = (struct Gadget*)chan->_trackArea;
-               // if(!chan->_layouted) continue;
 
                 if(headerGad && headerGad->Activation & GACT_ACTIVEGADGET)
                 {
-                    //headerGad->Activation &= ~GACT_ACTIVEGADGET;
                     DoMethodA((Object*)headerGad, (Msg)M);
+                }
+                if(volumeRule && volumeRule->Activation & GACT_ACTIVEGADGET)
+                {
+                    DoMethodA((Object*)volumeRule, (Msg)M);
                 }
                 if(trackGad && trackGad->Activation & GACT_ACTIVEGADGET)
                 {

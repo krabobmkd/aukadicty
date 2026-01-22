@@ -10,7 +10,6 @@
 #include <intuition/icclass.h>
 #include "class_trackheader.h"
 #include "class_trackheader_private.h"
-#include "../VolumeRule/class_volumerule.h"
 
 #include <proto/layout.h>
 #include <gadgets/layout.h>
@@ -228,10 +227,7 @@ ULONG ASM SAVEDS TrackHeader_Dispatcher(
                                         BUTTON_Transparent, TRUE,
                                     TAG_END);
 
-            /* Right side: VolumeRule */
-            gdata->subs[THS_VolumeRule] = NewObject( VOLUMERULE_GetClass(),NULL,
-                                        VOLUMERULE_StyleSheet,(ULONG)style,
-                                    TAG_END );
+
             for(i=0;i<THS_Total;i++)
             {
                 if(gdata->subs[i])

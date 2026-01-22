@@ -21,6 +21,7 @@
 /* Include child gadget classes */
 #include "../TrackArea/class_trackarea.h"
 #include "../TrackHeader/class_trackheader.h"
+#include "../VolumeRule/class_volumerule.h"
 
 #include <proto/layout.h>
 #include <gadgets/layout.h>
@@ -181,6 +182,7 @@ ULONG TrackListArea_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout
   LONG trackTop;
   ULONG itrack,iChannel;
  ULONG prevDomainHeight;
+
 // ULONG prevHeight;
     gdata=INST_DATA(C, Gad);
 
@@ -205,7 +207,7 @@ ULONG TrackListArea_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout
         /* Default track height if not set */
         if(gdata->_defaulTrackHeight == 0) gdata->_defaulTrackHeight = 40;
         /* Default header width if not set */
-        if(gdata->_headerWidth == 0) gdata->_headerWidth = 100;
+        if(gdata->_headerWidth == 0) gdata->_headerWidth = 96;
 
 
         /* count total height first */
@@ -235,16 +237,6 @@ ULONG TrackListArea_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout
 
 
         /* Layout each track row */
-//        for(i = 0; i < gdata->_trackCount; i++)
-//        {
-//            TrackArea *trackArea;
-//            TrackChild *strack;
-//            struct Gadget *headerGad;
-//            struct Gadget *trackGad;
-//            UWORD trackHeight=0;
-
-//            strack = &gdata->_tracks[i];
-
         for(itrack = 0; itrack < gdata->_trackCount; itrack++)
         {
             LONG headerTop = trackTop;
@@ -254,21 +246,20 @@ ULONG TrackListArea_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout
             strack->_layouted = 0; // if any chan layouted...
             for(iChannel = 0; iChannel < strack->_nbChannels; iChannel++)
             {
-                struct Gadget *trackGad;
+                struct Gadget *trackGad,*volumeRule;
                 //TrackArea *trackArea;
                 TrackChannelChild *chan = &strack->_channels[iChannel];
                 UWORD trackHeight=0;
                 if(iChannel == 0)
-                {   /* the header is always only on tyhe first chan */
+                {   /* the header is always only on tyhe first chan
+                    This is layouted after the loop
+                    */
                     headerGad = (struct Gadget *) chan->_trackHeader;
                 }
                 trackGad = (struct Gadget *) chan->_trackArea;
+                volumeRule = (struct Gadget *) chan->_volumeRule;
                 chan->_layouted = 0;
 
-//            if(trackGad)
-//            {
-//                trackArea = INST_DATA(TrackAreaClassPtr, trackGad);
-//            }
                 trackHeight = chan->_prefHeight;
                 if(trackHeight==0) trackHeight = gdata->_defaulTrackHeight;
 
@@ -283,13 +274,23 @@ ULONG TrackListArea_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout
                     continue;
                 }
                 // now header is layout after all chans trackareas
+                if(volumeRule)
+                {
+                    volumeRule->LeftEdge = leftedge + gdata->_headerWidth;
+                    volumeRule->TopEdge = trackTop;
+                    volumeRule->Width = gdata->_volruleWidth;
+                    volumeRule->Height = trackHeight;
+
+                    /* Call child's GM_LAYOUT */
+                   DoMethodA((Object*)volumeRule, (Msg)layout);
+                }
                 if(trackGad)
                 {
 
                     /* Position TrackArea on the right, after header */
-                    trackGad->LeftEdge = leftedge + gdata->_headerWidth;
+                    trackGad->LeftEdge = leftedge + gdata->_headerWidth+gdata->_volruleWidth;
                     trackGad->TopEdge = trackTop;
-                    trackGad->Width = width - gdata->_headerWidth;
+                    trackGad->Width = width - (gdata->_headerWidth+gdata->_volruleWidth);
                     trackGad->Height = trackHeight;
 
                     /* Call child's GM_LAYOUT */
@@ -299,7 +300,7 @@ ULONG TrackListArea_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout
                 strack->_layouted = 1;
                 chan->_top = trackTop;
                 chan->_bottom = trackTop+trackHeight;
-                chan->_xmid = leftedge+ gdata->_headerWidth;
+                chan->_xmid = leftedge+ gdata->_headerWidth+gdata->_volruleWidth;
 
                 trackTop += trackHeight;
             } // end loop per chan
@@ -392,12 +393,13 @@ ULONG TrackListArea_Render(Class *C, struct Gadget *Gad, struct gpRender *Render
 
         for(iChannel = 0; iChannel < (int)strack->_nbChannels; iChannel++)
         {
-            struct Gadget *headerGad;
+            struct Gadget *headerGad,*volumeRule;
             struct Gadget *trackGad;
           //  TrackArea *trackArea;
             TrackChannelChild *chan = &strack->_channels[iChannel];
 
             headerGad = (struct Gadget *) chan->_trackHeader;
+            volumeRule = (struct Gadget *) chan->_volumeRule;
             trackGad = (struct Gadget *) chan->_trackArea;
 
             // if layouted
@@ -416,6 +418,10 @@ ULONG TrackListArea_Render(Class *C, struct Gadget *Gad, struct gpRender *Render
                 DoMethodA((Object*)headerGad, (Msg)Render); // not DoGadgetMethodA in that case
             }
             if(!chan->_layouted) continue;
+            if(volumeRule && ((filter & 1)!=0)) // if layouted && selected for refresh
+            {
+                DoMethodA((Object*)volumeRule, (Msg)Render); // not DoGadgetMethodA in that case
+            }
             if(trackGad && ((filter & 1)!=0)) // if layouted && selected for refresh
             {
                 DoMethodA((Object*)trackGad, (Msg)Render); // not DoGadgetMethodA in that case
@@ -480,11 +486,12 @@ void TrackListArea_DisposeGadgets(struct Gadget *Gad,TrackListArea *gdata)
             {
                 struct Gadget *trackHeader;
                 struct Gadget *trackArea;
+                struct Gadget *volumeRule;
                 TrackChannelChild *chan = &strack->_channels[iChannel];
 
                 trackHeader = (struct Gadget *) chan->_trackHeader;
                 trackArea = (struct Gadget *) chan->_trackArea;
-
+                volumeRule = (struct Gadget *) chan->_volumeRule;
                 if(trackHeader)
                 {
                     /* LAYOUT_RemoveChild: This will destroy the object as well. */
@@ -492,6 +499,13 @@ void TrackListArea_DisposeGadgets(struct Gadget *Gad,TrackListArea *gdata)
                                 LAYOUT_RemoveChild,(ULONG)trackHeader,TAG_END);
                     BoopsiDispose_Later( ObjectLateDisposer, (Object *)trackHeader);
                 }
+                if(volumeRule)
+                {
+                    SetGadgetAttrs(Gad,CurrentMainWindow,NULL,
+                                LAYOUT_RemoveChild,(ULONG)volumeRule,TAG_END);
+                    BoopsiDispose_Later( ObjectLateDisposer,(Object *)volumeRule);
+                }
+
                 if(trackArea)
                 {
                     SetGadgetAttrs(Gad,CurrentMainWindow,NULL,
@@ -502,6 +516,7 @@ void TrackListArea_DisposeGadgets(struct Gadget *Gad,TrackListArea *gdata)
 
                 /* Clear the slot */
                 chan->_trackHeader = NULL;
+                chan->_volumeRule = NULL;
                 chan->_trackArea = NULL;
 
             }
@@ -573,12 +588,24 @@ static int TrackListArea_CreateTrackChannelLine(
             SetAttrs(Gad,LAYOUT_AddChild,(ULONG)schan->_trackHeader,
                         CHILD_NoDispose,TRUE,
                         TAG_END);
+
+
         }
     }
     //TODO TRACKHEADER_TrackIndex TRACKHEADER_Name should be later setAttribs()
 
+      /* Right header side: VolumeRule */
+     schan->_volumeRule = NewObject( VOLUMERULE_GetClass(),NULL,
+                                    VOLUMERULE_StyleSheet,(ULONG)styleSheet,
+                                    TAG_END );
+    if(schan->_volumeRule)
+    {
+        SetAttrs(Gad,LAYOUT_AddChild,(ULONG)schan->_volumeRule,
+                            CHILD_NoDispose,TRUE,
+                            TAG_END);
+    }
 
-    //if(!strack->_trackHeader ) return 0;
+
     /* Create TrackArea - pass data track for reference counted retention */
     schan->_trackArea = NewObject(TRACKAREA_GetClass(), NULL,
                                    INFINITESCROLL_PPosition,(ULONG) &gdata->_timeProjection._pixAtLeft,
@@ -789,7 +816,7 @@ void TrackListArea_insertTrack(struct Gadget *Gad, AukTrack *track, int indexToI
 void TrackListArea_removeTrack(struct Gadget *Gad, int indexToRemove)
 {
     TrackListArea *gdata;
-    Object *trackheader,*trackarea;
+    Object *trackheader,*trackarea,*volumeRule;
     TrackChild *trackChild;
     TrackChannelChild *chan;
     ULONG i;
@@ -833,6 +860,16 @@ void TrackListArea_removeTrack(struct Gadget *Gad, int indexToRemove)
             SetAttrs(Gad, LAYOUT_RemoveChild, (ULONG)trackarea, TAG_END);
             BoopsiDispose_Later( ObjectLateDisposer, trackarea);
         }
+
+        volumeRule =chan->_volumeRule;
+        if(volumeRule)
+        {
+             /* do that first, may help messaging */
+            chan->_volumeRule = NULL;
+            SetAttrs(Gad, LAYOUT_RemoveChild, (ULONG)volumeRule, TAG_END);
+            BoopsiDispose_Later( ObjectLateDisposer, volumeRule);
+        }
+
 
     } // end loop per chan
 
