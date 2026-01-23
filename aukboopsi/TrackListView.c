@@ -566,6 +566,8 @@ static void TrackListView_SetHScrollPos(TrackListView *pm,TimeProjection *timepr
                 TAG_END
             );
 
+    /* this is the left shift from the TrackArea left position to
+      the window left position */
     timeproj->_pixAtLeft -= (long long)headerWidth;
 
     SetGadgetAttrs((struct Gadget *)pm->timerule, CurrentMainWindow, NULL,

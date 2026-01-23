@@ -82,7 +82,6 @@ ULONG VolumeRule_Render(Class *C, struct Gadget *Gad, struct gpRender *R)
     gdata = INST_DATA(C, Gad);
     rp = R->gpr_RPort;
 
-  return 1;
     if(!rp) return 0;
 
     /* Get gadget bounds */

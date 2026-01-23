@@ -289,7 +289,7 @@ void TimeRule_RenderDelegate(InfiniteScrollRenderParams *p)
      {
        font = gdata->_style->fontTiny;
      }
-   //Re  if(font) SetFont(rp, font);
+     if(font) SetFont(rp, font);
 
     /* Convert time offset to pixel position within tile */
     px = (LONG)((currentTime / timePerPixel) -p->_start._scrollx);

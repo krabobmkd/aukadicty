@@ -83,7 +83,8 @@ ULONG TrackListArea_GetAttr(Class *C, struct Gadget *Gad, struct opGet *Get)
       break;
 
     case TRACKLIST_HeaderWidth:
-      *data = (ULONG)gdata->_headerWidth;
+        /* actually used to find the shift between timerule and trackarea start */
+      *data = (ULONG)gdata->_headerWidth + gdata->_volruleWidth + gdata->_styleSheet->borderSelectionWidth;
       break;
      case TRACKLIST_TrackAreaWidth:
      {

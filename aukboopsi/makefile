@@ -58,6 +58,7 @@ OBJS = \
  $(BUILDDIRTLA)/class_tracklistarea_dispatch.o \
  $(BUILDDIRTLA)/class_tracklistarea_lib.o \
  $(BUILDDIRTLA)/class_tracklistarea_render.o \
+ $(BUILDDIRTLA)/class_tracklistarea_api.o \
  $(BUILDDIRTLA)/class_tracklistarea_handleinput.o \
  $(BUILDDIRTR)/class_timerule_attribs.o \
  $(BUILDDIRTR)/class_timerule_dispatch.o \

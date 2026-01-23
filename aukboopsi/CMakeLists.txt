@@ -111,6 +111,7 @@ set(AUKBOOPSI_SOURCES
     TrackListArea/class_tracklistarea_lib.c
     TrackListArea/class_tracklistarea_render.c
     TrackListArea/class_tracklistarea_handleinput.c
+    TrackListArea/class_tracklistarea_api.c
     TrackListArea/class_tracklistarea_private.h
     TrackListArea/class_tracklistarea.h
 
