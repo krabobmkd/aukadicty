@@ -59,7 +59,7 @@ ULONG VolumeRule_Render(Class *C, struct Gadget *Gad, struct gpRender *R)
 {
     VolumeRule *gdata;
     struct RastPort *rp;
-    struct TextFont *font = NULL;
+    struct TextFont *font = NULL,*oldfont=NULL;
     WORD left, top, width, height;
     WORD centerY, topY, bottomY;
     WORD textX, lineEndX;
@@ -82,6 +82,7 @@ ULONG VolumeRule_Render(Class *C, struct Gadget *Gad, struct gpRender *R)
     gdata = INST_DATA(C, Gad);
     rp = R->gpr_RPort;
 
+  return 1;
     if(!rp) return 0;
 
     /* Get gadget bounds */
@@ -111,6 +112,7 @@ ULONG VolumeRule_Render(Class *C, struct Gadget *Gad, struct gpRender *R)
     if(gdata->_style && gdata->_style->fontTiny)
     {
         font = gdata->_style->fontTiny;
+        oldfont = rp->Font;
         SetFont(rp, font);
     }
 
@@ -165,9 +167,17 @@ ULONG VolumeRule_Render(Class *C, struct Gadget *Gad, struct gpRender *R)
     Move(rp, lineEndX, topY);
     Draw(rp, lineEndX, bottomY);
 
+    /* alsoleft edge */
+    Move(rp, left, topY);
+    Draw(rp, left, bottomY);
+
     /* Also need bottom */
-    Move(rp, left, bottomY);
-    Draw(rp, left+width-1, bottomY);
+    Move(rp, left+1, bottomY);
+    Draw(rp, left+width-2, bottomY);
+
+    /* need to actually do that bacause it's the main rastport */
+    if(oldfont) SetFont(rp, oldfont);
+
 
     return 1;
 }

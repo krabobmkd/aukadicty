@@ -142,7 +142,8 @@ ULONG ASM SAVEDS TrackHeader_Dispatcher(
                                         GA_Text, "X",
                                         GA_ID,GAD_TRACKHEADER_BASE|GAD_TRACKHEADER_CLOSE|(iTrack<<4),
                                         ICA_TARGET,target,
-                                        GA_DrawInfo,(ULONG)drawInfo,
+                                     //   GA_DrawInfo,(ULONG)drawInfo,
+                                     //   BUTTON_BevelStyle, BVS_BUTTON,
                                         GA_RelVerify, TRUE,
                                     TAG_END);
 
@@ -150,17 +151,20 @@ ULONG ASM SAVEDS TrackHeader_Dispatcher(
                                         GA_Text,trackname,
                                         GA_ID,GAD_TRACKHEADER_BASE|GAD_TRACKHEADER_NAME|(iTrack<<4),
                                         ICA_TARGET,target,
-                                        GA_DrawInfo,(ULONG)drawInfo,
+                                     //   GA_DrawInfo,(ULONG)drawInfo,
+                                     //  BUTTON_BevelStyle, BVS_BUTTON,
                                         GA_RelVerify, TRUE,
                                     TAG_END);
 
             /* Row 2: Silencer and Solo buttons */
             gdata->subs[THS_SilencerBt] = NewObject( HEADERBUTTON_GetClass(),NULL,
+                                       // GA_TextAttr,(ULONG) &style->fontTiny_TA,
+                                       // GA_DrawInfo,(ULONG)drawInfo,
                                         GA_Text, "Sil.",
-                                        GA_TextAttr,(ULONG) &style->fontTiny_TA,
+
                                         GA_ID,GAD_TRACKHEADER_BASE|GAD_TRACKHEADER_SILENCER|(iTrack<<4),
                                         ICA_TARGET,target,
-                                       // GA_DrawInfo,(ULONG)drawInfo,
+
                                         GA_RelVerify, TRUE,
                                         BUTTON_BevelStyle, BVS_THIN,
                                         BUTTON_PushButton,TRUE, // aka toggle button
@@ -168,20 +172,20 @@ ULONG ASM SAVEDS TrackHeader_Dispatcher(
 
             gdata->subs[THS_SoloBt] = NewObject( HEADERBUTTON_GetClass(),NULL,
                                         GA_Text,"Solo",
-                                        GA_TextAttr,(ULONG) &style->fontTiny_TA,
+                                       // GA_TextAttr,(ULONG) &style->fontTiny_TA,
                                         GA_ID,GAD_TRACKHEADER_BASE|GAD_TRACKHEADER_SOLO|(iTrack<<4),
                                         ICA_TARGET,target,
-                                       // GA_DrawInfo,(ULONG)drawInfo,
+//                                        GA_DrawInfo,(ULONG)drawInfo,
                                         GA_RelVerify, TRUE,
                                         BUTTON_BevelStyle, BVS_THIN,
                                         BUTTON_PushButton,TRUE, // aka toggle button
                                     TAG_END);
 
             /* Row 3: Vol label and slider */
-            gdata->subs[THS_VolLabel] = NewObject( BUTTON_GetClass(),NULL,
+            gdata->subs[THS_VolLabel] = NewObject( HEADERBUTTON_GetClass(),NULL,
                                         GA_Text,(ULONG)"Vol.",
                                         GA_ReadOnly,TRUE,
-                                      //  GA_DrawInfo,(ULONG)drawInfo,
+                                     //   GA_DrawInfo,(ULONG)drawInfo,
                                         BUTTON_BevelStyle,BVS_NONE,
                                         BUTTON_Transparent, TRUE,
                                     TAG_END);
@@ -198,10 +202,10 @@ ULONG ASM SAVEDS TrackHeader_Dispatcher(
                                     TAG_END);
 
             /* Row 4: Pan label and slider */
-            gdata->subs[THS_PanLabel] = NewObject( BUTTON_GetClass(),NULL,
+            gdata->subs[THS_PanLabel] = NewObject( HEADERBUTTON_GetClass(),NULL,
                                         GA_Text,(ULONG)"Pan",
                                         GA_ReadOnly,TRUE,
-                                      //  GA_DrawInfo,(ULONG)drawInfo,
+                                       // GA_DrawInfo,(ULONG)drawInfo,
                                         BUTTON_BevelStyle,BVS_NONE,
                                         BUTTON_Transparent, TRUE,
                                     TAG_END);
@@ -212,15 +216,34 @@ ULONG ASM SAVEDS TrackHeader_Dispatcher(
                                         SLIDER_Max, 128,
                                         SLIDER_Level, 64,
                                         ICA_TARGET,target,
-                                     //   GA_DrawInfo,(ULONG)drawInfo,
+                                      //  GA_DrawInfo,(ULONG)drawInfo,
                                         GA_ID,GAD_TRACKHEADER_BASE|GAD_TRACKHEADER_PAN|(iTrack<<4),
                                         GA_RelVerify, TRUE,
                                     TAG_END);
 
             /* Row 5: Info label */
-            gdata->subs[THS_InfoLabel] = NewObject( BUTTON_GetClass(),NULL,
-                                        GA_Text,(ULONG)"Mono 22050Hz",
+            gdata->subs[THS_InfoLabel1] = NewObject( HEADERBUTTON_GetClass(),NULL,
+                                        GA_Text,(ULONG)" Mono",
                                         GA_TextAttr,(ULONG) &style->fontTiny_TA,
+                                        GA_ReadOnly,TRUE,
+                                        BUTTON_Justification,BCJ_LEFT,
+                                      //  GA_DrawInfo,(ULONG)drawInfo,
+                                        BUTTON_BevelStyle,BVS_NONE,
+                                        BUTTON_Transparent, TRUE,
+                                    TAG_END);
+            gdata->subs[THS_InfoLabel2] = NewObject( HEADERBUTTON_GetClass(),NULL,
+                                        GA_Text,(ULONG)" 22050Hz",
+                                        GA_TextAttr,(ULONG) &style->fontTiny_TA,
+                                        GA_ReadOnly,TRUE,
+                                        BUTTON_Justification,BCJ_LEFT,
+                                      //  GA_DrawInfo,(ULONG)drawInfo,
+                                        BUTTON_BevelStyle,BVS_NONE,
+                                        BUTTON_Transparent, TRUE,
+                                    TAG_END);
+            /* also that */
+            gdata->subs[THS_Spacer] = NewObject( HEADERBUTTON_GetClass(),NULL,
+                                        GA_Text,(ULONG)" ",
+                                    //    GA_TextAttr,(ULONG) &style->fontTiny_TA,
                                         GA_ReadOnly,TRUE,
                                       //  GA_DrawInfo,(ULONG)drawInfo,
                                         BUTTON_BevelStyle,BVS_NONE,
@@ -497,10 +520,16 @@ ULONG ASM SAVEDS HeaderButton_Dispatcher(
 //        TrackListView_UpdateTrackList_Headers();
         retval = 1;
         break;
-    case GM_RENDER:
-        retval=DoSuperMethodA(C,(Object *)Gad,(Msg)M);
-       // bdbprintf("bt GM_RENDER:%d\n",retval);
-    break;
+//    case GM_RENDER:
+//    {
+//        struct TextFont *prevfont = NULL;
+//        if(M->gpRender.gpr_RPort) prevfont = M->gpRender.gpr_RPort->Font;
+
+//            retval=DoSuperMethodA(C,(Object *)Gad,(Msg)M);
+//       // bdbprintf("bt GM_RENDER:%d\n",retval);
+//       if( prevfont ) SetFont( M->gpRender.gpr_RPort , prevfont );
+//    }
+//    break;
 
     default:
     {

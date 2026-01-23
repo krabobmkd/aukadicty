@@ -182,27 +182,34 @@ ULONG TrackListArea_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout
   LONG trackTop;
   ULONG itrack,iChannel;
  ULONG prevDomainHeight;
+ int selectionBorderWidth=2;
 
 // ULONG prevHeight;
     gdata=INST_DATA(C, Gad);
 
+    if(gdata->_styleSheet)
+        selectionBorderWidth =  gdata->_styleSheet->borderSelectionWidth;
 
     topedge = Gad->TopEdge;
-    leftedge = Gad->LeftEdge;
-    width = Gad->Width;
+    leftedge = Gad->LeftEdge + selectionBorderWidth;
+    width = Gad->Width - selectionBorderWidth;
     height = Gad->Height;
 
+    /* this is for the cliprect */
     gdata->_framerec.MinX = leftedge;
     gdata->_framerec.MinY = topedge;
     gdata->_framerec.MaxX = leftedge + width  -1;
     gdata->_framerec.MaxY = topedge  + height -1;
+
+    leftedge += selectionBorderWidth;
+    width -= selectionBorderWidth;
 
     prevDomainHeight = gdata->_domainHeight;
 
     /* Layout child gadgets (TrackHeaders and TrackGadgets) */
     if(gdata->_tracks && gdata->_trackCount > 0)
     {
-        LONG totalDomainHeight = 0;
+        LONG totalDomainHeight = selectionBorderWidth;
 
         /* Default track height if not set */
         if(gdata->_defaulTrackHeight == 0) gdata->_defaulTrackHeight = 40;
@@ -225,6 +232,7 @@ ULONG TrackListArea_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout
                 if(trackHeight==0) trackHeight = gdata->_defaulTrackHeight;
                 totalDomainHeight += trackHeight;
             }
+            totalDomainHeight += selectionBorderWidth;
         }
 
         if((totalDomainHeight-gdata->_scrollY) < height)
@@ -237,6 +245,7 @@ ULONG TrackListArea_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout
 
 
         /* Layout each track row */
+        trackTop += selectionBorderWidth;
         for(itrack = 0; itrack < gdata->_trackCount; itrack++)
         {
             LONG headerTop = trackTop;
@@ -270,6 +279,8 @@ ULONG TrackListArea_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout
                     (trackTop > topedge + height)
                      )
                 {
+                    chan->_top = trackTop;
+                    chan->_bottom = trackTop+trackHeight;
                     trackTop += trackHeight ;
                     continue;
                 }
@@ -317,7 +328,7 @@ ULONG TrackListArea_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout
                 /* Call child's GM_LAYOUT */
                 DoMethodA((Object*)headerGad, (Msg)layout);
             }
-
+            trackTop += selectionBorderWidth;
         } // end loop per track
 
         /* Store the calculated domain height */
@@ -353,12 +364,14 @@ ULONG TrackListArea_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout
 ULONG TrackListArea_Render(Class *C, struct Gadget *Gad, struct gpRender *Render,int filter)
 {
     struct Region *oldClipRegion;
+ //   struct TextFont *oldfont=NULL;
     TrackListArea *gdata;
     struct RastPort *rp;
     int bLayerUpdating=FALSE;
     LONG itrack,iChannel;
     LONG topedge; //,leftedge,width,height;
-
+     int selectionBorderWidth=2;
+     int prevSelected=0;
     if(Render->MethodID==GM_RENDER &&  Render->gpr_RPort )
     {
         rp=Render->gpr_RPort;
@@ -368,7 +381,12 @@ ULONG TrackListArea_Render(Class *C, struct Gadget *Gad, struct gpRender *Render
         return 1;
     }
 
+ //   oldfont = rp->Font;
+
     gdata=INST_DATA(C, Gad);
+
+    if(gdata->_styleSheet)
+        selectionBorderWidth =  gdata->_styleSheet->borderSelectionWidth;
 
     topedge = Gad->TopEdge;
 //    leftedge = Gad->LeftEdge;
@@ -388,8 +406,32 @@ ULONG TrackListArea_Render(Class *C, struct Gadget *Gad, struct gpRender *Render
 
     for(itrack = 0; itrack < (int)gdata->_trackCount; itrack++)
     {
+        int trtop,trbot,isSelected;
+        int yscrol = Gad->TopEdge - gdata->_scrollY;
         TrackChild *strack;
         strack = &gdata->_tracks[itrack];
+        if(strack->_nbChannels==0 || !strack->_dataTrack) continue;
+        if(!strack->_layouted) continue;
+        trtop = strack->_channels[0]._top;
+        trbot = strack->_channels[strack->_nbChannels-1]._bottom;
+        isSelected = strack->_dataTrack->selectionFlags & AukTrackSelFlag_Selected;
+        //if()
+        // draw left border trackBackground
+        bdbprintf("_styleSheet %08x top %d bot %d\n",gdata->_styleSheet,trtop,trbot);
+        SetAPen(rp,
+        //gdata->_styleSheet->trackBackground.pen);
+            isSelected?gdata->_styleSheet->trackHighlight.pen:
+                               gdata->_styleSheet->trackBackground.pen );
+
+       RectFill(rp,gdata->_framerec.MinX,
+                   trtop-selectionBorderWidth+yscrol,
+                   gdata->_framerec.MinX+selectionBorderWidth-1,
+                   trtop+selectionBorderWidth-1+yscrol);
+
+       RectFill(rp,gdata->_framerec.MinX,
+                   trtop+yscrol,
+                   gdata->_framerec.MaxX,
+                   trbot+yscrol);
 
         for(iChannel = 0; iChannel < (int)strack->_nbChannels; iChannel++)
         {
@@ -414,8 +456,9 @@ ULONG TrackListArea_Render(Class *C, struct Gadget *Gad, struct gpRender *Render
                 //                        headerGad->TopEdge,
                 //                        headerGad->LeftEdge + headerGad->Width -1,
                 //                        headerGad->TopEdge + headerGad->Height -1);
-
-                DoMethodA((Object*)headerGad, (Msg)Render); // not DoGadgetMethodA in that case
+              //  struct TextFont *prevfont = rp->Font;
+                    DoMethodA((Object*)headerGad, (Msg)Render); // not DoGadgetMethodA in that case
+              //  if(prevfont) SetFont(rp,prevfont);
             }
             if(!chan->_layouted) continue;
             if(volumeRule && ((filter & 1)!=0)) // if layouted && selected for refresh
@@ -427,7 +470,9 @@ ULONG TrackListArea_Render(Class *C, struct Gadget *Gad, struct gpRender *Render
                 DoMethodA((Object*)trackGad, (Msg)Render); // not DoGadgetMethodA in that case
             }
          } // end loop per chan
-        } // end loop per track
+
+        prevSelected = isSelected;
+    } // end loop per track
 
 
     /* may render empty space */
@@ -445,6 +490,8 @@ ULONG TrackListArea_Render(Class *C, struct Gadget *Gad, struct gpRender *Render
 
 
     InstallClipRegion( rp->Layer,oldClipRegion); // important to pass NULL if oldClipRegion is NULL.
+
+ //   if(oldfont) SetFont(rp,oldfont);
 
     // if(bLayerUpdating)
     // {
@@ -572,7 +619,7 @@ static int TrackListArea_CreateTrackChannelLine(
     {
         schan->_trackHeader =
             NewObject(TRACKHEADER_GetClass(), NULL,
-                           LAYOUT_DeferLayout,TRUE,
+                         LAYOUT_DeferLayout,TRUE,
                           // CHILD_NoDispose,TRUE,
                             TRACKHEADER_StyleSheet, (ULONG)styleSheet,
                            //test LAYOUT_FillPen, gdata->_styleSheet->trackHeaderBG.pen,

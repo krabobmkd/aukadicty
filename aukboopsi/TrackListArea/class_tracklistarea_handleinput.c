@@ -81,7 +81,7 @@ ULONG TrackListArea_HandleHitTest(Class *C, struct Gadget *Gad,struct gpHitTest 
     } // end if any track
 
     // "not hit"
-    return GMR_NOREUSE; //0;
+    return GMR_NOREUSE;
 }
 
 //#define MRK_BUFFER_SIZE 3

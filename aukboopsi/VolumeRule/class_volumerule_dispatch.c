@@ -88,7 +88,9 @@ ULONG ASM SAVEDS VolumeRule_Dispatcher(
     case GM_RENDER:
       retval = VolumeRule_Render(C, Gad, (struct gpRender *)M);
       break;
-
+    case GM_HITTEST:
+        retval = 0; //GMR_GADGETHIT
+        break;
     default:
       retval=DoSuperMethodA(C,(Object *)Gad,(Msg)M);
       break;

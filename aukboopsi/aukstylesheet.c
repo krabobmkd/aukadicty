@@ -137,6 +137,9 @@ void AukStyleSheet_Serialize(AukObject* This, ISerializer* ser, const char* pNam
     ser->t_uint(ser, "trackBackground", &styleSheet->style.trackBackground.rgbcolor);
     ser->t_uint(ser, "soundBackground", &styleSheet->style.soundBackground.rgbcolor);
     ser->t_uint(ser, "selectedBackground", &styleSheet->style.selectedBackground.rgbcolor);
+
+    ser->t_uint(ser, "trackhl", &styleSheet->style.trackHighlight.rgbcolor);
+
     ser->t_uint(ser, "waveformDark", &styleSheet->style.waveformDark.rgbcolor);
     ser->t_uint(ser, "waveformLight", &styleSheet->style.waveformLight.rgbcolor);
     ser->t_uint(ser, "thbg", &styleSheet->style.waveformLight.rgbcolor);
@@ -279,6 +282,10 @@ int AukStyleSheet_ApplyStyle(void* This, struct Screen *scr) {
         ObtainPenForRGB(cm, &styleSheet->style.trackBackground);
         ObtainPenForRGB(cm, &styleSheet->style.soundBackground);
         ObtainPenForRGB(cm, &styleSheet->style.selectedBackground);
+
+        ObtainPenForRGB(cm, &styleSheet->style.trackHighlight);
+        ObtainPenForRGB(cm, &styleSheet->style.trackHighlight2);
+
         ObtainPenForRGB(cm, &styleSheet->style.waveformDark);
         ObtainPenForRGB(cm, &styleSheet->style.waveformLight);
         ObtainPenForRGB(cm, &styleSheet->style.trackHeaderBG);
@@ -336,6 +343,10 @@ void AukStyleSheet_ReleasePens(void* This) {
     ReleasePenIfValid(cm, &styleSheet->style.trackBackground);
     ReleasePenIfValid(cm, &styleSheet->style.soundBackground);
     ReleasePenIfValid(cm, &styleSheet->style.selectedBackground);
+
+    ReleasePenIfValid(cm, &styleSheet->style.trackHighlight);
+    ReleasePenIfValid(cm, &styleSheet->style.trackHighlight2);
+
     ReleasePenIfValid(cm, &styleSheet->style.waveformDark);
     ReleasePenIfValid(cm, &styleSheet->style.waveformLight);
     ReleasePenIfValid(cm, &styleSheet->style.trackHeaderBG);
@@ -468,6 +479,14 @@ void AukStyleSheet_Init(AukStyleSheet* styleSheet) {
         styleSheet->style.selectedBackground.pen = -1;
         styleSheet->style.selectedBackground.allocated = 0;
 
+        styleSheet->style.trackHighlight.rgbcolor = 0x00FFDD00;
+        styleSheet->style.trackHighlight.pen = -1;
+        styleSheet->style.trackHighlight.allocated = 0;
+
+        styleSheet->style.trackHighlight2.rgbcolor = 0x00EE8800;
+        styleSheet->style.trackHighlight2.pen = -1;
+        styleSheet->style.trackHighlight2.allocated = 0;
+
         styleSheet->style.waveformDark.rgbcolor = 0x00214783;    /* Dark blue for waveform min/max */
         styleSheet->style.waveformDark.pen = -1;
         styleSheet->style.waveformDark.allocated = 0;
@@ -513,5 +532,7 @@ void AukStyleSheet_Init(AukStyleSheet* styleSheet) {
 
         /* Initialize reference font height */
         styleSheet->style.fontHeight = 11;
+
+        styleSheet->style.borderSelectionWidth = 4;
     }
 }

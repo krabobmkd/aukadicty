@@ -37,9 +37,11 @@ extern "C" {
 #define THS_VolumeSlider  5
 #define THS_PanLabel      6
 #define THS_PanSlider     7
-#define THS_InfoLabel     8
+#define THS_Spacer        8
+#define THS_InfoLabel1    9
+#define THS_InfoLabel2    10
 
-#define THS_Total  9
+#define THS_Total  11
 
 typedef struct ITrackHeader {
 
@@ -50,9 +52,11 @@ typedef struct ITrackHeader {
 
     /* Pointer to AukStyle for visual styling */
     AukStyle *_style;
+
     /* track */
     int _trackIndex;
 
+    struct GadgetInfo	*_gadgetInfo;
 } TrackHeader;
 
 typedef struct TrackHeaderButton {

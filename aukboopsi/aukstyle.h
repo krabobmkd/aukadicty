@@ -36,6 +36,9 @@ struct AukStyle
     ManagedColor trackBackground;      /* Track empty background (dark gray) */
     ManagedColor soundBackground;      /* Sound clip background (lighter) */
     ManagedColor selectedBackground;   /* Selected region background */
+
+    ManagedColor trackHighlight,trackHighlight2;   /*  */
+
     ManagedColor waveformDark;         /* Waveform min/max dark blue */
     ManagedColor waveformLight;        /* Waveform RMS lighter blue */
 
@@ -54,6 +57,9 @@ struct AukStyle
 
     struct TextFont *fontBig;     /* Large font for headers/emphasis */
     struct TextAttr fontBig_TA;
+
+    /* in pixel. */
+    int borderSelectionWidth;
 
     /* Reference font height for "em"-like sizing */
     int fontHeight;             /* Height of normal font, used as base unit for sizing */
