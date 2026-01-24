@@ -45,8 +45,25 @@
 //    struct TagItem	*gpd_Attrs;	/* Additional attributes */
 //};
 
+/*doesnt work
+static int getHeight(Object *sub,struct gpDomain *D,int which)
+ {
+    ULONG tagend=0;
+     struct gpDomain gpdmin;
+    gpdmin.MethodID = GM_DOMAIN;
+    gpdmin.gpd_GInfo = D->gpd_GInfo;
+    gpdmin.gpd_RPort = D->gpd_RPort;
+    gpdmin.gpd_Which = which;
+    gpdmin.gpd_Attrs = &tagend;
+
+    DoMethodA((Object*)sub,(Msg)&gpdmin);
+    return (int) gpdmin.gpd_Domain.Height;
+ }
+*/
+
 ULONG TrackHeader_Domain(Class *C, struct Gadget *Gad, struct gpDomain *D)
 {
+  struct Gadget *sub;
   TrackHeader *gdata=0;
 
   if(Gad) gdata=INST_DATA(C, Gad);
@@ -55,6 +72,17 @@ ULONG TrackHeader_Domain(Class *C, struct Gadget *Gad, struct gpDomain *D)
   D->gpd_Domain.Left=0;
   D->gpd_Domain.Top=0;
 
+    /* inquire min height of buttons */
+    /* doesnt work
+    sub = (struct Gadget *)gdata->subs[THS_NameButton];
+    if(sub) gdata->row1height = getHeight(sub, D, GDOMAIN_NOMINAL);
+
+    sub = (struct Gadget *)gdata->subs[THS_SilencerBt];
+    if(sub) gdata->row2height = getHeight(sub, D, GDOMAIN_MINIMUM);
+
+    sub = (struct Gadget *)gdata->subs[THS_VolumeSlider];
+    if(sub) gdata->sliderheight = getHeight(sub,D, GDOMAIN_NOMINAL);
+*/
   switch(D->gpd_Which)
   {
     case GDOMAIN_NOMINAL:
@@ -88,19 +116,6 @@ ULONG TrackHeader_Domain(Class *C, struct Gadget *Gad, struct gpDomain *D)
 }
 
 
-static int getHeight(Object *sub,struct GadgetInfo *gi,int which)
- {
-     struct gpDomain gpdmin;
-    gpdmin.MethodID = GM_DOMAIN;
-    gpdmin.gpd_GInfo = gi;
-    gpdmin.gpd_RPort =gi->gi_RastPort;
-    gpdmin.gpd_Which = which;
-    gpdmin.gpd_Attrs = NULL;
-
-    DoMethodA((Object*)sub,(Msg)&gpdmin);
-    return (int) gpdmin.gpd_Domain.Height;
- }
-
 /**
  * method GM_LAYOUT
  * Manually position all child gadgets by setting TopEdge, LeftEdge, Width, Height.
@@ -130,10 +145,11 @@ ULONG TrackHeader_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout)
   LONG curY;
   LONG closeW, labelW, sliderX, sliderW;
   struct Gadget *sub;
+   int row1height,row2height, sliderheight;
+
 
     int clipTop = ((ULONG)Gad->UserData)>>16;
     int clipBottom = ((ULONG)Gad->UserData) & 0x0ffff;
-    int row1height,row2height, sliderheight;
 
     gdata=INST_DATA(C, Gad);
 
@@ -150,26 +166,22 @@ ULONG TrackHeader_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout)
     gdata->_framerec.MaxX = leftedge + width  -2;
     gdata->_framerec.MaxY = topedge  + height -2;
 
+
     /* Layout constants */
    // volumeRuleWidth = 32;
     leftPartWidth = width ;
     //     leftPartWidth = width - volumeRuleWidth;
     rowHeight = height / 5;  /* 5 rows */
-    row1height = row2height = sliderheight = rowHeight;
+    //row1height = row2height = sliderheight = rowHeight;
 
+  row1height = 22;
+    row2height = 16;
+    sliderheight = 22;
 
-    /* inquire min height of buttons */
-    sub = (struct Gadget *)gdata->subs[THS_NameButton];
-    if(sub) row1height =  getHeight(sub, layout->gpl_GInfo, GDOMAIN_NOMINAL);
     if(rowHeight<row1height) row1height = rowHeight;
-
-    sub = (struct Gadget *)gdata->subs[THS_SilencerBt];
-    if(sub) row2height =  getHeight(sub, layout->gpl_GInfo, GDOMAIN_NOMINAL);
-    if(rowHeight<row2height) row2height = rowHeight;
-
-    sub = (struct Gadget *)gdata->subs[THS_VolumeSlider];
-    if(sub) sliderheight =  getHeight(sub, layout->gpl_GInfo, GDOMAIN_NOMINAL) + 2;
+   if(rowHeight<row2height) row2height = rowHeight;
     if(rowHeight<sliderheight) sliderheight = rowHeight;
+
 
     closeW = 18;
     labelW = 28;  /* Width for "Vol." and "Pan" labels */
@@ -270,7 +282,7 @@ ULONG TrackHeader_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout)
     sub = (struct Gadget *)gdata->subs[THS_Spacer];
     if(sub)
     {
-        int h = height- ((curY-topedge) + row1height+row1height) ;
+        int h = height- ((curY-topedge) + row2height+row2height) ;
         if(h<=0) h=1;
         sub->LeftEdge = leftedge ;
         sub->TopEdge = curY;
@@ -285,18 +297,18 @@ ULONG TrackHeader_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout)
     if(sub)
     {
         sub->LeftEdge = leftedge ;
-        sub->TopEdge = topedge + height - (row1height*2); // curY;
+        sub->TopEdge = topedge + height - (row2height*2); // curY;
         sub->Width = leftPartWidth ;
-        sub->Height = row1height;
+        sub->Height = row2height;
         DoMethodA((Object*)sub, (Msg)layout);
     }
     sub = (struct Gadget *)gdata->subs[THS_InfoLabel2];
     if(sub)
     {
         sub->LeftEdge = leftedge;
-        sub->TopEdge = topedge + height - (row1height); // curY;
+        sub->TopEdge = topedge + height - (row2height); // curY;
         sub->Width = leftPartWidth;
-        sub->Height = row1height;
+        sub->Height = row2height;
         DoMethodA((Object*)sub, (Msg)layout);
     }
 

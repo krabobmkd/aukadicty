@@ -158,24 +158,23 @@ ULONG ASM SAVEDS TrackHeader_Dispatcher(
 
             /* Row 2: Silencer and Solo buttons */
             gdata->subs[THS_SilencerBt] = NewObject( HEADERBUTTON_GetClass(),NULL,
-                                       // GA_TextAttr,(ULONG) &style->fontTiny_TA,
-                                       // GA_DrawInfo,(ULONG)drawInfo,
-                                        GA_Text, "Sil.",
+                                         GA_TextAttr,(ULONG) &style->fontTiny_TA,
+                                        GA_DrawInfo,(ULONG)drawInfo,
+                                         GA_Text, "Sil.",
 
-                                        GA_ID,GAD_TRACKHEADER_BASE|GAD_TRACKHEADER_SILENCER|(iTrack<<4),
-                                        ICA_TARGET,target,
+                                         GA_ID,GAD_TRACKHEADER_BASE|GAD_TRACKHEADER_SILENCER|(iTrack<<4),
+                                         ICA_TARGET,target,
 
-                                        GA_RelVerify, TRUE,
-                                        BUTTON_BevelStyle, BVS_THIN,
-                                        BUTTON_PushButton,TRUE, // aka toggle button
+                                         GA_RelVerify, TRUE,
+                                         BUTTON_BevelStyle, BVS_THIN,
+                                         BUTTON_PushButton,TRUE, // aka toggle button
                                     TAG_END);
 
             gdata->subs[THS_SoloBt] = NewObject( HEADERBUTTON_GetClass(),NULL,
                                         GA_Text,"Solo",
-                                       // GA_TextAttr,(ULONG) &style->fontTiny_TA,
+                                       GA_TextAttr,(ULONG) &style->fontTiny_TA,
                                         GA_ID,GAD_TRACKHEADER_BASE|GAD_TRACKHEADER_SOLO|(iTrack<<4),
                                         ICA_TARGET,target,
-//                                        GA_DrawInfo,(ULONG)drawInfo,
                                         GA_RelVerify, TRUE,
                                         BUTTON_BevelStyle, BVS_THIN,
                                         BUTTON_PushButton,TRUE, // aka toggle button

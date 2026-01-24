@@ -57,6 +57,10 @@ typedef struct ITrackHeader {
     int _trackIndex;
 
     struct GadgetInfo	*_gadgetInfo;
+
+    /* domain -> layout vars  */
+   //int row1height,row2height, sliderheight;
+
 } TrackHeader;
 
 typedef struct TrackHeaderButton {
