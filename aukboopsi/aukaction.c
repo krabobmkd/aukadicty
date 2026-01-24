@@ -1,56 +1,306 @@
 
-#include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <proto/exec.h>
 #include <proto/intuition.h>
+#include <proto/dos.h>
+#include <proto/asl.h>
+#include <libraries/asl.h>
 #include <devices/inputevent.h>
 
 #include "aukaction.h"
 #include "auklocale.h"
+#include "aukerrors.h"
 #include "compilers.h"
+#include "aukiffserializer.h"
+#include "auktyperegistry.h"
 
-/* Action implementations - stubs for now */
+/* External references to app globals from aukboopsi.c */
+extern struct Library *AslBase;
+extern struct Window *CurrentMainWindow;
+
+/* Helper: case-insensitive check if string ends with suffix */
+static int EndsWithNoCase(const char *str, const char *suffix)
+{
+    size_t strLen, suffixLen;
+    const char *strEnd;
+
+    if (!str || !suffix) return 0;
+
+    strLen = strlen(str);
+    suffixLen = strlen(suffix);
+
+    if (suffixLen > strLen) return 0;
+
+    strEnd = str + strLen - suffixLen;
+
+    /* Case-insensitive compare */
+    while (*strEnd) {
+        char c1 = *strEnd;
+        char c2 = *suffix;
+        /* Convert to lowercase for comparison */
+        if (c1 >= 'A' && c1 <= 'Z') c1 += 32;
+        if (c2 >= 'A' && c2 <= 'Z') c2 += 32;
+        if (c1 != c2) return 0;
+        strEnd++;
+        suffix++;
+    }
+    return 1;
+}
+
+/* Action implementations */
 
 BOOL Action_ProjectNew(AukActionContext *context) {
-    printf("Action: Project New\n");
-    /* TODO: Implement new project creation */
+    AukLog_Message(AUKLOG_INFO, AUKERR_ACTION_PROJECT_NEW);
+
+    if (!context || !context->pproject || !*context->pproject) {
+        AukLog_Message(AUKLOG_ERROR, AUKERR_ACTION_NO_PROJECT);
+        return FALSE;
+    }
+
+    /* Clear the existing project - removes all tracks, resets to defaults */
+    AukAProject_Clear(*context->pproject);
+
+    AukLog_Message(AUKLOG_INFO, AUKERR_ACTION_PROJECT_CLEARED);
     return TRUE;
 }
 
 BOOL Action_ProjectOpen(AukActionContext *context) {
-    printf("Action: Project Open\n");
-    /* TODO: Implement file requester and project loading */
+    struct FileRequester *request;
+    char fullPath[512];
+    BPTR file;
+    ISerializer *ser;
+    const TypeNameToContructor *typeRegistry;
+    AukAProject **pproject;
+
+    AukLog_Message(AUKLOG_INFO, AUKERR_ACTION_PROJECT_OPEN);
+
+    if (!context || !context->pproject || !*context->pproject) {
+        AukLog_Message(AUKLOG_ERROR, AUKERR_ACTION_NO_PROJECT);
+        return FALSE;
+    }
+
+    if (!AslBase) {
+        AukLog_Message(AUKLOG_ERROR, AUKERR_ACTION_NO_ASLBASE);
+        return FALSE;
+    }
+
+    pproject = context->pproject;
+ printf("Action_ProjectOpen: listeners:%08x\n", (*pproject)->base.base.listeners);
+    /* Allocate and show file requester */
+    request = AllocFileRequest();
+    if (!request) {
+        AukLog_Message(AUKLOG_ERROR, AUKERR_ACTION_FILE_ALLOC_FAILED);
+        return FALSE;
+    }
+
+    if (!AslRequestTags(request,
+            ASLFR_TitleText, (ULONG)"Open Aukadicty Project",
+            ASLFR_InitialPattern, (ULONG)"#?.auka",
+            ASLFR_DoPatterns, TRUE,
+            ASLFR_DoSaveMode, FALSE,
+            ASLFR_RejectIcons, TRUE,
+            ASLFR_Window, (ULONG)CurrentMainWindow,
+            TAG_END)) {
+        /* User cancelled */
+        FreeAslRequest(request);
+        AukLog_Message(AUKLOG_INFO, AUKERR_ACTION_PROJECT_OPEN_CANCELLED);
+        return FALSE;
+    }
+
+    /* Build full path from drawer and file */
+    if (request->fr_Drawer && request->fr_File) {
+        strncpy(fullPath, request->fr_Drawer, sizeof(fullPath) - 1);
+        fullPath[sizeof(fullPath) - 1] = '\0';
+
+        /* Add path separator if needed */
+        if (strlen(fullPath) > 0) {
+            char lastChar = fullPath[strlen(fullPath) - 1];
+            if (lastChar != ':' && lastChar != '/') {
+                strncat(fullPath, "/", sizeof(fullPath) - strlen(fullPath) - 1);
+            }
+        }
+        strncat(fullPath, request->fr_File, sizeof(fullPath) - strlen(fullPath) - 1);
+    } else {
+        FreeAslRequest(request);
+        AukLog_Message(AUKLOG_ERROR, AUKERR_ACTION_FILE_INVALID);
+        return FALSE;
+    }
+
+    FreeAslRequest(request);
+
+    /* Open file for reading */
+    file = Open((STRPTR)fullPath, MODE_OLDFILE);
+    if (!file) {
+        AukLog_Message(AUKLOG_ERROR, AUKERR_ACTION_FILE_OPEN_FAILED);
+        return FALSE;
+    }
+
+    /* Get type registry */
+    typeRegistry = AukProject_GetTypeRegistry();
+
+    /* Create IFF reader serializer */
+    ser = AukIFFSerializer_CreateReader(file, typeRegistry);
+    if (!ser) {
+        AukLog_Message(AUKLOG_ERROR, AUKERR_ACTION_IFF_READ_FAILED);
+        Close(file);
+        return FALSE;
+    }
+
+    /* Clear existing project data first */
+    //no need ?
+    AukAProject_Clear(*pproject);
+
+    /* Deserialize into existing project */
+    //ser->t_object(ser, "project",pproject);
+    /* This version keep same object, so keep listener list */
+    (*pproject)->base.base.Serialize(*pproject,ser,"AukAProject");
+
+    /* Clean up serializer and file */
+    ser->Destroy(ser);
+    Close(file);
+
+
+
+    AukLog_MessageStr(AUKLOG_INFO, AUKERR_ACTION_PROJECT_OPENED, fullPath);
     return TRUE;
 }
 
 BOOL Action_ProjectSave(AukActionContext *context) {
-    printf("Action: Project Save\n");
-    /* TODO: Implement project saving */
+    struct FileRequester *request;
+    char fullPath[512];
+    BPTR file;
+    ISerializer *ser;
+    AukAProject **pproject;
+
+    AukLog_Message(AUKLOG_INFO, AUKERR_ACTION_PROJECT_SAVE);
+
+    if (!context || !context->pproject || !*context->pproject) {
+        AukLog_Message(AUKLOG_ERROR, AUKERR_ACTION_NO_PROJECT);
+        return FALSE;
+    }
+
+    if (!AslBase) {
+        AukLog_Message(AUKLOG_ERROR, AUKERR_ACTION_NO_ASLBASE);
+        return FALSE;
+    }
+
+    pproject = context->pproject;
+
+    /* Allocate and show file requester */
+    request = AllocFileRequest();
+    if (!request) {
+        AukLog_Message(AUKLOG_ERROR, AUKERR_ACTION_FILE_ALLOC_FAILED);
+        return FALSE;
+    }
+
+    /* Get initial filename from project name */
+    {
+        const char *projectName = (*pproject)->base.GetName(*pproject);
+        char initialFile[128];
+        if (projectName && strlen(projectName) > 0) {
+            snprintf(initialFile, sizeof(initialFile), "%s.auka", projectName);
+        } else {
+            strncpy(initialFile, "untitled.auka", sizeof(initialFile));
+        }
+
+        if (!AslRequestTags(request,
+                ASLFR_TitleText, (ULONG)"Save Aukadicty Project",
+                ASLFR_InitialFile, (ULONG)initialFile,
+                ASLFR_InitialPattern, (ULONG)"#?.auka",
+                ASLFR_DoPatterns, TRUE,
+                ASLFR_DoSaveMode, TRUE,
+                ASLFR_RejectIcons, TRUE,
+                ASLFR_Window, (ULONG)CurrentMainWindow,
+                TAG_END)) {
+            /* User cancelled */
+            FreeAslRequest(request);
+            AukLog_Message(AUKLOG_INFO, AUKERR_ACTION_PROJECT_SAVE_CANCELLED);
+            return FALSE;
+        }
+    }
+
+    /* Build full path from drawer and file */
+    if (request->fr_Drawer && request->fr_File) {
+        strncpy(fullPath, request->fr_Drawer, sizeof(fullPath) - 1);
+        fullPath[sizeof(fullPath) - 1] = '\0';
+
+        /* Add path separator if needed */
+        if (strlen(fullPath) > 0) {
+            char lastChar = fullPath[strlen(fullPath) - 1];
+            if (lastChar != ':' && lastChar != '/') {
+                strncat(fullPath, "/", sizeof(fullPath) - strlen(fullPath) - 1);
+            }
+        }
+        strncat(fullPath, request->fr_File, sizeof(fullPath) - strlen(fullPath) - 1);
+
+        /* Add .auka extension if not present (case-insensitive check) */
+        if (!EndsWithNoCase(fullPath, ".auka")) {
+            strncat(fullPath, ".auka", sizeof(fullPath) - strlen(fullPath) - 1);
+        }
+    } else {
+        FreeAslRequest(request);
+        AukLog_Message(AUKLOG_ERROR, AUKERR_ACTION_FILE_INVALID);
+        return FALSE;
+    }
+
+    FreeAslRequest(request);
+
+    /* Open file for writing */
+    file = Open((STRPTR)fullPath, MODE_NEWFILE);
+    if (!file) {
+        AukLog_Message(AUKLOG_ERROR, AUKERR_ACTION_FILE_WRITE_FAILED);
+        return FALSE;
+    }
+
+    /* Create IFF writer serializer */
+    ser = AukIFFSerializer_CreateWriter(file);
+    if (!ser) {
+        AukLog_Message(AUKLOG_ERROR, AUKERR_ACTION_IFF_WRITE_FAILED);
+        Close(file);
+        return FALSE;
+    }
+
+    /* Serialize the project */
+    //ser->t_object(ser, "project",pproject);
+    /* version that keeps same object instance */
+    (*pproject)->base.base.Serialize(*pproject,ser,"AukAProject");
+
+    /* Finalize IFF (writes correct FORM size) */
+    if (!AukIFFSerializer_Finalize(ser)) {
+        AukLog_Message(AUKLOG_ERROR, AUKERR_ACTION_IFF_FINALIZE_FAILED);
+        ser->Destroy(ser);
+        Close(file);
+        return FALSE;
+    }
+
+    /* Clean up */
+    ser->Destroy(ser);
+    Close(file);
+
+    AukLog_MessageStr(AUKLOG_INFO, AUKERR_ACTION_PROJECT_SAVED, fullPath);
     return TRUE;
 }
 
 BOOL Action_ProjectSaveAs(AukActionContext *context) {
-    printf("Action: Project Save As\n");
-    /* TODO: Implement file requester and save as */
-    return TRUE;
+    /* Save As is the same as Save - always shows file requester */
+    return Action_ProjectSave(context);
 }
 
 BOOL Action_ProjectExport(AukActionContext *context) {
-    printf("Action: Project Export\n");
+    (void)context;
     /* TODO: Implement audio export */
     return TRUE;
 }
 
 BOOL Action_ProjectAbout(AukActionContext *context) {
-    printf("Action: About\n");
+    (void)context;
     /* TODO: Show about requester */
     return TRUE;
 }
 
 BOOL Action_ProjectQuit(AukActionContext *context) {
-    //printf("Action: Quit\n");
-
+    (void)context;
     /* TODO: Confirm and quit application -> if modified */
 
     /* atexit() magic */
@@ -60,71 +310,70 @@ BOOL Action_ProjectQuit(AukActionContext *context) {
 }
 
 BOOL Action_EditUndo(AukActionContext *context) {
-    printf("Action: Undo\n");
+    (void)context;
     /* TODO: Implement undo */
     return TRUE;
 }
 
 BOOL Action_EditRedo(AukActionContext *context) {
-    printf("Action: Redo\n");
+    (void)context;
     /* TODO: Implement redo */
     return TRUE;
 }
 
 BOOL Action_EditSelectAll(AukActionContext *context) {
-    printf("Action: Select All\n");
+    (void)context;
     /* TODO: Implement select all */
     return TRUE;
 }
 
 BOOL Action_EditSelectNone(AukActionContext *context) {
-    printf("Action: Select None\n");
+    (void)context;
     /* TODO: Implement deselect all */
     return TRUE;
 }
 
 BOOL Action_EditCopy(AukActionContext *context) {
-    printf("Action: Copy\n");
+    (void)context;
     /* TODO: Implement copy to clipboard */
     return TRUE;
 }
 
 BOOL Action_EditCut(AukActionContext *context) {
-    printf("Action: Cut\n");
+    (void)context;
     /* TODO: Implement cut to clipboard */
     return TRUE;
 }
 
 BOOL Action_EditPaste(AukActionContext *context) {
-    printf("Action: Paste\n");
+    (void)context;
     /* TODO: Implement paste from clipboard */
     return TRUE;
 }
 
 BOOL Action_TracksAdd(AukActionContext *context) {
-    printf("Action: Add Track\n");
     /* TODO: Implement add track to project */
-    if (context && context->project) {
-        context->project->CreateTrack(context->project);
-        printf("Track added to project\n");
+    if (context && context->pproject && *context->pproject) {
+        AukAProject *p = *context->pproject ;
+        p->CreateTrack(p);
     }
     return TRUE;
 }
 
 BOOL Action_SettingsProject(AukActionContext *context) {
-    printf("Action: Project Settings\n");
+    (void)context;
     /* TODO: Show project settings dialog */
     return TRUE;
 }
 
 BOOL Action_SettingsView(AukActionContext *context) {
-    printf("Action: View Settings\n");
+    (void)context;
     /* TODO: Show view settings dialog */
     return TRUE;
 }
 
 BOOL Action_HelpHelp(AukActionContext *context) {
-    printf("Action: Help\n");
+    (void)context;
     /* TODO: Show help documentation */
     return TRUE;
 }
@@ -168,8 +417,6 @@ void AukAction_Init(void)
     for (i = 0; i < ACTION_COUNT; i++) {
         actionTable[i].name = LOC(actionTable[i].nameStringID);
     }
-
-    printf("Action system initialized with %lu actions\n", ACTION_COUNT);
 }
 
 AukAction *AukAction_Get(ULONG actionID)
@@ -185,13 +432,11 @@ BOOL AukAction_Execute(ULONG actionID, AukActionContext *context)
     AukAction *action;
 
     if (actionID >= ACTION_COUNT) {
-        printf("Invalid action ID: %lu\n", actionID);
         return FALSE;
     }
 
     action = &actionTable[actionID];
     if (!action->func) {
-        printf("Action %lu has no function\n", actionID);
         return FALSE;
     }
 

@@ -86,10 +86,19 @@ Vocals
 MSG_TRACK_MUSIC (//)
 Music
 ;
+MSG_TRACK_RENAME_TITLE (//)
+Rename Track
+;
+MSG_TRACK_RENAME_PROMPT (//)
+Enter new track name:
+;
 ; === Menu: Project ===
 ;
 MSG_MENU_PROJECT (//)
 Project
+;
+MSG_FILE_NEW (//)
+New
 ;
 MSG_FILE_OPEN (//)
 Open
@@ -116,6 +125,12 @@ Quit
 ;
 MSG_MENU_EDITION (//)
 Edition
+;
+MSG_EDIT_UNDO (//)
+Undo
+;
+MSG_EDIT_REDO (//)
+Redo
 ;
 MSG_EDIT_SELECTALL (//)
 Select All
@@ -188,4 +203,85 @@ Out of memory
 ;
 MSG_ERROR_INVALIDFILE (//)
 Invalid file format
+;
+; === GUI Error/Log messages ===
+;
+MSG_GUI_TRACKLIST_CAPACITY_REACHED (//)
+Maximum track count reached: %ld
+;
+MSG_GUI_TRACKLIST_ALLOC_FAILED (//)
+Track array allocation failed
+;
+MSG_GUI_TRACKLIST_INVALID_INDEX (//)
+Invalid track index: %ld
+;
+MSG_GUI_TRACKLIST_INSERT_FAILED (//)
+Failed to insert track
+;
+MSG_GUI_TRACKLIST_REMOVE_FAILED (//)
+Failed to remove track
+;
+MSG_GUI_TRACKLIST_SWAP_FAILED (//)
+Failed to swap tracks
+;
+MSG_GUI_GADGET_CREATE_FAILED (//)
+Failed to create gadget
+;
+MSG_GUI_LAYOUT_FAILED (//)
+Layout operation failed
+;
+; === Action messages ===
+;
+MSG_GUI_ACTION_PROJECT_NEW (//)
+New project
+;
+MSG_GUI_ACTION_PROJECT_CLEARED (//)
+Project cleared
+;
+MSG_GUI_ACTION_PROJECT_OPEN (//)
+Open project
+;
+MSG_GUI_ACTION_PROJECT_OPEN_CANCELLED (//)
+Open cancelled
+;
+MSG_GUI_ACTION_PROJECT_OPENED (//)
+Project opened: %s
+;
+MSG_GUI_ACTION_PROJECT_SAVE (//)
+Save project
+;
+MSG_GUI_ACTION_PROJECT_SAVE_CANCELLED (//)
+Save cancelled
+;
+MSG_GUI_ACTION_PROJECT_SAVED (//)
+Project saved: %s
+;
+; === Action error messages ===
+;
+MSG_GUI_ACTION_NO_PROJECT (//)
+No project available
+;
+MSG_GUI_ACTION_NO_ASLBASE (//)
+ASL library not initialized
+;
+MSG_GUI_ACTION_FILE_ALLOC_FAILED (//)
+File requester allocation failed
+;
+MSG_GUI_ACTION_FILE_INVALID (//)
+Invalid file selection
+;
+MSG_GUI_ACTION_FILE_OPEN_FAILED (//)
+Failed to open file
+;
+MSG_GUI_ACTION_FILE_WRITE_FAILED (//)
+Failed to write file
+;
+MSG_GUI_ACTION_IFF_READ_FAILED (//)
+Invalid file format
+;
+MSG_GUI_ACTION_IFF_WRITE_FAILED (//)
+Failed to create file
+;
+MSG_GUI_ACTION_IFF_FINALIZE_FAILED (//)
+Failed to finalize file
 ;

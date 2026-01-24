@@ -33,6 +33,8 @@ void AukAProject_New(AukObjectPtr *firstPtr) {
 void AukAProject_Delete(AukObject* This) {
     AukAProject* project = (AukAProject*)This;
 
+ printf("    *****    AukAProject_Delete    *****\n");
+
     if (project) {
         /* Release audio-specific members */
         AukObjectPtr_Release((AukObjectPtr*)&project->prefs);
@@ -72,11 +74,13 @@ void AukAProject_Serialize(AukObject* This, ISerializer* ser, const char* pName)
         return;
     }
 
+ if(IS_READING(ser)) printf("aukaprj_ser1 \n");
     /* Write version only when saving */
     if (IS_WRITING(ser)) {
         const char* version = "0.1";
         ser->t_string(ser, "version", &version);
     }
+//    if(ser->_isReading) printf("AukAProject_Serialize 1\n");
 
     /* Serialize name and path from base */
     ser->t_string_mutable(ser, "name", &project->base.name);
@@ -87,10 +91,35 @@ void AukAProject_Serialize(AukObject* This, ISerializer* ser, const char* pName)
 
     /* Serialize tracks array */
     ser->t_arrayobj(ser, "tracks", &project->tracks,(AukObjectNewFunc) AukTrack_New, AukTrack_GetTypeName(NULL));
-
+ //if(IS_READING(ser)) printf("aukaprj_ser1 project->tracks:%d\n",project->tracks->count);
     if(IS_READING(ser) && project->tracks)
     {
         reattributeTrackIndex((AukArray*) project->tracks);
+    }
+    if(IS_READING(ser))
+    {
+        AukArray* tracksArray;
+        int itrack, icount;
+        /* Set project context on all loaded objects */
+        AukProject_SetProjectContext(project);
+
+
+        /* need to send project load updates at this level.
+          Set()/Add() does this, but serialization will not automatize this */
+          tracksArray = project->tracks;
+                printf("READING tracksArray->count:%d\n",tracksArray->count);
+          icount = tracksArray->count;
+           printf("nblisteners:%08x\n",project->base.base.listeners); // obj->listeners
+        for(itrack=0;itrack<icount;itrack++)
+        {
+            AukMessage_AProject msg;
+            msg.type = AUK_MSG_TRACKADDED;
+            msg._track = (AukTrack *) tracksArray->items[itrack]; // should we lock ?
+                printf("   sg._track:%08x\n",(int)msg._track);
+            msg._track_id = itrack;
+            msg._timeStart = 0;
+            project->base.base.SendUpdate(&project->base.base,(AukMessage*) &msg);
+        }
     }
 }
 
@@ -557,4 +586,50 @@ int AukAProject_SoloTrack(AukAProject* project)
 {
     if (!project) return -1;
     return project->soloTrack;
+}
+/* Note we keep the  message listener pointers in .base ! */
+void AukAProject_Clear(AukAProject* project)
+{
+    AukArray* tracksArray;
+    AukTrack* track = NULL;
+
+    if (!project) return;
+
+    /* Remove all tracks (in reverse order to avoid index shifting issues) */
+    if (project->tracks) {
+        tracksArray = (AukArray*)project->tracks;
+
+        while (tracksArray->count > 0) {
+            /* Get last track */
+            tracksArray->Get(tracksArray, (AukObjectPtr*)&track, tracksArray->count - 1);
+            if (track) {
+                /* RemoveTrack sends TRACKREMOVED notification */
+                AukAProject_RemoveTrack(project, track);
+                AukObjectPtr_Release((AukObjectPtr*)&track);
+            }
+        }
+    }
+
+    /* Reset name to default */
+    if (project->base.name) {
+        AukString_Free(project->base.name);
+    }
+    project->base.name = AukString_Duplicate("Untitled");
+
+    /* Clear path */
+    if (project->base.path) {
+        AukString_Free(project->base.path);
+        project->base.path = NULL;
+    }
+
+    /* Reset preferences to defaults */
+    AukAProject_SetPreferences(project, 44100, 16);
+
+    /* Clear selection state */
+    project->hasSelection = 0;
+    project->selectionStart = 0;
+    project->selectionEnd = 0;
+
+    /* Reset solo track */
+    project->soloTrack = -1;
 }

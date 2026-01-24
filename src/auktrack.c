@@ -85,6 +85,7 @@ void AukTrack_Serialize(AukObject* This, ISerializer* ser, const char* pName) {
     ser->t_int(ser, "pan", &track->stereoPan);
     ser->t_int(ser, "stf", &track->stateFlags);
     ser->t_int(ser, "chc", &track->channelCount);
+    ser->t_int(ser, "srt", (int*)&track->sampleRate);
 
 }
 
@@ -254,6 +255,7 @@ AukSound* AukTrack_CreateSound(void* This, AukSoundFilePtr soundFile, AukFixed s
     if( track->sounds->count == 0 && soundFile->channels>0 )
     {
         track->channelCount = soundFile->channels;
+        track->sampleRate = soundFile->sampleRate;
     }
 
 
@@ -717,6 +719,9 @@ void AukTrack_Init(AukTrack* track) {
         /* Initialize channel count (default mono) */
         track->channelCount = 1;
 
+        /* Initialize sample rate (0 means unknown/not set) */
+        track->sampleRate = 0;
+
         /* Initialize selection state (not serialized) */
         track->selectionFlags = 0;
     }
@@ -818,5 +823,22 @@ int AukTrack_isSelected(AukTrack* track)
 {
     if (!track) return 0;
     return ((track->selectionFlags & AukTrackSelFlag_Selected)!=0);
+}
+
+void AukTrack_SetSampleRate(AukTrack* track, unsigned long rate)
+{
+    AukMessage msg;
+    if (!track) return;
+    if (track->sampleRate == rate) return;
+    track->sampleRate = rate;
+    /* Send update notification */
+    msg.type = AUK_MSG_MODIFY;
+    track->base.SendUpdate(&track->base, &msg);
+}
+
+unsigned long AukTrack_GetSampleRate(AukTrack* track)
+{
+    if (!track) return 0;
+    return track->sampleRate;
 }
 

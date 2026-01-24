@@ -201,6 +201,9 @@ struct App
         TrackListView tracksListView;
         FooterView footerView;
 
+     Object *statusBarLayout;  /* Status bar container with separator */
+     Object *statusBarLabel;   /* Status bar text label */
+
      Object *reportReq;
 
      // - - - retain document object
@@ -387,6 +390,25 @@ printf("AppInstance %08x\n",AppInstance);
 
     CreateFooterView(&app->footerView, app->drawInfo, AppInstance, &app->styleSheet->style);
 
+    /* Create status bar */
+    {
+        app->statusBarLabel = (Object *)NewObject(BUTTON_GetClass(), NULL,
+            GA_DrawInfo, (ULONG)app->drawInfo,
+            GA_ReadOnly, TRUE,
+            BUTTON_BevelStyle, BVS_NONE,
+            BUTTON_Transparent, TRUE,
+            BUTTON_Justification, BCJ_LEFT,
+            GA_Text, (ULONG)LOC(MSG_STATUS_READY),
+            TAG_END);
+
+        app->statusBarLayout = (Object *)NewObject(LAYOUT_GetClass(), NULL,
+            GA_DrawInfo, app->drawInfo,
+            LAYOUT_Orientation, LAYOUT_ORIENT_HORIZ,
+            LAYOUT_BevelStyle, BVS_SBAR_VERT,
+            LAYOUT_AddChild, app->statusBarLabel,
+            TAG_END);
+    }
+
     /* create final layout */
     {
         app->mainvlayout = (Object *)NewObject( LAYOUT_GetClass(), NULL,
@@ -405,6 +427,8 @@ printf("AppInstance %08x\n",AppInstance);
             LAYOUT_AddChild, app->tracksListView.mainVl,
                 CHILD_WeightedHeight,4,
             LAYOUT_AddChild, app->footerView.mainHl,
+                CHILD_WeightedHeight,0,
+            LAYOUT_AddChild, app->statusBarLayout,
                 CHILD_WeightedHeight,0,
             TAG_END);
         if (!app->mainvlayout) cleanexit("layout error 3");
@@ -528,7 +552,7 @@ printf("AppInstance %08x\n",AppInstance);
                             if(action)
                             {
                                 struct AukActionContext actionContext;
-                                actionContext.project = app->_project;
+                                actionContext.pproject = &app->_project;
                                 actionContext.appWindow = CurrentMainWindow;
                                 actionContext.appData = AppInstance;
                                 action->func(&actionContext);
@@ -850,18 +874,89 @@ void TrackListView_UpdateTrackList_Headers()
         if(myTask) Signal(myTask,SIGBREAKF_CTRL_F);
 }
 
-/* GUI Error/Log system - stub implementations for now */
+/* GUI Error/Log system - maps error IDs to locale strings */
+
+/* Map AukErrorID to MSG_GUI_xxx locale string ID */
+static ULONG AukErrorToMsgID(AukErrorID errorID)
+{
+    /* The MSG_GUI_xxx enums start at MSG_GUI_TRACKLIST_CAPACITY_REACHED
+     * and follow the same order as AukErrorID */
+    return MSG_GUI_TRACKLIST_CAPACITY_REACHED + (ULONG)errorID;
+}
+
+static const char *AukLogLevelPrefix(AukLogLevel level)
+{
+    switch (level) {
+        case AUKLOG_INFO:    return "[Info] ";
+        case AUKLOG_WARNING: return "[Warn] ";
+        case AUKLOG_ERROR:   return "[Error] ";
+        default:             return "";
+    }
+}
+
+/* Static buffer for status bar text */
+static char statusBarBuffer[256];
+
+/* Update the status bar gadget with the current buffer content */
+static void UpdateStatusBar(void)
+{
+    if (app && app->statusBarLabel && CurrentMainWindow) {
+        SetGadgetAttrs((struct Gadget *)app->statusBarLabel,
+            CurrentMainWindow, NULL,
+            GA_Text, (ULONG)statusBarBuffer,
+            TAG_END);
+    }
+}
+
 void AukLog_Message(AukLogLevel level, AukErrorID errorID)
 {
-    /* TODO: Implement actual logging/display */
-    (void)level;
-    (void)errorID;
+    const char *msg;
+    ULONG msgID;
+
+    msgID = AukErrorToMsgID(errorID);
+    msg = LOC(msgID);
+
+    bdbprintf("%s%s\n", AukLogLevelPrefix(level), msg);
+
+    /* Update status bar */
+    snprintf(statusBarBuffer, sizeof(statusBarBuffer), "%s%s", AukLogLevelPrefix(level), msg);
+    UpdateStatusBar();
 }
 
 void AukLog_MessageInt(AukLogLevel level, AukErrorID errorID, LONG param)
 {
-    /* TODO: Implement actual logging/display with parameter */
-    (void)level;
-    (void)errorID;
-    (void)param;
+    const char *msg;
+    char tempBuffer[200];
+    ULONG msgID;
+
+    msgID = AukErrorToMsgID(errorID);
+    msg = LOC(msgID);
+
+    bdbprintf("%s", AukLogLevelPrefix(level));
+    bdbprintf(msg, param);
+    bdbprintf("\n");
+
+    /* Update status bar */
+    snprintf(tempBuffer, sizeof(tempBuffer), msg, param);
+    snprintf(statusBarBuffer, sizeof(statusBarBuffer), "%s%s", AukLogLevelPrefix(level), tempBuffer);
+    UpdateStatusBar();
+}
+
+void AukLog_MessageStr(AukLogLevel level, AukErrorID errorID, const char *param)
+{
+    const char *msg;
+    char tempBuffer[200];
+    ULONG msgID;
+
+    msgID = AukErrorToMsgID(errorID);
+    msg = LOC(msgID);
+
+    bdbprintf("%s", AukLogLevelPrefix(level));
+    bdbprintf(msg, param);
+    bdbprintf("\n");
+
+    /* Update status bar */
+    snprintf(tempBuffer, sizeof(tempBuffer), msg, param);
+    snprintf(statusBarBuffer, sizeof(statusBarBuffer), "%s%s", AukLogLevelPrefix(level), tempBuffer);
+    UpdateStatusBar();
 }

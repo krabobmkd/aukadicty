@@ -48,8 +48,9 @@
 /* Pointer to AukStyle for visual styling */
 #define	TRACKHEADER_StyleSheet		(TRACKHEADER_Dummy+7)
 
+/* Channel count: 0->"-", 1->"Mono", 2->"Stereo", 3+->"N Chans" */
+#define TRACKHEADER_ChannelCount	(TRACKHEADER_Dummy+8)
 
-/** DEVTODO: adds attributes definitions here and
- * manage them in class_trackheader_attribs.c
- */
+/* Sample rate in Hz, displayed as "22050Hz" */
+#define TRACKHEADER_SampleRate		(TRACKHEADER_Dummy+9)
 #endif

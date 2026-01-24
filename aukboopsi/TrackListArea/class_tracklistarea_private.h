@@ -140,6 +140,8 @@ void TrackListArea_SetTrackOwnVolume( struct Gadget *Gad,int itrack,int ivol);
 void TrackListArea_SetTrackStereoPan( struct Gadget *Gad,int itrack,int ipan);
 void TrackListArea_SetTrackFlags( struct Gadget *Gad,int itrack,int flags);
 void TrackListArea_SetSoloTrack( struct Gadget *Gad,int iSoloedTrack); // or -1 if not
+void TrackListArea_SetTrackChannelCount( struct Gadget *Gad,int itrack,int channelCount);
+void TrackListArea_SetTrackSampleRate( struct Gadget *Gad,int itrack,unsigned long sampleRate);
 
 /* track may have evolved and need new nb chans, ... */
 void TrackListArea_CheckTrackChannels( struct Gadget *Gad,int itrack);

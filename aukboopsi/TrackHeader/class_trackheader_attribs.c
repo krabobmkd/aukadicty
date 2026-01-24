@@ -235,6 +235,52 @@ ULONG TrackHeader_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
 
             }
         } break;
+       case TRACKHEADER_ChannelCount:
+        {
+            struct Gadget *infoLabel = (struct Gadget *) gdata->subs[THS_InfoLabel1];
+            if(infoLabel)
+            {
+                char chanStr[16];
+                int chanCount = (int)data;
+                if(chanCount == 0)
+                {
+                    strcpy(chanStr, " -");
+                }
+                else if(chanCount == 1)
+                {
+                    strcpy(chanStr, " Mono");
+                }
+                else if(chanCount == 2)
+                {
+                    strcpy(chanStr, " Stereo");
+                }
+                else
+                {
+                    snprintf(chanStr, 15, " %d Chans", chanCount);
+                }
+                SetAttrs(infoLabel, GA_Text, (ULONG)chanStr, TAG_END);
+                actuallydone = 1;
+            }
+        } break;
+       case TRACKHEADER_SampleRate:
+        {
+            struct Gadget *infoLabel = (struct Gadget *) gdata->subs[THS_InfoLabel2];
+            if(infoLabel)
+            {
+                char rateStr[16];
+                unsigned long sampleRate = (unsigned long)data;
+                if(sampleRate == 0)
+                {
+                    strcpy(rateStr, " -");
+                }
+                else
+                {
+                    snprintf(rateStr, 15, " %luHz", sampleRate);
+                }
+                SetAttrs(infoLabel, GA_Text, (ULONG)rateStr, TAG_END);
+                actuallydone = 1;
+            }
+        } break;
     default:
         break;
 

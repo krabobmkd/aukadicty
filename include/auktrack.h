@@ -38,9 +38,10 @@ struct AukTrack {
         If another sound copied, may need conversion. 1 by default.
     */
     unsigned int    channelCount;
-    /* finally not, we'll consider current sampleRate is the one of sound we point.
-     * unsigned long sampleRate;  Sample rate (e.g., 44100) sound refered  may differ,
+    /* Sample rate set at the first AddSound, from the sound file.
+       sounds may differ, but we keep the first one for display.
     */
+    unsigned long   sampleRate;
     #define AukTrackFlag_Silent 1
 
     int         stateFlags;
@@ -103,6 +104,9 @@ AukFixed16 AukTrack_GetStereoPan(AukTrack* track);
 
 void AukTrack_SetChannelCount(AukTrack* track, int count);
 int AukTrack_GetChannelCount(AukTrack* track);
+
+void AukTrack_SetSampleRate(AukTrack* track, unsigned long rate);
+unsigned long AukTrack_GetSampleRate(AukTrack* track);
 
 /* These 2 are exclusives, bool is passed */
 void AukTrack_SetSilent(AukTrack* track, int isSilent);

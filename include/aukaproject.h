@@ -68,6 +68,9 @@ void AukAProject_GetTrack(void* This, AukTrack**ptr, unsigned int index);
 unsigned int AukAProject_GetTrackCount(void* This);
 AukFixed AukAProject_GetDuration(void* This);
 
+/* Clear project - removes all tracks and resets to defaults */
+void AukAProject_Clear(AukAProject* project);
+
 /* Selection accessors (not serialized) */
 void AukAProject_SetSelection(AukAProject* project, AukFixed start, AukFixed end);
 void AukAProject_ClearSelection(AukAProject* project);

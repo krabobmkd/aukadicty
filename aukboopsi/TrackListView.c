@@ -207,8 +207,11 @@ static void AukUpdate_Track(AukObject* listenerObject, AukObject* modifiedObject
         {
             /* Sound added to track, may affect project duration.
              * Schedule horizontal scroll domain update.
+             * Also update track info (channel count, sample rate) in header.
              */
             TrackListArea_CheckTrackChannels((struct Gadget *)pm->trackList,track->trackIndex);
+            TrackListArea_SetTrackChannelCount((struct Gadget *)pm->trackList,track->trackIndex,track->channelCount);
+            TrackListArea_SetTrackSampleRate((struct Gadget *)pm->trackList,track->trackIndex,track->sampleRate);
 
             pm->updateBits |= TLVB_UPDATE_HORIZSCROLLDOMAIN;
             if(myTask) Signal(myTask, SIGBREAKF_CTRL_F);
@@ -258,7 +261,7 @@ static void AukUpdate_TrackList(AukObject* listenerObject, AukObject* modifiedOb
     AukAProject *tracklist = (AukAProject*)modifiedObject;
     TrackListView *pm = (TrackListView *)userData;
 
-    bdbprintf(" **** AukUpdate_TrackList ! \n");
+    printf(" **** AukUpdate_TrackList ! \n");
     if(!pm || !tracklist || !message) return;
 
     trackListAreaUi = (struct Gadget *)pm->trackList;
@@ -268,7 +271,7 @@ static void AukUpdate_TrackList(AukObject* listenerObject, AukObject* modifiedOb
         {
             AukMessage_AProject *m = (AukMessage_AProject *)message;
             AukTrack *track = m->_track;
- //   bdbprintf(" **** AUK_MSG_TRACKADDED ! \n");
+    printf(" **** AUK_MSG_TRACKADDED ! \n");
             if(track)  AukObject_AddListener(track,
                   pm->updateListener, // AukObject* listenerObject,
                   (void*)pm, // userData
@@ -278,7 +281,15 @@ static void AukUpdate_TrackList(AukObject* listenerObject, AukObject* modifiedOb
             // update GUI, add ui track. This retain the track.
             TrackListArea_insertTrack(trackListAreaUi,track,track->trackIndex);
 
-            /* Track added may affect project duration, update horizontal scroll domain */
+            /* Set track info labels (channel count, sample rate) for loaded projects */
+            TrackListArea_SetTrackChannelCount(trackListAreaUi,track->trackIndex,track->channelCount);
+            TrackListArea_SetTrackSampleRate(trackListAreaUi,track->trackIndex,track->sampleRate);
+
+/*test*/
+//RethinkLayout(pm->trackList,CurrentMainWindow,NULL,1);
+
+
+            /* Track added may affect project duration, update horizontal scroll domain */            
             pm->updateBits |= TLVB_UPDATE_HORIZSCROLLDOMAIN;
             if(myTask) signalupdate=1;
         }

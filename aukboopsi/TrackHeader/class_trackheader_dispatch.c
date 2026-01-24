@@ -142,7 +142,7 @@ ULONG ASM SAVEDS TrackHeader_Dispatcher(
                                         GA_Text, "X",
                                         GA_ID,GAD_TRACKHEADER_BASE|GAD_TRACKHEADER_CLOSE|(iTrack<<4),
                                         ICA_TARGET,target,
-                                     //   GA_DrawInfo,(ULONG)drawInfo,
+                                        GA_DrawInfo,(ULONG)drawInfo,
                                      //   BUTTON_BevelStyle, BVS_BUTTON,
                                         GA_RelVerify, TRUE,
                                     TAG_END);
@@ -151,7 +151,7 @@ ULONG ASM SAVEDS TrackHeader_Dispatcher(
                                         GA_Text,trackname,
                                         GA_ID,GAD_TRACKHEADER_BASE|GAD_TRACKHEADER_NAME|(iTrack<<4),
                                         ICA_TARGET,target,
-                                     //   GA_DrawInfo,(ULONG)drawInfo,
+                                        GA_DrawInfo,(ULONG)drawInfo,
                                      //  BUTTON_BevelStyle, BVS_BUTTON,
                                         GA_RelVerify, TRUE,
                                     TAG_END);
@@ -254,9 +254,16 @@ ULONG ASM SAVEDS TrackHeader_Dispatcher(
             {
                 if(gdata->subs[i])
                 {
+                    struct Gadget *subgad;
+                    subgad = (struct Gadget *)gdata->subs[i];
                     //SetSuperAttrs(C,Gad,LAYOUT_AddChild,(ULONG)gdata->subs[i],TAG_END);
                     //SetAttrs(Gad,LAYOUT_AddChild,(ULONG)gdata->subs[i],TAG_END);
-                    SetAttrs(Gad,LAYOUT_AddChild,(ULONG)gdata->subs[i],TAG_END);
+
+                    SetAttrs(Gad,LAYOUT_AddChild,(ULONG)subgad,TAG_END);
+//subgad->SpecialInfo = Gad->SpecialInfo; // try this
+                    /* real layout does this apparently ? no */
+                 //   SetAttrs(gdata->subs[i], LAYOUT_Parent,(ULONG)Gad,TAG_END);
+
                 }
 
             }

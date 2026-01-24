@@ -310,3 +310,19 @@ void TrackListArea_SetSoloTrack( struct Gadget *Gad,int iSoloedTrack)
     }
 
 }
+
+void TrackListArea_SetTrackChannelCount( struct Gadget *Gad,int itrack,int channelCount)
+{
+    TrackChannelChild *ch = getTrackFirstChanChild(Gad,itrack);
+    if(!ch || !ch->_trackHeader) return;
+
+    SetAttrs(ch->_trackHeader,TRACKHEADER_ChannelCount,(ULONG)channelCount,TAG_END);
+}
+
+void TrackListArea_SetTrackSampleRate( struct Gadget *Gad,int itrack,unsigned long sampleRate)
+{
+    TrackChannelChild *ch = getTrackFirstChanChild(Gad,itrack);
+    if(!ch || !ch->_trackHeader) return;
+
+    SetAttrs(ch->_trackHeader,TRACKHEADER_SampleRate,(ULONG)sampleRate,TAG_END);
+}

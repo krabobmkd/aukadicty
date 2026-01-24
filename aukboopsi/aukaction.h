@@ -19,7 +19,7 @@ typedef BOOL (*AukActionFunc)(AukActionContext *context);
 
 /* Action context - passed to action functions */
 struct AukActionContext {
-    AukAProject *project;       /* Current project */
+    AukAProjectPtr *pproject;       /* Current project */
     void *appWindow;            /* Application window (struct Window*) */
     void *appData;              /* Application-specific data */
 };
