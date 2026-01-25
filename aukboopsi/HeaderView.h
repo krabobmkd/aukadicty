@@ -50,6 +50,7 @@ void CreateHeaderView(HeaderView *hv, struct DrawInfo *drawInfo,
 
 void CloseHeaderView(HeaderView *hv);
 
-void HeaderView_ListenMessage(HeaderView *hv,struct opUpdate *M, ULONG gadId);
+/* return new mode when it changes, else -1 keep same */
+int HeaderView_ListenMessage(HeaderView *hv,struct opUpdate *M, ULONG gadId);
 
 #endif

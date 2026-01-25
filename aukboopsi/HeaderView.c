@@ -123,7 +123,7 @@ void CreateHeaderView(HeaderView *hv, struct DrawInfo *drawInfo,
                         GA_DrawInfo, drawInfo,
                         GA_ID, GAD_HEADER_COPY,
                         GA_RelVerify, TRUE,
-                        GA_Text, (ULONG)LOC(MSG_EDITMODE_COPY),
+                        GA_Text, " ", //(ULONG)LOC(MSG_EDITMODE_COPY),
                         BUTTON_PushButton, TRUE,
                         BUTTON_Justification, BCJ_CENTER,
                         ICA_TARGET, appModel,
@@ -153,7 +153,7 @@ void CreateHeaderView(HeaderView *hv, struct DrawInfo *drawInfo,
                         GA_DrawInfo, drawInfo,
                         GA_ID, GAD_HEADER_PASTE,
                         GA_RelVerify, TRUE,
-                        GA_Text, (ULONG)LOC(MSG_EDITMODE_PASTE),
+                        GA_Text, " ", // (ULONG)LOC(MSG_EDITMODE_PASTE),
                         BUTTON_PushButton, TRUE,
                         BUTTON_Justification, BCJ_CENTER,
                         ICA_TARGET, appModel,
@@ -235,12 +235,13 @@ void CloseHeaderView(HeaderView *hv)
 //    }
 }
 
-void HeaderView_ListenMessage(HeaderView *hv,struct opUpdate *M, ULONG gadId)
+/* return new mode when it changes, else -1 keep same */
+int HeaderView_ListenMessage(HeaderView *hv,struct opUpdate *M, ULONG gadId)
 {
     struct TagItem *ptag;
     ULONG selected=-1;
     int modeForThisButton = (gadId - GAD_HEADER_EDITMODE_FIRST);
-    if(modeForThisButton<0 || modeForThisButton>=EDITMODE_COUNT) return;
+    if(modeForThisButton<0 || modeForThisButton>=EDITMODE_COUNT) return -1;
     /*
         Here we know it's a message from a button, but could be
         any information. We seek change to GA_SELECTED;
@@ -248,17 +249,17 @@ void HeaderView_ListenMessage(HeaderView *hv,struct opUpdate *M, ULONG gadId)
     if((ptag = FindTagItem( GA_SELECTED,M->opu_AttrList ))!=NULL)
         selected = ptag->ti_Data;
 
-    if(selected<0) return; /* no GA_SELECTED information in the message */
+    if(selected<0) return -1; /* no GA_SELECTED information in the message */
 
     if(selected==0)
     {
         /* message is bt unselected...  */
         ULONG currentBtState=0;
         Object *thatButton;
-        if((int)hv->currentEditMode != (int)modeForThisButton) return; // normal
+        if((int)hv->currentEditMode != (int)modeForThisButton) return -1; // normal
         /**/
         thatButton = hv->btEditModes[hv->currentEditMode];
-        if(!thatButton) return;
+        if(!thatButton) return -1;
         /* reclick the selected mode shouldnt remove its state (hack) */
         GetAttr(GA_SELECTED,thatButton,&currentBtState);
 
@@ -268,12 +269,13 @@ void HeaderView_ListenMessage(HeaderView *hv,struct opUpdate *M, ULONG gadId)
                 hv->btEditModes[hv->currentEditMode],
                     CurrentMainWindow,NULL,GA_SELECTED,TRUE);
         }
+        return -1;
     }
     else // selected == 1
     {
         int i;
         /* message is bt selected...  */
-        if(hv->currentEditMode == modeForThisButton) return; // already correct
+        if(hv->currentEditMode == modeForThisButton) return -1; // already correct
         hv->currentEditMode = modeForThisButton;
         /* force unselect the other */
         for(int i=0;i<EDITMODE_COUNT;i++)
@@ -284,10 +286,9 @@ void HeaderView_ListenMessage(HeaderView *hv,struct opUpdate *M, ULONG gadId)
                     CurrentMainWindow,NULL,GA_SELECTED,FALSE);
         }
         /* should send message here */
-
+        return modeForThisButton;
     }
-
-
+    return -1;
 }
 AukEditMode HeaderView_GetEditMode(HeaderView *hv)
 {

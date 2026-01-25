@@ -28,13 +28,17 @@
 #define GAD_HEADER_PAUSE        8
 #define GAD_HEADER_FORWARD      9
 
-/* Header view edit mode buttons (3x2 grid) */
-#define GAD_HEADER_EDITMODE1    10
-#define GAD_HEADER_EDITMODE2    11
-#define GAD_HEADER_EDITMODE3    12
-#define GAD_HEADER_EDITMODE4    13
-#define GAD_HEADER_EDITMODE5    14
-#define GAD_HEADER_EDITMODE6    15
+/* Header view edit mode buttons (3x2 grid) - mutually exclusive toggle buttons */
+#define GAD_HEADER_SELECTTOOL   10  /* Selection Tool */
+#define GAD_HEADER_VOLUMEENV    11  /* Volume Envelope */
+#define GAD_HEADER_COPY         12  /* Copy */
+#define GAD_HEADER_ZOOMTOOL     13  /* Zoom Tool */
+#define GAD_HEADER_TIMESLIDE    14  /* Time Slide */
+#define GAD_HEADER_PASTE        15  /* Paste */
+
+/* First and last edit mode button IDs for range checking */
+#define GAD_HEADER_EDITMODE_FIRST GAD_HEADER_SELECTTOOL
+#define GAD_HEADER_EDITMODE_LAST  GAD_HEADER_PASTE
 
 #define GAD_BUTTON_ABOUT 16
 

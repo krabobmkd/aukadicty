@@ -34,8 +34,11 @@ typedef struct TrackListView
     /* Visual style configuration */
     AukStyle *pstyleSheet;
 
-    // kind of easy message update to delay, def below. If zero, nothing to do
+    /* kind of easy message update to delay, def below. If zero, nothing to do*/
     ULONG updateBits;
+
+    /* current edit mode aukeditmode.h */
+    int editMode;
 
 } TrackListView;
 
@@ -60,9 +63,14 @@ void TrackListView_ListenTrackListMessage(TrackListView *pm,struct opUpdate *M);
 void TrackListView_ListenScrollVMessage(TrackListView *pm,struct opUpdate *M);
 void TrackListView_ListenScrollHMessage(TrackListView *pm,struct opUpdate *M);
 void TrackListView_ListenTrackHeaderMessage(TrackListView *pm,struct opUpdate *M, ULONG gadId);
+
+void TrackListView_SetEditMode(TrackListView *pm, int editMode);
+
 void TrackListView_CheckUpdates(TrackListView *pm);
 void TrackListView_UpdateTrackList(TrackListView *pm);
 void TrackListView_UpdateTimeRule(TrackListView *pm);
+
+
 void CloseTrackListView(TrackListView *pm);
 void CloseTrackListView_StaticClasses();
 #endif

@@ -824,6 +824,15 @@ void TrackListView_ListenTrackHeaderMessage(TrackListView *pm,struct opUpdate *M
     AukObjectPtr_Release(&track);
 
 }
+
+void TrackListView_SetEditMode(TrackListView *pm, int editMode)
+{
+    if(pm->editMode == editMode) return;
+
+    pm->editMode = editMode;
+
+}
+
 void TrackListView_CheckUpdates(TrackListView *pm)
 {
     if(pm->updateBits & TLVB_UPDATE_VERTSCROLLDOMAIN) updateVerticalScrollDomain(pm);
