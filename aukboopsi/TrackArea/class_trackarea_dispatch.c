@@ -141,6 +141,28 @@ ULONG ASM SAVEDS TrackArea_Dispatcher(
       retval=1;
       break;
 
+
+// - - -  - -
+   case GM_HITTEST:
+     retval = GMR_GADGETHIT;
+     break;
+   /* you are now going to be fed input */
+   case GM_GOACTIVE:
+   case GM_HANDLEINPUT:
+// bdbprintf("trackarea GM_HANDLEINPUT\n");
+   retval = GMR_NOREUSE;// MEACTIVE; // this is ored bit ! GMR_MEACTIVE-> want more inputs.
+     // gdata=INST_DATA(C, Gad);
+      retval=TrackArea_HandleInput(C,Gad,(struct gpInput *)M);
+
+     break;
+
+   case GM_GOINACTIVE:
+      retval = 0;
+     //  TrackListArea_GoInactive(C,Gad,(struct gpRender *)M);
+     break;
+
+
+
     // case GM_LAYOUT:
     //   retval = TrackArea_Layout(C,(Object *)Gad,(struct gpLayout *)M);
     //   break;
