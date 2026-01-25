@@ -3,7 +3,7 @@
 
 #include <intuition/classusr.h>
 #include "aukstyle.h"
-
+#include "../aukeditmode.h"
 /*
     Manages the top toolbar section of the GUI.
     Contains transport controls (pause/play/stop/rewind/forward)
@@ -21,12 +21,13 @@ typedef struct HeaderView
         Object *btForward;      /* Forward button */
 
     Object *editModeLayout;     /* 3x2 grid layout for edit mode buttons */
-        Object *btEditMode1;    /* Edit mode button 1 */
-        Object *btEditMode2;    /* Edit mode button 2 */
-        Object *btEditMode3;    /* Edit mode button 3 */
-        Object *btEditMode4;    /* Edit mode button 4 */
-        Object *btEditMode5;    /* Edit mode button 5 */
-        Object *btEditMode6;    /* Edit mode button 6 */
+        Object *btEditModes[EDITMODE_COUNT];
+        // Object *btSelectTool;    /* Edit mode button 1 */
+        // Object *btVolumeEnv;    /* Edit mode button 2 */
+        // Object *btCopy;    /* Edit mode button 3 */
+        // Object *btZoomTool;    /* Edit mode button 4 */
+        // Object *btTimeSlide;    /* Edit mode button 5 */
+        // Object *btPaste;    /* Edit mode button 6 */
 
     Object *spacerLayout;       /* Empty space filler */
 
@@ -38,6 +39,9 @@ typedef struct HeaderView
     /* Visual style configuration */
     AukStyle *pstyleSheet;
 
+    /* Current edit mode - tracks which button is selected */
+    AukEditMode currentEditMode;
+
 } HeaderView;
 
 void CreateHeaderView(HeaderView *hv, struct DrawInfo *drawInfo,
@@ -45,5 +49,7 @@ void CreateHeaderView(HeaderView *hv, struct DrawInfo *drawInfo,
                        AukStyle *stylesheet);
 
 void CloseHeaderView(HeaderView *hv);
+
+void HeaderView_ListenMessage(HeaderView *hv,struct opUpdate *M, ULONG gadId);
 
 #endif

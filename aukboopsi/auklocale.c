@@ -24,12 +24,12 @@ static const char *defaultStrings[MSG_COUNT] = {
     [MSG_TRANSPORT_FORWARD] = ">>|",
 
     /* Edit mode buttons */
-    [MSG_EDITMODE_1] = "1",
-    [MSG_EDITMODE_2] = "2",
-    [MSG_EDITMODE_3] = "3",
-    [MSG_EDITMODE_4] = "4",
-    [MSG_EDITMODE_5] = "5",
-    [MSG_EDITMODE_6] = "6",
+    [MSG_EDITMODE_SELECTTOOL] = "Select",
+    [MSG_EDITMODE_VOLUMEENV] = "Volume",
+    [MSG_EDITMODE_COPY] = "Copy",
+    [MSG_EDITMODE_ZOOMTOOL] = "Zoom",
+    [MSG_EDITMODE_TIMESLIDE] = "Slide",
+    [MSG_EDITMODE_PASTE] = "Paste",
 
     /* Footer view */
     [MSG_FOOTER_FREQUENCY] = "%lu Hz",

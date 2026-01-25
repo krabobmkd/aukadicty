@@ -384,7 +384,7 @@ printf("AppInstance %08x\n",AppInstance);
     app->styleSheet->ApplyStyle( app->styleSheet,app->lockedscreen );
    bdbprintf(" **** main init style:%08x fontTiny:%08x \n",(int)&app->styleSheet->style,(int)app->styleSheet->style.fontTiny);
 
-    CreateHeaderView(&app->headerView, app->drawInfo, AppInstance, &app->styleSheet->style);
+   // CreateHeaderView(&app->headerView, app->drawInfo, AppInstance, &app->styleSheet->style);
 
     CreateTrackListView(&app->tracksListView,app->drawInfo, AppInstance,&app->styleSheet->style);
 
@@ -422,8 +422,8 @@ printf("AppInstance %08x\n",AppInstance);
             LAYOUT_InnerSpacing,0,
             LAYOUT_Orientation, LAYOUT_ORIENT_VERT,
 
-            LAYOUT_AddChild, app->headerView.mainHl,
-                CHILD_WeightedHeight,0,
+            // LAYOUT_AddChild, app->headerView.mainHl,
+            //     CHILD_WeightedHeight,0,
             LAYOUT_AddChild, app->tracksListView.mainVl,
                 CHILD_WeightedHeight,4,
             LAYOUT_AddChild, app->footerView.mainHl,
@@ -600,10 +600,10 @@ printf("AppInstance %08x\n",AppInstance);
                     {
                         /* TODO: transport buttons */
                     }
-                    else if (sender_ID >= GAD_HEADER_EDITMODE1 && sender_ID <= GAD_HEADER_EDITMODE6)
-                    {
-                       // bdbprintf("Edit mode button: %08x\n", sender_ID);
-                    }
+                    // else if (sender_ID >= GAD_HEADER_EDITMODE_FIRST && sender_ID <= GAD_HEADER_EDITMODE_LAST)
+                    // {
+                    //     HeaderView_ListenMessage(&app->headerView,&opUpd,sender_ID);
+                    // }
                     else if (sender_ID == GAD_TRACKLIST)
                     {
                         TrackListView_ListenTrackListMessage(&app->tracksListView, &opUpd);

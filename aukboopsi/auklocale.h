@@ -23,12 +23,12 @@ enum {
     MSG_TRANSPORT_FORWARD,
 
     /* Edit mode buttons */
-    MSG_EDITMODE_1,
-    MSG_EDITMODE_2,
-    MSG_EDITMODE_3,
-    MSG_EDITMODE_4,
-    MSG_EDITMODE_5,
-    MSG_EDITMODE_6,
+    MSG_EDITMODE_SELECTTOOL,    /* Selection Tool */
+    MSG_EDITMODE_VOLUMEENV,     /* Volume Envelope */
+    MSG_EDITMODE_COPY,          /* Copy */
+    MSG_EDITMODE_ZOOMTOOL,      /* Zoom Tool */
+    MSG_EDITMODE_TIMESLIDE,     /* Time Slide */
+    MSG_EDITMODE_PASTE,         /* Paste */
 
     /* Footer view */
     MSG_FOOTER_FREQUENCY,
