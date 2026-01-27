@@ -13,6 +13,9 @@
 #include "class_tracklistarea.h"
 #include "class_tracklistarea_private.h"
 
+// shared global state...
+extern int CurrentEditMode;
+
 ULONG TrackListArea_HandleHitTest(Class *C, struct Gadget *Gad,struct gpHitTest *m)
 {
    TrackListArea *gdata;

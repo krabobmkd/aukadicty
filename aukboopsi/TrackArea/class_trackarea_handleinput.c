@@ -25,9 +25,12 @@
  */
 #include "bdbprintf.h"
 
-#define MRK_BUFFER_SIZE 3
+//#define MRK_BUFFER_SIZE 3
+// shared global state...
+extern int CurrentEditMode;
 
-ULONG TrackArea_HandleInput(Class *C, struct Gadget *Gad, struct gpInput *Input)
+
+ULONG TrackArea_HandleInput(Class *C, struct Gadget *Gad, struct gpInput *Input, int isFirstActivate)
 {
   ULONG retval=GMR_MEACTIVE; //default
 
@@ -35,96 +38,12 @@ ULONG TrackArea_HandleInput(Class *C, struct Gadget *Gad, struct gpInput *Input)
   struct InputEvent *ie;
 
   gdata=INST_DATA(C, Gad);
-  //retval = GMR_MEACTIVE;
+  //retval = GMR_MEACTIVE;  
   ie = Input->gpi_IEvent;
 
   switch(ie->ie_Class)
   {    case IECLASS_RAWKEY:
-//      KP("RAW KEY CODE - %lx %8lx\n",ie->ie_Code,ie->ie_Qualifier);
-//        gdata->gd_MouseMode=0;
 
-      /*switch(ie->ie_Code)
-      {
-
-        case 0x4c: // UP
-          {
-            LONG t;
-
-            t=gdata->ActivePen-gdata->Cols;
-            if(t<0) t+=gdata->Pens;
-            if(t<0) t=0; // double check!
-            gdata->ActivePen=t;
-
-            gad_Render(C,Gad,(APTR)Input,GREDRAW_UPDATE);
-            TrackArea_Notify(C,Gad,(APTR)Input, 0);
-          }
-          break;
-
-        case 0x4f: // LEFT
-          {
-            LONG t;
-
-            t=gdata->ActivePen-1;
-            if(t<0) t=gdata->Pens-1;
-            gdata->ActivePen=t;
-
-            gad_Render(C,Gad,(APTR)Input,GREDRAW_UPDATE);
-            TrackArea_Notify(C,Gad,(APTR)Input, 0);
-          }
-          break;
-
-        case 0x4e: // RIGHT
-          {
-            LONG t;
-
-            t=gdata->ActivePen+1;
-            if(t>=gdata->Pens) t=0;
-            gdata->ActivePen=t;
-
-            gad_Render(C,Gad,(APTR)Input,GREDRAW_UPDATE);
-            TrackArea_Notify(C,Gad,(APTR)Input, 0);
-          }
-          break;
-
-        case 0x4d: // DOWN
-          {
-            LONG t;
-
-            t=gdata->ActivePen+gdata->Cols;
-            if(t>=gdata->Pens) t-=gdata->Pens;
-            if(t>=gdata->Pens) t=0; // double check!
-            gdata->ActivePen=t;
-
-            gad_Render(C,Gad,(APTR)Input,GREDRAW_UPDATE);
-            TrackArea_Notify(C,Gad,(APTR)Input, 0);
-          }
-          break;
-
-        default:
-          if(MapRawKey(ie,buffer,MRK_BUFFER_SIZE,0))
-          {
-       //     KP("%ld %lc\n",buffer[0],buffer[0]);
-
-            switch(buffer[0])
-            {
-              case 27: // Esc
-                retval=GMR_NOREUSE;
-                break;
-              case 155: //  Shift + TAB
-                retval=GMR_NOREUSE | GMR_PREVACTIVE;
-                break;
-              case  9:  // TAB
-                retval=GMR_NOREUSE | GMR_NEXTACTIVE;
-                break;
-              case 0x20:
-//                  step=(shifted?-1:1);
-                break;
-            }
-          }
-          break;
-
-      }  // end ie_code switch
-       */
       break;
     case IECLASS_RAWMOUSE:
       {
@@ -334,3 +253,11 @@ ULONG TrackArea_HandleInput(Class *C, struct Gadget *Gad, struct gpInput *Input)
 
   return(retval);
 }
+
+
+ULONG TrackListArea_GoInactive(Class *C, struct Gadget *Gad,struct gpGoInactive *M)
+{
+    return 0;
+
+}
+

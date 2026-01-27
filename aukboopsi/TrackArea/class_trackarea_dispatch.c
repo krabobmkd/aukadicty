@@ -148,26 +148,16 @@ ULONG ASM SAVEDS TrackArea_Dispatcher(
      break;
    /* you are now going to be fed input */
    case GM_GOACTIVE:
+      retval=TrackArea_HandleInput(C,Gad,(struct gpInput *)M,TRUE);
+      break;
    case GM_HANDLEINPUT:
-// bdbprintf("trackarea GM_HANDLEINPUT\n");
-   retval = GMR_NOREUSE;// MEACTIVE; // this is ored bit ! GMR_MEACTIVE-> want more inputs.
-     // gdata=INST_DATA(C, Gad);
-      retval=TrackArea_HandleInput(C,Gad,(struct gpInput *)M);
-
+      retval=TrackArea_HandleInput(C,Gad,(struct gpInput *)M,FALSE);
      break;
-
    case GM_GOINACTIVE:
-      retval = 0;
-     //  TrackListArea_GoInactive(C,Gad,(struct gpRender *)M);
+      retval = TrackListArea_GoInactive(C,Gad,(struct gpGoInactive *)M);
      break;
 
-
-
-    // case GM_LAYOUT:
-    //   retval = TrackArea_Layout(C,(Object *)Gad,(struct gpLayout *)M);
-    //   break;
-
-    /* Let InfiniteScroll handle these: GM_RENDER, GM_HITTEST, etc */
+    /* Let InfiniteScroll handle these: GM_RENDER, etc */
     default:
       retval=DoSuperMethodA(C,(Object *)Gad,(Msg)M);
       break;

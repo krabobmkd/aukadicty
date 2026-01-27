@@ -55,21 +55,40 @@ typedef struct ITrackArea {
     WORD _justScroll, _fullRedraw;
 
     /* Pointer to time cursor position (64-bit fixed-point seconds).
+     * This is used to draw selection span
      * NULL means no cursor displayed.
      */
     AukTimeCursor *_timeCursor;
 
     /* Pointer to time selection span (start and end times).
      * NULL or both values == 0 means no selection.
+     * This is used to draw selection span
      */
     AukTimeSpan *_timeSelection;
+
+#define TRCKMOVE_NoMove 0
+#define TRCKMOVE_Selection 1
+#define TRCKMOVE_PanZoom 2
+#define TRCKMOVE_Slide 2
+
+    /* interaction automats. Totally internal. */
+
+    UBYTE _MoveType; /* what happens when click down and move. */
+    UBYTE b,c,d;
+    /* TRCKMOVE_Selection/TRCKMOVE_PanZoom during move. Unsorted */
+    long long _moveTimeStart;
+    long long _moveTimeEnd;
+
+
 
 } TrackArea;
 
 ULONG TrackArea_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set);
 ULONG TrackArea_GetAttr(Class *C, struct Gadget *Gad, struct opGet *Get);
 ULONG TrackArea_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout);
-ULONG TrackArea_HandleInput(Class *C, struct Gadget *Gad, struct gpInput *Input);
+ULONG TrackArea_HandleInput(Class *C, struct Gadget *Gad, struct gpInput *Input, int isFirstActivate );
+ULONG TrackListArea_GoInactive(Class *C, struct Gadget *Gad,struct gpGoInactive *M);
+
 ULONG TrackArea_Domain(Class *C, struct Gadget *Gad, struct gpDomain *D);
 
 /* TrackArea overrides InfiniteScroll tile rendering to draw track content */
