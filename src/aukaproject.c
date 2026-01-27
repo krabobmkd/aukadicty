@@ -101,7 +101,7 @@ void AukAProject_Serialize(AukObject* This, ISerializer* ser, const char* pName)
         AukArray* tracksArray;
         int itrack, icount;
         /* Set project context on all loaded objects */
-        AukProject_SetProjectContext(project);
+        AukProject_SetProjectContext((AukProject*)project);
 
 
         /* need to send project load updates at this level.

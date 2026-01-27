@@ -265,7 +265,7 @@ int HeaderView_ListenMessage(HeaderView *hv,struct opUpdate *M, ULONG gadId)
 
         if(currentBtState != GA_SELECTED)
         {
-            SetGadgetAttrs(
+            SetGadgetAttrs((struct Gadget *)
                 hv->btEditModes[hv->currentEditMode],
                     CurrentMainWindow,NULL,GA_SELECTED,TRUE);
         }
@@ -278,10 +278,10 @@ int HeaderView_ListenMessage(HeaderView *hv,struct opUpdate *M, ULONG gadId)
         if(hv->currentEditMode == modeForThisButton) return -1; // already correct
         hv->currentEditMode = modeForThisButton;
         /* force unselect the other */
-        for(int i=0;i<EDITMODE_COUNT;i++)
+        for(i=0;i<EDITMODE_COUNT;i++)
         {
             if(i ==  (int) hv->currentEditMode) continue;
-            SetGadgetAttrs(
+            SetGadgetAttrs((struct Gadget *)
                 hv->btEditModes[i],
                     CurrentMainWindow,NULL,GA_SELECTED,FALSE);
         }

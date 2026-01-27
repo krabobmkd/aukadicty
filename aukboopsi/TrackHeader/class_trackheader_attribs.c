@@ -194,7 +194,7 @@ ULONG TrackHeader_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
             {
                 int curstate;
                 int setstate = flags & 1; // AukTrack AukTrackFlag_Silent
-                GetAttr(GA_SELECTED,silbt,&curstate);
+                GetAttr(GA_SELECTED,(Object *)silbt,(ULONG*)&curstate);
                 if(curstate != setstate)
                 {
                     SetGadgetAttrs(silbt,CurrentMainWindow,NULL,GA_SELECTED,setstate);
@@ -220,7 +220,7 @@ ULONG TrackHeader_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
                     case 1: selected=1; silDisabled=1; break;
                     case 2: silDisabled=1;  break;
                 }
-                GetAttr(GA_SELECTED,solobt,&curstate);
+                GetAttr(GA_SELECTED,(Object *)solobt,(ULONG*)&curstate);
                 if(curstate != selected)
                 {
                     SetGadgetAttrs(solobt,CurrentMainWindow,NULL,GA_SELECTED,selected);

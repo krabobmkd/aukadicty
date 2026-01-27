@@ -70,7 +70,12 @@ void TrackListView_CheckUpdates(TrackListView *pm);
 void TrackListView_UpdateTrackList(TrackListView *pm);
 void TrackListView_UpdateTimeRule(TrackListView *pm);
 
+void TrackListView_ZoomIn(TrackListView *pm);
+void TrackListView_ZoomOut(TrackListView *pm);
 
 void CloseTrackListView(TrackListView *pm);
 void CloseTrackListView_StaticClasses();
+
+
+
 #endif

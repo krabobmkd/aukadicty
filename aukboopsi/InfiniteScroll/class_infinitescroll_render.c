@@ -337,7 +337,7 @@ static void InfiniteScroll_FullRedraw(
 ULONG InfiniteScroll_Render(Class *C, struct Gadget *Gad, struct gpRender *Render)
 {
     InfiniteScroll *gdata;
-    struct RastPort *rp;
+    struct RastPort *rp=NULL;
     ULONG retval=1;
     ULONG i;
 
@@ -348,13 +348,6 @@ ULONG InfiniteScroll_Render(Class *C, struct Gadget *Gad, struct gpRender *Rende
     gdata=INST_DATA(C, Gad);
 
 // bdbprintf("InfiniteScroll_Render renderf: width:%d\n",(int)Gad->Width);
-
-           SetAPen(rp, 7);
-           RectFill(rp,Gad->LeftEdge,
-                       Gad->TopEdge,
-                       Gad->LeftEdge + Gad->Width -1,
-                       Gad->TopEdge + Gad->Height -1);
-
 
     if( !gdata->_tiles) return retval;
     // common params for tile rendering

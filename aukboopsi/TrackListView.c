@@ -10,6 +10,7 @@
 #include <proto/graphics.h>
 #include <proto/intuition.h>
 #include <proto/utility.h>
+#include <proto/alib.h>
 #include <proto/dos.h>
 
 #include <proto/layout.h>
@@ -229,23 +230,23 @@ static void AukUpdate_Track(AukObject* listenerObject, AukObject* modifiedObject
         case AUK_MSG_TRACKMODIFIED_NAMECHANGE:
         {
            //const char *name;
-            TrackListArea_SetTrackName(pm->trackList, message->_track_id,message->_track->name);
+            TrackListArea_SetTrackName((struct Gadget *)pm->trackList, message->_track_id,message->_track->name);
         }
         break;
         case AUK_MSG_TRACKMODIFIED_CHANGEVol:
         {
-            TrackListArea_SetTrackOwnVolume(pm->trackList,message->_track_id,track->ownVolume);
+            TrackListArea_SetTrackOwnVolume((struct Gadget *)pm->trackList,message->_track_id,track->ownVolume);
             //to validate printf("track->ownVolume:%d\n",track->ownVolume);
          }
         break;
         case AUK_MSG_TRACKMODIFIED_CHANGEPan:
         {
-            TrackListArea_SetTrackStereoPan(pm->trackList,message->_track_id,track->stereoPan);
+            TrackListArea_SetTrackStereoPan((struct Gadget *)pm->trackList,message->_track_id,track->stereoPan);
         }
         break;
         case AUK_MSG_TRACKMODIFIED_CHANGEFlags:
         {
-            TrackListArea_SetTrackFlags(pm->trackList,message->_track_id,track->stateFlags);
+            TrackListArea_SetTrackFlags((struct Gadget *)pm->trackList,message->_track_id,track->stateFlags);
         }
         break;
         default:
@@ -272,10 +273,10 @@ static void AukUpdate_TrackList(AukObject* listenerObject, AukObject* modifiedOb
             AukMessage_AProject *m = (AukMessage_AProject *)message;
             AukTrack *track = m->_track;
     printf(" **** AUK_MSG_TRACKADDED ! \n");
-            if(track)  AukObject_AddListener(track,
+            if(track)  AukObject_AddListener((AukObject *)track,
                   pm->updateListener, // AukObject* listenerObject,
                   (void*)pm, // userData
-                  &AukUpdate_Track //AukUpdateCallback callback
+                  (AukUpdateCallback)&AukUpdate_Track //AukUpdateCallback callback
                   );
 
             // update GUI, add ui track. This retain the track.
@@ -300,7 +301,7 @@ static void AukUpdate_TrackList(AukObject* listenerObject, AukObject* modifiedOb
             AukTrack *track = m->_track;
 
     bdbprintf(" **** receive from data AUK_MSG_TRACKREMOVED ! \n");
-            if(track)  AukObject_RemoveListener(track,
+            if(track)  AukObject_RemoveListener((AukObject *)track,
                         pm->updateListener // AukObject* listenerObject,
                   );
 
@@ -374,7 +375,7 @@ void updateVerticalScrollDomain(TrackListView *pm)
         tags[3] = visibleHeight;
 
 
-        SetGadgetAttrsA((struct Gadget *)pm->scrollerV, CurrentMainWindow, NULL,&tags[0]);
+        SetGadgetAttrsA((struct Gadget *)pm->scrollerV, CurrentMainWindow, NULL,(struct TagItem *)&tags[0]);
     }
 
 }
@@ -433,7 +434,7 @@ void updateHorizontalScrollDomain(TrackListView *pm)
      * so visible track area width = gadget width.
      * The actual visible time area would be gadget width, but we use domainWidth directly.
      */
-     GetAttr(TRACKLIST_TimeProjection, pm->trackList, &trackListTimeproj);
+     GetAttr(TRACKLIST_TimeProjection, pm->trackList,(ULONG *) &trackListTimeproj);
      timePerPixelWidth = trackListTimeproj._timePerPixelWidth;
 
      GetAttr(TRACKLIST_TrackAreaWidth, pm->trackList, &trackPixelWidth);
@@ -513,7 +514,7 @@ void TrackListView_setProject(TrackListView *pm,AukAProject *project)
    // printf("  ////// TrackListView_setProject:%08x\n",(int)project);
 
     // link data to UI
-    TrackListArea_setTrackList(pm->trackList ,project );
+    TrackListArea_setTrackList((struct Gadget *)pm->trackList ,project );
 
 }
 
@@ -611,7 +612,7 @@ void TrackListView_ListenScrollHMessage(TrackListView *pm, struct opUpdate *M)
         ULONG scrollerTop = ptag->ti_Data;
         TimeProjection trackListTimeproj;
 
-        GetAttr(TRACKLIST_TimeProjection, pm->trackList, &trackListTimeproj);
+        GetAttr(TRACKLIST_TimeProjection, pm->trackList,(ULONG *) &trackListTimeproj);
 
         if(trackListTimeproj._timePerPixelWidth<=0 ) return;
         duration = project->GetDuration(project);
@@ -692,7 +693,7 @@ int requesterName(char *buffer, int charmax,
      // Show the requester
     result = DoMethod(reqobj, RM_OPENREQ, NULL, NULL, NULL);
 
-    // Clean up
+    // Clean ups
     DisposeObject(reqobj);
 
     return result;
@@ -732,9 +733,9 @@ void TrackListView_ListenTrackHeaderMessage(TrackListView *pm,struct opUpdate *M
             // /* Close track at data level */
             if(buttonReleased >0)
             {
-                printf("go project->RemoveTrack %d %08x %08x\n",trackId,project,track);
+                //printf("go project->RemoveTrack %d %08x %08x\n",trackId,project,track);
                 project->RemoveTrack(project,track);
-                AukObjectPtr_Release(&track);
+                AukObjectPtr_Release((AukObject **)&track);
             }
         }
         break;
@@ -780,7 +781,7 @@ void TrackListView_ListenTrackHeaderMessage(TrackListView *pm,struct opUpdate *M
                 //  we receive 0 for the other solo bt state that we put off !
                 // only send of to the track which is on
                 if(project->soloTrack != -1 &&
-                    project->soloTrack == trackId &&
+                    project->soloTrack == (int)trackId &&
                     buttonstate == 0 )
                     {
                         AukAProject_SetSoloTrack(project,-1);
@@ -821,7 +822,7 @@ void TrackListView_ListenTrackHeaderMessage(TrackListView *pm,struct opUpdate *M
 
     }
 
-    AukObjectPtr_Release(&track);
+    AukObjectPtr_Release((AukObject **)&track);
 
 }
 
@@ -847,19 +848,19 @@ void TrackListView_CheckUpdates(TrackListView *pm)
         if(pm->updateBits & TLVB_UPDATE_REDRAW_JUSTTRACKS)
         {
             // same as TLVB_UPDATE_REDRAW_TRACKLIST, but do not redraw headers
-            SetGadgetAttrs(pm->trackList, CurrentMainWindow, NULL,TRACKLIST_JustTracksRefresh,TRUE,TAG_END);
+            SetGadgetAttrs((struct Gadget *)pm->trackList, CurrentMainWindow, NULL,TRACKLIST_JustTracksRefresh,TRUE,TAG_END);
         } else
         if(pm->updateBits & TLVB_UPDATE_REDRAW_JUSTHEADERS)
         {
             // same as TLVB_UPDATE_REDRAW_TRACKLIST, but do not redraw headers
-            SetGadgetAttrs(pm->trackList, CurrentMainWindow, NULL,TRACKLIST_JustHeadersRefresh,TRUE,TAG_END);
+            SetGadgetAttrs((struct Gadget *)pm->trackList, CurrentMainWindow, NULL,TRACKLIST_JustHeadersRefresh,TRUE,TAG_END);
         }
 
     }
 
     if(pm->updateBits & TLVB_UPDATE_REDRAW_TIMERULE)
     {
-        SetGadgetAttrs(pm->timerule,CurrentMainWindow, NULL,TIMERULE_Refresh,TRUE,TAG_END);
+        SetGadgetAttrs((struct Gadget *)pm->timerule,CurrentMainWindow, NULL,TIMERULE_Refresh,TRUE,TAG_END);
     }
 
 
@@ -869,7 +870,7 @@ void TrackListView_CheckUpdates(TrackListView *pm)
 void TrackListView_UpdateTrackList(TrackListView *pm)
 {
     if(!pm->trackList) return;
-    SetGadgetAttrs(pm->trackList, CurrentMainWindow, NULL,TRACKLIST_Refresh,TRUE,TAG_END);
+    SetGadgetAttrs((struct Gadget *)pm->trackList, CurrentMainWindow, NULL,TRACKLIST_Refresh,TRUE,TAG_END);
 }
 void TrackListView_UpdateTimeRule(TrackListView *pm)
 {
@@ -913,10 +914,35 @@ void CloseTrackListView_StaticClasses()
     InfiniteScrollStaticClose();
 }
 
-/*
- debug report note:
-  if send OM_UPDATE to notify a size at the end of a GM_LAYOUT, and modify scroller domain in it, will not work
-  -> delay update for setGadgetAttrib()
+
+static void TrackListView_ZoomChange(TrackListView *pm, ULONG factor)
+{
+    TimeProjection trackListTimeproj;
+    ULONG headerWidth = 0;
+    long long center;
+    if(!pm) return;
+    GetAttr(TRACKLIST_HeaderWidth, pm->trackList, &headerWidth);
+    GetAttr(TRACKLIST_TimeProjection, pm->trackList,(ULONG*) &trackListTimeproj);
+
+    if(trackListTimeproj._timePerPixelWidth<=0 ) return;
+
+//todo    center = trackListTimeproj._pixAtLeft +
+
+//    //long long _pixAtLeft,_timePerPixelWidth;
 
 
-*/
+//       // timePerPixelWidth = trackListTimeproj._timePerPixelWidth; // ((long long)timePerPixHi << 32) | timePerPixLo;
+
+//        /* scrollX = value in pixel 64b, not in time */
+//        trackListTimeproj._pixAtLeft = ((long long)scrollerTop * duration) / (trackListTimeproj._timePerPixelWidth *SCROLLERH_FIXEDTOTAL);
+////  bdbprintf("trackListTimeproj._pixAtLeft:%lld",trackListTimeproj._pixAtLeft);
+//        TrackListView_SetHScrollPos(pm,&trackListTimeproj);
+}
+void TrackListView_ZoomIn(TrackListView *pm)
+{
+    TrackListView_ZoomChange(pm,0x00010000 - (0x00010000>>2) ); // X 0.75
+}
+void TrackListView_ZoomOut(TrackListView *pm)
+{
+    TrackListView_ZoomChange(pm,0x00010000 + (0x00010000>>2) ); // X 1.25
+}

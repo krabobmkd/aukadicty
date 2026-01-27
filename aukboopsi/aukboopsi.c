@@ -225,6 +225,8 @@ struct App *app=NULL;
 // Yet, it's needed for most Gadget method calls, and this is not retained by boopsi objects.
 // note there vould be many windows.
 struct Window *CurrentMainWindow=NULL;
+// shared global state...
+int CurrentEditMode = 0;
 
 BoopsiDisposeQueue *ObjectLateDisposer=NULL;
 
@@ -366,7 +368,7 @@ int main(int argc, char **argv)
     if(!ObjectLateDisposer) exit(0);
 
     if(!initAppModel())  cleanexit("Can't create app");
-printf("AppInstance %08x\n",AppInstance);
+//printf("AppInstance %08x\n",(int)AppInstance);
     /* BOOPSI needs */
     app->lockedscreen = LockPubScreen(NULL);
     if (!app->lockedscreen) cleanexit("Can't lock screen");
@@ -604,7 +606,12 @@ printf("AppInstance %08x\n",AppInstance);
                     {
                         int modeChange =HeaderView_ListenMessage(&app->headerView,&opUpd,sender_ID);
                         /* -1 means no mode change */
-                        if(modeChange>=0) TrackListView_SetEditMode(&app->tracksListView,modeChange);
+                        if(modeChange>=0)
+                        {
+                            CurrentEditMode = modeChange;
+                            TrackListView_SetEditMode(&app->tracksListView,modeChange);
+                        }
+
                     }
                     else if (sender_ID == GAD_TRACKLIST)
                     {

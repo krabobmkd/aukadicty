@@ -125,7 +125,7 @@ ULONG ASM SAVEDS TrackListArea_Dispatcher(
         /* Dispose all track gadgets */
         TrackListArea_DisposeGadgets(Gad,gdata);
 
-        AukObjectPtr_Release( &gdata->_project);
+        AukObjectPtr_Release((AukObject **) &gdata->_project);
 
       retval=DoSuperMethodA(C,(Object *)Gad,(Msg)M);
       break;

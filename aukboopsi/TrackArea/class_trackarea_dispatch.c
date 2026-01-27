@@ -71,7 +71,7 @@ ULONG ASM SAVEDS TrackArea_Dispatcher(
   {
     case OM_NEW:
       /* Let InfiniteScroll handle creation first (it sets up tiles, etc) */
-      if(Gad=(struct Gadget *)DoSuperMethodA(C,(Object *)Gad,(Msg)M))
+      if((Gad=(struct Gadget *)DoSuperMethodA(C,(Object *)Gad,(Msg)M))!=NULL)
       {
             struct opSet superops;
             ULONG supertags[] = {
@@ -83,7 +83,7 @@ ULONG ASM SAVEDS TrackArea_Dispatcher(
             superops.ops_GInfo    = M->opSet.ops_GInfo;
             supertags[1] = (ULONG)&TrackArea_RenderDelegate;
 
-            DoSuperMethodA(C, Gad, (Msg)&superops);
+            DoSuperMethodA(C,(Object*) Gad, (Msg)&superops);
 
             bdbprintf_new("TrackArea", Gad);
 

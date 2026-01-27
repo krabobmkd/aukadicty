@@ -133,17 +133,17 @@ void AukStyleSheet_Serialize(AukObject* This, ISerializer* ser, const char* pNam
     }
 
     /* Serialize colors (only rgbcolor field, pen/allocated are runtime) */
-    ser->t_uint(ser, "background", &styleSheet->style.background.rgbcolor);
-    ser->t_uint(ser, "trackBackground", &styleSheet->style.trackBackground.rgbcolor);
-    ser->t_uint(ser, "soundBackground", &styleSheet->style.soundBackground.rgbcolor);
-    ser->t_uint(ser, "selectedBackground", &styleSheet->style.selectedBackground.rgbcolor);
+    ser->t_uint(ser, "background",(ULONG*) &styleSheet->style.background.rgbcolor);
+    ser->t_uint(ser, "trackBackground",(ULONG*) &styleSheet->style.trackBackground.rgbcolor);
+    ser->t_uint(ser, "soundBackground",(ULONG*) &styleSheet->style.soundBackground.rgbcolor);
+    ser->t_uint(ser, "selectedBackground",(ULONG*) &styleSheet->style.selectedBackground.rgbcolor);
 
-    ser->t_uint(ser, "trackhl", &styleSheet->style.trackHighlight.rgbcolor);
+    ser->t_uint(ser, "trackhl",(ULONG*) &styleSheet->style.trackHighlight.rgbcolor);
 
-    ser->t_uint(ser, "waveformDark", &styleSheet->style.waveformDark.rgbcolor);
-    ser->t_uint(ser, "waveformLight", &styleSheet->style.waveformLight.rgbcolor);
-    ser->t_uint(ser, "thbg", &styleSheet->style.waveformLight.rgbcolor);
-    ser->t_uint(ser, "textColor", &styleSheet->style.textColor.rgbcolor);
+    ser->t_uint(ser, "waveformDark",(ULONG*) &styleSheet->style.waveformDark.rgbcolor);
+    ser->t_uint(ser, "waveformLight",(ULONG*) &styleSheet->style.waveformLight.rgbcolor);
+    ser->t_uint(ser, "thbg",(ULONG*) &styleSheet->style.waveformLight.rgbcolor);
+    ser->t_uint(ser, "textColor",(ULONG*) &styleSheet->style.textColor.rgbcolor);
 
     /* Serialize font specifications (name + height for each font) */
     ser->t_string_mutable(ser, "fontTinyName", &styleSheet->fontTinyName);

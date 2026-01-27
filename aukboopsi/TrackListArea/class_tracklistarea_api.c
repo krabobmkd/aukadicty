@@ -36,6 +36,7 @@
 
 // memcpy
 #include <string.h>
+#include <stdio.h>
 
 /* Default capacity for track array allocation */
 #define TRACKLIST_DEFAULT_CAPACITY 64
@@ -244,7 +245,7 @@ static int TrackListArea_CreateTrackChannelLine(
     }
 
     /* retain data we sync: */
-    AukObjectPtr_Set((AukObjectPtr *)&strack->_dataTrack,dataTrack);
+    AukObjectPtr_Set((AukObjectPtr *)&strack->_dataTrack,(AukObject *)dataTrack);
     // default value
     schan->_prefHeight = 96;
 
@@ -328,7 +329,7 @@ void TrackListArea_setTrackList(struct Gadget *Gad,AukAProject *tracklist)
 
     gdata=INST_DATA(TrackListClassPtr, Gad);
 
-    AukObjectPtr_Set(&gdata->_project,tracklist);
+    AukObjectPtr_Set((AukObjectPtr*)&gdata->_project,(AukObject *)tracklist);
 
    // TrackListArea_updateTrackListUiToData(Gad);
 }
@@ -341,7 +342,7 @@ void TrackListArea_insertTrack(struct Gadget *Gad, AukTrack *track, int indexToI
     if(!TrackListClassPtr || !Gad || !track || track->channelCount<=0) return;
     gdata = INST_DATA(TrackListClassPtr, Gad);
 
- printf("TrackListArea_insertTrack track->channelCount:%d\n",track->channelCount);
+// printf("TrackListArea_insertTrack track->channelCount:%d\n",track->channelCount);
 
     /* Ensure array is allocated */
     if(!TrackListArea_EnsureTrackArray(gdata))
@@ -576,6 +577,7 @@ void TrackListArea_trackModified(struct Gadget *Gad,AukTrack *track)
      * as the TrackGadgets will handle their own rendering based on data */
 }
 
+// should be just insert
 void TrackListArea_CheckTrackChannels( struct Gadget *Gad,int itrack)
 {
    TrackListArea *gdata;

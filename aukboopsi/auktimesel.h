@@ -16,10 +16,8 @@
  * NULL pointer or both values == 0 means no selection.
  */
 typedef struct AukTimeSpan {
-    LONG startHi;       /* Start time high 32 bits (integer seconds, signed) */
-    ULONG startLo;      /* Start time low 32 bits (fractional seconds) */
-    LONG endHi;         /* End time high 32 bits (integer seconds, signed) */
-    ULONG endLo;        /* End time low 32 bits (fractional seconds) */
+    long long start;
+    long long end;
 } AukTimeSpan;
 
 /* Time cursor - single 64-bit time position
@@ -27,15 +25,8 @@ typedef struct AukTimeSpan {
  * NULL pointer means no cursor visible.
  */
 typedef struct AukTimeCursor {
-    LONG hi;            /* High 32 bits (integer seconds, signed) */
-    ULONG lo;           /* Low 32 bits (fractional seconds) */
+    long long _t;
 } AukTimeCursor;
 
-/* Helper macros for AukTimeSpan */
-#define AUKTIMESPAN_IS_EMPTY(ts) \
-    ((ts) == NULL || ((ts)->startHi == 0 && (ts)->startLo == 0 && \
-                      (ts)->endHi == 0 && (ts)->endLo == 0))
-
-#define AUKTIMECURSOR_IS_NULL(tc) ((tc) == NULL)
 
 #endif /* AUKTIMESEL_H */

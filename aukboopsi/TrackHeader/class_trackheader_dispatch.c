@@ -1,13 +1,17 @@
 
-
-
-#include <clib/alib_protos.h>
+#include <proto/exec.h>
+#include <proto/intuition.h>
+#include <proto/graphics.h>
+#include <proto/utility.h>
+#include <proto/layers.h>
+#include <proto/alib.h>
 #include <proto/dos.h>
-//#include <proto/utility.h>
+
 #include <intuition/classes.h>
 #include <intuition/classusr.h>
 #include <intuition/gadgetclass.h>
 #include <intuition/icclass.h>
+
 #include "class_trackheader.h"
 #include "class_trackheader_private.h"
 
@@ -20,14 +24,12 @@
 #include <proto/slider.h>
 #include <gadgets/slider.h>
 
-#include <proto/exec.h>
-#include <proto/intuition.h>
-#include <proto/graphics.h>
-#include <proto/utility.h>
-#include <proto/layers.h>
+
 #include "gadgetid.h"
 
 #include <stdio.h>
+
+void TrackListView_UpdateTrackList_Generic();
 
 typedef union MsgUnion
 {

@@ -3,7 +3,7 @@
 # Place this file in the aukadicty root directory as "makefile"
 
 MCPU ?= m68030
-USEJSON = 1
+USEJSON = 0
 CC = gcc
 AR = ar
 BUILDDIRAUK = build-gcc-$(MCPU)
@@ -20,9 +20,9 @@ HEADERS = \
  include/auktyperegistry.h include/serializer.h \
  include/aukiffserializer.h
 
-#ifeq ($(USEJSON), 1 )
+ifeq ($(USEJSON), 1 )
 HEADERS +=  cjson/cJSON.h include/aukjson.h sinclude/aukjsonserializer.h
-#endif
+endif
 # AukProject library objects
 LIBOBJS = \
  $(BUILDDIRAUK)/aukobject.o \
@@ -39,7 +39,7 @@ LIBOBJS = \
  $(BUILDDIRAUK)/auktyperegistry.o \
  $(BUILDDIRAUK)/aukiffserializer.o 
 
-#ifeq ($(USEJSON), 1 )
+ifeq ($(USEJSON), 1 )
 LIBOBJS += \
         $(BUILDDIRAUK)/aukjsonserializer.o \
         $(BUILDDIRAUK)/aukjson.o
@@ -47,7 +47,7 @@ LIBOBJS += \
 JSONLIBOBJS = \
         $(BUILDDIRJSON)/cJSON.o
 
-#endif
+endif
 
 # AukStreamCache library objects
 STREAMLIBOBJS = \

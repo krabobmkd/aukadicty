@@ -60,7 +60,24 @@ const char *VersionString = "infinitescroll.gadget 1.0 "; /* add date */
 const char InfiniteScrollSuperClassID[]=InfiniteScroll_SUPERCLASS_ID;
 
 
-
+/** for dispatcher, very wise use of union.
+ *  each  struct also starts with MethodID.
+ * and they are the very parameters for each methods.
+ */
+typedef union MsgUnion
+{
+  ULONG  MethodID;
+  /* from classusr.h or gadgetclass.h, all starts with MethodID. */
+  struct opSet        opSet;
+  struct opUpdate     opUpdate;
+  struct opGet        opGet;
+  struct gpHitTest    gpHitTest;
+  struct gpRender     gpRender;
+  struct gpInput      gpInput;
+  struct gpGoInactive gpGoInactive;
+  struct gpLayout     gpLayout;
+  struct gpDomain     gpDomain;
+} *Msgs;
 
 /* note: if other BOOPSI classes are dependences, they need to be opened here. */
 #ifndef INFINITESCROLL_STATICLINK

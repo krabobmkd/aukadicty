@@ -14,6 +14,7 @@
 #include "compilers.h"
 #include "aukiffserializer.h"
 #include "auktyperegistry.h"
+#include <stdio.h>
 
 /* External references to app globals from aukboopsi.c */
 extern struct Library *AslBase;
@@ -86,7 +87,7 @@ BOOL Action_ProjectOpen(AukActionContext *context) {
     }
 
     pproject = context->pproject;
- printf("Action_ProjectOpen: listeners:%08x\n", (*pproject)->base.base.listeners);
+// printf("Action_ProjectOpen: listeners:%08x\n", (*pproject)->base.base.listeners);
     /* Allocate and show file requester */
     request = AllocFileRequest();
     if (!request) {
@@ -154,7 +155,7 @@ BOOL Action_ProjectOpen(AukActionContext *context) {
     /* Deserialize into existing project */
     //ser->t_object(ser, "project",pproject);
     /* This version keep same object, so keep listener list */
-    (*pproject)->base.base.Serialize(*pproject,ser,"AukAProject");
+    (*pproject)->base.base.Serialize((AukObject *)*pproject,ser,"AukAProject");
 
     /* Clean up serializer and file */
     ser->Destroy(ser);
@@ -264,7 +265,7 @@ BOOL Action_ProjectSave(AukActionContext *context) {
     /* Serialize the project */
     //ser->t_object(ser, "project",pproject);
     /* version that keeps same object instance */
-    (*pproject)->base.base.Serialize(*pproject,ser,"AukAProject");
+    (*pproject)->base.base.Serialize((AukObject *)*pproject,ser,"AukAProject");
 
     /* Finalize IFF (writes correct FORM size) */
     if (!AukIFFSerializer_Finalize(ser)) {

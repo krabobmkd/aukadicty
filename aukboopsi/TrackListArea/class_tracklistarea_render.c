@@ -353,7 +353,7 @@ ULONG TrackListArea_Render(Class *C, struct Gadget *Gad, struct gpRender *Render
     for(itrack = 0; itrack < (int)gdata->_trackCount; itrack++)
     {
         int trtop,trbot,isSelected;
-        int yscrol = Gad->TopEdge - gdata->_scrollY;
+        //int yscrol = Gad->TopEdge - gdata->_scrollY;
         TrackChild *strack;
         strack = &gdata->_tracks[itrack];
         // shouldn't happen

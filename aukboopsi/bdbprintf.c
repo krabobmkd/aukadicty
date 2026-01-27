@@ -178,7 +178,7 @@ static volatile int classes_freed = 0;
  */
 int bdbprintf_makeclass(const char *className, void *classPtr)
 {
-    int result;
+    int result=0;
 
     classes_made++;
 
@@ -193,7 +193,7 @@ int bdbprintf_makeclass(const char *className, void *classPtr)
  */
 int bdbprintf_freeclass(const char *className, void *classPtr)
 {
-    int result;
+    int result=0;
 
     classes_freed++;
 

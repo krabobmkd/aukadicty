@@ -295,13 +295,14 @@ void TrackListArea_SetSoloTrack( struct Gadget *Gad,int iSoloedTrack)
 
     for(i=0;i<gdata->_trackCount;i++)
     {
+        ULONG solostate;
         strack = &gdata->_tracks[i];
         if( strack->_nbChannels == 0 ) continue;
         schan = &strack->_channels[0];
 
         if(!strack || !strack->_dataTrack || !schan->_trackHeader) continue;
 
-        ULONG solostate =
+        solostate =
             (iSoloedTrack==-1)?0:
             (iSoloedTrack==strack->_dataTrack->trackIndex)?1:2;
    //  printf("TrackListArea_SetSoloTrack%d with iSoloedTrack:%d\n",solostate, iSoloedTrack);
