@@ -12,7 +12,7 @@
 #include "class_trackarea_private.h"
 
 #include <utility/tagitem.h>
-
+#include "../aukeditmode.h"
 
 /* Most of the calls to boopsi methods are not done from the App's context,
  * but from a specific intuition context, and because of that we can't use DOS calls
@@ -28,6 +28,28 @@
 //#define MRK_BUFFER_SIZE 3
 // shared global state...
 extern int CurrentEditMode;
+
+// TRACKAREA_TimeSelectionChange
+static ULONG TrackListArea_NotifyAttribValue(struct Gadget *Gad, struct GadgetInfo *GInfo,ULONG attrib, ULONG value)
+{
+    struct opUpdate notifymsg;
+    ULONG tags[]={
+     GA_ID,0,
+     0,0,
+     TAG_DONE
+    };
+    tags[1] = Gad->GadgetID;
+    tags[2] = attrib;
+    tags[3] = value;
+    notifymsg.MethodID = OM_NOTIFY;
+    notifymsg.opu_AttrList = (struct TagItem *)&tags[0];
+    notifymsg.opu_GInfo = GInfo; // "always there for gadget, in all messages"
+    notifymsg.opu_Flags = 0;
+
+    return DoSuperMethodA(OCLASS(Gad),(APTR)Gad,(Msg)&notifymsg );
+}
+
+
 
 
 ULONG TrackArea_HandleInput(Class *C, struct Gadget *Gad, struct gpInput *Input, int isFirstActivate)
@@ -69,7 +91,7 @@ ULONG TrackArea_HandleInput(Class *C, struct Gadget *Gad, struct gpInput *Input,
             if(x>=gdata->Col[c] && x<gdata->Col[c+1])
               break;
           }
-
+if((Gad->Flags & GFLG_DISABLED)==0) 
 //          DKP("  c=%ld r=%ld\n", c, r);
 
           if(c<gdata->Cols && r<gdata->Rows)
@@ -92,136 +114,98 @@ ULONG TrackArea_HandleInput(Class *C, struct Gadget *Gad, struct gpInput *Input,
          {
 
           case SELECTUP:
-// bdbprintf("SELECTUP: %d %d\n",(int)(Input->gpi_Mouse).X,(int)(Input->gpi_Mouse).Y);
-//             gdata->_MouseMode=0;
-/*
+    bdbprintf("TA SELECTUP: %d %d\n",(int)(Input->gpi_Mouse).X,(int)(Input->gpi_Mouse).Y);
+            if( gdata->_MoveType == TRCKMOVE_Selection ||
+               gdata->_MoveType == TRCKMOVE_PanZoom )
+            {
+                gdata->_moveTimeEnd =
+                    (gdata->_pTimeProjection->_pixAtLeft
+                    + Input->gpi_Mouse.X) * gdata->_pTimeProjection->_timePerPixelWidth;
+                    // sendmessage
+                TrackListArea_NotifyAttribValue(Gad,Input->gpi_GInfo,
+                   (gdata->_MoveType == TRCKMOVE_Selection)?
+                        TRACKAREA_TimeSelectionChange:TRACKAREA_TimeZoomChange,
+                    (ULONG)&gdata->_moveTimeStart);
+                gdata->_MoveType = TRCKMOVE_NoMove;
+                //TODO sendmessage
 
-            {// inside gadget
-              ULONG em;
-
-              em=gdata->EditMode;
-              gdata->EditMode=0;
-
-
-              switch(em)
-              {
-                case TCPEM_COPY:
-                  i_AddUndo(gdata, gdata->ActivePen,0,0);
-                  gdata->Palette[gdata->ActivePen]=gdata->Palette[gdata->EMPen];
-                  gad_Render(C,Gad,(APTR)Input,GREDRAW_UPDATE);
-                  break;
-                case TCPEM_SPREAD:
-                  {
-                    ULONG l,c1,c2,c3,r1,r2,g1,g2,b1,b2;
-                    float p;
-
-
-//                        pr_SetUndoBuffer(PReq);
-
-                    if(gdata->EMPen>gdata->ActivePen)
-                    {
-                      c1=gdata->ActivePen;
-                      c2=gdata->EMPen;
-                    }
-                    else
-                    {
-                      c2=gdata->ActivePen;
-                      c1=gdata->EMPen;
-                    }
-
-                    c3=c2-c1;
-
-                    if(c3>1)
-                    {
-                      r1=gdata->Palette[c1].R;
-                      g1=gdata->Palette[c1].G;
-                      b1=gdata->Palette[c1].B;
-
-                      r2=gdata->Palette[c2].R;
-                      g2=gdata->Palette[c2].G;
-                      b2=gdata->Palette[c2].B;
-
-                      for(l=c1+1;l<c2;l++)
-                      {
-                        i_AddUndo(gdata, l ,0,!(l==(c1+1)));
-                        p=(float)(l-c1)/(float)c3;
-                        gdata->Palette[l].R       =pr_Mix(r1,r2,p);
-                        gdata->Palette[l].G       =pr_Mix(g1,g2,p);
-                        gdata->Palette[l].B       =pr_Mix(b1,b2,p);
-                      }
-                    }
-                  }
-                  gad_Render(C,Gad,(APTR)Input,GREDRAW_REDRAW);
-                  break;
-                case TCPEM_SWAP:
-                  {
-                    struct TCPaletteRGB dummy;
-
-                    i_AddUndo(gdata, gdata->ActivePen ,0,0);
-                    i_AddUndo(gdata, gdata->EMPen     ,0,1);
-
-                    dummy=gdata->Palette[gdata->ActivePen];
-                    gdata->Palette[gdata->ActivePen]=gdata->Palette[gdata->EMPen];
-                    gdata->Palette[gdata->EMPen]=dummy;
-                  }
-
-                  gad_Render(C,Gad,(APTR)Input,GREDRAW_REDRAW);
-                  break;
-
-                default:
-                  gad_Render(C,Gad,(APTR)Input,GREDRAW_UPDATE);
-              }
-
-              TrackArea_Notify(C,Gad,(APTR)Input, 0);
-
-              retval = GMR_MEACTIVE;
-//              retval = GMR_NOREUSE;
             }
-            */
-           retval = GMR_MEACTIVE;
-            break;
+            retval = GMR_NOREUSE;
+//              retval = GMR_MEACTIVE;
+//              retval = GMR_NOREUSE;
 
+           //retval = GMR_MEACTIVE;
+            break;
           case SELECTDOWN:
-    bdbprintf("SELECTDOWN: %d %d\n",(int)(Input->gpi_Mouse).X,(int)(Input->gpi_Mouse).Y);
+    bdbprintf("TA SELECTDOWN: %d %d\n",(int)(Input->gpi_Mouse).X,(int)(Input->gpi_Mouse).Y);
             // actually receive all clics on the whole WB !!
              if ( (((Input->gpi_Mouse).X < 0) ||
                  ((Input->gpi_Mouse).X >= Gad->Width) ||
                  ((Input->gpi_Mouse).Y < 0) ||
                  ((Input->gpi_Mouse).Y >= Gad->Height))
+                 || ((Gad->Flags & GFLG_DISABLED)!=0)
                   )
             {// outside gadget or disabled.
-
-//              if(gdata->_EditMode)
-//              {
-//                gdata->_EditMode=0;
-//                TrackArea_Render(C,Gad,(APTR)Input,GREDRAW_UPDATE);
-//              }
-//              retval = GMR_NOREUSE | GMR_VERIFY;
-              retval = GMR_REUSE;
+                // click outside ?
+                 retval = GMR_NOREUSE;
             }
-            else if((Gad->Flags & GFLG_DISABLED)==0) // don't manage clicks if disabled.
+            else // don't manage clicks if disabled.
             {
+                // mouse click inside gadget !
+                if((CurrentEditMode == EDITMODE_SELECT ||
+                   CurrentEditMode == EDITMODE_VOLUME ) &&
+                    gdata->_pTimeProjection )
+                   {
+                    if(CurrentEditMode)
+                        gdata->_MoveType = (CurrentEditMode==EDITMODE_SELECT)
+                            ? TRCKMOVE_Selection : TRCKMOVE_PanZoom ;
 
+                        gdata->_moveTimeEnd =
+                        gdata->_moveTimeStart ==
+                            (gdata->_pTimeProjection->_pixAtLeft
+                            + Input->gpi_Mouse.X) * gdata->_pTimeProjection->_timePerPixelWidth;
+                    // sendmessage
+                    TrackListArea_NotifyAttribValue(Gad,Input->gpi_GInfo,
+                       (gdata->_MoveType == TRCKMOVE_Selection)?
+                            TRACKAREA_TimeSelectionChange:TRACKAREA_TimeZoomChange,
+                        (ULONG)&gdata->_moveTimeStart);
 
-            // // mouse click inside gadget !
+                        retval = GMR_MEACTIVE;
+                   } else
+                   {
+                        retval = GMR_NOREUSE;
+                   }
             // // recenter circle proportionaly.
             // if(Gad->Width>0)
             //     cx = ((Input->gpi_Mouse).X <<16)/Gad->Width;
             // if(Gad->Height>0)
             //     cy = ((Input->gpi_Mouse).Y <<16)/Gad->Height;
 
-            //   gdata->_MouseMode=1;
-            //   SetGadgetAttrs(Gad,Input->gpi_GInfo->gi_Window,NULL,
-            //         TRACKAREA_CenterX,cx,
-            //         TRACKAREA_CenterY,cy,
-            //         TAG_END
-            //     );
-            //   //TrackArea_Render(C,Gad,(APTR)Input,GREDRAW_UPDATE);
 
-              retval = GMR_MEACTIVE;
+
             }
             break;
+            case IECODE_NOBUTTON:
+            {
+                /* if being moved */
+                if( gdata->_MoveType == TRCKMOVE_Selection ||
+                   gdata->_MoveType == TRCKMOVE_PanZoom )
+                {
+                    gdata->_moveTimeEnd =
+                        (gdata->_pTimeProjection->_pixAtLeft
+                        + Input->gpi_Mouse.X) * gdata->_pTimeProjection->_timePerPixelWidth;
 
+                    // sendmessage
+                    TrackListArea_NotifyAttribValue(Gad,Input->gpi_GInfo,
+                       (gdata->_MoveType == TRCKMOVE_Selection)?
+                            TRACKAREA_TimeSelectionChange:TRACKAREA_TimeZoomChange,
+                        (ULONG)&gdata->_moveTimeStart);
+
+                }
+    //bdbprintf("TA IECODE_NOBUTTON: %d %d\n",(int)(Input->gpi_Mouse).X,(int)(Input->gpi_Mouse).Y);
+
+            }
+             break;
  /* The user hit the menu button. Go inactive and let      */
                                      /* Intuition reuse the menu button event so Intuition can */
                                      /* pop up the menu bar.                                   */
@@ -240,6 +224,7 @@ ULONG TrackArea_HandleInput(Class *C, struct Gadget *Gad, struct gpInput *Input,
             break;
             */
           default:
+//    bdbprintf("TA ie->ie_Code: %d\n",ie->ie_Code);
             retval = GMR_MEACTIVE;
         } // end of
       } // end of IECLASS_RAWMOUSE
@@ -255,7 +240,7 @@ ULONG TrackArea_HandleInput(Class *C, struct Gadget *Gad, struct gpInput *Input,
 }
 
 
-ULONG TrackListArea_GoInactive(Class *C, struct Gadget *Gad,struct gpGoInactive *M)
+ULONG TrackArea_GoInactive(Class *C, struct Gadget *Gad,struct gpGoInactive *M)
 {
     return 0;
 

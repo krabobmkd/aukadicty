@@ -59,4 +59,9 @@
  */
 #define TRACKAREA_TimeSelection (TRACKAREA_Dummy+5)
 
+/* this is to notify change . It's pointer to 2x long long  */
+#define TRACKAREA_TimeSelectionChange (TRACKAREA_Dummy+6)
+/* this is to notify change . It's pointer to 2x long long  */
+#define TRACKAREA_TimeZoomChange (TRACKAREA_Dummy+7)
+
 #endif

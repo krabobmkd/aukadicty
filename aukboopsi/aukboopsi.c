@@ -71,7 +71,10 @@
 #include "aukmenu.h"
 #include "boopsidelay.h"
 #include "boopsidispose.h"
+
 #include "TrackListArea/class_tracklistarea.h"
+#include "TrackArea/class_trackarea.h"
+
 //#include "aukaproject.h"
 #include <aukadicty.h>
 
@@ -234,7 +237,8 @@ BoopsiDisposeQueue *ObjectLateDisposer=NULL;
 */
 static ULONG delayedAttribs[]={
     GA_Selected,SLIDER_Level,SCROLLER_Top,
-    TRACKLIST_ScrollY,TRACKLIST_TimeProjection,TRACKLIST_DomainHeight
+    TRACKLIST_ScrollY,TRACKLIST_TimeProjection,TRACKLIST_DomainHeight,
+    TRACKAREA_TimeSelectionChange,TRACKAREA_TimeZoomChange
 };
 #define nbDelayedAttribs (sizeof(delayedAttribs)/sizeof(ULONG))
 

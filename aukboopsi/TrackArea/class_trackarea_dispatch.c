@@ -154,7 +154,7 @@ ULONG ASM SAVEDS TrackArea_Dispatcher(
       retval=TrackArea_HandleInput(C,Gad,(struct gpInput *)M,FALSE);
      break;
    case GM_GOINACTIVE:
-      retval = TrackListArea_GoInactive(C,Gad,(struct gpGoInactive *)M);
+      retval = TrackArea_GoInactive(C,Gad,(struct gpGoInactive *)M);
      break;
 
     /* Let InfiniteScroll handle these: GM_RENDER, etc */

@@ -87,7 +87,7 @@ ULONG TrackArea_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set);
 ULONG TrackArea_GetAttr(Class *C, struct Gadget *Gad, struct opGet *Get);
 ULONG TrackArea_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout);
 ULONG TrackArea_HandleInput(Class *C, struct Gadget *Gad, struct gpInput *Input, int isFirstActivate );
-ULONG TrackListArea_GoInactive(Class *C, struct Gadget *Gad,struct gpGoInactive *M);
+ULONG TrackArea_GoInactive(Class *C, struct Gadget *Gad,struct gpGoInactive *M);
 
 ULONG TrackArea_Domain(Class *C, struct Gadget *Gad, struct gpDomain *D);
 
@@ -101,7 +101,7 @@ void TrackArea_RenderDelegate(InfiniteScrollRenderParams *p);
 * It may be better to just notify what change and have many notify functions per theme.
 * Some examples use only one Notify which send all attribs.
 */
-ULONG TrackArea_NotifyCoords(Class *C, struct Gadget *Gad, struct GadgetInfo	*GInfo);
+ULONG TrackArea_NotifySelection(Class *C, struct Gadget *Gad, struct GadgetInfo	*GInfo);
 
 /** this is the struct that is the extended struct Library
  * That is created with OpenLibrary().
