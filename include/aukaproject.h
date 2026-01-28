@@ -10,6 +10,7 @@
 
 #include "aukproject.h"
 #include "aukfixed.h"
+#include "aukselection.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -37,9 +38,7 @@ struct AukAProject {
     AukArrayPtr tracks;        /* Array of audio tracks (AukArray) */
 
     /* Selection state (not serialized) */
-    int hasSelection;          /* Boolean: 1 if time selection exists, 0 otherwise */
-    AukFixed selectionStart;   /* Start time of selection */
-    AukFixed selectionEnd;     /* End time of selection (exclusive) */
+    AukSelection selection;
 
     /* soloed track -1 means no solo (not serialized)  */
     int  soloTrack;
@@ -72,11 +71,11 @@ AukFixed AukAProject_GetDuration(void* This);
 void AukAProject_Clear(AukAProject* project);
 
 /* Selection accessors (not serialized) */
-void AukAProject_SetSelection(AukAProject* project, AukFixed start, AukFixed end);
+void AukAProject_SetSelection(AukAProject* project, AukSelection *selection);
+
 void AukAProject_ClearSelection(AukAProject* project);
 int AukAProject_HasSelection(AukAProject* project);
-AukFixed AukAProject_GetSelectionStart(AukAProject* project);
-AukFixed AukAProject_GetSelectionEnd(AukAProject* project);
+
 
 /* -1 means no solo, else track id */
 void AukAProject_SetSoloTrack(AukAProject* project, int soloTrackId);

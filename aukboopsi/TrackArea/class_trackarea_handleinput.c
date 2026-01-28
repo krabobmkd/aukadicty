@@ -14,6 +14,9 @@
 #include <utility/tagitem.h>
 #include "../aukeditmode.h"
 
+#include "gadgetid.h"
+#include "auktrack.h"
+
 /* Most of the calls to boopsi methods are not done from the App's context,
  * but from a specific intuition context, and because of that we can't use DOS calls
  * like dos/Printf() , and also stdlib printf().
@@ -30,15 +33,20 @@
 extern int CurrentEditMode;
 
 // TRACKAREA_TimeSelectionChange
-static ULONG TrackListArea_NotifyAttribValue(struct Gadget *Gad, struct GadgetInfo *GInfo,ULONG attrib, ULONG value)
+static ULONG TrackArea_NotifyAttribValue(struct Gadget *Gad, struct GadgetInfo *GInfo,ULONG attrib, ULONG value)
 {
+    TrackArea *gdata;
     struct opUpdate notifymsg;
     ULONG tags[]={
      GA_ID,0,
      0,0,
      TAG_DONE
     };
-    tags[1] = Gad->GadgetID;
+
+    gdata=INST_DATA(OCLASS(Gad), Gad);
+
+    // use same GA_ID interval as button in trackheaders, to tag message sender
+    tags[1] = GAD_TRACKHEADER_BASE | GAD_TRACKHEADER_TRACKAREA | ((gdata->_dataTrack->trackIndex) << 4) ; // Gad->GadgetID;
     tags[2] = attrib;
     tags[3] = value;
     notifymsg.MethodID = OM_NOTIFY;
@@ -118,17 +126,16 @@ if((Gad->Flags & GFLG_DISABLED)==0)
             if( gdata->_MoveType == TRCKMOVE_Selection ||
                gdata->_MoveType == TRCKMOVE_PanZoom )
             {
-                gdata->_moveTimeEnd =
+                gdata->_selection._end =
                     (gdata->_pTimeProjection->_pixAtLeft
                     + Input->gpi_Mouse.X) * gdata->_pTimeProjection->_timePerPixelWidth;
-                    // sendmessage
+
+                gdata->_MoveType = TRCKMOVE_NoMove;
+
                 TrackListArea_NotifyAttribValue(Gad,Input->gpi_GInfo,
                    (gdata->_MoveType == TRCKMOVE_Selection)?
                         TRACKAREA_TimeSelectionChange:TRACKAREA_TimeZoomChange,
-                    (ULONG)&gdata->_moveTimeStart);
-                gdata->_MoveType = TRCKMOVE_NoMove;
-                //TODO sendmessage
-
+                    (ULONG)&gdata->_selection);
             }
             retval = GMR_NOREUSE;
 //              retval = GMR_MEACTIVE;
@@ -160,15 +167,17 @@ if((Gad->Flags & GFLG_DISABLED)==0)
                         gdata->_MoveType = (CurrentEditMode==EDITMODE_SELECT)
                             ? TRCKMOVE_Selection : TRCKMOVE_PanZoom ;
 
-                        gdata->_moveTimeEnd =
-                        gdata->_moveTimeStart ==
+                        gdata->_selection._mode = 1;
+                        gdata->_selection._itrack = gdata->_dataTrack->trackIndex ;
+                        gdata->_selection._start =
+                        gdata->_selection._end =
                             (gdata->_pTimeProjection->_pixAtLeft
                             + Input->gpi_Mouse.X) * gdata->_pTimeProjection->_timePerPixelWidth;
                     // sendmessage
                     TrackListArea_NotifyAttribValue(Gad,Input->gpi_GInfo,
                        (gdata->_MoveType == TRCKMOVE_Selection)?
                             TRACKAREA_TimeSelectionChange:TRACKAREA_TimeZoomChange,
-                        (ULONG)&gdata->_moveTimeStart);
+                        (ULONG)&gdata->_selection);
 
                         retval = GMR_MEACTIVE;
                    } else
@@ -191,7 +200,7 @@ if((Gad->Flags & GFLG_DISABLED)==0)
                 if( gdata->_MoveType == TRCKMOVE_Selection ||
                    gdata->_MoveType == TRCKMOVE_PanZoom )
                 {
-                    gdata->_moveTimeEnd =
+                    gdata->_selection._end =
                         (gdata->_pTimeProjection->_pixAtLeft
                         + Input->gpi_Mouse.X) * gdata->_pTimeProjection->_timePerPixelWidth;
 
@@ -199,7 +208,7 @@ if((Gad->Flags & GFLG_DISABLED)==0)
                     TrackListArea_NotifyAttribValue(Gad,Input->gpi_GInfo,
                        (gdata->_MoveType == TRCKMOVE_Selection)?
                             TRACKAREA_TimeSelectionChange:TRACKAREA_TimeZoomChange,
-                        (ULONG)&gdata->_moveTimeStart);
+                        (ULONG)&gdata->_selection);
 
                 }
     //bdbprintf("TA IECODE_NOBUTTON: %d %d\n",(int)(Input->gpi_Mouse).X,(int)(Input->gpi_Mouse).Y);

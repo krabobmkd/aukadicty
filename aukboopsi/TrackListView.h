@@ -62,6 +62,7 @@ void TrackListView_setProject(TrackListView *pm,AukAProject *project);
 void TrackListView_ListenTrackListMessage(TrackListView *pm,struct opUpdate *M);
 void TrackListView_ListenScrollVMessage(TrackListView *pm,struct opUpdate *M);
 void TrackListView_ListenScrollHMessage(TrackListView *pm,struct opUpdate *M);
+/* also get message from all TrackArea */
 void TrackListView_ListenTrackHeaderMessage(TrackListView *pm,struct opUpdate *M, ULONG gadId);
 
 void TrackListView_SetEditMode(TrackListView *pm, int editMode);

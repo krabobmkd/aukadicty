@@ -189,6 +189,7 @@ void CreateTrackListView(TrackListView *pm,struct DrawInfo *drawInfo,
 static void AukUpdate_Track(AukObject* listenerObject, AukObject* modifiedObject,void *userData, AukMessage_AProject *message)
 {
     TrackListView *pm = (TrackListView *)userData;
+
     AukTrack *track = message->_track;
     if(!pm || !track) return;
     bdbprintf(" **** AukUpdate_Track ! \n");
@@ -259,11 +260,11 @@ static void AukUpdate_TrackList(AukObject* listenerObject, AukObject* modifiedOb
 {
     int signalupdate=0;
     struct Gadget *trackListAreaUi;
-    AukAProject *tracklist = (AukAProject*)modifiedObject;
+    AukAProject *project = (AukAProject*)modifiedObject;
     TrackListView *pm = (TrackListView *)userData;
 
     printf(" **** AukUpdate_TrackList ! \n");
-    if(!pm || !tracklist || !message) return;
+    if(!pm || !project || !message) return;
 
     trackListAreaUi = (struct Gadget *)pm->trackList;
     switch(message->type)
@@ -323,6 +324,14 @@ static void AukUpdate_TrackList(AukObject* listenerObject, AukObject* modifiedOb
 
             // pm->updateBits |= TLVB_UPDATE_REDRAW_JUSTHEADERS;
             // if(myTask) signalupdate=1;
+        }
+        break;
+        case AUK_MSG_SELECTIONCHANGED:
+        {
+            //AukAProject *project = (AukAProject*)modifiedObject;
+            AukSelection *sel = &project->selection;
+            TrackListArea_SetCurrentSelection(trackListAreaUi,sel);
+
         }
         break;
         default:
@@ -722,6 +731,36 @@ void TrackListView_ListenTrackHeaderMessage(TrackListView *pm,struct opUpdate *M
 
     switch(buttonId)
     {
+
+        case GAD_TRACKHEADER_TRACKAREA:
+        {
+            struct TagItem *ptag = M->opu_AttrList;
+            while(ptag->ti_Tag)
+            {
+                switch(ptag->ti_Tag)
+                {
+                    case TRACKAREA_TimeSelectionChange:
+                    {   /* affect selection noted in data, data will send update message */
+                        AukSelection *selection = (AukSelection *)ptag->ti_Data;
+                        AukAProject_SetSelection(project,selection);
+                    } break;
+                    case TRACKAREA_TimeZoomChange:
+                    {
+                        /* when moving just affect drawing, when bt up, change zoom.
+                            This is all TrackListArea (UI) internal things...
+                        */
+                        AukSelection *sel = (AukSelection *)ptag->ti_Data;
+                        TrackListArea_SetZoomSelectorRun((struct Gadget *)pm->trackList,sel);
+                    } break;
+                    default:
+                        break;
+                }
+                ptag++;
+            }
+
+             int isSelection = getGadgetMessageAttrib(M,WMHI_GADGETUP);
+        }
+        break;
         case GAD_TRACKHEADER_CLOSE:
         {
             // watch out receive events that are not necessarily "button action"

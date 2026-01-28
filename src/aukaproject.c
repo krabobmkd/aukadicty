@@ -364,9 +364,10 @@ void AukAProject_Init(AukAProject* project) {
         }
 
         /* Initialize selection state (not serialized) */
-        project->hasSelection = 0;
-        project->selectionStart = 0;
-        project->selectionEnd = 0;
+        project->selection._mode = 0;
+        project->selection._itrack = -1;
+        project->selection._start = 0;
+        project->selection._end = 0;
 
         project->soloTrack = -1;
     }
@@ -493,28 +494,25 @@ void AukProject_SetProjectContext(AukProject* project) {
 
 /* Selection accessors (not serialized) */
 
-void AukAProject_SetSelection(AukAProject* project, AukFixed start, AukFixed end)
+void AukAProject_SetSelection(AukAProject* project, AukSelection *selection)
 {
     AukMessage_AProject msg;
 
-    if (!project) return;
+    if (!project || !selection) return;
 
-    /* Check if values actually changed */
-    if (project->hasSelection &&
-        project->selectionStart == start &&
-        project->selectionEnd == end) {
-        return; /* No change */
-    }
+    if(project->selection._mode == selection->_mode &&
+        project->selection._itrack == selection->_itrack &&
+        project->selection._start == selection->_start &&
+        project->selection._end == selection->_end
+    ) return;
 
-    project->hasSelection = 1;
-    project->selectionStart = start;
-    project->selectionEnd = end;
+    project->selection = *selection;
 
     /* Send update notification */
     msg.type = AUK_MSG_SELECTIONCHANGED;
-    msg._track_id = -1;
+    msg._track_id = (project->selection._mode != 1)?project->selection._itrack:-1;
     msg._track = NULL;
-    msg._timeStart = start;
+    msg._timeStart = project->selection._start;
     project->base.base.SendUpdate(&project->base.base, (AukMessage*)&msg);
 }
 
@@ -525,13 +523,14 @@ void AukAProject_ClearSelection(AukAProject* project)
     if (!project) return;
 
     /* Check if already cleared */
-    if (!project->hasSelection) {
+    if (project->selection._mode !=0) {
         return; /* No change */
     }
 
-    project->hasSelection = 0;
-    project->selectionStart = 0;
-    project->selectionEnd = 0;
+    project->selection._mode = 0;
+    project->selection._itrack = -1;
+    project->selection._start = 0;
+    project->selection._end = 0;
 
     /* Send update notification */
     msg.type = AUK_MSG_SELECTIONCHANGED;
@@ -544,19 +543,7 @@ void AukAProject_ClearSelection(AukAProject* project)
 int AukAProject_HasSelection(AukAProject* project)
 {
     if (!project) return 0;
-    return project->hasSelection;
-}
-
-AukFixed AukAProject_GetSelectionStart(AukAProject* project)
-{
-    if (!project) return 0;
-    return project->selectionStart;
-}
-
-AukFixed AukAProject_GetSelectionEnd(AukAProject* project)
-{
-    if (!project) return 0;
-    return project->selectionEnd;
+    return (project->selection._mode!=0) ;
 }
 
 /* -1 means no solo, else track id */
@@ -626,9 +613,10 @@ void AukAProject_Clear(AukAProject* project)
     AukAProject_SetPreferences(project, 44100, 16);
 
     /* Clear selection state */
-    project->hasSelection = 0;
-    project->selectionStart = 0;
-    project->selectionEnd = 0;
+    project->selection._mode = 0;
+    project->selection._itrack = -1;
+    project->selection._start = 0;
+    project->selection._end = 0;
 
     /* Reset solo track */
     project->soloTrack = -1;

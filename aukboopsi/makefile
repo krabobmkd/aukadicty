@@ -42,7 +42,7 @@ OBJS = \
  $(BUILDDIR)/aukstylesheet.o \
  $(BUILDDIR)/bdbprintf.o \
  $(BUILDDIR)/offscreenbm.o \
- $(BUILDDIR)/boopsidelay.o \
+ $(BUILDDIR)/boopsimessage.o \
  $(BUILDDIR)/boopsidispose.o \
  $(BUILDDIRIS)/class_infinitescroll_attribs.o \
  $(BUILDDIRIS)/class_infinitescroll_dispatch.o \

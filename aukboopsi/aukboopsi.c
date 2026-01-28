@@ -69,11 +69,8 @@
 #include "aukaction.h"
 #include "aukstylesheet.h"
 #include "aukmenu.h"
-#include "boopsidelay.h"
+#include "boopsimessage.h"
 #include "boopsidispose.h"
-
-#include "TrackListArea/class_tracklistarea.h"
-#include "TrackArea/class_trackarea.h"
 
 //#include "aukaproject.h"
 #include <aukadicty.h>
@@ -83,9 +80,6 @@
 INLINE struct Window *boopsi_OpenWindow(Object *owin) {
     return  (struct Window *)DoMethod(owin, WM_OPEN, NULL);
 }
-
-
-typedef ULONG (*REHOOKFUNC)();
 
 struct Task	*myTask=NULL;
 
@@ -166,20 +160,6 @@ void cleanexit(const char *pmessage)
 void exitclose(void);
 
 void openAboutReq();
-// usefull union for dispatchers. Each structs also starts with MethodID.
-typedef union MsgUnion
-{
-  ULONG  MethodID;
-  // from classusr.h or gadgetclass.h, all starts with MethodID.
-  struct opSet        opSet;
-  struct opUpdate     opUpdate;
-  struct opGet        opGet;
-  struct gpHitTest    gpHitTest;
-  struct gpRender     gpRender;
-  struct gpInput      gpInput;
-  struct gpGoInactive gpGoInactive;
-  struct gpLayout     gpLayout;
-} *Msgs;
 
 // all app related variables are here:
 struct App
@@ -212,15 +192,8 @@ struct App
      // - - - retain document object
      AukAProjectPtr _project;
 
-     // - - - delayed BOOPSI notification queue
-     BoopsiDelayQueue delayQueue;
 };
-// - - - note having a private "boopsi object class and instance"
-// - - - makes it fancy to connect values and receive events.
-// Boopsi class pointer to manage our private modelclass.
-Class *AppModelClass = NULL;
-// App Model instance as a Boopsi object.
-Object *AppInstance = NULL;
+
 // App Modelinstance as our private struct.
 struct App *app=NULL;
 // This is the intuition level Window, on OS3 it's recreated when iconizing/reopening !
@@ -233,112 +206,6 @@ int CurrentEditMode = 0;
 
 BoopsiDisposeQueue *ObjectLateDisposer=NULL;
 
-/* The attribs we actually delay
-*/
-static ULONG delayedAttribs[]={
-    GA_Selected,SLIDER_Level,SCROLLER_Top,
-    TRACKLIST_ScrollY,TRACKLIST_TimeProjection,TRACKLIST_DomainHeight,
-    TRACKAREA_TimeSelectionChange,TRACKAREA_TimeZoomChange
-};
-#define nbDelayedAttribs (sizeof(delayedAttribs)/sizeof(ULONG))
-
-ULONG ASM SAVEDS AppModelDispatch(
-                    REG(a0,struct IClass *C),
-                    REG(a2,Object *obj),
-                    REG(a1,union MsgUnion *M))
-{
-  ULONG retval=0;
-
-  switch(M->MethodID)
-  {
-    case OM_NEW:
-        if((obj=(Object *)DoSuperMethodA(C,(Object *)obj,(Msg)M))!= NULL)
-        {
-            app=(struct App *)INST_DATA(C, obj);
-            memset(app,0,sizeof(struct App)); // absolutely *NOT* sure about this being cleaned, more secure.
-            BoopsiDelay_Init(&app->delayQueue);
-            retval = (ULONG)obj;
-        }
-    break;
-    case OM_DISPOSE:
-        retval=DoSuperMethodA(C,(Object *)obj,(Msg)M);
-      break;
-    case OM_NOTIFY:
-    case OM_UPDATE:
-        {
-            struct TagItem *ptag;
-            ULONG sender_ID=0;
-
-
-            /* active this to trace messages sent by gadgets
-             {
-                ptag = M->opUpdate.opu_AttrList;
-                while(ptag->ti_Tag != 0)
-                {
-                    bdbprintf("n:%08x %08x\n",ptag->ti_Tag,ptag->ti_Data);
-                    ptag++;
-                }
-                bdbprintf("\n");
-            }*/
-
-            if((ptag = FindTagItem( GA_ID,M->opUpdate.opu_AttrList ))!=NULL) sender_ID = ptag->ti_Data;
-
-            /* Queue message if sender_ID != 0 */
-            if (sender_ID != 0)
-            {
-                int i;
-                BoopsiDelay_BeginMessage(&app->delayQueue, sender_ID);
-                for(i=0;i<nbDelayedAttribs;i++)
-                {
-                    if ((ptag = FindTagItem(delayedAttribs[i], M->opUpdate.opu_AttrList)) != NULL)
-                        BoopsiDelay_AddTag(&app->delayQueue, delayedAttribs[i], ptag->ti_Data);
-                }
-
-                BoopsiDelay_EndMessage(&app->delayQueue);
-
-                /* Signal main loop to process queue */
-                if (myTask) Signal(myTask, SIGBREAKF_CTRL_F);
-
-                retval = 1;
-            }
-        }
-        break;
-    default:
-        retval=DoSuperMethodA(C,(Object *)obj,(Msg)M);
-    break;
-  }
-  return retval;
-}
-
-int initAppModel(void)
-{
-    // this is how you create a private transient class:
-    // -First param: no name needed for itself.
-    // - "modelclass" is super class name, which is the base for all boopsi class.
-    // a super class name or pointer must always be provided.
-    AppModelClass = MakeClass(NULL,"modelclass",NULL,sizeof(struct App),0);
-    if(!AppModelClass) return 0;
-    bdbprintf_makeclass("AppModel", AppModelClass);
-
-    AppModelClass->cl_Dispatcher.h_Entry = (REHOOKFUNC) &AppModelDispatch;
-
-    AppInstance = (Object *)NewObject( AppModelClass, NULL, TAG_DONE);
-    if(!AppInstance) return 0;
-
-    return 1;
-}
-void closeAppModel(void)
-{
-    if(AppInstance) DisposeObject(AppInstance);
-    AppInstance = NULL;
-    app=NULL;
-    if(AppModelClass)
-    {
-        bdbprintf_freeclass("AppModel", AppModelClass);
-        FreeClass(AppModelClass);
-    }
-    AppModelClass = NULL;
-}
 static int testprojectinited=0;
 int initProject();
 //  - - - -- - - - -  end of App modelclass management.
@@ -371,8 +238,11 @@ int main(int argc, char **argv)
     ObjectLateDisposer = (BoopsiDisposeQueue *)AllocVec(sizeof(BoopsiDisposeQueue),MEMF_CLEAR);
     if(!ObjectLateDisposer) exit(0);
 
-    if(!initAppModel())  cleanexit("Can't create app");
-//printf("AppInstance %08x\n",(int)AppInstance);
+    if(!initMessageTargetModel())  cleanexit("Can't create appmodel");
+
+    app = AllocVec(sizeof(struct App),MEMF_CLEAR);
+    if(!app)  cleanexit("Can't create app");
+
     /* BOOPSI needs */
     app->lockedscreen = LockPubScreen(NULL);
     if (!app->lockedscreen) cleanexit("Can't lock screen");
@@ -390,11 +260,11 @@ int main(int argc, char **argv)
     app->styleSheet->ApplyStyle( app->styleSheet,app->lockedscreen );
    bdbprintf(" **** main init style:%08x fontTiny:%08x \n",(int)&app->styleSheet->style,(int)app->styleSheet->style.fontTiny);
 
-    CreateHeaderView(&app->headerView, app->drawInfo, AppInstance, &app->styleSheet->style);
+    CreateHeaderView(&app->headerView, app->drawInfo, TargetInstance, &app->styleSheet->style);
 
-    CreateTrackListView(&app->tracksListView,app->drawInfo, AppInstance,&app->styleSheet->style);
+    CreateTrackListView(&app->tracksListView,app->drawInfo, TargetInstance,&app->styleSheet->style);
 
-    CreateFooterView(&app->footerView, app->drawInfo, AppInstance, &app->styleSheet->style);
+    CreateFooterView(&app->footerView, app->drawInfo, TargetInstance, &app->styleSheet->style);
 
     /* Create status bar */
     {
@@ -526,12 +396,12 @@ int main(int argc, char **argv)
                     {
                         /* releasing a button is only sent here
                           Pass it the same way gadget details are sent to
-                          AppInstance  OM_NOTIFY.*/
+                          TargetInstance  OM_NOTIFY.*/
 
                         ULONG senderId = result & WMHI_GADGETMASK;
-                        BoopsiDelay_BeginMessage(&app->delayQueue, senderId);
-                        BoopsiDelay_AddTag(&app->delayQueue,WMHI_GADGETUP,1);
-                        BoopsiDelay_EndMessage(&app->delayQueue);
+                        BoopsiDelay_BeginMessage(DelayQueue, senderId);
+                        BoopsiDelay_AddTag(DelayQueue,WMHI_GADGETUP,1);
+                        BoopsiDelay_EndMessage(DelayQueue);
 
                         break;
                     }
@@ -560,7 +430,7 @@ int main(int argc, char **argv)
                                 struct AukActionContext actionContext;
                                 actionContext.pproject = &app->_project;
                                 actionContext.appWindow = CurrentMainWindow;
-                                actionContext.appData = AppInstance;
+                                actionContext.appData = TargetInstance;
                                 action->func(&actionContext);
                             }
                         }
@@ -585,10 +455,10 @@ int main(int argc, char **argv)
                 all buttons, sliders, and other UI action
                 should be applied !
             */
-            if (BoopsiDelay_HasMessages(&app->delayQueue))
+            if (BoopsiDelay_HasMessages(DelayQueue))
             {
                 struct TagItem *msg;
-                while ((msg = BoopsiDelay_NextMessage(&app->delayQueue)) != NULL)
+                while ((msg = BoopsiDelay_NextMessage(DelayQueue)) != NULL)
                 {
                     struct opUpdate opUpd;
                     struct TagItem *ptag;
@@ -660,7 +530,7 @@ int main(int argc, char **argv)
 
 void exitclose(void)
 {
-           flushbdbprint();
+    flushbdbprint();
     printf("exitclose()\n");
     if(app)
     {
@@ -696,13 +566,16 @@ void exitclose(void)
         }
 
         if(app->drawInfo) FreeScreenDrawInfo(app->lockedscreen, app->drawInfo);
-        if(app->lockedscreen) UnlockPubScreen(0, app->lockedscreen);
+        if(app->lockedscreen) UnlockPubScreen(0, app->lockedscreen);        
 
+        /* Delete message port */
+        if (app->app_port) DeleteMsgPort(app->app_port);
+
+        FreeVec(app);
+        app = NULL;
     }
-    /* Delete message port */
-    if (app->app_port) DeleteMsgPort(app->app_port);
 
-    closeAppModel();
+    closeMessageTargetModel();
 
     CloseTrackListView_StaticClasses();
 

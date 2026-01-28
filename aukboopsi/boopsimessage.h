@@ -1,8 +1,9 @@
-#ifndef BOOPSIDELAY_H
-#define BOOPSIDELAY_H
+#ifndef BOOPSIMESSAGE_H
+#define BOOPSIMESSAGE_H
 
 /**
- * BoopsiDelay - Delayed message queue for BOOPSI gadget notifications
+ * BoopsiMessage - Delayed message queue for BOOPSI gadget notifications
+ * Also manage object that is the target for everyone to pass with ICA_TARGET.
  *
  * This module provides a FIFO queue for collecting OM_NOTIFY messages
  * from gadgets and processing them after the main WM_HANDLEINPUT loop.
@@ -17,24 +18,17 @@
 
 #include <exec/types.h>
 #include <utility/tagitem.h>
+#include <intuition/classusr.h>
 
-/* Maximum number of tag entries in the queue (128 pairs) */
-#define BOOPSIDELAY_QUEUE_SIZE 256
+int initMessageTargetModel(void);
+void closeMessageTargetModel(void);
 
-/* Queue structure - to be aggregated in App struct */
-typedef struct BoopsiDelayQueue
-{
-    struct TagItem queue[BOOPSIDELAY_QUEUE_SIZE];
-    UWORD writePos;     /* Next write position */
-    UWORD readPos;      /* Next read position */
-    BOOL hasMessages;   /* TRUE if there are pending messages */
-} BoopsiDelayQueue;
 
-/**
- * Initialize the notification queue
- */
-void BoopsiDelay_Init(BoopsiDelayQueue *q);
+struct BoopsiDelayQueue;
+typedef struct BoopsiDelayQueue BoopsiDelayQueue;
 
+extern BoopsiDelayQueue *DelayQueue;
+extern Object *TargetInstance;
 /**
  * Add a tag to the queue
  * @return TRUE if added successfully, FALSE if queue is full

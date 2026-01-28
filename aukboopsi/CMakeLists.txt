@@ -80,8 +80,8 @@ set(AUKBOOPSI_SOURCES
     bdbprintf.c
     bdbprintf.h
 
-    boopsidelay.c
-    boopsidelay.h
+    boopsimessage.c
+    boopsimessage.h
 
     boopsidispose.c
     boopsidispose.h

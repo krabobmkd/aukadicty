@@ -172,11 +172,8 @@ static int TrackListArea_EnsureTrackArray(TrackListArea *gdata)
     return 1;
 }
 
-extern Object *AppInstance;
-//static int TrackListArea_CreateTrackLine(
-//            struct Gadget *Gad,
-//            TrackListArea *gdata,
-//            TrackChild *strack, AukTrack *dataTrack, int iTrack)
+extern Object *TargetInstance;
+
 static int TrackListArea_CreateTrackChannelLine(
             struct Gadget *Gad,
             TrackListArea *gdata,
@@ -201,7 +198,7 @@ static int TrackListArea_CreateTrackChannelLine(
                             TRACKHEADER_StyleSheet, (ULONG)styleSheet,
                            //test LAYOUT_FillPen, gdata->_styleSheet->trackHeaderBG.pen,
                             TRACKHEADER_TrackIndex,iTrack,
-                            ICA_TARGET,AppInstance,
+                            ICA_TARGET,TargetInstance,
                             GA_DrawInfo, (ULONG)gdata->_drawInfo,
                             TRACKHEADER_Nametag,trackname, // optional, must be last
                             TAG_END);
@@ -236,6 +233,8 @@ static int TrackListArea_CreateTrackChannelLine(
                                    TRACKAREA_StyleSheet, (ULONG)styleSheet,
                                    TRACKAREA_PTimeProjection,(ULONG)&gdata->_timeProjection,
                                    TRACKAREA_DataTrack,(ULONG)dataTrack,
+                                   ICA_TARGET,TargetInstance,
+                                   //TRACKHEADER_TrackIndex,iTrack,
                                    TAG_END);
     if(schan->_trackArea)
     {
@@ -619,4 +618,65 @@ void TrackListArea_CheckTrackChannels( struct Gadget *Gad,int itrack)
 
 
 }
+/* sent during moving the select selector */
+void TrackListArea_SetCurrentSelection(struct Gadget *Gad, AukSelection *selection)
+{
+    ULONF itrack;
+   TrackListArea *gdata;
+    TrackChild *strack;
+    AukTrackPtr aukTrack;
+    ULONG nnbc;
 
+    if(!Gad || !selection) return;
+    gdata=INST_DATA(OCLASS(Gad), Gad);
+
+    /* propagate state ? */
+//    for( itrack=0 ; itrack<gdata->_trackCount ; itrack++ )
+//    {
+//        strack = &gdata->_tracks[itrack];
+
+
+//    ULONG     _nbChannels; // should be same as _dataTrack->channels
+//    TrackChannelChild *_channels;
+//        if(strack->)
+////        if(selection->_mode==0 ||
+////           (selection->_mode == 1 && itrack != selection->_itrack))
+////        {
+////            // unselect
+////            strack->
+////        } else if(selection->_mode==1)
+////        {
+
+////        } else if(selection->_mode==2)
+////        {
+
+////        }
+    }
+
+
+
+}
+/* sent during moving the zoom selctor */
+void TrackListArea_SetZoomSelectorRun(struct Gadget *Gad, AukSelection *zoomsel)
+{
+   TrackListArea *gdata;
+    TrackChild *strack;
+    AukTrackPtr aukTrack;
+    ULONG nnbc;
+
+    if(!Gad) return;
+    gdata=INST_DATA(OCLASS(Gad), Gad);
+
+
+}
+/* Apply last value sent to TrackListArea_SetZoomSelectorRun() at bt up */
+void TrackListArea_ApplyZoomSelectorRun(struct Gadget *Gad)
+{
+   TrackListArea *gdata;
+    TrackChild *strack;
+    AukTrackPtr aukTrack;
+    ULONG nnbc;
+
+    if(!Gad) return;
+    gdata=INST_DATA(OCLASS(Gad), Gad);
+}

@@ -841,4 +841,3 @@ unsigned long AukTrack_GetSampleRate(AukTrack* track)
     if (!track) return 0;
     return track->sampleRate;
 }
-

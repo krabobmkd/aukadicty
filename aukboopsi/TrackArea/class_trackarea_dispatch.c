@@ -94,12 +94,6 @@ ULONG ASM SAVEDS TrackArea_Dispatcher(
         gdata->_dataTrack = NULL;
         gdata->_justScroll = gdata->_fullRedraw = 0;
 
-#ifdef USE_BEVEL_FRAME
-          gdata->Bevel= NewObject(BEVEL_GetClass(),NULL,
-            BEVEL_Style, BVS_BUTTON,
-            BEVEL_FillPen, -1,
-            TAG_END);
-#endif
 
         /* Process TrackArea-specific attributes from creation tags */
         if(M->opSet.ops_AttrList)
@@ -128,9 +122,7 @@ ULONG ASM SAVEDS TrackArea_Dispatcher(
       bdbprintf_dispose("TrackArea", Gad);
       /* Release the data track reference */
       AukObjectPtr_Release((AukObjectPtr*)&gdata->_dataTrack);
-    #ifdef USE_BEVEL_FRAME
-        if(gdata->Bevel) DisposeObject(gdata->Bevel);
-    #endif
+
       /* Let InfiniteScroll clean up tiles, etc */
       retval=DoSuperMethodA(C,(Object *)Gad,(Msg)M);
       break;

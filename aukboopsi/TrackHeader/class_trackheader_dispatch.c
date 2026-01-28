@@ -309,7 +309,7 @@ ULONG ASM SAVEDS TrackHeader_Dispatcher(
 }
 
 // App Model instance as a Boopsi object.
-extern Object *AppInstance;
+extern Object *TargetInstance;
 void HeaderButton_Notify(Class *C, struct Gadget *Gad, struct GadgetInfo *ginfo)
 {
    struct opUpdate notifymsg;
@@ -333,14 +333,8 @@ void HeaderButton_Notify(Class *C, struct Gadget *Gad, struct GadgetInfo *ginfo)
     notifymsg.opu_AttrList = (struct TagItem *)&tags[0];
     notifymsg.opu_GInfo = ginfo; // "always there for gadget, in all messages"
     notifymsg.opu_Flags = 0;
-    return DoMethodA((APTR)AppInstance,(Msg)&notifymsg );
+    return DoMethodA((APTR)TargetInstance,(Msg)&notifymsg );
 
-  //  tags[3] = (ULONG)AppInstance;
-   // notifymsg.MethodID = OM_NOTIFY;
-   // notifymsg.opu_AttrList = (struct TagItem *)&tags[0];
-   // notifymsg.opu_GInfo = ginfo; // "always there for gadget, in all messages"
-   // notifymsg.opu_Flags = 0;
-   // return DoSuperMethodA(C,(APTR)Gad,(Msg)&notifymsg );
 }
 
 /*

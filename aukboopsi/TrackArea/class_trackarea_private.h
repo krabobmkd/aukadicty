@@ -4,7 +4,7 @@
 #include "compilers.h"
 #include "class_trackarea.h"
 #include "aukstyle.h"
-
+#include "aukselection.h"
 /* Include InfiniteScroll for superclass */
 #include "../InfiniteScroll/class_infinitescroll.h"
 
@@ -76,9 +76,7 @@ typedef struct ITrackArea {
     UBYTE _MoveType; /* what happens when click down and move. */
     UBYTE b,c,d;
     /* TRCKMOVE_Selection/TRCKMOVE_PanZoom during move. Unsorted */
-    long long _moveTimeStart;
-    long long _moveTimeEnd;
-
+    AukSelection _selection;
 
 
 } TrackArea;
