@@ -17,6 +17,7 @@
 #include "class_timerule.h"
 #include "class_timerule_private.h"
 #include "../aukstyle.h"
+#include "aukselection.h"
 
 /* Include InfiniteScroll private for access to superclass data */
 #include "../InfiniteScroll/class_infinitescroll_private.h"
@@ -217,53 +218,112 @@ void TimeRule_UpdateTimeInterval(TimeRule *gdata)
  * NOW
  * - Tile RastPort is at 0,0, size is TileWidth x TileHeight
  * - AbstractPos is the time value at the LEFT edge of this tile
+ *
+ * Selection rendering:
+ * - Mode 1: time span selection draws selected background color
  */
 void TimeRule_RenderDelegate(InfiniteScrollRenderParams *p)
 {
     int iloop=0;
     LONG px;
     TimeRule *gdata;
-     struct TextFont *font=NULL; /* consider can fail with NULL, ony draw texts if present. */
+    struct TextFont *font=NULL; /* consider can fail with NULL, ony draw texts if present. */
     /* Time range for this TimeRule (from attributes) */
     long long timeLeft;
     /* Drawing parameters */
     long long timePerPixel;
     long long currentTime,currentTimeMin;
     char timeBuf[32];
-//    return;
+    /* Selection variables */
+    AukSelection *selection;
+    LONG selPixLeft, selPixRight;
+    int selectionActive;
+    WORD penBackground, penBackgroundSelected;
 
     struct Gadget *Gad = p->Gad;
     struct RastPort *rp = p->rp;
-//    bdbprintf("TimeRule_RenderDelegate %08x %08x\n",(int)Gad,(int)rp);
     if( !Gad || !rp) return ;
 
-    gdata = INST_DATA(TimeRuleClassPtr, Gad); // note superclass can't send final class pointer implementation
+    gdata = INST_DATA(TimeRuleClassPtr, Gad);
 
-//    bdbprintf("render gdata: %08x\n",(int)gdata);
-
-     /* Get time range from TimeRule attributes */
-     timePerPixel = gdata->_timePerPixelWidth;
-
-//bdbprintf("render timePerPixel: %08x.%08x\n",(int)(timePerPixel>>32),(int)timePerPixel);
-//bdbprintf("render minorTickInterval: %08x.%08x\n",(int)(gdata->minorTickInterval>>32),(int)gdata->minorTickInterval);
-//bdbprintf("render majorTickInterval: %08x.%08x\n",(int)(gdata->majorTickInterval>>32),(int)gdata->majorTickInterval);
-//bdbprintf("render minorTickInterval: %08x.%08x\n",(int)(gdata->minorTickInterval>>32),(int)gdata->minorTickInterval);
-//bdbprintf("render majorTickInterval: %08x.%08x\n",(int)(gdata->majorTickInterval>>32),(int)gdata->majorTickInterval);
- // 0.33
- // 1.00
+    /* Get time range from TimeRule attributes */
+    timePerPixel = gdata->_timePerPixelWidth;
 
     if( timePerPixel == 0 ||
        gdata->minorTickInterval ==0 || gdata->majorTickInterval==0 )
     {
-       // bdbprintf("render minorTickInterval/majorTickInterval not layouted???\n");
         return;
     }
-    /* Clear tile to background (pen 0 = typically grey) */
-    SetAPen(rp, 0 /*+ ((int)p->_start._scrollx)/128*/);
-    SetBPen(rp, 0);
-    RectFill(rp, p->destX, p->destY, p->destWidth - 1, p->destHeight - 1);
 
-     timeLeft = timePerPixel * p->_start._scrollx;
+    /* Get background pens from style */
+    penBackground = 0;
+    penBackgroundSelected = 0;
+    if(gdata->_style)
+    {
+        if(gdata->_style->selectedBackground.pen != -1)
+            penBackgroundSelected = gdata->_style->selectedBackground.pen;
+    }
+
+    /* Determine selection state */
+    selectionActive = 0;
+    selPixLeft = -1;
+    selPixRight = -1;
+    selection = gdata->_timeSelection;
+
+    if(selection && selection->_mode == 1)
+    {
+        /* Mode 1: time span selection (for any _itrack value) */
+        selPixLeft = (LONG)((selection->_start / timePerPixel) - p->_start._scrollx);
+        selPixRight = (LONG)((selection->_end / timePerPixel) - p->_start._scrollx);
+
+        /* If start==end, means cursor - need 1 pixel */
+        if(selPixLeft == selPixRight) selPixRight++;
+
+        /* Clamp to tile bounds */
+        if(selPixLeft < p->destX) selPixLeft = p->destX;
+        if(selPixRight > (LONG)(p->destWidth - 1)) selPixRight = p->destWidth - 1;
+        if(selPixLeft <= selPixRight) selectionActive = 1;
+    }
+
+    /* Clear tile to background with selection handling */
+    SetBPen(rp, penBackground);
+
+    if(selectionActive)
+    {
+        LONG tileLeft = p->destX;
+        LONG tileRight = p->destWidth - 1;
+
+        /* Part before selection */
+        if(tileLeft < selPixLeft)
+        {
+            SetAPen(rp, penBackground);
+            RectFill(rp, tileLeft, p->destY, selPixLeft - 1, p->destHeight - 1);
+        }
+        /* Part within selection */
+        {
+            LONG selStart = (tileLeft > selPixLeft) ? tileLeft : selPixLeft;
+            LONG selEnd = (tileRight < selPixRight) ? tileRight : selPixRight;
+            if(selStart <= selEnd)
+            {
+                SetAPen(rp, penBackgroundSelected);
+                RectFill(rp, selStart, p->destY, selEnd, p->destHeight - 1);
+            }
+        }
+        /* Part after selection */
+        if(tileRight > selPixRight)
+        {
+            SetAPen(rp, penBackground);
+            RectFill(rp, selPixRight + 1, p->destY, tileRight, p->destHeight - 1);
+        }
+    }
+    else
+    {
+        /* No selection - fill entire tile with normal background */
+        SetAPen(rp, penBackground);
+        RectFill(rp, p->destX, p->destY, p->destWidth - 1, p->destHeight - 1);
+    }
+
+    timeLeft = timePerPixel * p->_start._scrollx;
 //bdbprintf("render timeLeft: %08x.%08x\n",(int)(timeLeft>>32),(int)timeLeft);
      /* Now, Abstract InfiniteScroll only give a pixel offset position for the left border of this tile.
 

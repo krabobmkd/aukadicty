@@ -72,9 +72,6 @@ ULONG TimeRule_GetAttr(Class *C, struct Gadget *Gad, struct opGet *Get)
     case TIMERULE_StyleSheet:
         *data = (ULONG)gdata->_style;
         break;
-    case TIMERULE_TimeCursor:
-        *data = (ULONG)gdata->_timeCursor;
-        break;
     case TIMERULE_TimeSelection:
         *data = (ULONG)gdata->_timeSelection;
         break;
@@ -139,19 +136,9 @@ ULONG TimeRule_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
         }
 
        }break;
-      case TIMERULE_TimeCursor:
-      {
-        AukTimeCursor *newCursor = (AukTimeCursor *)data;
-        if(newCursor != gdata->_timeCursor)
-        {
-            gdata->_timeCursor = newCursor;
-            fullRedraw = 1;
-            used = 1;
-        }
-      }break;
       case TIMERULE_TimeSelection:
       {
-        AukTimeSpan *newSelection = (AukTimeSpan *)data;
+        AukSelection *newSelection = (AukSelection *)data;
         if(newSelection != gdata->_timeSelection)
         {
             gdata->_timeSelection = newSelection;

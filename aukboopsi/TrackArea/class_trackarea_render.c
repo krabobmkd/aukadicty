@@ -136,29 +136,44 @@ ULONG TrackArea_Domain(Class *C, struct Gadget *Gad, struct gpDomain *D)
  * - Left edge time = _pixAtLeft * _timePerPixelWidth
  * - Right edge time = (_pixAtLeft + gadgetWidth) * _timePerPixelWidth
  * - For this tile: tileLeftTime = (p->_start._scrollx) * _timePerPixelWidth
+ *
+ * Selection rendering:
+ * - Mode 0: no selection, use normal colors
+ * - Mode 1: time span selection for track selection->_itrack
+ * - Mode 2: whole track selected if track->selectionFlags & AukTrackSelFlag_Selected
  */
 void TrackArea_RenderDelegate(InfiniteScrollRenderParams *p)
 {
     TrackArea *gdata;
-    int penbg = 1;
     struct Gadget *Gad = p->Gad;
     struct RastPort *rp = p->rp;
     TimeProjection *proj;
+    AukSelection *selection = NULL;
     AukTrack *track;
     AukArray *sounds;
     unsigned int soundCount, i;
     long long timePerPixel;
     long long tileLeftTime, tileRightTime;
-    AukStyle *style = gdata->_style;
-    WORD penBackground,penBgSound;
+    AukStyle *style;
+    WORD penBackground, penBgSound;
+    WORD penBackgroundSelected, penBgSoundSelected;
+    /* Selection pixel span (-1 means no selection active for this track) */
+    LONG selPixLeft, selPixRight;
+    int selectionActive;
+
     if(!Gad || !rp) return;
 
     gdata = INST_DATA(TrackAreaClassPtr, Gad);
 
+    selection = gdata->_dataSelection;
+
     /* Style concern... */
     style = gdata->_style;
-    penBackground = (style->background.pen!=-1)?style->background.pen:1;
-    penBgSound = (style->soundBackground.pen!=-1)?style->soundBackground.pen:2;
+    penBackground = (style->background.pen != -1) ? style->background.pen : 1;
+    penBgSound = (style->soundBackground.pen != -1) ? style->soundBackground.pen : 2;
+
+    penBackgroundSelected = (style->selectedBackground.pen != -1) ? style->selectedBackground.pen : 1;
+    penBgSoundSelected = (style->selectedSoundBackground.pen != -1) ? style->selectedSoundBackground.pen : 2;
 
     /* Check we have required data */
     proj = gdata->_pTimeProjection;
@@ -192,6 +207,37 @@ void TrackArea_RenderDelegate(InfiniteScrollRenderParams *p)
     tileLeftTime = p->_start._scrollx * timePerPixel;
     tileRightTime = (p->_start._scrollx + p->destWidth) * timePerPixel;
 
+    /* Determine selection state for this track */
+    selectionActive = 0;
+    selPixLeft = -1;
+    selPixRight = -1;
+
+    if(selection)
+    {
+        if(selection->_mode == 1 && track->trackIndex == selection->_itrack)
+        {
+            /* Mode 1: time span selection for this specific track */
+            selPixLeft = (LONG)((selection->_start / timePerPixel) - p->_start._scrollx);
+            selPixRight = (LONG)((selection->_end / timePerPixel) - p->_start._scrollx) /*- 1*/;
+
+            /* specifc: of start==end, means cursor. need 1 pixel */
+            if(selPixLeft == selPixRight) selPixRight++;
+
+            /* Clamp to tile bounds */
+            if(selPixLeft < p->destX) selPixLeft = p->destX;
+            if(selPixRight > (LONG)(p->destWidth - 1)) selPixRight = p->destWidth - 1;
+            if(selPixLeft <= selPixRight) selectionActive = 1;
+        }
+        else if(selection->_mode == 2 && (track->selectionFlags & AukTrackSelFlag_Selected))
+        {
+            /* Mode 2: whole track is selected */
+            selPixLeft = p->destX;
+            selPixRight = p->destWidth - 1;
+            selectionActive = 2;
+        }
+        /* Mode 0: no selection, selectionActive stays 0 */
+    }
+
     /* Track current X position for gap filling - sounds are sorted and non-overlapping */
     {
         LONG currentX = p->destX;
@@ -222,22 +268,97 @@ void TrackArea_RenderDelegate(InfiniteScrollRenderParams *p)
             if(pixRight > tileRight) pixRight = tileRight;
 
             /* Skip if completely outside tile after clamping */
-            if(pixLeft >= pixRight) continue;
+            if(pixLeft > pixRight) continue;
 
             /* Fill background gap before this sound */
             if(currentX < pixLeft)
             {
-                SetAPen(rp, penBackground);
-                RectFill(rp, currentX, p->destY, pixLeft - 1, p->destHeight - 1);
+                LONG gapLeft = currentX;
+                LONG gapRight = pixLeft - 1;
+
+                if(selectionActive && gapRight >= selPixLeft && gapLeft <= selPixRight)
+                {
+                    /* Gap intersects selection - split into up to 3 parts */
+                    /* Part before selection */
+                    if(gapLeft < selPixLeft)
+                    {
+                        SetAPen(rp, penBackground);
+                        RectFill(rp, gapLeft, p->destY, selPixLeft - 1, p->destHeight - 1);
+                    }
+                    /* Part within selection */
+                    {
+                        LONG selStart = (gapLeft > selPixLeft) ? gapLeft : selPixLeft;
+                        LONG selEnd = (gapRight < selPixRight) ? gapRight : selPixRight;
+                        if(selStart <= selEnd)
+                        {
+                            SetAPen(rp, penBackgroundSelected);
+                            RectFill(rp, selStart, p->destY, selEnd, p->destHeight - 1);
+                        }
+                    }
+                    /* Part after selection */
+                    if(gapRight > selPixRight)
+                    {
+                        SetAPen(rp, penBackground);
+                        RectFill(rp, selPixRight + 1, p->destY, gapRight, p->destHeight - 1);
+                    }
+                }
+                else
+                {
+                    /* No selection intersection - normal background */
+                    SetAPen(rp, penBackground);
+                    RectFill(rp, gapLeft, p->destY, gapRight, p->destHeight - 1);
+                }
             }
 
             /* Draw sound rectangle (with 2px margin top/bottom for visibility) */
-            SetAPen(rp, penBackground);
-            RectFill(rp, pixLeft, p->destY, pixRight, p->destY + 1);
-            SetAPen(rp, penBgSound);
-            RectFill(rp, pixLeft, p->destY + 2, pixRight, p->destHeight - 3);
-            SetAPen(rp, penBackground);
-            RectFill(rp, pixLeft, p->destHeight - 2, pixRight, p->destHeight - 1);
+            if(selectionActive && pixRight >= selPixLeft && pixLeft <= selPixRight)
+            {
+                /* Sound intersects selection - split into up to 3 parts */
+                /* Part before selection */
+                if(pixLeft < selPixLeft)
+                {
+                    SetAPen(rp, penBackground);
+                    RectFill(rp, pixLeft, p->destY, selPixLeft - 1, p->destY + 1);
+                    SetAPen(rp, penBgSound);
+                    RectFill(rp, pixLeft, p->destY + 2, selPixLeft - 1, p->destHeight - 3);
+                    SetAPen(rp, penBackground);
+                    RectFill(rp, pixLeft, p->destHeight - 2, selPixLeft - 1, p->destHeight - 1);
+                }
+                /* Part within selection */
+                {
+                    LONG selStart = (pixLeft > selPixLeft) ? pixLeft : selPixLeft;
+                    LONG selEnd = (pixRight < selPixRight) ? pixRight : selPixRight;
+                    if(selStart <= selEnd)
+                    {
+                        SetAPen(rp, penBackgroundSelected);
+                        RectFill(rp, selStart, p->destY, selEnd, p->destY + 1);
+                        SetAPen(rp, penBgSoundSelected);
+                        RectFill(rp, selStart, p->destY + 2, selEnd, p->destHeight - 3);
+                        SetAPen(rp, penBackgroundSelected);
+                        RectFill(rp, selStart, p->destHeight - 2, selEnd, p->destHeight - 1);
+                    }
+                }
+                /* Part after selection */
+                if(pixRight > selPixRight)
+                {
+                    SetAPen(rp, penBackground);
+                    RectFill(rp, selPixRight + 1, p->destY, pixRight, p->destY + 1);
+                    SetAPen(rp, penBgSound);
+                    RectFill(rp, selPixRight + 1, p->destY + 2, pixRight, p->destHeight - 3);
+                    SetAPen(rp, penBackground);
+                    RectFill(rp, selPixRight + 1, p->destHeight - 2, pixRight, p->destHeight - 1);
+                }
+            }
+            else
+            {
+                /* No selection intersection - normal colors */
+                SetAPen(rp, penBackground);
+                RectFill(rp, pixLeft, p->destY, pixRight, p->destY + 1);
+                SetAPen(rp, penBgSound);
+                RectFill(rp, pixLeft, p->destY + 2, pixRight, p->destHeight - 3);
+                SetAPen(rp, penBackground);
+                RectFill(rp, pixLeft, p->destHeight - 2, pixRight, p->destHeight - 1);
+            }
 
             currentX = pixRight + 1;
         }
@@ -245,8 +366,41 @@ void TrackArea_RenderDelegate(InfiniteScrollRenderParams *p)
         /* Fill remaining background after last sound */
         if(currentX <= tileRight)
         {
-            SetAPen(rp, penBackground);
-            RectFill(rp, currentX, p->destY, tileRight, p->destHeight - 1);
+            LONG gapLeft = currentX;
+            LONG gapRight = tileRight;
+
+            if(selectionActive && gapRight >= selPixLeft && gapLeft <= selPixRight)
+            {
+                /* Gap intersects selection - split into up to 3 parts */
+                /* Part before selection */
+                if(gapLeft < selPixLeft)
+                {
+                    SetAPen(rp, penBackground);
+                    RectFill(rp, gapLeft, p->destY, selPixLeft - 1, p->destHeight - 1);
+                }
+                /* Part within selection */
+                {
+                    LONG selStart = (gapLeft > selPixLeft) ? gapLeft : selPixLeft;
+                    LONG selEnd = (gapRight < selPixRight) ? gapRight : selPixRight;
+                    if(selStart <= selEnd)
+                    {
+                        SetAPen(rp, penBackgroundSelected);
+                        RectFill(rp, selStart, p->destY, selEnd, p->destHeight - 1);
+                    }
+                }
+                /* Part after selection */
+                if(gapRight > selPixRight)
+                {
+                    SetAPen(rp, penBackground);
+                    RectFill(rp, selPixRight + 1, p->destY, gapRight, p->destHeight - 1);
+                }
+            }
+            else
+            {
+                /* No selection intersection - normal background */
+                SetAPen(rp, penBackground);
+                RectFill(rp, gapLeft, p->destY, gapRight, p->destHeight - 1);
+            }
         }
     }
 

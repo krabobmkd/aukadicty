@@ -42,12 +42,8 @@ ULONG TrackArea_GetAttr(Class *C, struct Gadget *Gad, struct opGet *Get)
         *data = (ULONG)gdata->_dataTrack;
         break;
 
-    case TRACKAREA_TimeCursor:
-        *data = (ULONG)gdata->_timeCursor;
-        break;
-
     case TRACKAREA_TimeSelection:
-        *data = (ULONG)gdata->_timeSelection;
+        *data = (ULONG)gdata->_dataSelection;
         break;
 
     /* super class gadget things. would manage attribs selected/highlighted, ... */
@@ -105,15 +101,9 @@ ULONG TrackArea_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
         redraw = 1;
         break;
 
-      case TRACKAREA_TimeCursor:
-        /* data is a pointer to AukTimeCursor (64-bit time position) */
-        gdata->_timeCursor = (AukTimeCursor *)data;
-        redraw = 1;
-        break;
-
       case TRACKAREA_TimeSelection:
-        /* data is a pointer to AukTimeSpan (selection start/end) */
-        gdata->_timeSelection = (AukTimeSpan *)data;
+        /* data is a pointer to AukSelection (selection start/end) */
+        gdata->_dataSelection = (AukSelection *)data;
         redraw = 1;
         break;
 

@@ -233,6 +233,7 @@ static int TrackListArea_CreateTrackChannelLine(
                                    TRACKAREA_StyleSheet, (ULONG)styleSheet,
                                    TRACKAREA_PTimeProjection,(ULONG)&gdata->_timeProjection,
                                    TRACKAREA_DataTrack,(ULONG)dataTrack,
+                                   TRACKAREA_TimeSelection,(ULONG)&(gdata->_project->selection), /* the shared selection state */
                                    ICA_TARGET,TargetInstance,
                                    //TRACKHEADER_TrackIndex,iTrack,
                                    TAG_END);
@@ -621,7 +622,7 @@ void TrackListArea_CheckTrackChannels( struct Gadget *Gad,int itrack)
 /* sent during moving the select selector */
 void TrackListArea_SetCurrentSelection(struct Gadget *Gad, AukSelection *selection)
 {
-    ULONF itrack;
+    ULONG itrack;
    TrackListArea *gdata;
     TrackChild *strack;
     AukTrackPtr aukTrack;
@@ -630,29 +631,39 @@ void TrackListArea_SetCurrentSelection(struct Gadget *Gad, AukSelection *selecti
     if(!Gad || !selection) return;
     gdata=INST_DATA(OCLASS(Gad), Gad);
 
+    /*
+        How to refresh on selection change ?
+        Very hard question, there could have some TrackArea changing and other not.
+        Also the TimeRule display selection.
+        As TrackArea and TimeRule are InfiniteScroll, refresh affect all buffering.
+        Strategy:
+         - send very precise message about selection change
+         - send GM_RENDER at our level
+
+
+        // redrawing everything could be a littyle too much.
+    */
+
+
     /* propagate state ? */
-//    for( itrack=0 ; itrack<gdata->_trackCount ; itrack++ )
-//    {
-//        strack = &gdata->_tracks[itrack];
+    for( itrack=0 ; itrack<gdata->_trackCount ; itrack++ )
+    {
+        ULONG ichan;
+        strack = &gdata->_tracks[itrack];
 
-
-//    ULONG     _nbChannels; // should be same as _dataTrack->channels
-//    TrackChannelChild *_channels;
-//        if(strack->)
-////        if(selection->_mode==0 ||
-////           (selection->_mode == 1 && itrack != selection->_itrack))
-////        {
-////            // unselect
-////            strack->
-////        } else if(selection->_mode==1)
-////        {
-
-////        } else if(selection->_mode==2)
-////        {
-
-////        }
+        for( ichan=0 ; ichan<strack->_nbChannels ; ichan++)
+        {
+            TrackChannelChild *chanchild = &strack->_channels[ichan];
+            if(chanchild->_layouted && chanchild->_trackArea)
+            {
+                //todo optimize, if not selected should redraw.
+                /* because they are InifniteScroll, need explicit tile refresh */
+                SetAttrs(chanchild->_trackArea, INFINITESCROLL_FullTilesRefresh,TRUE,TAG_END);
+            }
+        }
     }
 
+    SetGadgetAttrs(Gad,CurrentMainWindow,NULL, TRACKLIST_JustTracksRefresh,TRUE,TAG_END);
 
 
 }

@@ -14,7 +14,7 @@
 
 /* Include TrackListArea header for TimeProjection definition */
 #include "../TrackListArea/class_tracklistarea.h"
-#include "../auktimesel.h"
+#include "aukselection.h"
 
 #define VERSION_TRACKAREA 1
 /* TrackArea inherits from InfiniteScroll (class pointer, not string) */
@@ -47,19 +47,14 @@
  */
 #define	TRACKAREA_DataTrack		(TRACKAREA_Dummy+3)
 
-/* Pointer to AukTimeCursor (64-bit fixed-point time position).
- * NULL means no cursor displayed. Used for playback/edit cursor.
- * Apply to OM_NEW OM_SET OM_GET.
- */
-#define TRACKAREA_TimeCursor (TRACKAREA_Dummy+4)
-
-/* Pointer to AukTimeSpan (selection start and end times).
+/* Pointer to AukSelection (selection start and end times).
+ * can be set once to shared value, then render refresh by the other refresh means.
  * NULL or both values == 0 means no selection.
  * Apply to OM_NEW OM_SET OM_GET.
  */
 #define TRACKAREA_TimeSelection (TRACKAREA_Dummy+5)
 
-/* this is to notify change . It's pointer to 2x long long  */
+/* this is to notify change, when clicks on us , so change are applied  . It's pointer to 2x long long  */
 #define TRACKAREA_TimeSelectionChange (TRACKAREA_Dummy+6)
 /* this is to notify change . It's pointer to 2x long long  */
 #define TRACKAREA_TimeZoomChange (TRACKAREA_Dummy+7)

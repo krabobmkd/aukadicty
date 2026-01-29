@@ -96,6 +96,7 @@ void CreateTrackListView(TrackListView *pm,struct DrawInfo *drawInfo,
     pm->timerule = (Object *)NewObject( TIMERULE_GetClass(), NULL,
                             TIMERULE_StyleSheet,(ULONG)stylesheet,
                             ICA_TARGET,appModel,
+                            TIMERULE_TimeSelection,
                             TAG_END);
 
 
@@ -331,7 +332,14 @@ static void AukUpdate_TrackList(AukObject* listenerObject, AukObject* modifiedOb
             //AukAProject *project = (AukAProject*)modifiedObject;
             AukSelection *sel = &project->selection;
             TrackListArea_SetCurrentSelection(trackListAreaUi,sel);
+            if(pm->timerule)
+            {
+                /* "Next refresh, update all tiles" */
+                SetAttrs(pm->timerule, INFINITESCROLL_FullTilesRefresh,TRUE,TAG_END);
 
+                SetGadgetAttrs((struct Gadget *)pm->timerule,CurrentMainWindow,NULL,
+                     TIMERULE_Refresh,TRUE,TAG_END );
+            }
         }
         break;
         default:
@@ -517,6 +525,14 @@ void TrackListView_setProject(TrackListView *pm,AukAProject *project)
                       (void*)pm, // userData
                       &AukUpdate_TrackList //AukUpdateCallback callback
                       );
+
+       if(pm->timerule)
+       {
+            SetGadgetAttrs((struct Gadget *)pm->timerule,CurrentMainWindow,NULL,
+                            TIMERULE_TimeSelection, (ULONG)&project->selection,
+                             TAG_END );
+
+       }
     }
     // retain project
     AukObjectPtr_Set(&pm->project,&project->base.base);
@@ -733,7 +749,7 @@ void TrackListView_ListenTrackHeaderMessage(TrackListView *pm,struct opUpdate *M
     {
 
         case GAD_TRACKHEADER_TRACKAREA:
-        {
+        {        
             struct TagItem *ptag = M->opu_AttrList;
             while(ptag->ti_Tag)
             {

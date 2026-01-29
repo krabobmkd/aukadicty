@@ -7,17 +7,18 @@
 extern "C" {
 #endif
 
-/* AukSound structure - inherits from AukObject */
+/* AukSelection: tells what is selected at project level.
+    _mode== 0 no selection,
+    _mode==1 track span for a single track: (_itrack,_start,_end),
+    _mode==2: one or more whole tracks are selected: for each tracks in project, track is selected if AukTrack flags tells it.
+ */
 typedef struct AukSelection {
-    int _mode;   // 0 no selection, 1 track span, 1 or more whole tracks
+    int _mode;   //
     int _itrack; // when time span apply,  mode 1, else should be -1
     long long _start;
     long long _end;
 } AukSelection;
 
-//    int hasSelection;          /* Boolean: 1 if time selection exists, 0 otherwise */
-//    AukFixed selectionStart;   /* Start time of selection */
-//    AukFixed selectionEnd;     /* End time of selection (exclusive) */
 #ifdef __cplusplus
 }
 #endif

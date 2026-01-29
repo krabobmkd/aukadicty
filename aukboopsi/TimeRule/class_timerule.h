@@ -14,7 +14,7 @@
 
 /* TimeRule inherits from InfiniteScroll for tile caching */
 #include "../InfiniteScroll/class_infinitescroll.h"
-#include "../auktimesel.h"
+#include "aukselection.h"
 
 #define VERSION_TIMERULE 1
 /* Use InfiniteScroll as superclass - requires INFINITESCROLL_GetClass() */
@@ -39,16 +39,10 @@
 
 #define TIMERULE_Refresh (TIMERULE_Dummy+3)
 
-/* Pointer to AukTimeCursor (64-bit fixed-point time position).
- * NULL means no cursor displayed. Used for playback/edit cursor.
- * Apply to OM_NEW OM_SET OM_GET.
- */
-#define TIMERULE_TimeCursor (TIMERULE_Dummy+4)
-
-/* Pointer to AukTimeSpan (selection start and end times).
+/* Pointer to AukSelection (selection start and end times).
  * NULL or both values == 0 means no selection.
  * Apply to OM_NEW OM_SET OM_GET.
  */
-#define TIMERULE_TimeSelection (TIMERULE_Dummy+5)
+#define TIMERULE_TimeSelection (TIMERULE_Dummy+4)
 
 #endif

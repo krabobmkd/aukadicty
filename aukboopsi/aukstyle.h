@@ -36,6 +36,7 @@ struct AukStyle
     ManagedColor trackBackground;      /* Track empty background (dark gray) */
     ManagedColor soundBackground;      /* Sound clip background (lighter) */
     ManagedColor selectedBackground;   /* Selected region background */
+    ManagedColor selectedSoundBackground;      /* Sound clip background when selected */
 
     ManagedColor trackHighlight,trackHighlight2;   /*  */
 

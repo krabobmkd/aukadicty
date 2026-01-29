@@ -126,16 +126,16 @@ if((Gad->Flags & GFLG_DISABLED)==0)
             if( gdata->_MoveType == TRCKMOVE_Selection ||
                gdata->_MoveType == TRCKMOVE_PanZoom )
             {
-                gdata->_selection._end =
+                gdata->_inputselection._end =
                     (gdata->_pTimeProjection->_pixAtLeft
                     + Input->gpi_Mouse.X) * gdata->_pTimeProjection->_timePerPixelWidth;
 
                 gdata->_MoveType = TRCKMOVE_NoMove;
 
-                TrackListArea_NotifyAttribValue(Gad,Input->gpi_GInfo,
+                TrackArea_NotifyAttribValue(Gad,Input->gpi_GInfo,
                    (gdata->_MoveType == TRCKMOVE_Selection)?
                         TRACKAREA_TimeSelectionChange:TRACKAREA_TimeZoomChange,
-                    (ULONG)&gdata->_selection);
+                    (ULONG)&gdata->_inputselection);
             }
             retval = GMR_NOREUSE;
 //              retval = GMR_MEACTIVE;
@@ -163,21 +163,21 @@ if((Gad->Flags & GFLG_DISABLED)==0)
                    CurrentEditMode == EDITMODE_VOLUME ) &&
                     gdata->_pTimeProjection )
                    {
-                    if(CurrentEditMode)
                         gdata->_MoveType = (CurrentEditMode==EDITMODE_SELECT)
                             ? TRCKMOVE_Selection : TRCKMOVE_PanZoom ;
 
-                        gdata->_selection._mode = 1;
-                        gdata->_selection._itrack = gdata->_dataTrack->trackIndex ;
-                        gdata->_selection._start =
-                        gdata->_selection._end =
+
+                        gdata->_inputselection._mode = 1;
+                        gdata->_inputselection._itrack = gdata->_dataTrack->trackIndex ;
+                        gdata->_inputselection._start =
+                        gdata->_inputselection._end =
                             (gdata->_pTimeProjection->_pixAtLeft
                             + Input->gpi_Mouse.X) * gdata->_pTimeProjection->_timePerPixelWidth;
                     // sendmessage
-                    TrackListArea_NotifyAttribValue(Gad,Input->gpi_GInfo,
+                    TrackArea_NotifyAttribValue(Gad,Input->gpi_GInfo,
                        (gdata->_MoveType == TRCKMOVE_Selection)?
                             TRACKAREA_TimeSelectionChange:TRACKAREA_TimeZoomChange,
-                        (ULONG)&gdata->_selection);
+                        (ULONG)&gdata->_inputselection);
 
                         retval = GMR_MEACTIVE;
                    } else
@@ -200,15 +200,15 @@ if((Gad->Flags & GFLG_DISABLED)==0)
                 if( gdata->_MoveType == TRCKMOVE_Selection ||
                    gdata->_MoveType == TRCKMOVE_PanZoom )
                 {
-                    gdata->_selection._end =
+                    gdata->_inputselection._end =
                         (gdata->_pTimeProjection->_pixAtLeft
                         + Input->gpi_Mouse.X) * gdata->_pTimeProjection->_timePerPixelWidth;
 
                     // sendmessage
-                    TrackListArea_NotifyAttribValue(Gad,Input->gpi_GInfo,
+                    TrackArea_NotifyAttribValue(Gad,Input->gpi_GInfo,
                        (gdata->_MoveType == TRCKMOVE_Selection)?
                             TRACKAREA_TimeSelectionChange:TRACKAREA_TimeZoomChange,
-                        (ULONG)&gdata->_selection);
+                        (ULONG)&gdata->_inputselection);
 
                 }
     //bdbprintf("TA IECODE_NOBUTTON: %d %d\n",(int)(Input->gpi_Mouse).X,(int)(Input->gpi_Mouse).Y);

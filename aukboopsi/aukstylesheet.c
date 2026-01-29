@@ -133,10 +133,13 @@ void AukStyleSheet_Serialize(AukObject* This, ISerializer* ser, const char* pNam
     }
 
     /* Serialize colors (only rgbcolor field, pen/allocated are runtime) */
-    ser->t_uint(ser, "background",(ULONG*) &styleSheet->style.background.rgbcolor);
-    ser->t_uint(ser, "trackBackground",(ULONG*) &styleSheet->style.trackBackground.rgbcolor);
-    ser->t_uint(ser, "soundBackground",(ULONG*) &styleSheet->style.soundBackground.rgbcolor);
-    ser->t_uint(ser, "selectedBackground",(ULONG*) &styleSheet->style.selectedBackground.rgbcolor);
+    ser->t_uint(ser, "bg",(ULONG*) &styleSheet->style.background.rgbcolor);
+    ser->t_uint(ser, "trBg",(ULONG*) &styleSheet->style.trackBackground.rgbcolor);
+    ser->t_uint(ser, "sndBg",(ULONG*) &styleSheet->style.soundBackground.rgbcolor);
+
+    ser->t_uint(ser, "selBg",(ULONG*) &styleSheet->style.selectedBackground.rgbcolor);
+    ser->t_uint(ser, "selSd",(ULONG*) &styleSheet->style.selectedSoundBackground.rgbcolor);
+
 
     ser->t_uint(ser, "trackhl",(ULONG*) &styleSheet->style.trackHighlight.rgbcolor);
 
@@ -282,6 +285,7 @@ int AukStyleSheet_ApplyStyle(void* This, struct Screen *scr) {
         ObtainPenForRGB(cm, &styleSheet->style.trackBackground);
         ObtainPenForRGB(cm, &styleSheet->style.soundBackground);
         ObtainPenForRGB(cm, &styleSheet->style.selectedBackground);
+        ObtainPenForRGB(cm, &styleSheet->style.selectedSoundBackground);
 
         ObtainPenForRGB(cm, &styleSheet->style.trackHighlight);
         ObtainPenForRGB(cm, &styleSheet->style.trackHighlight2);
@@ -343,6 +347,7 @@ void AukStyleSheet_ReleasePens(void* This) {
     ReleasePenIfValid(cm, &styleSheet->style.trackBackground);
     ReleasePenIfValid(cm, &styleSheet->style.soundBackground);
     ReleasePenIfValid(cm, &styleSheet->style.selectedBackground);
+    ReleasePenIfValid(cm, &styleSheet->style.selectedSoundBackground);
 
     ReleasePenIfValid(cm, &styleSheet->style.trackHighlight);
     ReleasePenIfValid(cm, &styleSheet->style.trackHighlight2);
@@ -478,6 +483,10 @@ void AukStyleSheet_Init(AukStyleSheet* styleSheet) {
         styleSheet->style.selectedBackground.rgbcolor = 0x005566AA; /* Selected region - blue highlight */
         styleSheet->style.selectedBackground.pen = -1;
         styleSheet->style.selectedBackground.allocated = 0;
+
+        styleSheet->style.selectedSoundBackground.rgbcolor = 0x007575BB; /* Selected region - blue highlight */
+        styleSheet->style.selectedSoundBackground.pen = -1;
+        styleSheet->style.selectedSoundBackground.allocated = 0;
 
         styleSheet->style.trackHighlight.rgbcolor = 0x00FFDD00;
         styleSheet->style.trackHighlight.pen = -1;

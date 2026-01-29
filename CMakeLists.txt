@@ -124,6 +124,7 @@ set(AUKADICTY_HEADERS
     include/auktyperegistry.h
     include/serializer.h
     include/aukiffserializer.h
+    include/aukselection.h
 
 )
 if(ENABLEJSONSERIAL)

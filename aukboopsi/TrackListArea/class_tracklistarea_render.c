@@ -316,6 +316,7 @@ ULONG TrackListArea_Render(Class *C, struct Gadget *Gad, struct gpRender *Render
     struct RastPort *rp;
     int bLayerUpdating=FALSE;
     LONG itrack,iChannel;
+    AukSelection *selection=NULL;
     LONG topedge; //,leftedge,width,height;
      int selectionBorderWidth=2;
      int prevSelected=0;
@@ -339,7 +340,10 @@ ULONG TrackListArea_Render(Class *C, struct Gadget *Gad, struct gpRender *Render
 //    leftedge = Gad->LeftEdge;
 //    width = Gad->Width;
 //    height = Gad->Height;
-
+    if( gdata->_project )
+    {
+        selection = &gdata->_project->selection ;
+    }
 
 	// if( ( rp->Layer->Flags & LAYERUPDATING ) != 0L )
 	// {
@@ -362,31 +366,76 @@ ULONG TrackListArea_Render(Class *C, struct Gadget *Gad, struct gpRender *Render
         trtop = strack->_channels[0]._top;
         trbot = strack->_channels[strack->_nbChannels-1]._bottom;
         isSelected = strack->_dataTrack->selectionFlags & AukTrackSelFlag_Selected;
+        if(selection && selection->_mode == 1 &&
+              selection->_itrack ==  strack->_dataTrack->trackIndex ) isSelected = 1;
         //if()
         // draw left border trackBackground
         //bdbprintf("_styleSheet %08x top %d bot %d\n",gdata->_styleSheet,trtop,trbot);
 
         /* draw marges that tells selection */
-        SetAPen(rp,
-            isSelected?gdata->_styleSheet->trackHighlight.pen:
-                               gdata->_styleSheet->trackBackground.pen );
-                               // trackBackground
-        { /*up the track*/
+
+        /* intermarge top/bottom */
+        {
             int y1 = trtop-selectionBorderWidth;
             int y2 = trtop-1;
+
             if(y1<=gdata->_framerec.MaxY &&
                 y2>=gdata->_framerec.MinY )
+            if(isSelected||prevSelected)
             {
+                SetAPen(rp,
+                    (prevSelected)? gdata->_styleSheet->trackHighlight.pen:
+                        gdata->_styleSheet->trackBackground.pen);
+
+                    RectFill(rp,gdata->_framerec.MinX, y1,
+                    gdata->_framerec.MaxX, y1 );
+                if(y2-y1>2)
+                {
+                    SetAPen(rp, gdata->_styleSheet->trackHighlight2.pen);
+                            RectFill(rp,gdata->_framerec.MinX, y1+1,
+                        gdata->_framerec.MaxX, y2-1 );
+                }
+
+                SetAPen(rp,
+                    (isSelected)? gdata->_styleSheet->trackHighlight.pen:
+                        gdata->_styleSheet->trackBackground.pen);
+
+                    RectFill(rp,gdata->_framerec.MinX, y2,
+                    gdata->_framerec.MaxX, y2 );
+// trackHighlight2
+            } else
+            {
+                // not selected
+                SetAPen(rp,gdata->_styleSheet->trackBackground.pen );
                 RectFill(rp,gdata->_framerec.MinX, y1,
                             gdata->_framerec.MaxX, y2 );
+
             }
         }
-        { /*left*/
-            int y1 = trtop-selectionBorderWidth;
-            int y2 = trbot+selectionBorderWidth-1;
-            if(y1<=gdata->_framerec.MaxY &&
-                y2>=gdata->_framerec.MinY )
+
+        /*left*/
+        {
+            int y1 = trtop;
+            int y2 = trbot-1;
+            if(isSelected)
             {
+                /* note: amiga bitmap wise, this should, ...must be a bitmap copy. */
+                if(selectionBorderWidth>2)
+                {
+                    SetAPen(rp,gdata->_styleSheet->trackBackground.pen);
+                    RectFill(rp,gdata->_framerec.MinX, y1,
+                                gdata->_framerec.MinX+selectionBorderWidth-3, y2 );
+                }
+                SetAPen(rp,gdata->_styleSheet->trackHighlight2.pen);
+                RectFill(rp,gdata->_framerec.MinX+selectionBorderWidth-2, y1,
+                            gdata->_framerec.MinX+selectionBorderWidth-2, y2 );
+
+                SetAPen(rp,gdata->_styleSheet->trackHighlight.pen);
+                RectFill(rp,gdata->_framerec.MinX+selectionBorderWidth-1, y1,
+                            gdata->_framerec.MinX+selectionBorderWidth-1, y2 );
+            } else
+            {
+                SetAPen(rp, gdata->_styleSheet->trackBackground.pen );
                 RectFill(rp,gdata->_framerec.MinX, y1,
                             gdata->_framerec.MinX+selectionBorderWidth-1, y2 );
             }
@@ -421,7 +470,7 @@ ULONG TrackListArea_Render(Class *C, struct Gadget *Gad, struct gpRender *Render
               //  if(prevfont) SetFont(rp,prevfont);
             }
             if(!chan->_layouted) continue;
-            if(volumeRule && ((filter & 1)!=0)) // if layouted && selected for refresh
+            if(volumeRule && ((filter & 2)!=0)) // if layouted && selected for refresh
             {
                 DoMethodA((Object*)volumeRule, (Msg)Render); // not DoGadgetMethodA in that case
             }

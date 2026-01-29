@@ -92,6 +92,7 @@ ULONG ASM SAVEDS TrackArea_Dispatcher(
         gdata->_pTimeProjection = NULL;
         gdata->_style = NULL;
         gdata->_dataTrack = NULL;
+        gdata->_dataSelection = NULL;
         gdata->_justScroll = gdata->_fullRedraw = 0;
 
 

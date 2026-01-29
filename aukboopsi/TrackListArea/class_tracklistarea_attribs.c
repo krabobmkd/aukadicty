@@ -192,7 +192,7 @@ ULONG TrackListArea_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
     {
         int filter=(tag->ti_Tag==TRACKLIST_JustTracksRefresh)?1:3;
         if(tag->ti_Tag==TRACKLIST_JustHeadersRefresh) filter=2;
-        //bdbprintf("TrackListArea_SetAttrs TRACKLIST_Refresh:%08x\n",(int)Set->ops_GInfo);
+
         // goes layout...
         {
             struct gpLayout gpl;

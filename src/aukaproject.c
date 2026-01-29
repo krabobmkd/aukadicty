@@ -507,6 +507,14 @@ void AukAProject_SetSelection(AukAProject* project, AukSelection *selection)
     ) return;
 
     project->selection = *selection;
+    /* some magic, if selction is from an UI, start end may be inverted. */
+    if(project->selection._mode == 1 &&
+        project->selection._start> project->selection._end)
+    {
+        long long s = project->selection._start;
+        project->selection._start = project->selection._end;
+        project->selection._end = s;
+    }
 
     /* Send update notification */
     msg.type = AUK_MSG_SELECTIONCHANGED;

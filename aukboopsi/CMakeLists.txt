@@ -71,8 +71,6 @@ set(AUKBOOPSI_SOURCES
     aukmenu.c
     aukmenu.h
 
-    auktimesel.h
-
     aukstylesheet.c
     aukstylesheet.h
     gadgetid.h

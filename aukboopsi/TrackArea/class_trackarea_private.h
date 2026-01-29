@@ -54,17 +54,11 @@ typedef struct ITrackArea {
     /* next GM_RENDER will do accordingly */
     WORD _justScroll, _fullRedraw;
 
-    /* Pointer to time cursor position (64-bit fixed-point seconds).
-     * This is used to draw selection span
-     * NULL means no cursor displayed.
-     */
-    AukTimeCursor *_timeCursor;
-
     /* Pointer to time selection span (start and end times).
      * NULL or both values == 0 means no selection.
      * This is used to draw selection span
      */
-    AukTimeSpan *_timeSelection;
+    AukSelection *_dataSelection;
 
 #define TRCKMOVE_NoMove 0
 #define TRCKMOVE_Selection 1
@@ -75,8 +69,11 @@ typedef struct ITrackArea {
 
     UBYTE _MoveType; /* what happens when click down and move. */
     UBYTE b,c,d;
-    /* TRCKMOVE_Selection/TRCKMOVE_PanZoom during move. Unsorted */
-    AukSelection _selection;
+    /* TRCKMOVE_Selection/TRCKMOVE_PanZoom during move.This is the value told by input, yet not set in data
+        Thus, don't use this elsewhere than input methods and notify.
+        The really applied selection is pointed by _dataSelection.
+    */
+    AukSelection _inputselection;
 
 
 } TrackArea;
