@@ -11,6 +11,8 @@
 #include <intuition/classusr.h>
 #include <intuition/gadgetclass.h>
 #include <utility/tagitem.h>
+#include <intuition/screens.h>
+#include <graphics/text.h>
 
 #include "class_trackheader.h"
 #include "class_trackheader_private.h"
@@ -166,7 +168,6 @@ ULONG TrackHeader_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout)
     gdata->_framerec.MaxX = leftedge + width  -2;
     gdata->_framerec.MaxY = topedge  + height -2;
 
-
     /* Layout constants */
    // volumeRuleWidth = 32;
     leftPartWidth = width ;
@@ -177,13 +178,25 @@ ULONG TrackHeader_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout)
   row1height = 22;
     row2height = 16;
     sliderheight = 22;
+    closeW = 20;
 
-    if(rowHeight<row1height) row1height = rowHeight;
+    if(gdata->_gadgetInfo &&
+        gdata->_gadgetInfo->gi_DrInfo &&
+        gdata->_gadgetInfo->gi_DrInfo->dri_Font )
+    {
+        struct TextFont	*tfont = gdata->_gadgetInfo->gi_DrInfo->dri_Font;
+        int btheight =  tfont->tf_YSize+8;
+        if(row1height< btheight)
+        {
+         row1height = btheight;
+         closeW = btheight+2;
+        }
+    }
+
+  //  if(rowHeight<row1height) row1height = rowHeight;
    if(rowHeight<row2height) row2height = rowHeight;
     if(rowHeight<sliderheight) sliderheight = rowHeight;
 
-
-    closeW = 18;
     labelW = 28;  /* Width for "Vol." and "Pan" labels */
     sliderX = leftedge + labelW;
     sliderW = leftPartWidth - labelW - 2;
@@ -313,4 +326,45 @@ ULONG TrackHeader_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout)
     }
 
   return(1);
+}
+/* need to fill gaps, supercall already done */
+void TrackHeader_Render(Class *C, struct Gadget *Gad, struct gpRender *Render)
+{
+    TrackHeader *gdata;
+    struct Gadget *sub;
+    struct RastPort *rp;
+    AukStyle *style;
+    LONG topedge,leftedge,width,height;
+
+    if(!Render->gpr_RPort) return;
+
+    rp = Render->gpr_RPort;
+
+    gdata=INST_DATA(C, Gad);
+    style = gdata->_style;
+    if(!style) return;
+
+    topedge = Gad->TopEdge;
+    leftedge = Gad->LeftEdge;
+    width = Gad->Width;
+    height = Gad->Height;
+
+
+
+    sub = (struct Gadget *)gdata->subs[THS_CloseButton];
+    if(sub)
+    {
+        SetAPen(rp,style->white.pen);
+        RectFill(rp,
+                    leftedge,topedge,
+                    leftedge,topedge+height
+                    );
+        RectFill(rp,
+                    leftedge+sub->Width+1,topedge,
+                    leftedge+sub->Width+1,topedge+sub->Height
+                    );
+
+
+    }
+
 }

@@ -58,7 +58,7 @@ typedef union MsgUnion
 
 /* Forward declaration for layout function */
 ULONG TrackHeader_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout);
-//ULONG TrackHeader_Render(Class *C, struct Gadget *Gad, struct gpRender *Render);
+void TrackHeader_Render(Class *C, struct Gadget *Gad, struct gpRender *Render);
 
 /** WATCH OUT ! boopsi docs says:
 *  "the rkmmodelclass dispatcher must be able to run on Intuition's context,
@@ -186,6 +186,7 @@ ULONG ASM SAVEDS TrackHeader_Dispatcher(
             gdata->subs[THS_VolLabel] = NewObject( HEADERBUTTON_GetClass(),NULL,
                                         GA_Text,(ULONG)"Vol.",
                                         GA_ReadOnly,TRUE,
+                                         GA_TextAttr,(ULONG) &style->fontTiny_TA,
                                      //   GA_DrawInfo,(ULONG)drawInfo,
                                         BUTTON_BevelStyle,BVS_NONE,
                                         BUTTON_Transparent, TRUE,
@@ -206,6 +207,7 @@ ULONG ASM SAVEDS TrackHeader_Dispatcher(
             gdata->subs[THS_PanLabel] = NewObject( HEADERBUTTON_GetClass(),NULL,
                                         GA_Text,(ULONG)"Pan",
                                         GA_ReadOnly,TRUE,
+                                         GA_TextAttr,(ULONG) &style->fontTiny_TA,
                                        // GA_DrawInfo,(ULONG)drawInfo,
                                         BUTTON_BevelStyle,BVS_NONE,
                                         BUTTON_Transparent, TRUE,
@@ -291,6 +293,13 @@ ULONG ASM SAVEDS TrackHeader_Dispatcher(
         retval = TrackHeader_Layout(C, Gad, (struct gpLayout *)M);
       }
       break;
+    case GM_RENDER:
+        retval=DoSuperMethodA(C,(Object *)Gad,(Msg)M);
+        /* also need to backfill empty spaces (experimental) */
+        TrackHeader_Render(C,(Object *)Gad,&M->gpRender);
+        retval=1;
+    break;
+
     case OM_UPDATE:
     case OM_SET:
       retval = TrackHeader_SetAttrs(C,Gad,(struct opSet *)M);
@@ -642,9 +651,9 @@ ULONG ASM SAVEDS HeaderSlider_Dispatcher(
         TrackListView_UpdateTrackList_Generic();
         retval = 1;
         break;
-    case GM_RENDER:
-        retval=DoSuperMethodA(C,(Object *)Gad,(Msg)M);
-    break;
+    // case GM_RENDER:
+    //     retval=DoSuperMethodA(C,(Object *)Gad,(Msg)M);
+    // break;
 
     default:
     {
