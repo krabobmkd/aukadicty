@@ -63,12 +63,22 @@ enum {
     MSG_EDIT_CUT,
     MSG_EDIT_PASTE,
 
-    /* Menu: Tracks */
-    MSG_MENU_TRACKS,
-    MSG_TRACKS_ADD,
+    /* Menu: View */
+    MSG_MENU_VIEW,
+    MSG_VIEW_ZOOMIN,
+    MSG_VIEW_ZOOMOUT,
+    MSG_VIEW_COLLAPSE_TRACKS,
+    MSG_VIEW_EXPAND_TRACKS,
+    MSG_VIEW_ICONIFY,
+
+    /* Menu: Modify */
+    MSG_MENU_MODIFY,
 
     /* Menu: Generate */
     MSG_MENU_GENERATE,
+
+    /* Menu: Tracks (items moved to Edition, but keep for action) */
+    MSG_TRACKS_ADD,
 
     /* Menu: Settings */
     MSG_MENU_SETTINGS,

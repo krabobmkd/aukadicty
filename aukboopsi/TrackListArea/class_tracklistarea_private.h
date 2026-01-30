@@ -146,6 +146,9 @@ void TrackListArea_SetTrackSampleRate( struct Gadget *Gad,int itrack,unsigned lo
 /* track may have evolved and need new nb chans, ... */
 void TrackListArea_CheckTrackChannels( struct Gadget *Gad,int itrack);
 
+/* used by zoom, force full tile refresh on all tracks */
+void TrackListArea_FullTrackRedraw(struct Gadget *Gad);
+
 /* sent during moving the select selector */
 void TrackListArea_SetCurrentSelection(struct Gadget *Gad, AukSelection *sel);
 /* sent during moving the zoom selector */
@@ -153,6 +156,8 @@ void TrackListArea_SetZoomSelectorRun(struct Gadget *Gad, AukSelection *zoomsel)
 /* Apply last value sent to TrackListArea_SetZoomSelectorRun() at bt up */
 void TrackListArea_ApplyZoomSelectorRun(struct Gadget *Gad);
 /* - - - - -- - */
+
+
 
 /** for dispatcher, very wise use of union.
  *  each  struct also starts with MethodID.

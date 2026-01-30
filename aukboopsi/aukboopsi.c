@@ -431,6 +431,7 @@ int main(int argc, char **argv)
                                 actionContext.pproject = &app->_project;
                                 actionContext.appWindow = CurrentMainWindow;
                                 actionContext.appData = TargetInstance;
+                                actionContext.trackListView = &app->tracksListView;
                                 action->func(&actionContext);
                             }
                         }

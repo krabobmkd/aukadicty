@@ -41,10 +41,21 @@ static struct NewMenu menuTemplate[] = {
         {NM_ITEM, NULL,"C",0, 0, (APTR)ACTION_EDIT_COPY},
         {NM_ITEM, NULL,"X",0, 0, (APTR)ACTION_EDIT_CUT},
         {NM_ITEM, NULL,"P",0, 0, (APTR)ACTION_EDIT_PASTE},
+        {NM_ITEM, NM_BARLABEL, 0, 0, 0, NULL},
+        {NM_ITEM, NULL,"T",0, 0, (APTR)ACTION_TRACKS_ADD},
 
-    /* Tracks menu */
-    {NM_TITLE, NULL, 0, 0, 0, (APTR)MSG_MENU_TRACKS},
-        {NM_ITEM, NULL, 0, 0, 0, (APTR)ACTION_TRACKS_ADD},
+    /* View menu */
+    {NM_TITLE, NULL, 0, 0, 0, (APTR)MSG_MENU_VIEW},
+        {NM_ITEM, NULL,"+",0, 0, (APTR)ACTION_VIEW_ZOOMIN},
+        {NM_ITEM, NULL,"-",0, 0, (APTR)ACTION_VIEW_ZOOMOUT},
+        {NM_ITEM, NM_BARLABEL, 0, 0, 0, NULL},
+        {NM_ITEM, NULL, 0, 0, 0, (APTR)ACTION_VIEW_COLLAPSE_TRACKS},
+        {NM_ITEM, NULL, 0, 0, 0, (APTR)ACTION_VIEW_EXPAND_TRACKS},
+        {NM_ITEM, NM_BARLABEL, 0, 0, 0, NULL},
+        {NM_ITEM, NULL, 0, 0, 0, (APTR)ACTION_VIEW_ICONIFY},
+
+    /* Modify menu */
+    {NM_TITLE, NULL, 0, 0, 0, (APTR)MSG_MENU_MODIFY},
 
     /* Generate menu */
     {NM_TITLE, NULL, 0, 0, 0, (APTR)MSG_MENU_GENERATE},

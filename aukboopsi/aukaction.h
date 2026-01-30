@@ -14,6 +14,8 @@
 typedef struct AukAction AukAction;
 typedef struct AukActionContext AukActionContext;
 
+struct TrackListView;
+
 /* Action function signature - returns TRUE if successful */
 typedef BOOL (*AukActionFunc)(AukActionContext *context);
 
@@ -22,6 +24,7 @@ struct AukActionContext {
     AukAProjectPtr *pproject;       /* Current project */
     void *appWindow;            /* Application window (struct Window*) */
     void *appData;              /* Application-specific data */
+    struct TrackListView *trackListView; /* For View actions */
 };
 
 /* Action definition */
@@ -53,8 +56,15 @@ enum {
     ACTION_EDIT_CUT,
     ACTION_EDIT_PASTE,
 
-    /* Track actions */
+    /* Track actions (now under Edition menu) */
     ACTION_TRACKS_ADD,
+
+    /* View actions */
+    ACTION_VIEW_ZOOMIN,
+    ACTION_VIEW_ZOOMOUT,
+    ACTION_VIEW_COLLAPSE_TRACKS,
+    ACTION_VIEW_EXPAND_TRACKS,
+    ACTION_VIEW_ICONIFY,
 
     /* Settings actions */
     ACTION_SETTINGS_PROJECT,
@@ -94,6 +104,12 @@ BOOL Action_EditCut(AukActionContext *context);
 BOOL Action_EditPaste(AukActionContext *context);
 
 BOOL Action_TracksAdd(AukActionContext *context);
+
+BOOL Action_ViewZoomIn(AukActionContext *context);
+BOOL Action_ViewZoomOut(AukActionContext *context);
+BOOL Action_ViewCollapseTracks(AukActionContext *context);
+BOOL Action_ViewExpandTracks(AukActionContext *context);
+BOOL Action_ViewIconify(AukActionContext *context);
 
 BOOL Action_SettingsProject(AukActionContext *context);
 BOOL Action_SettingsView(AukActionContext *context);

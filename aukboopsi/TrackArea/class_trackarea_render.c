@@ -189,7 +189,7 @@ void TrackArea_RenderDelegate(InfiniteScrollRenderParams *p)
         return;
     }
 
-    timePerPixel = proj->_timePerPixelWidth;
+    timePerPixel = proj->_timePerPixelWidth;    
     if(timePerPixel == 0)
     {
         SetAPen(rp, penBackground);
@@ -408,5 +408,38 @@ void TrackArea_RenderDelegate(InfiniteScrollRenderParams *p)
     SetAPen(rp, 2);
     Move(rp, p->destX, p->destHeight - 1);
     Draw(rp, p->destWidth - 1, p->destHeight - 1);
+}
+
+/* override InfiniteScroll_Render
+
+*/
+ULONG TrackArea_Render(Class *C, struct Gadget *Gad, struct gpRender *Render)
+{
+
+    ULONG retval = 1;
+    if(Render->MethodID!=GM_RENDER || !Render->gpr_RPort) return retval;
+
+    retval = DoSuperMethodA(C,(APTR)Gad,(Msg)Render);
+
+    {
+        TrackArea *gdata;
+        AukStyle *style;
+        struct RastPort *rp=Render->gpr_RPort;
+        WORD penline;
+
+
+        gdata=INST_DATA(C, Gad);
+        style = gdata->_style;
+        penline = (style->black.pen != -1) ? style->black.pen : 1;
+
+        if( gdata->_MoveType == TRCKMOVE_PanZoom )
+        {
+            // _dataSelection
+            SetAPen(rp, penline);
+
+        }
+    }
+
+    return retval;
 }
 

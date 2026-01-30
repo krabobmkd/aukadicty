@@ -293,7 +293,9 @@ static void AukUpdate_TrackList(AukObject* listenerObject, AukObject* modifiedOb
 
 
             /* Track added may affect project duration, update horizontal scroll domain */            
-            pm->updateBits |= TLVB_UPDATE_HORIZSCROLLDOMAIN;
+            pm->updateBits |= TLVB_UPDATE_HORIZSCROLLDOMAIN
+                                | TLVB_UPDATE_VERTSCROLLDOMAIN
+                                | TLVB_UPDATE_REDRAW_TRACKLIST;
             if(myTask) signalupdate=1;
         }
         break;
@@ -974,24 +976,49 @@ static void TrackListView_ZoomChange(TrackListView *pm, ULONG factor)
 {
     TimeProjection trackListTimeproj;
     ULONG headerWidth = 0;
-    long long center;
+    struct Gadget *Gadtracklist;
+    long long pixcenter;
+    ULONG trackAreaWidth;
     if(!pm) return;
+
+//        printf("TrackListView_ZoomChange %08x\n",(int)factor);
+
     GetAttr(TRACKLIST_HeaderWidth, pm->trackList, &headerWidth);
     GetAttr(TRACKLIST_TimeProjection, pm->trackList,(ULONG*) &trackListTimeproj);
 
+// printf(" z timePerPixelWidth: %08x.%08x\n",(int)(trackListTimeproj._timePerPixelWidth>>32),(int)trackListTimeproj._timePerPixelWidth);
+
+//        printf("TrackListView_ZoomChange tpp:%016x\n",trackListTimeproj._timePerPixelWidth);
     if(trackListTimeproj._timePerPixelWidth<=0 ) return;
+    Gadtracklist = (struct Gadget *)pm->trackList;
 
-//todo    center = trackListTimeproj._pixAtLeft +
+    trackAreaWidth = ((ULONG)Gadtracklist->Width - headerWidth);
 
-//    //long long _pixAtLeft,_timePerPixelWidth;
+    pixcenter = (trackListTimeproj._pixAtLeft + (trackAreaWidth>>1)) ;// * trackListTimeproj._timePerPixelWidth;
+
+    trackListTimeproj._timePerPixelWidth =
+            (((unsigned long long )trackListTimeproj._timePerPixelWidth)*factor)>>16;
 
 
-//       // timePerPixelWidth = trackListTimeproj._timePerPixelWidth; // ((long long)timePerPixHi << 32) | timePerPixLo;
+    if(trackListTimeproj._timePerPixelWidth<TRACKLIST_MINZOOM)
+        trackListTimeproj._timePerPixelWidth = TRACKLIST_MINZOOM;
+    else if(trackListTimeproj._timePerPixelWidth>TRACKLIST_MAXZOOM)
+        trackListTimeproj._timePerPixelWidth = TRACKLIST_MAXZOOM;
 
-//        /* scrollX = value in pixel 64b, not in time */
-//        trackListTimeproj._pixAtLeft = ((long long)scrollerTop * duration) / (trackListTimeproj._timePerPixelWidth *SCROLLERH_FIXEDTOTAL);
-////  bdbprintf("trackListTimeproj._pixAtLeft:%lld",trackListTimeproj._pixAtLeft);
-//        TrackListView_SetHScrollPos(pm,&trackListTimeproj);
+ printf(" za timePerPixelWidth: %08x.%08x\n",(int)(trackListTimeproj._timePerPixelWidth>>32),(int)trackListTimeproj._timePerPixelWidth);
+
+
+    trackListTimeproj._pixAtLeft  +=
+            ((trackAreaWidth*factor)>>16)-trackAreaWidth;
+
+    TrackListView_SetHScrollPos(pm,&trackListTimeproj);
+
+    updateHorizontalScrollDomain(pm);
+    // same as TLVB_UPDATE_REDRAW_TRACKLIST, but do not redraw headers
+    //SetGadgetAttrs((struct Gadget *)pm->trackList, CurrentMainWindow, NULL,TRACKLIST_JustTracksRefresh,TRUE,TAG_END);
+    /* need full time refresh on all tracks */
+    TrackListArea_FullTrackRedraw((struct Gadget *)pm->trackList);
+
 }
 void TrackListView_ZoomIn(TrackListView *pm)
 {

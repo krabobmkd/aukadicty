@@ -115,11 +115,22 @@ typedef struct TimeProjection {
 // GM_METHODS
 //
 #define TRACKLIST_GMDummy			(TRACKLIST_Dummy+0x100)
+
+
+
+/* min value for TRACKLIST_TimeProjection "timePerPixel"  */
+#define TRACKLIST_MINZOOM (0x0000000000002000LL)
+
+
+/* max value for TRACKLIST_TimeProjection "timePerPixel"  */
+#define TRACKLIST_MAXZOOM (0x0000001800000000LL)
+
 /*
 #define GM_TRACKLIST_ADDTRACK (TRACKLIST_GMDummy+1)
 #define GM_TRACKLIST_REMOVETRACK (TRACKLIST_GMDummy+2)
 */
 // private class, so keep methids open for dev:
+
 
 // set main project - tracklist NULL means clean everything, back to empty state.
 void TrackListArea_setTrackList(struct Gadget *Gad,AukAProject *tracklist);

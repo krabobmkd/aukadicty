@@ -619,8 +619,9 @@ void TrackListArea_CheckTrackChannels( struct Gadget *Gad,int itrack)
 
 
 }
-/* sent during moving the select selector */
-void TrackListArea_SetCurrentSelection(struct Gadget *Gad, AukSelection *selection)
+
+/* used by zoom, force full tile refresh on all tracks */
+void TrackListArea_FullTrackRedraw(struct Gadget *Gad)
 {
     ULONG itrack;
    TrackListArea *gdata;
@@ -628,24 +629,9 @@ void TrackListArea_SetCurrentSelection(struct Gadget *Gad, AukSelection *selecti
     AukTrackPtr aukTrack;
     ULONG nnbc;
 
-    if(!Gad || !selection) return;
+    if(!Gad ) return;
     gdata=INST_DATA(OCLASS(Gad), Gad);
 
-    /*
-        How to refresh on selection change ?
-        Very hard question, there could have some TrackArea changing and other not.
-        Also the TimeRule display selection.
-        As TrackArea and TimeRule are InfiniteScroll, refresh affect all buffering.
-        Strategy:
-         - send very precise message about selection change
-         - send GM_RENDER at our level
-
-
-        // redrawing everything could be a littyle too much.
-    */
-
-
-    /* propagate state ? */
     for( itrack=0 ; itrack<gdata->_trackCount ; itrack++ )
     {
         ULONG ichan;
@@ -665,6 +651,26 @@ void TrackListArea_SetCurrentSelection(struct Gadget *Gad, AukSelection *selecti
 
     SetGadgetAttrs(Gad,CurrentMainWindow,NULL, TRACKLIST_JustTracksRefresh,TRUE,TAG_END);
 
+}
+/* sent during moving the select selector */
+void TrackListArea_SetCurrentSelection(struct Gadget *Gad, AukSelection *selection)
+{
+    /*
+        How to refresh on selection change ?
+        Very hard question, there could have some TrackArea changing and other not.
+        Also the TimeRule display selection.
+        As TrackArea and TimeRule are InfiniteScroll, refresh affect all buffering.
+        Strategy:
+         - send very precise message about selection change
+         - send GM_RENDER at our level
+
+
+        // redrawing everything could be a littyle too much.
+    */
+
+
+    /* propagate state with full redraw */
+    TrackListArea_FullTrackRedraw(Gad);
 
 }
 /* sent during moving the zoom selctor */

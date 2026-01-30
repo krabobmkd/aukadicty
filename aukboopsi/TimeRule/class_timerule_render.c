@@ -5,6 +5,7 @@
 #include <proto/layers.h>
 
 #include <string.h>  /* For strlen */
+#include <stdio.h>   /* For sprintf */
 
 
 #include <clib/alib_protos.h>
@@ -25,7 +26,8 @@
 #include "bdbprintf.h"
 extern struct IClass   *TimeRuleClassPtr;
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-/* GM_DOMAIN */
+/* GM_DOMAIN - Where we tell Intuition how big we'd LIKE to be.           */
+/* Spoiler: Intuition doesn't care about our feelings.                    */
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 ULONG TimeRule_Domain(Class *C, struct Gadget *Gad, struct gpDomain *D)
@@ -53,8 +55,8 @@ ULONG TimeRule_Domain(Class *C, struct Gadget *Gad, struct gpDomain *D)
      break;
 
     case GDOMAIN_MAXIMUM:
-      D->gpd_Domain.Width = 16000;
-      D->gpd_Domain.Height =  24;
+      D->gpd_Domain.Width = 16000;  /* Dream big, little gadget */
+      D->gpd_Domain.Height =  24;   /* But not TOO big, we're not barbarians */
       break;
 
     case GDOMAIN_MINIMUM:
@@ -72,10 +74,12 @@ ULONG TimeRule_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout)
 {
   TimeRule *gdata=0;
   gdata=INST_DATA(C, Gad);
-//  bdbprintf("TimeRule_Layout\n");
-  /* Lines are drawn from bottom - make them short */
-  gdata->majorTickHeight = (Gad->Height/3)+2;
-  gdata->minorTickHeight = (Gad->Height/6)+1;
+//  bdbprintf("TimeRule_Layout\n");  /* Commented out like my social life */
+  /* Lines are drawn from bottom - make them short.
+   * The math below was derived through the ancient art of
+   * "tweak until it looks right on my monitor" */
+  gdata->majorTickHeight = (Gad->Height/3)+2;  /* The boss tick */
+  gdata->minorTickHeight = (Gad->Height/6)+1;  /* The intern tick */
 
    return DoSuperMethodA(C,Gad,(Msg)layout);
 }
@@ -84,127 +88,315 @@ ULONG TimeRule_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout)
 /* Time Formatting Helper */
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-/**
- * Format a time value (64-bit fixed point, integer part is seconds) as text.
- * Outputs format like "0:00", "1:23", "12:34" etc.
- * For sub-second graduations, adds milliseconds: "0:00.1", "0:00.5"
- *
- * @param stime   time value
- * @param buffer   Output buffer (must be at least 12 chars)
- * @param showMs   If TRUE, show one decimal for sub-second
- */
-void TimeRule_FormatTime(long long stime, char *buffer, BOOL showMs)
-{
-    ULONG seconds;
-    ULONG minutes;
-    LONG ms;
-    char *p = buffer;
+/* Fixed-point time constants - because floats are for people with FPUs,
+ * and we're coding like it's 1992 (because it basically is on Amiga) */
+#define SEC_FP      (1LL << 32)                 /* 1 second - feels like an eternity on 7MHz */
+#define MS_FP       (SEC_FP / 1000)             /* 1 millisecond - blink and you'll miss 14 of them */
+#define US_FP       (SEC_FP / 1000000)          /* 1 microsecond - the 68000 just felt that */
 
-    /* Get integer seconds from fixed-point */
-    /* timeHi contains the integer part for values >= 0 */
-    /* For negative values, we would need special handling */
+/* Time scale enumeration for formatting
+ * From "blink of an electron's eye" to "time to make coffee" */
+typedef enum {
+    TIMESCALE_USEC,     /* Microseconds: for when you REALLY zoomed in */
+    TIMESCALE_MSEC,     /* Milliseconds: the sweet spot of audio editing */
+    TIMESCALE_SEC,      /* Seconds: patience, young padawan */
+    TIMESCALE_MIN       /* Minutes: go touch grass, you've zoomed out too far */
+} TimeScale;
+
+/**
+ * Format a time value with appropriate unit suffix.
+ * Outputs formats like "100µs", "50ms", "1.5s", "2m30s"
+ *
+ * @param stime      Time value in 32.32 fixed-point (integer part = seconds)
+ * @param buffer     Output buffer (must be at least 16 chars)
+ * @param scale      The scale to use for formatting
+ */
+void TimeRule_FormatTime(long long stime, char *buffer, int scale)
+{
+    char *p = buffer;
+    int negative = 0;
+    ULONG seconds, minutes, hours;
+    (void)p;  /* Suppress unused warning if buffer manipulation changes */
 
     if(stime < 0)
     {
-        *p++ = '-';
+        negative = 1;
         stime = -stime;
     }
-    seconds = (ULONG)(stime>>32);
+
+    /* Extract integer seconds */
+    seconds = (ULONG)(stime >> 32);
 
     minutes = seconds / 60;
-    seconds = seconds -(minutes*60);
+    seconds = seconds % 60;
+    hours = minutes / 60;
+    minutes = minutes % 60;
 
-    /* Format minutes:seconds */
-    if(minutes >= 10)
-    {
-        *p++ = '0' + (minutes / 10);
-    }
-    *p++ = '0' + (minutes % 10);
-    *p++ = ':';
-    *p++ = '0' + (seconds / 10);
-    *p++ = '0' + (seconds % 10);
+    if(negative) *p++ = '-';
 
-    if(showMs)
+    switch(scale)
     {
-        /* Get first decimal from fractional part */
-        /* timeLo upper bits are fraction, scale to get 0-9 */
-        ms = ((ULONG)stime >> 28) & 0xF;  /* Get top 4 bits */
-        if(ms > 9) ms = 9;
-        *p++ = '.';
-        *p++ = '0' + ms;
+        case TIMESCALE_USEC:
+        {
+            /* Format as microseconds - timePerPixel determined we need µs precision,
+             * so that's what we show. Always. No second-guessing the zoom level. */
+            /* Add 0x80000000 for rounding before shift */
+            ULONG totalUs = (ULONG)(((stime * 1000000ULL) + 0x80000000ULL) >> 32);
+
+            p += sprintf(p, "%lu", (unsigned long)totalUs);
+            /* µ is 0xB5 in ISO-8859-1 / Amiga charset */
+            *p++ = (char)0xB5;
+            *p++ = 's';
+            break;
+        }
+
+        case TIMESCALE_MSEC:
+        {
+            /* Format as milliseconds - ALWAYS show ms at this zoom level
+             * because that's what the user zoomed in to see! */
+            /* Add 0x80000000 for rounding before shift */
+            ULONG totalMs = (ULONG)(((stime * 1000ULL) + 0x80000000ULL) >> 32);
+
+            /* Always show full milliseconds: "7500ms" not "7.5s" */
+            p += sprintf(p, "%lu", (unsigned long)totalMs);
+            *p++ = 'm';
+            *p++ = 's';
+            break;
+        }
+
+        case TIMESCALE_SEC:
+        {
+            /* Format as seconds with s suffix */
+            if(minutes > 0 || hours > 0)
+            {
+                /* Show minutes:seconds format */
+                if(hours > 0)
+                {
+                    p += sprintf(p, "%lu", (unsigned long)hours);
+                    *p++ = 'h';
+                }
+                if(minutes > 0 || hours > 0)
+                {
+                    p += sprintf(p, "%lu", (unsigned long)minutes);
+                    *p++ = 'm';
+                }
+                if(seconds > 0)
+                {
+                    p += sprintf(p, "%lu", (unsigned long)seconds);
+                    *p++ = 's';
+                }
+            }
+            else
+            {
+                /* Just seconds */
+                ULONG totalSec = (ULONG)(stime >> 32);
+                /* Add 0x80000000 for rounding before shift */
+                ULONG fracTenth = (ULONG)((((stime & 0xFFFFFFFFULL) * 10) + 0x80000000ULL) >> 32);
+                if(fracTenth > 0 && totalSec < 10)
+                {
+                    p += sprintf(p, "%lu.%lu", (unsigned long)totalSec, (unsigned long)fracTenth);
+                }
+                else
+                {
+                    p += sprintf(p, "%lu", (unsigned long)totalSec);
+                }
+                *p++ = 's';
+            }
+            break;
+        }
+
+        case TIMESCALE_MIN:
+        {
+            /* Format as minutes with m suffix */
+            ULONG totalMin = (ULONG)(stime >> 32) / 60;
+            ULONG remainSec = (ULONG)(stime >> 32) % 60;
+
+            if(hours > 0)
+            {
+                p += sprintf(p, "%lu", (unsigned long)hours);
+                *p++ = 'h';
+                if(minutes > 0)
+                {
+                    p += sprintf(p, "%lu", (unsigned long)minutes);
+                    *p++ = 'm';
+                }
+            }
+            else
+            {
+                p += sprintf(p, "%lu", (unsigned long)totalMin);
+                *p++ = 'm';
+                if(remainSec > 0 && totalMin < 10)
+                {
+                    p += sprintf(p, "%lu", (unsigned long)remainSec);
+                    *p++ = 's';
+                }
+            }
+            break;
+        }
     }
 
     *p = '\0';
 }
 
+/**
+ * Update tick intervals based on current zoom level (_timePerPixelWidth).
+ * Extended to support microsecond through hour scales.
+ *
+ * For a 44100Hz sample to be 8 pixels wide:
+ * sampleDuration = 1/44100 s ≈ 22.68 µs
+ * timePerPixel = 22.68µs / 8 ≈ 2.83 µs
+ *
+ * Fun fact: this function has more if-else branches than a
+ * choose-your-own-adventure book from the 80s.
+ */
 void TimeRule_UpdateTimeInterval(TimeRule *gdata)
 {
-
-    /* computed for a tppw  */
-  long long majorTickInterval;  /* Time between major ticks */
-  long long minorTickInterval;  /* Time between minor ticks */
-    int nbsubdiv=1;
+    long long majorTickInterval;
+    long long minorTickInterval;
+    TimeScale scale;
     const long long minMajorPixels = 64;  /* Minimum pixels between major ticks */
     long long minMajorTime = gdata->_timePerPixelWidth * minMajorPixels;
 
-    /* Round up to nice intervals: 0.1s, 0.5s, 1s, 2s, 5s, 10s, 30s, 1min, 5min... */
-    /* Using fixed point: 1 second = 1LL << 32 */
-    #define SEC_FP (1LL << 32)
-
-    if(minMajorTime <= SEC_FP / 10)        /* <= 0.1s */
+    /* The great ladder of time scales - from quantum to coffee break.
+     * Warning: the following code was written by someone who clearly
+     * enjoys typing the same pattern 15 times. */
+    /* Microsecond scales (for when you want to see individual electrons party) */
+    if(minMajorTime <= US_FP * 10)              /* <= 10µs */
     {
-        majorTickInterval = SEC_FP / 10;   /* 0.1 second */
-        minorTickInterval = SEC_FP / 100;  /* 0.01 second (10 minor per major) */
+        majorTickInterval = US_FP * 10;         /* 10 microseconds */
+        minorTickInterval = US_FP * 2;          /* 2 microseconds */
+        scale = TIMESCALE_USEC;
     }
-    else if(minMajorTime <= SEC_FP / 2)    /* <= 0.5s */
+    else if(minMajorTime <= US_FP * 50)         /* <= 50µs */
     {
-        majorTickInterval = SEC_FP / 2;    /* 0.5 second */
-        minorTickInterval = SEC_FP / 10;   /* 0.1 second */
-
+        majorTickInterval = US_FP * 50;         /* 50 microseconds */
+        minorTickInterval = US_FP * 10;         /* 10 microseconds */
+        scale = TIMESCALE_USEC;
     }
-    else if(minMajorTime <= SEC_FP)        /* <= 1s */
+    else if(minMajorTime <= US_FP * 100)        /* <= 100µs */
     {
-        majorTickInterval = SEC_FP;        /* 1 second */
-        minorTickInterval = SEC_FP / 5;    /* 0.2 second */
+        majorTickInterval = US_FP * 100;        /* 100 microseconds */
+        minorTickInterval = US_FP * 20;         /* 20 microseconds */
+        scale = TIMESCALE_USEC;
     }
-    else if(minMajorTime <= SEC_FP * 2)    /* <= 2s */
+    else if(minMajorTime <= US_FP * 500)        /* <= 500µs */
     {
-        majorTickInterval = SEC_FP * 2;    /* 2 seconds */
-        minorTickInterval = SEC_FP / 2;    /* 0.5 second */
+        majorTickInterval = US_FP * 500;        /* 500 microseconds */
+        minorTickInterval = US_FP * 100;        /* 100 microseconds */
+        scale = TIMESCALE_USEC;
     }
-    else if(minMajorTime <= SEC_FP * 5)    /* <= 5s */
+    /* Millisecond scales */
+    else if(minMajorTime <= MS_FP * 1)          /* <= 1ms */
     {
-        majorTickInterval = SEC_FP * 5;    /* 5 seconds */
-        minorTickInterval = SEC_FP;        /* 1 second */
+        majorTickInterval = MS_FP * 1;          /* 1 millisecond */
+        minorTickInterval = US_FP * 200;        /* 200 microseconds */
+        scale = TIMESCALE_MSEC;
     }
-    else if(minMajorTime <= SEC_FP * 10)   /* <= 10s */
+    else if(minMajorTime <= MS_FP * 5)          /* <= 5ms */
     {
-        majorTickInterval = SEC_FP * 10;   /* 10 seconds */
-        minorTickInterval = SEC_FP * 2;    /* 2 seconds */
+        majorTickInterval = MS_FP * 5;          /* 5 milliseconds */
+        minorTickInterval = MS_FP * 1;          /* 1 millisecond */
+        scale = TIMESCALE_MSEC;
     }
-    else if(minMajorTime <= SEC_FP * 30)   /* <= 30s */
+    else if(minMajorTime <= MS_FP * 10)         /* <= 10ms */
     {
-        majorTickInterval = SEC_FP * 30;   /* 30 seconds */
-        minorTickInterval = SEC_FP * 5;    /* 5 seconds */
+        majorTickInterval = MS_FP * 10;         /* 10 milliseconds */
+        minorTickInterval = MS_FP * 2;          /* 2 milliseconds */
+        scale = TIMESCALE_MSEC;
     }
-    else if(minMajorTime <= SEC_FP * 60)   /* <= 1min */
+    else if(minMajorTime <= MS_FP * 50)         /* <= 50ms */
     {
-        majorTickInterval = SEC_FP * 60;   /* 1 minute */
-        minorTickInterval = SEC_FP * 10;   /* 10 seconds */
+        majorTickInterval = MS_FP * 50;         /* 50 milliseconds */
+        minorTickInterval = MS_FP * 10;         /* 10 milliseconds */
+        scale = TIMESCALE_MSEC;
+    }
+    else if(minMajorTime <= MS_FP * 100)        /* <= 100ms */
+    {
+        majorTickInterval = MS_FP * 100;        /* 100 milliseconds */
+        minorTickInterval = MS_FP * 20;         /* 20 milliseconds */
+        scale = TIMESCALE_MSEC;
+    }
+    else if(minMajorTime <= MS_FP * 500)        /* <= 500ms */
+    {
+        majorTickInterval = MS_FP * 500;        /* 500 milliseconds */
+        minorTickInterval = MS_FP * 100;        /* 100 milliseconds */
+        scale = TIMESCALE_MSEC;
+    }
+    /* Second scales */
+    else if(minMajorTime <= SEC_FP)             /* <= 1s */
+    {
+        majorTickInterval = SEC_FP;             /* 1 second */
+        minorTickInterval = MS_FP * 200;        /* 200 milliseconds */
+        scale = TIMESCALE_SEC;
+    }
+    else if(minMajorTime <= SEC_FP * 2)         /* <= 2s */
+    {
+        majorTickInterval = SEC_FP * 2;         /* 2 seconds */
+        minorTickInterval = MS_FP * 500;        /* 500 milliseconds */
+        scale = TIMESCALE_SEC;
+    }
+    else if(minMajorTime <= SEC_FP * 5)         /* <= 5s */
+    {
+        majorTickInterval = SEC_FP * 5;         /* 5 seconds */
+        minorTickInterval = SEC_FP;             /* 1 second */
+        scale = TIMESCALE_SEC;
+    }
+    else if(minMajorTime <= SEC_FP * 10)        /* <= 10s */
+    {
+        majorTickInterval = SEC_FP * 10;        /* 10 seconds */
+        minorTickInterval = SEC_FP * 2;         /* 2 seconds */
+        scale = TIMESCALE_SEC;
+    }
+    else if(minMajorTime <= SEC_FP * 30)        /* <= 30s */
+    {
+        majorTickInterval = SEC_FP * 30;        /* 30 seconds */
+        minorTickInterval = SEC_FP * 5;         /* 5 seconds */
+        scale = TIMESCALE_SEC;
+    }
+    /* Minute scales */
+    else if(minMajorTime <= SEC_FP * 60)        /* <= 1min */
+    {
+        majorTickInterval = SEC_FP * 60;        /* 1 minute */
+        minorTickInterval = SEC_FP * 10;        /* 10 seconds */
+        scale = TIMESCALE_MIN;
+    }
+    else if(minMajorTime <= SEC_FP * 120)       /* <= 2min */
+    {
+        majorTickInterval = SEC_FP * 120;       /* 2 minutes */
+        minorTickInterval = SEC_FP * 30;        /* 30 seconds */
+        scale = TIMESCALE_MIN;
+    }
+    else if(minMajorTime <= SEC_FP * 300)       /* <= 5min */
+    {
+        majorTickInterval = SEC_FP * 300;       /* 5 minutes */
+        minorTickInterval = SEC_FP * 60;        /* 1 minute */
+        scale = TIMESCALE_MIN;
+    }
+    else if(minMajorTime <= SEC_FP * 600)       /* <= 10min */
+    {
+        majorTickInterval = SEC_FP * 600;       /* 10 minutes */
+        minorTickInterval = SEC_FP * 120;       /* 2 minutes */
+        scale = TIMESCALE_MIN;
     }
     else
     {
-        majorTickInterval = SEC_FP * 300;  /* 5 minutes */
-        minorTickInterval = SEC_FP * 60;   /* 1 minute */
+        /* If you've zoomed out THIS far, you're either editing a symphony
+         * or you accidentally scrolled with your elbow */
+        majorTickInterval = SEC_FP * 1800;      /* 30 minutes */
+        minorTickInterval = SEC_FP * 300;       /* 5 minutes */
+        scale = TIMESCALE_MIN;
     }
 
     gdata->majorTickInterval = majorTickInterval;
     gdata->minorTickInterval = minorTickInterval;
-    gdata->tickSubDiv = majorTickInterval/minorTickInterval;
+    gdata->tickSubDiv = (int)(majorTickInterval / minorTickInterval);
+    gdata->timeScale = scale;
 }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-/* GM_INFINITESCROLL_RENDERTILE - Override to draw time graduations */
+/* GM_INFINITESCROLL_RENDERTILE - Override to draw time graduations       */
+/* Also known as "the function that draws those tiny lines you never      */
+/* consciously notice but would definitely miss if they weren't there"    */
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 /**
@@ -212,22 +404,23 @@ void TimeRule_UpdateTimeInterval(TimeRule *gdata)
  *
  * The TimeRule displays a time scale matching TrackListArea's horizontal scroll.
  * - Major ticks with numbers every N seconds (N depends on zoom)
- * - Minor ticks between major ticks
+ * - Minor ticks between major ticks (the little guys nobody thanks)
  *
  * Drawing coordinate system:
- * NOW
+ * NOW - Because "later" is for people who plan ahead
  * - Tile RastPort is at 0,0, size is TileWidth x TileHeight
  * - AbstractPos is the time value at the LEFT edge of this tile
  *
  * Selection rendering:
  * - Mode 1: time span selection draws selected background color
+ *   (making your selection feel special and validated)
  */
 void TimeRule_RenderDelegate(InfiniteScrollRenderParams *p)
 {
     int iloop=0;
     LONG px;
     TimeRule *gdata;
-    struct TextFont *font=NULL; /* consider can fail with NULL, ony draw texts if present. */
+    struct TextFont *font=NULL; /* No font? No problem! We'll just... not draw text. Modern problems. */
     /* Time range for this TimeRule (from attributes) */
     long long timeLeft;
     /* Drawing parameters */
@@ -367,12 +560,12 @@ void TimeRule_RenderDelegate(InfiniteScrollRenderParams *p)
          }
 
          /* Draw time text near bottom of tile */
-         /* IMPORTANT RP with no SetFont() would crash when Text() used.  */
+         /* IMPORTANT: Calling Text() without SetFont() is like asking
+          * a mime to read Shakespeare - it will NOT end well. Guru Meditation awaits. */
         if(font) {
-             BOOL showMs = (gdata->majorTickInterval < SEC_FP);
              UWORD textY;
 
-             TimeRule_FormatTime(currentTime, timeBuf, showMs);
+             TimeRule_FormatTime(currentTime, timeBuf, gdata->timeScale);
 
             textY = p->destHeight - 4;
 
@@ -383,13 +576,15 @@ void TimeRule_RenderDelegate(InfiniteScrollRenderParams *p)
          }
 
 
-         // loop per subtick
+         /* Now draw the minor ticks - the unsung heroes of time visualization.
+          * They don't get numbers, they don't get glory, but without them
+          * the timeline would look like a sad picket fence. */
          currentTimeMin = currentTime + gdata->minorTickInterval;
         for(iminortick=1 ; iminortick < gdata->tickSubDiv ; iminortick++ )
         {
             px = (LONG)(((currentTimeMin) / timePerPixel) - p->_start._scrollx);
             if(px >= (p->destWidth)) break;
-             /* Minor tick - draw shorter line */
+             /* Minor tick - shorter than major, like a little sibling */
              Move(rp, px, p->destHeight - gdata->minorTickHeight);
              Draw(rp, px, p->destHeight - 1);
              currentTimeMin += gdata->minorTickInterval;
@@ -397,7 +592,9 @@ void TimeRule_RenderDelegate(InfiniteScrollRenderParams *p)
 
         currentTime += gdata->majorTickInterval;
         iloop++;
-        if(iloop>8) break; // safety
+        if(iloop>8) break; /* Safety valve: if we're drawing more than 8 major ticks
+                            * per tile, something has gone horribly wrong, or the user
+                            * has a 4K monitor and we need to have a serious talk. */
         /* Convert time offset to pixel position within tile */
         px = (LONG)((currentTime / timePerPixel) - p->_start._scrollx);
 

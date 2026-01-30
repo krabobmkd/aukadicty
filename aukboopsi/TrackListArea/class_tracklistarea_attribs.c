@@ -78,6 +78,7 @@ ULONG TrackListArea_GetAttr(Class *C, struct Gadget *Gad, struct opGet *Get)
     case TRACKLIST_TimeProjection:
     {
         ((TimeProjection *)data)->_pixAtLeft = gdata->_timeProjection._pixAtLeft;
+// bdbprintf(" get _timePerPixelWidth: %08x.%08x\n",(int)(gdata->_timeProjection._timePerPixelWidth>>32),(int)gdata->_timeProjection._timePerPixelWidth);
         ((TimeProjection *)data)->_timePerPixelWidth = gdata->_timeProjection._timePerPixelWidth;
       }
       break;

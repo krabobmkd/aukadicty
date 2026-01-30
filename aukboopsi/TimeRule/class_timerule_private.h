@@ -33,7 +33,7 @@ extern "C" {
 typedef struct ITimeRule {
 
     /* Gives current projection */
-    unsigned long long _timePerPixelWidth;
+    long long _timePerPixelWidth;
 
     /* next GM_RENDER will do accoringly */
     WORD _justScroll,_fullRedraw;
@@ -45,6 +45,7 @@ typedef struct ITimeRule {
     long long majorTickInterval;  /* Time between major ticks */
     long long minorTickInterval;  /* Time between minor ticks */
     int  tickSubDiv; /* basically  majorTickInterval/minorTickInterval */
+    int  timeScale;  /* TimeScale enum value for formatting (USEC, MSEC, SEC, MIN) */
 
     UWORD majorTickHeight, minorTickHeight;
 
@@ -69,8 +70,7 @@ void TimeRule_RenderDelegate(InfiniteScrollRenderParams *p);
 
 
 /* Helper to format time value as text */
-void TimeRule_FormatTime(long long stime, char *buffer, BOOL showMs);
-
+void TimeRule_FormatTime(long long stime, char *buffer, int scale);
 // - - - - -- -
 
 /** for dispatcher, very wise use of union.

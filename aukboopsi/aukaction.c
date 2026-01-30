@@ -16,6 +16,8 @@
 #include "auktyperegistry.h"
 #include <stdio.h>
 
+#include "TrackListView.h"
+
 /* External references to app globals from aukboopsi.c */
 extern struct Library *AslBase;
 extern struct Window *CurrentMainWindow;
@@ -361,6 +363,39 @@ BOOL Action_TracksAdd(AukActionContext *context) {
     return TRUE;
 }
 
+BOOL Action_ViewZoomIn(AukActionContext *context) {
+    (void)context;
+
+    TrackListView_ZoomIn(context->trackListView);
+    /*  Implement zoom in - will call TrackListView_ZoomIn */
+    return TRUE;
+}
+
+BOOL Action_ViewZoomOut(AukActionContext *context) {
+    (void)context;
+    TrackListView_ZoomOut(context->trackListView);
+    /* TODO: Implement zoom out - will call TrackListView_ZoomOut */
+    return TRUE;
+}
+
+BOOL Action_ViewCollapseTracks(AukActionContext *context) {
+    (void)context;
+    /* TODO: Implement collapse all tracks */
+    return TRUE;
+}
+
+BOOL Action_ViewExpandTracks(AukActionContext *context) {
+    (void)context;
+    /* TODO: Implement expand all tracks */
+    return TRUE;
+}
+
+BOOL Action_ViewIconify(AukActionContext *context) {
+    (void)context;
+    /* TODO: Implement iconify window */
+    return TRUE;
+}
+
 BOOL Action_SettingsProject(AukActionContext *context) {
     (void)context;
     /* TODO: Show project settings dialog */
@@ -399,8 +434,15 @@ static AukAction actionTable[ACTION_COUNT] = {
     [ACTION_EDIT_CUT]        = {Action_EditCut,        MSG_EDIT_CUT,        NULL, 0, 0},
     [ACTION_EDIT_PASTE]      = {Action_EditPaste,      MSG_EDIT_PASTE,      NULL, 0, 0},
 
-    /* Track actions */
+    /* Track actions (now under Edition menu) */
     [ACTION_TRACKS_ADD] = {Action_TracksAdd, MSG_TRACKS_ADD, NULL, 0, 0},
+
+    /* View actions */
+    [ACTION_VIEW_ZOOMIN]          = {Action_ViewZoomIn,         MSG_VIEW_ZOOMIN,          NULL, 0x5D, 0}, /* Numpad + */
+    [ACTION_VIEW_ZOOMOUT]         = {Action_ViewZoomOut,        MSG_VIEW_ZOOMOUT,         NULL, 0x4A, 0}, /* Numpad - */
+    [ACTION_VIEW_COLLAPSE_TRACKS] = {Action_ViewCollapseTracks, MSG_VIEW_COLLAPSE_TRACKS, NULL, 0, 0},
+    [ACTION_VIEW_EXPAND_TRACKS]   = {Action_ViewExpandTracks,   MSG_VIEW_EXPAND_TRACKS,   NULL, 0, 0},
+    [ACTION_VIEW_ICONIFY]         = {Action_ViewIconify,        MSG_VIEW_ICONIFY,         NULL, 0, 0},
 
     /* Settings actions */
     [ACTION_SETTINGS_PROJECT] = {Action_SettingsProject, MSG_SETTINGS_PROJECT, NULL, 0, 0},

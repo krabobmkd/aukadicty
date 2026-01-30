@@ -484,19 +484,39 @@ ULONG TrackListArea_Render(Class *C, struct Gadget *Gad, struct gpRender *Render
         /* draw last marge down*/
         if(itrack == (int)gdata->_trackCount-1)
         {
-            SetAPen(rp,
-                isSelected?gdata->_styleSheet->trackHighlight.pen:
-                                   gdata->_styleSheet->trackBackground.pen );
-            { /* up the track */
-                int y1 = trbot;
-                int y2 = trbot+selectionBorderWidth-1;
-                if(y1<=gdata->_framerec.MaxY &&
-                    y2>=gdata->_framerec.MinY )
-                {
+            int y1 = trbot;
+            int y2 = trbot+selectionBorderWidth-1;
+
+            if(y1<=gdata->_framerec.MaxY &&
+                y2>=gdata->_framerec.MinY )
+            if(prevSelected)
+            {
+                SetAPen(rp,
+                    (prevSelected)? gdata->_styleSheet->trackHighlight.pen:
+                        gdata->_styleSheet->trackBackground.pen);
+
                     RectFill(rp,gdata->_framerec.MinX, y1,
-                                gdata->_framerec.MaxX, y2 );
+                    gdata->_framerec.MaxX, y1 );
+                if(y2-y1>2)
+                {
+                    SetAPen(rp, gdata->_styleSheet->trackHighlight2.pen);
+                            RectFill(rp,gdata->_framerec.MinX, y1+1,
+                        gdata->_framerec.MaxX, y2-1 );
                 }
+
+                SetAPen(rp,gdata->_styleSheet->trackBackground.pen);
+                    RectFill(rp,gdata->_framerec.MinX, y2,
+                    gdata->_framerec.MaxX, y2 );
+
+            } else
+            {
+                // not selected
+                SetAPen(rp,gdata->_styleSheet->trackBackground.pen );
+                RectFill(rp,gdata->_framerec.MinX, y1,
+                            gdata->_framerec.MaxX, y2 );
+
             }
+
         }
 
     } // end loop per track

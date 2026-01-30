@@ -64,12 +64,22 @@ static const char *defaultStrings[MSG_COUNT] = {
     [MSG_EDIT_CUT] = "Cut",
     [MSG_EDIT_PASTE] = "Paste",
 
-    /* Menu: Tracks */
-    [MSG_MENU_TRACKS] = "Tracks",
-    [MSG_TRACKS_ADD] = "Add",
+    /* Menu: View */
+    [MSG_MENU_VIEW] = "View",
+    [MSG_VIEW_ZOOMIN] = "Zoom In",
+    [MSG_VIEW_ZOOMOUT] = "Zoom Out",
+    [MSG_VIEW_COLLAPSE_TRACKS] = "Collapse Tracks",
+    [MSG_VIEW_EXPAND_TRACKS] = "Expand Tracks",
+    [MSG_VIEW_ICONIFY] = "Iconify",
+
+    /* Menu: Modify */
+    [MSG_MENU_MODIFY] = "Modify",
 
     /* Menu: Generate */
     [MSG_MENU_GENERATE] = "Generate",
+
+    /* Menu: Tracks (items moved to Edition) */
+    [MSG_TRACKS_ADD] = "Add Track",
 
     /* Menu: Settings */
     [MSG_MENU_SETTINGS] = "Settings",

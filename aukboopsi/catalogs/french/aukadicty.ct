@@ -122,18 +122,40 @@ Couper
 MSG_EDIT_PASTE
 Coller
 ;
-; === Menu: Tracks ===
+; === Menu: View ===
 ;
-MSG_MENU_TRACKS
-Pistes
+MSG_MENU_VIEW
+Affichage
 ;
-MSG_TRACKS_ADD
-Ajouter
+MSG_VIEW_ZOOMIN
+Zoom avant
+;
+MSG_VIEW_ZOOMOUT
+Zoom arrière
+;
+MSG_VIEW_COLLAPSE_TRACKS
+Réduire les pistes
+;
+MSG_VIEW_EXPAND_TRACKS
+Agrandir les pistes
+;
+MSG_VIEW_ICONIFY
+Iconifier
+;
+; === Menu: Modify ===
+;
+MSG_MENU_MODIFY
+Modifier
 ;
 ; === Menu: Generate ===
 ;
 MSG_MENU_GENERATE
 Générer
+;
+; === Menu: Tracks (items moved to Edition) ===
+;
+MSG_TRACKS_ADD
+Ajouter une piste
 ;
 ; === Menu: Settings ===
 ;

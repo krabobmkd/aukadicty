@@ -133,8 +133,9 @@ ULONG ASM SAVEDS TrackArea_Dispatcher(
       TrackArea_Domain(C, Gad, (APTR)M);
       retval=1;
       break;
-
-
+    case GM_RENDER:
+        retval = TrackArea_Render(C, Gad,&M->gpRender);
+        break;
 // - - -  - -
    case GM_HITTEST:
      retval = GMR_GADGETHIT;

@@ -89,6 +89,8 @@ ULONG TrackArea_Domain(Class *C, struct Gadget *Gad, struct gpDomain *D);
 /* TrackArea overrides InfiniteScroll tile rendering to draw track content */
 void TrackArea_RenderDelegate(InfiniteScrollRenderParams *p);
 
+/* need a few overriding */
+ULONG TrackArea_Render(Class *C, struct Gadget *Gad, struct gpRender *Render);
 /* - - - - -- - */
 
 /**
