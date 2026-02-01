@@ -841,3 +841,127 @@ unsigned long AukTrack_GetSampleRate(AukTrack* track)
     if (!track) return 0;
     return track->sampleRate;
 }
+
+AukSound* AukTrack_FindSoundAtTime(void* This, AukFixed time, unsigned int* outIndex,
+                                   AukFixed* outMinSlide, AukFixed* outMaxSlide)
+{
+    AukTrack* track = (AukTrack*)This;
+    AukArray* soundsArray;
+    unsigned int i, count;
+    AukSound* sound = NULL;
+    AukSound* prevSound = NULL;
+    AukSound* foundSound = NULL;
+    unsigned int foundIndex = 0;
+
+    if (!track || !track->sounds) {
+        return NULL;
+    }
+
+    soundsArray = (AukArray*)track->sounds;
+    count = soundsArray->GetCount(soundsArray);
+
+    for (i = 0; i < count; i++) {
+        soundsArray->Get(soundsArray, (AukObjectPtr*)&sound, i);
+        if (!sound) continue;
+
+        /* Check if time is within this sound's range [startTime, endTime) */
+        if (time >= sound->startTime && time < sound->endTime) {
+            foundSound = sound;
+            foundIndex = i;
+
+            /* Calculate min slide: either 0 or previous sound's end time */
+            if (outMinSlide) {
+                if (prevSound) {
+                    *outMinSlide = prevSound->endTime;
+                } else {
+                    *outMinSlide = 0;
+                }
+            }
+
+            /* Calculate max slide: need to check next sound */
+            if (outMaxSlide) {
+                AukSound* nextSound = NULL;
+                AukFixed duration = sound->endTime - sound->startTime;
+
+                if (i + 1 < count) {
+                    soundsArray->Get(soundsArray, (AukObjectPtr*)&nextSound, i + 1);
+                    if (nextSound) {
+                        /* Max start = next sound's start - our duration */
+                        *outMaxSlide = nextSound->startTime - duration;
+                        AukObjectPtr_Release((AukObjectPtr*)&nextSound);
+                    } else {
+                        *outMaxSlide = 0x7FFFFFFFFFFFFFFFLL; /* No limit */
+                    }
+                } else {
+                    *outMaxSlide = 0x7FFFFFFFFFFFFFFFLL; /* No next sound, no limit */
+                }
+            }
+
+            if (outIndex) {
+                *outIndex = foundIndex;
+            }
+
+            /* Release prevSound if we had one */
+            if (prevSound) {
+                AukObjectPtr_Release((AukObjectPtr*)&prevSound);
+            }
+
+            /* Return foundSound - caller will own the reference */
+            return foundSound;
+        }
+
+        /* Keep track of previous sound for min slide calculation */
+        if (prevSound) {
+            AukObjectPtr_Release((AukObjectPtr*)&prevSound);
+        }
+        prevSound = sound;
+        sound = NULL;
+    }
+
+    /* Clean up */
+    if (prevSound) {
+        AukObjectPtr_Release((AukObjectPtr*)&prevSound);
+    }
+
+    return NULL;
+}
+
+int AukTrack_SlideSound(void* This, AukSound* sound, AukFixed newStartTime,
+                        AukFixed minTime, AukFixed maxTime)
+{
+    AukTrack* track = (AukTrack*)This;
+    AukFixed duration;
+    AukFixed clampedStart;
+
+ printf("data:AukTrack_SlideSound 1 \n");
+
+    if (!track || !sound) {
+        return 0;
+    }
+
+    duration = sound->endTime - sound->startTime;
+
+    /* Clamp to allowed range */
+    clampedStart = newStartTime;
+    if (clampedStart < minTime) {
+        clampedStart = minTime;
+    }
+    if (clampedStart > maxTime) {
+        clampedStart = maxTime;
+    }
+
+    /* If no change, skip update */
+    if (clampedStart == sound->startTime) {
+        return 1;
+    }
+
+    /* Update sound's time range directly (no resort needed, order preserved) */
+    sound->startTime = clampedStart;
+    sound->endTime = clampedStart + duration;
+ printf("data:AukTrack_SlideSound 2 \n");
+    /* Send update notification */
+    emitMemberChange(track,AUK_MSG_TRACKMODIFIED_CHANGESoundPosition);
+
+
+    return 1;
+}

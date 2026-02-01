@@ -63,7 +63,7 @@ typedef struct ITrackArea {
 #define TRCKMOVE_NoMove 0
 #define TRCKMOVE_Selection 1
 #define TRCKMOVE_PanZoom 2
-#define TRCKMOVE_Slide 2
+#define TRCKMOVE_Slide 3
 
     /* interaction automats. Totally internal. */
 
@@ -74,6 +74,17 @@ typedef struct ITrackArea {
         The really applied selection is pointed by _dataSelection.
     */
     AukSelection _inputselection;
+
+    /* Slide mode state */
+    AukSound *_slidingSound;         /* Sound currently being slid (not retained) */
+    WORD _slideStartMouseX;          /* Mouse X at slide start */
+    WORD _reserved1;
+    AukFixed _slideOriginalStartTime; /* Sound's original start time before slide */
+    AukFixed _slideMinTime;           /* Minimum allowed start time (constrained by previous sound) */
+    AukFixed _slideMaxTime;           /* Maximum allowed start time (constrained by next sound) */
+
+    /* Slide notification data - aggregated member for notify mechanism */
+    AukSoundSlideInfo _slideInfo;
 
 
 } TrackArea;

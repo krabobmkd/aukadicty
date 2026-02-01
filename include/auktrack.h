@@ -15,6 +15,15 @@
 extern "C" {
 #endif
 
+/* Structure for sound slide notification (used by UI to communicate slide events) */
+typedef struct {
+    int itrack;              /* Track index */
+    AukSound *sound;         /* Sound being slid (not retained) */
+    AukFixed newStartTime;   /* New start time for the sound */
+    UBYTE isEnd;             /* 1 if slide ended (mouse up), 0 if sliding */
+    UBYTE reserved[3];
+} AukSoundSlideInfo;
+
 /* AukTrack structure - inherits from AukObject */
 struct AukTrack {
     AukObject base;          /* Must be first - inheritance */
@@ -88,6 +97,18 @@ int AukTrack_MoveSound(void* This, AukSound* sound, AukFixed newStartTime);
 int AukTrack_MoveSoundToTrack(void* This, AukSound* sound, AukTrack* destTrack);
 void AukTrack_GetSound(void* This, AukSound** ptr, unsigned int index);
 unsigned int AukTrack_GetSoundCount(void* This);
+
+/* Find sound at a given time point. Returns sound if found (caller must release), NULL otherwise.
+ * Also outputs the sound's index and the allowed slide range (min/max start times).
+ */
+AukSound* AukTrack_FindSoundAtTime(void* This, AukFixed time, unsigned int* outIndex,
+                                   AukFixed* outMinSlide, AukFixed* outMaxSlide);
+
+/* Slide a sound to a new start time, constrained by minTime and maxTime.
+ * Returns 1 on success, 0 on failure. The sound's end time is adjusted to maintain duration.
+ */
+int AukTrack_SlideSound(void* This, AukSound* sound, AukFixed newStartTime,
+                        AukFixed minTime, AukFixed maxTime);
 
 /* Envelope management */
 int AukTrack_AddEnvelopePoint(void* This, AukFixed time, unsigned short value);

@@ -149,6 +149,9 @@ void TrackListArea_CheckTrackChannels( struct Gadget *Gad,int itrack);
 /* used by zoom, force full tile refresh on all tracks */
 void TrackListArea_FullTrackRedraw(struct Gadget *Gad);
 
+/* used by slide, .. , force full tile refresh on 1 track */
+void TrackListArea_TrackRedraw(struct Gadget *Gad, int itrack);
+
 /* sent during moving the select selector */
 void TrackListArea_SetCurrentSelection(struct Gadget *Gad, AukSelection *sel);
 /* sent during moving the zoom selector */

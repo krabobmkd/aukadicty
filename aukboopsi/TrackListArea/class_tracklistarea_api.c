@@ -652,6 +652,38 @@ void TrackListArea_FullTrackRedraw(struct Gadget *Gad)
     SetGadgetAttrs(Gad,CurrentMainWindow,NULL, TRACKLIST_JustTracksRefresh,TRUE,TAG_END);
 
 }
+
+/* used by slide, .. , force full tile refresh on 1 track */
+void TrackListArea_TrackRedraw(struct Gadget *Gad, int itrack)
+{
+   TrackListArea *gdata;
+    TrackChild *strack;
+    AukTrackPtr aukTrack;
+    ULONG nnbc;
+    ULONG ichan;
+
+    if(!Gad ) return;
+    gdata=INST_DATA(OCLASS(Gad), Gad);
+
+    if(itrack<0 || itrack>=gdata->_trackCount) return;
+    strack = &gdata->_tracks[itrack];
+
+    for( ichan=0 ; ichan<strack->_nbChannels ; ichan++)
+    {
+        TrackChannelChild *chanchild = &strack->_channels[ichan];
+        if(chanchild->_layouted && chanchild->_trackArea)
+        {
+            //todo optimize, if not selected should redraw.
+            /* because they are InifniteScroll, need explicit tile refresh */
+            SetAttrs(chanchild->_trackArea, INFINITESCROLL_FullTilesRefresh,TRUE,TAG_END);
+        }
+    }
+
+
+    SetGadgetAttrs(Gad,CurrentMainWindow,NULL, TRACKLIST_JustTracksRefresh,TRUE,TAG_END);
+
+}
+
 /* sent during moving the select selector */
 void TrackListArea_SetCurrentSelection(struct Gadget *Gad, AukSelection *selection)
 {

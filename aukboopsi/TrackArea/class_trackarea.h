@@ -15,6 +15,7 @@
 /* Include TrackListArea header for TimeProjection definition */
 #include "../TrackListArea/class_tracklistarea.h"
 #include "aukselection.h"
+#include "auksound.h"
 
 #define VERSION_TRACKAREA 1
 /* TrackArea inherits from InfiniteScroll (class pointer, not string) */
@@ -58,5 +59,8 @@
 #define TRACKAREA_TimeSelectionChange (TRACKAREA_Dummy+6)
 /* this is to notify change . It's pointer to 2x long long  */
 #define TRACKAREA_TimeZoomChange (TRACKAREA_Dummy+7)
+
+/* Notify sound slide: ti_Data is pointer to AukSoundSlideInfo struct (defined in auktrack.h) */
+#define TRACKAREA_SoundSlideChange (TRACKAREA_Dummy+8)
 
 #endif

@@ -52,7 +52,8 @@ void BoopsiDelay_Init(BoopsiDelayQueue *q);
 static ULONG delayedAttribs[]={
     GA_Selected,SLIDER_Level,SCROLLER_Top,
     TRACKLIST_ScrollY,TRACKLIST_TimeProjection,TRACKLIST_DomainHeight,
-    TRACKAREA_TimeSelectionChange,TRACKAREA_TimeZoomChange
+    TRACKAREA_TimeSelectionChange,TRACKAREA_TimeZoomChange,
+    TRACKAREA_SoundSlideChange
 };
 #define nbDelayedAttribs (sizeof(delayedAttribs)/sizeof(ULONG))
 

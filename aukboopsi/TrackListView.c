@@ -251,6 +251,13 @@ static void AukUpdate_Track(AukObject* listenerObject, AukObject* modifiedObject
             TrackListArea_SetTrackFlags((struct Gadget *)pm->trackList,message->_track_id,track->stateFlags);
         }
         break;
+        case AUK_MSG_TRACKMODIFIED_CHANGESoundPosition:
+        {
+        bdbprintf(" tlv AUK_MSG_TRACKMODIFIED_CHANGESoundPosition\n");
+            TrackListArea_TrackRedraw((struct Gadget *)pm->trackList,message->_track_id);
+            pm->updateBits |= TLVB_UPDATE_HORIZSCROLLDOMAIN ;
+            if(myTask) Signal(myTask, SIGBREAKF_CTRL_F);
+        } break;
         default:
         break;
     }
@@ -751,7 +758,7 @@ void TrackListView_ListenTrackHeaderMessage(TrackListView *pm,struct opUpdate *M
     {
 
         case GAD_TRACKHEADER_TRACKAREA:
-        {        
+        {
             struct TagItem *ptag = M->opu_AttrList;
             while(ptag->ti_Tag)
             {
@@ -769,6 +776,30 @@ void TrackListView_ListenTrackHeaderMessage(TrackListView *pm,struct opUpdate *M
                         */
                         AukSelection *sel = (AukSelection *)ptag->ti_Data;
                         TrackListArea_SetZoomSelectorRun((struct Gadget *)pm->trackList,sel);
+                    } break;
+                    case TRACKAREA_SoundSlideChange:
+                    {
+                        /* Sound slide notification from TrackArea */
+                        AukSoundSlideInfo *slideInfo = (AukSoundSlideInfo *)ptag->ti_Data;
+                        if(slideInfo && slideInfo->sound)
+                        {
+                            /* Use AukTrack_SlideSound to move with constraints */
+                            AukTrack_SlideSound(track, slideInfo->sound,
+                                               slideInfo->newStartTime,
+                                               0, 0x7FFFFFFFFFFFFFFFLL);
+
+                            if(slideInfo->isEnd)
+                            {
+                                /* Slide ended - trigger proper document update */
+                                AukMessage msg;
+                                msg.type = AUK_MSG_TRACKMODIFIED_TIMECHANGE;
+                                track->base.SendUpdate(&track->base, &msg);
+                            }
+
+                            /* Request redraw of track area */
+                            pm->updateBits |= TLVB_UPDATE_REDRAW_JUSTTRACKS;
+                            if(myTask) Signal(myTask, SIGBREAKF_CTRL_F);
+                        }
                     } break;
                     default:
                         break;

@@ -16,6 +16,7 @@
 
 #include "gadgetid.h"
 #include "auktrack.h"
+#include "auksound.h"
 
 /* Most of the calls to boopsi methods are not done from the App's context,
  * but from a specific intuition context, and because of that we can't use DOS calls
@@ -55,6 +56,13 @@ static ULONG TrackArea_NotifyAttribValue(struct Gadget *Gad, struct GadgetInfo *
     notifymsg.opu_Flags = 0;
 
     return DoSuperMethodA(OCLASS(Gad),(APTR)Gad,(Msg)&notifymsg );
+}
+
+/* Notify sound slide change */
+static ULONG TrackArea_NotifySoundSlide(struct Gadget *Gad, struct GadgetInfo *GInfo,
+                                        AukSoundSlideInfo *slideInfo)
+{
+    return TrackArea_NotifyAttribValue(Gad, GInfo, TRACKAREA_SoundSlideChange, (ULONG)slideInfo);
 }
 
 
@@ -137,11 +145,30 @@ if((Gad->Flags & GFLG_DISABLED)==0)
                         TRACKAREA_TimeSelectionChange:TRACKAREA_TimeZoomChange,
                     (ULONG)&gdata->_inputselection);
             }
-            retval = GMR_NOREUSE;
-//              retval = GMR_MEACTIVE;
-//              retval = GMR_NOREUSE;
+            else if(gdata->_MoveType == TRCKMOVE_Slide && gdata->_slidingSound)
+            {
+                /* End slide - send final notification */
+                WORD deltaX = Input->gpi_Mouse.X - gdata->_slideStartMouseX;
+                AukFixed deltaTime = (AukFixed)deltaX * gdata->_pTimeProjection->_timePerPixelWidth;
+                AukFixed newStartTime = gdata->_slideOriginalStartTime + deltaTime;
 
-           //retval = GMR_MEACTIVE;
+                /* Clamp to allowed range */
+                if(newStartTime < gdata->_slideMinTime) newStartTime = gdata->_slideMinTime;
+                if(newStartTime > gdata->_slideMaxTime) newStartTime = gdata->_slideMaxTime;
+
+                gdata->_slideInfo.itrack = gdata->_dataTrack->trackIndex;
+                gdata->_slideInfo.sound = gdata->_slidingSound;
+                gdata->_slideInfo.newStartTime = newStartTime;
+                gdata->_slideInfo.isEnd = 1;
+
+                TrackArea_NotifySoundSlide(Gad, Input->gpi_GInfo, &gdata->_slideInfo);
+
+                gdata->_MoveType = TRCKMOVE_NoMove;
+                gdata->_slidingSound = NULL;
+
+                bdbprintf("TA Slide end: newStart=%lld\n", newStartTime);
+            }
+            retval = GMR_NOREUSE;
             break;
           case SELECTDOWN:
     bdbprintf("TA SELECTDOWN: %d %d\n",(int)(Input->gpi_Mouse).X,(int)(Input->gpi_Mouse).Y);
@@ -180,18 +207,47 @@ if((Gad->Flags & GFLG_DISABLED)==0)
                         (ULONG)&gdata->_inputselection);
 
                         retval = GMR_MEACTIVE;
-                   } else
+                   }
+                else if(CurrentEditMode == EDITMODE_TIMESLIDE &&
+                        gdata->_pTimeProjection &&
+                        gdata->_dataTrack)
+                   {
+                        /* Slide mode: find sound under mouse */
+                        AukFixed clickTime = (gdata->_pTimeProjection->_pixAtLeft
+                            + Input->gpi_Mouse.X) * gdata->_pTimeProjection->_timePerPixelWidth;
+                        unsigned int soundIndex = 0;
+                        AukFixed minSlide = 0, maxSlide = 0;
+                        AukSound *sound = AukTrack_FindSoundAtTime(gdata->_dataTrack, clickTime,
+                                                                   &soundIndex, &minSlide, &maxSlide);
+
+                        if(sound)
+                        {
+                            /* Found a sound - start sliding */
+                            gdata->_MoveType = TRCKMOVE_Slide;
+                            gdata->_slidingSound = sound;
+                            gdata->_slideStartMouseX = Input->gpi_Mouse.X;
+                            gdata->_slideOriginalStartTime = sound->startTime;
+                            gdata->_slideMinTime = minSlide;
+                            gdata->_slideMaxTime = maxSlide;
+
+                            /* Release the reference - we keep a raw pointer during slide */
+                            AukObjectPtr_Release((AukObjectPtr*)&sound);
+
+                            bdbprintf("TA Slide start: sound at %lld, min=%lld, max=%lld\n",
+                                     gdata->_slideOriginalStartTime, minSlide, maxSlide);
+
+                            retval = GMR_MEACTIVE;
+                        }
+                        else
+                        {
+                            /* No sound under mouse - don't activate */
+                            retval = GMR_NOREUSE;
+                        }
+                   }
+                   else
                    {
                         retval = GMR_NOREUSE;
                    }
-            // // recenter circle proportionaly.
-            // if(Gad->Width>0)
-            //     cx = ((Input->gpi_Mouse).X <<16)/Gad->Width;
-            // if(Gad->Height>0)
-            //     cy = ((Input->gpi_Mouse).Y <<16)/Gad->Height;
-
-
-
             }
             break;
             case IECODE_NOBUTTON:
@@ -211,7 +267,24 @@ if((Gad->Flags & GFLG_DISABLED)==0)
                         (ULONG)&gdata->_inputselection);
 
                 }
-    //bdbprintf("TA IECODE_NOBUTTON: %d %d\n",(int)(Input->gpi_Mouse).X,(int)(Input->gpi_Mouse).Y);
+                else if(gdata->_MoveType == TRCKMOVE_Slide && gdata->_slidingSound)
+                {
+                    /* Live slide preview - compute new position and notify */
+                    WORD deltaX = Input->gpi_Mouse.X - gdata->_slideStartMouseX;
+                    AukFixed deltaTime = (AukFixed)deltaX * gdata->_pTimeProjection->_timePerPixelWidth;
+                    AukFixed newStartTime = gdata->_slideOriginalStartTime + deltaTime;
+
+                    /* Clamp to allowed range */
+                    if(newStartTime < gdata->_slideMinTime) newStartTime = gdata->_slideMinTime;
+                    if(newStartTime > gdata->_slideMaxTime) newStartTime = gdata->_slideMaxTime;
+
+                    gdata->_slideInfo.itrack = gdata->_dataTrack->trackIndex;
+                    gdata->_slideInfo.sound = gdata->_slidingSound;
+                    gdata->_slideInfo.newStartTime = newStartTime;
+                    gdata->_slideInfo.isEnd = 0;
+
+                    TrackArea_NotifySoundSlide(Gad, Input->gpi_GInfo, &gdata->_slideInfo);
+                }
 
             }
              break;
