@@ -169,11 +169,11 @@ void TrackArea_RenderDelegate(InfiniteScrollRenderParams *p)
 
     /* Style concern... */
     style = gdata->_style;
-    penBackground = (style->background.pen != -1) ? style->background.pen : 1;
-    penBgSound = (style->soundBackground.pen != -1) ? style->soundBackground.pen : 2;
+    penBackground = style->pens[AUK_COLOR_BACKGROUND].pen;
+    penBgSound = style->pens[AUK_COLOR_SOUND_BACKGROUND].pen;
 
-    penBackgroundSelected = (style->selectedBackground.pen != -1) ? style->selectedBackground.pen : 1;
-    penBgSoundSelected = (style->selectedSoundBackground.pen != -1) ? style->selectedSoundBackground.pen : 2;
+    penBackgroundSelected = style->pens[AUK_COLOR_SELECTED_BACKGROUND].pen;
+    penBgSoundSelected = style->pens[AUK_COLOR_SELECTED_SOUND_BG].pen;
 
     /* Check we have required data */
     proj = gdata->_pTimeProjection;
@@ -430,7 +430,7 @@ ULONG TrackArea_Render(Class *C, struct Gadget *Gad, struct gpRender *Render)
 
         gdata=INST_DATA(C, Gad);
         style = gdata->_style;
-        penline = (style->black.pen != -1) ? style->black.pen : 1;
+        penline = style->pens[AUK_COLOR_BLACK].pen;
 
         if( gdata->_MoveType == TRCKMOVE_PanZoom )
         {

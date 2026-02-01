@@ -453,8 +453,7 @@ void TimeRule_RenderDelegate(InfiniteScrollRenderParams *p)
     penBackgroundSelected = 0;
     if(gdata->_style)
     {
-        if(gdata->_style->selectedBackground.pen != -1)
-            penBackgroundSelected = gdata->_style->selectedBackground.pen;
+        penBackgroundSelected = gdata->_style->pens[AUK_COLOR_SELECTED_BACKGROUND].pen;
     }
 
     /* Determine selection state */

@@ -124,29 +124,36 @@ const char* AukStyleSheet_GetTypeName(void* This) {
     return "AukStyleSheet";
 }
 
+/* Serialization keys for each color role */
+static const char* colorSerKeys[AUK_COLOR_COUNT] = {
+    "bg",           /* AUK_COLOR_BACKGROUND */
+    "trBg",         /* AUK_COLOR_TRACK_BACKGROUND */
+    "sndBg",        /* AUK_COLOR_SOUND_BACKGROUND */
+    "selBg",        /* AUK_COLOR_SELECTED_BACKGROUND */
+    "selSd",        /* AUK_COLOR_SELECTED_SOUND_BG */
+    "trackhl",      /* AUK_COLOR_TRACK_HIGHLIGHT */
+    "trackhl2",     /* AUK_COLOR_TRACK_HIGHLIGHT2 */
+    "wvDark",       /* AUK_COLOR_WAVEFORM_DARK */
+    "wvLight",      /* AUK_COLOR_WAVEFORM_LIGHT */
+    "thbg",         /* AUK_COLOR_TRACK_HEADER_BG */
+    "txtCol",       /* AUK_COLOR_TEXT */
+    "white",        /* AUK_COLOR_WHITE */
+    "black"         /* AUK_COLOR_BLACK */
+};
+
 void AukStyleSheet_Serialize(AukObject* This, ISerializer* ser, const char* pName) {
     AukStyleSheet* styleSheet = (AukStyleSheet*)This;
+    int i;
     (void)pName;
 
     if (!styleSheet || !ser) {
         return;
     }
 
-    /* Serialize colors (only rgbcolor field, pen/allocated are runtime) */
-    ser->t_uint(ser, "bg",(ULONG*) &styleSheet->style.background.rgbcolor);
-    ser->t_uint(ser, "trBg",(ULONG*) &styleSheet->style.trackBackground.rgbcolor);
-    ser->t_uint(ser, "sndBg",(ULONG*) &styleSheet->style.soundBackground.rgbcolor);
-
-    ser->t_uint(ser, "selBg",(ULONG*) &styleSheet->style.selectedBackground.rgbcolor);
-    ser->t_uint(ser, "selSd",(ULONG*) &styleSheet->style.selectedSoundBackground.rgbcolor);
-
-
-    ser->t_uint(ser, "trackhl",(ULONG*) &styleSheet->style.trackHighlight.rgbcolor);
-
-    ser->t_uint(ser, "waveformDark",(ULONG*) &styleSheet->style.waveformDark.rgbcolor);
-    ser->t_uint(ser, "waveformLight",(ULONG*) &styleSheet->style.waveformLight.rgbcolor);
-    ser->t_uint(ser, "thbg",(ULONG*) &styleSheet->style.waveformLight.rgbcolor);
-    ser->t_uint(ser, "textColor",(ULONG*) &styleSheet->style.textColor.rgbcolor);
+    /* Serialize colors using loop (only rgbcolor field, pen/allocated are runtime) */
+    for (i = 0; i < AUK_COLOR_COUNT; i++) {
+        ser->t_uint(ser, colorSerKeys[i], (ULONG*)&styleSheet->style.pens[i].rgbcolor);
+    }
 
     /* Serialize font specifications (name + height for each font) */
     ser->t_string_mutable(ser, "fontTinyName", &styleSheet->fontTinyName);
@@ -267,6 +274,7 @@ int AukStyleSheet_ApplyStyle(void* This, struct Screen *scr) {
     AukStyleSheet* styleSheet = (AukStyleSheet*)This;
     struct ColorMap *cm;
     int success = 1;
+    int i;
 
     if (!styleSheet) {
         return 0;
@@ -280,22 +288,10 @@ int AukStyleSheet_ApplyStyle(void* This, struct Screen *scr) {
     if (scr) {
         cm = scr->ViewPort.ColorMap;
 
-        /* Obtain pens for all colors */
-        ObtainPenForRGB(cm, &styleSheet->style.background);
-        ObtainPenForRGB(cm, &styleSheet->style.trackBackground);
-        ObtainPenForRGB(cm, &styleSheet->style.soundBackground);
-        ObtainPenForRGB(cm, &styleSheet->style.selectedBackground);
-        ObtainPenForRGB(cm, &styleSheet->style.selectedSoundBackground);
-
-        ObtainPenForRGB(cm, &styleSheet->style.trackHighlight);
-        ObtainPenForRGB(cm, &styleSheet->style.trackHighlight2);
-
-        ObtainPenForRGB(cm, &styleSheet->style.waveformDark);
-        ObtainPenForRGB(cm, &styleSheet->style.waveformLight);
-        ObtainPenForRGB(cm, &styleSheet->style.trackHeaderBG);
-        ObtainPenForRGB(cm, &styleSheet->style.textColor);
-        ObtainPenForRGB(cm, &styleSheet->style.white);
-        ObtainPenForRGB(cm, &styleSheet->style.black);
+        /* Obtain pens for all colors using loop */
+        for (i = 0; i < AUK_COLOR_COUNT; i++) {
+            ObtainPenForRGB(cm, &styleSheet->style.pens[i]);
+        }
     }
 
     /* Close any existing fonts first */
@@ -335,6 +331,7 @@ int AukStyleSheet_ApplyStyle(void* This, struct Screen *scr) {
 void AukStyleSheet_ReleasePens(void* This) {
     AukStyleSheet* styleSheet = (AukStyleSheet*)This;
     struct ColorMap *cm;
+    int i;
 
     if (!styleSheet || !styleSheet->screen) {
         return;
@@ -342,22 +339,10 @@ void AukStyleSheet_ReleasePens(void* This) {
 
     cm = styleSheet->screen->ViewPort.ColorMap;
 
-    /* Release all pens */
-    ReleasePenIfValid(cm, &styleSheet->style.background);
-    ReleasePenIfValid(cm, &styleSheet->style.trackBackground);
-    ReleasePenIfValid(cm, &styleSheet->style.soundBackground);
-    ReleasePenIfValid(cm, &styleSheet->style.selectedBackground);
-    ReleasePenIfValid(cm, &styleSheet->style.selectedSoundBackground);
-
-    ReleasePenIfValid(cm, &styleSheet->style.trackHighlight);
-    ReleasePenIfValid(cm, &styleSheet->style.trackHighlight2);
-
-    ReleasePenIfValid(cm, &styleSheet->style.waveformDark);
-    ReleasePenIfValid(cm, &styleSheet->style.waveformLight);
-    ReleasePenIfValid(cm, &styleSheet->style.trackHeaderBG);
-    ReleasePenIfValid(cm, &styleSheet->style.textColor);
-    ReleasePenIfValid(cm, &styleSheet->style.white);
-    ReleasePenIfValid(cm, &styleSheet->style.black);
+    /* Release all pens using loop */
+    for (i = 0; i < AUK_COLOR_COUNT; i++) {
+        ReleasePenIfValid(cm, &styleSheet->style.pens[i]);
+    }
 
     styleSheet->screen = NULL;
 }
@@ -388,8 +373,8 @@ void AukStyleSheet_CloseFonts(void* This) {
 int AukStyleSheet_SetBackground(AukStyleSheet* This, ULONG color) {
     if (!This) return 0;
 
-    if (This->style.background.rgbcolor != color) {
-        This->style.background.rgbcolor = color;
+    if (This->style.pens[AUK_COLOR_BACKGROUND].rgbcolor != color) {
+        This->style.pens[AUK_COLOR_BACKGROUND].rgbcolor = color;
     }
     return 1;
 }
@@ -397,8 +382,8 @@ int AukStyleSheet_SetBackground(AukStyleSheet* This, ULONG color) {
 int AukStyleSheet_SetTrackBackground(AukStyleSheet* This, ULONG color) {
     if (!This) return 0;
 
-    if (This->style.trackBackground.rgbcolor != color) {
-        This->style.trackBackground.rgbcolor = color;
+    if (This->style.pens[AUK_COLOR_TRACK_BACKGROUND].rgbcolor != color) {
+        This->style.pens[AUK_COLOR_TRACK_BACKGROUND].rgbcolor = color;
     }
     return 1;
 }
@@ -406,8 +391,8 @@ int AukStyleSheet_SetTrackBackground(AukStyleSheet* This, ULONG color) {
 int AukStyleSheet_SetSoundBackground(AukStyleSheet* This, ULONG color) {
     if (!This) return 0;
 
-    if (This->style.soundBackground.rgbcolor != color) {
-        This->style.soundBackground.rgbcolor = color;
+    if (This->style.pens[AUK_COLOR_SOUND_BACKGROUND].rgbcolor != color) {
+        This->style.pens[AUK_COLOR_SOUND_BACKGROUND].rgbcolor = color;
     }
     return 1;
 }
@@ -415,8 +400,8 @@ int AukStyleSheet_SetSoundBackground(AukStyleSheet* This, ULONG color) {
 int AukStyleSheet_SetSelectedBackground(AukStyleSheet* This, ULONG color) {
     if (!This) return 0;
 
-    if (This->style.selectedBackground.rgbcolor != color) {
-        This->style.selectedBackground.rgbcolor = color;
+    if (This->style.pens[AUK_COLOR_SELECTED_BACKGROUND].rgbcolor != color) {
+        This->style.pens[AUK_COLOR_SELECTED_BACKGROUND].rgbcolor = color;
     }
     return 1;
 }
@@ -424,8 +409,8 @@ int AukStyleSheet_SetSelectedBackground(AukStyleSheet* This, ULONG color) {
 int AukStyleSheet_SetWaveformDark(AukStyleSheet* This, ULONG color) {
     if (!This) return 0;
 
-    if (This->style.waveformDark.rgbcolor != color) {
-        This->style.waveformDark.rgbcolor = color;
+    if (This->style.pens[AUK_COLOR_WAVEFORM_DARK].rgbcolor != color) {
+        This->style.pens[AUK_COLOR_WAVEFORM_DARK].rgbcolor = color;
     }
     return 1;
 }
@@ -433,8 +418,8 @@ int AukStyleSheet_SetWaveformDark(AukStyleSheet* This, ULONG color) {
 int AukStyleSheet_SetWaveformLight(AukStyleSheet* This, ULONG color) {
     if (!This) return 0;
 
-    if (This->style.waveformLight.rgbcolor != color) {
-        This->style.waveformLight.rgbcolor = color;
+    if (This->style.pens[AUK_COLOR_WAVEFORM_LIGHT].rgbcolor != color) {
+        This->style.pens[AUK_COLOR_WAVEFORM_LIGHT].rgbcolor = color;
     }
     return 1;
 }
@@ -442,13 +427,32 @@ int AukStyleSheet_SetWaveformLight(AukStyleSheet* This, ULONG color) {
 int AukStyleSheet_SetTextColor(AukStyleSheet* This, ULONG color) {
     if (!This) return 0;
 
-    if (This->style.textColor.rgbcolor != color) {
-        This->style.textColor.rgbcolor = color;
+    if (This->style.pens[AUK_COLOR_TEXT].rgbcolor != color) {
+        This->style.pens[AUK_COLOR_TEXT].rgbcolor = color;
     }
     return 1;
 }
 
+/* Default color values for each role (Audacity-like palette) */
+static const ULONG defaultColors[AUK_COLOR_COUNT] = {
+    0x00333355,  /* AUK_COLOR_BACKGROUND - Main background gray */
+    0x00464656,  /* AUK_COLOR_TRACK_BACKGROUND - Track empty area dark gray */
+    0x00757575,  /* AUK_COLOR_SOUND_BACKGROUND - Sound clip area */
+    0x005566AA,  /* AUK_COLOR_SELECTED_BACKGROUND - Selected region blue */
+    0x007575BB,  /* AUK_COLOR_SELECTED_SOUND_BG - Selected sound clip */
+    0x00FFDD00,  /* AUK_COLOR_TRACK_HIGHLIGHT - Track selection highlight */
+    0x00EE8800,  /* AUK_COLOR_TRACK_HIGHLIGHT2 - Track highlight secondary */
+    0x00214783,  /* AUK_COLOR_WAVEFORM_DARK - Waveform min/max dark blue */
+    0x004464C0,  /* AUK_COLOR_WAVEFORM_LIGHT - Waveform RMS lighter blue */
+    0x008888FF,  /* AUK_COLOR_TRACK_HEADER_BG - Track header background */
+    0x00FFFFFF,  /* AUK_COLOR_TEXT - Text color white */
+    0x00FFFFFF,  /* AUK_COLOR_WHITE - Always white */
+    0x00000000   /* AUK_COLOR_BLACK - Always black */
+};
+
 void AukStyleSheet_Init(AukStyleSheet* styleSheet) {
+    int i;
+
     if (styleSheet) {
         /* Initialize base object */
         AukObject_Init(&styleSheet->base);
@@ -467,59 +471,12 @@ void AukStyleSheet_Init(AukStyleSheet* styleSheet) {
         styleSheet->ReleasePens = AukStyleSheet_ReleasePens;
         styleSheet->CloseFonts = AukStyleSheet_CloseFonts;
 
-        /* Initialize colors with Audacity-like defaults */
-        styleSheet->style.background.rgbcolor = 0x00333355;      /* Main background gray */
-        styleSheet->style.background.pen = -1;
-        styleSheet->style.background.allocated = 0;
-
-        styleSheet->style.trackBackground.rgbcolor = 0x00464656; /* Track empty area - dark gray */
-        styleSheet->style.trackBackground.pen = -1;
-        styleSheet->style.trackBackground.allocated = 0;
-
-        styleSheet->style.soundBackground.rgbcolor = 0x00757575; /* Sound clip area - slight blue tint */
-        styleSheet->style.soundBackground.pen = -1;
-        styleSheet->style.soundBackground.allocated = 0;
-
-        styleSheet->style.selectedBackground.rgbcolor = 0x005566AA; /* Selected region - blue highlight */
-        styleSheet->style.selectedBackground.pen = -1;
-        styleSheet->style.selectedBackground.allocated = 0;
-
-        styleSheet->style.selectedSoundBackground.rgbcolor = 0x007575BB; /* Selected region - blue highlight */
-        styleSheet->style.selectedSoundBackground.pen = -1;
-        styleSheet->style.selectedSoundBackground.allocated = 0;
-
-        styleSheet->style.trackHighlight.rgbcolor = 0x00FFDD00;
-        styleSheet->style.trackHighlight.pen = -1;
-        styleSheet->style.trackHighlight.allocated = 0;
-
-        styleSheet->style.trackHighlight2.rgbcolor = 0x00EE8800;
-        styleSheet->style.trackHighlight2.pen = -1;
-        styleSheet->style.trackHighlight2.allocated = 0;
-
-        styleSheet->style.waveformDark.rgbcolor = 0x00214783;    /* Dark blue for waveform min/max */
-        styleSheet->style.waveformDark.pen = -1;
-        styleSheet->style.waveformDark.allocated = 0;
-
-        styleSheet->style.waveformLight.rgbcolor = 0x004464C0;   /* Lighter blue for waveform RMS */
-        styleSheet->style.waveformLight.pen = -1;
-        styleSheet->style.waveformLight.allocated = 0;
-
-
-        styleSheet->style.trackHeaderBG.rgbcolor = 0x008888FF;   /* Lighter blue for waveform RMS */
-        styleSheet->style.trackHeaderBG.pen = -1;
-        styleSheet->style.trackHeaderBG.allocated = 0;
-
-        styleSheet->style.textColor.rgbcolor = 0x00FFFFFF;       /* White */
-        styleSheet->style.textColor.pen = -1;
-        styleSheet->style.textColor.allocated = 0;
-
-        styleSheet->style.white.rgbcolor = 0x00FFFFFF;
-        styleSheet->style.white.pen = -1;
-        styleSheet->style.white.allocated = 0;
-
-        styleSheet->style.black.rgbcolor = 0x00000000;
-        styleSheet->style.black.pen = -1;
-        styleSheet->style.black.allocated = 0;
+        /* Initialize all colors with defaults using loop */
+        for (i = 0; i < AUK_COLOR_COUNT; i++) {
+            styleSheet->style.pens[i].rgbcolor = defaultColors[i];
+            styleSheet->style.pens[i].pen = 1;  /* Default pen 1, always valid */
+            styleSheet->style.pens[i].allocated = 0;
+        }
 
         /* Screen not yet set */
         styleSheet->screen = NULL;

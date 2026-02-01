@@ -28,26 +28,29 @@ struct ManagedColor
 };
 typedef struct ManagedColor ManagedColor;
 
+/* Color role enumeration - indices into pens[] array */
+typedef enum {
+    AUK_COLOR_BACKGROUND = 0,          /* Main background color (gray) */
+    AUK_COLOR_TRACK_BACKGROUND,        /* Track empty background (dark gray) */
+    AUK_COLOR_SOUND_BACKGROUND,        /* Sound clip background (lighter) */
+    AUK_COLOR_SELECTED_BACKGROUND,     /* Selected region background */
+    AUK_COLOR_SELECTED_SOUND_BG,       /* Sound clip background when selected */
+    AUK_COLOR_TRACK_HIGHLIGHT,         /* Track selection highlight */
+    AUK_COLOR_TRACK_HIGHLIGHT2,        /* Track selection highlight secondary */
+    AUK_COLOR_WAVEFORM_DARK,           /* Waveform min/max dark blue */
+    AUK_COLOR_WAVEFORM_LIGHT,          /* Waveform RMS lighter blue */
+    AUK_COLOR_TRACK_HEADER_BG,         /* Track header background */
+    AUK_COLOR_TEXT,                    /* Text color */
+    AUK_COLOR_WHITE,                   /* Always white */
+    AUK_COLOR_BLACK,                   /* Always black */
+    AUK_COLOR_COUNT                    /* Number of colors - must be last */
+} AukColorRole;
+
 /* AukStyle structure - Plain C struct with no inheritance */
 struct AukStyle
 {
     /* Managed colors (RGB + pen + allocation flag) - Audacity-like palette */
-    ManagedColor background;           /* Main background color (gray) */
-    ManagedColor trackBackground;      /* Track empty background (dark gray) */
-    ManagedColor soundBackground;      /* Sound clip background (lighter) */
-    ManagedColor selectedBackground;   /* Selected region background */
-    ManagedColor selectedSoundBackground;      /* Sound clip background when selected */
-
-    ManagedColor trackHighlight,trackHighlight2;   /*  */
-
-    ManagedColor waveformDark;         /* Waveform min/max dark blue */
-    ManagedColor waveformLight;        /* Waveform RMS lighter blue */
-
-    ManagedColor trackHeaderBG;        /*  */
-
-    ManagedColor textColor;            /* Text color */
-    ManagedColor white;                /* Always white */
-    ManagedColor black;                /* Always black */
+    ManagedColor pens[AUK_COLOR_COUNT];
 
     /* Font pointers - Amiga TextFont structures (runtime, NOT serialized) */
     struct TextFont *fontTiny;    /* Small font for compact UI elements */

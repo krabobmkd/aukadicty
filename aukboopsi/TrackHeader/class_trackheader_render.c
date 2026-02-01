@@ -354,7 +354,7 @@ void TrackHeader_Render(Class *C, struct Gadget *Gad, struct gpRender *Render)
     sub = (struct Gadget *)gdata->subs[THS_CloseButton];
     if(sub)
     {
-        SetAPen(rp,style->white.pen);
+        SetAPen(rp,style->pens[AUK_COLOR_WHITE].pen);
         RectFill(rp,
                     leftedge,topedge,
                     leftedge,topedge+height

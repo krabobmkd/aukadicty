@@ -384,21 +384,21 @@ ULONG TrackListArea_Render(Class *C, struct Gadget *Gad, struct gpRender *Render
             if(isSelected||prevSelected)
             {
                 SetAPen(rp,
-                    (prevSelected)? gdata->_styleSheet->trackHighlight.pen:
-                        gdata->_styleSheet->trackBackground.pen);
+                    (prevSelected)? gdata->_styleSheet->pens[AUK_COLOR_TRACK_HIGHLIGHT].pen:
+                        gdata->_styleSheet->pens[AUK_COLOR_TRACK_BACKGROUND].pen);
 
                     RectFill(rp,gdata->_framerec.MinX, y1,
                     gdata->_framerec.MaxX, y1 );
                 if(y2-y1>2)
                 {
-                    SetAPen(rp, gdata->_styleSheet->trackHighlight2.pen);
+                    SetAPen(rp, gdata->_styleSheet->pens[AUK_COLOR_TRACK_HIGHLIGHT2].pen);
                             RectFill(rp,gdata->_framerec.MinX, y1+1,
                         gdata->_framerec.MaxX, y2-1 );
                 }
 
                 SetAPen(rp,
-                    (isSelected)? gdata->_styleSheet->trackHighlight.pen:
-                        gdata->_styleSheet->trackBackground.pen);
+                    (isSelected)? gdata->_styleSheet->pens[AUK_COLOR_TRACK_HIGHLIGHT].pen:
+                        gdata->_styleSheet->pens[AUK_COLOR_TRACK_BACKGROUND].pen);
 
                     RectFill(rp,gdata->_framerec.MinX, y2,
                     gdata->_framerec.MaxX, y2 );
@@ -406,7 +406,7 @@ ULONG TrackListArea_Render(Class *C, struct Gadget *Gad, struct gpRender *Render
             } else
             {
                 // not selected
-                SetAPen(rp,gdata->_styleSheet->trackBackground.pen );
+                SetAPen(rp,gdata->_styleSheet->pens[AUK_COLOR_TRACK_BACKGROUND].pen );
                 RectFill(rp,gdata->_framerec.MinX, y1,
                             gdata->_framerec.MaxX, y2 );
 
@@ -422,20 +422,20 @@ ULONG TrackListArea_Render(Class *C, struct Gadget *Gad, struct gpRender *Render
                 /* note: amiga bitmap wise, this should, ...must be a bitmap copy. */
                 if(selectionBorderWidth>2)
                 {
-                    SetAPen(rp,gdata->_styleSheet->trackBackground.pen);
+                    SetAPen(rp,gdata->_styleSheet->pens[AUK_COLOR_TRACK_BACKGROUND].pen);
                     RectFill(rp,gdata->_framerec.MinX, y1,
                                 gdata->_framerec.MinX+selectionBorderWidth-3, y2 );
                 }
-                SetAPen(rp,gdata->_styleSheet->trackHighlight2.pen);
+                SetAPen(rp,gdata->_styleSheet->pens[AUK_COLOR_TRACK_HIGHLIGHT2].pen);
                 RectFill(rp,gdata->_framerec.MinX+selectionBorderWidth-2, y1,
                             gdata->_framerec.MinX+selectionBorderWidth-2, y2 );
 
-                SetAPen(rp,gdata->_styleSheet->trackHighlight.pen);
+                SetAPen(rp,gdata->_styleSheet->pens[AUK_COLOR_TRACK_HIGHLIGHT].pen);
                 RectFill(rp,gdata->_framerec.MinX+selectionBorderWidth-1, y1,
                             gdata->_framerec.MinX+selectionBorderWidth-1, y2 );
             } else
             {
-                SetAPen(rp, gdata->_styleSheet->trackBackground.pen );
+                SetAPen(rp, gdata->_styleSheet->pens[AUK_COLOR_TRACK_BACKGROUND].pen );
                 RectFill(rp,gdata->_framerec.MinX, y1,
                             gdata->_framerec.MinX+selectionBorderWidth-1, y2 );
             }
@@ -492,26 +492,26 @@ ULONG TrackListArea_Render(Class *C, struct Gadget *Gad, struct gpRender *Render
             if(prevSelected)
             {
                 SetAPen(rp,
-                    (prevSelected)? gdata->_styleSheet->trackHighlight.pen:
-                        gdata->_styleSheet->trackBackground.pen);
+                    (prevSelected)? gdata->_styleSheet->pens[AUK_COLOR_TRACK_HIGHLIGHT].pen:
+                        gdata->_styleSheet->pens[AUK_COLOR_TRACK_BACKGROUND].pen);
 
                     RectFill(rp,gdata->_framerec.MinX, y1,
                     gdata->_framerec.MaxX, y1 );
                 if(y2-y1>2)
                 {
-                    SetAPen(rp, gdata->_styleSheet->trackHighlight2.pen);
+                    SetAPen(rp, gdata->_styleSheet->pens[AUK_COLOR_TRACK_HIGHLIGHT2].pen);
                             RectFill(rp,gdata->_framerec.MinX, y1+1,
                         gdata->_framerec.MaxX, y2-1 );
                 }
 
-                SetAPen(rp,gdata->_styleSheet->trackBackground.pen);
+                SetAPen(rp,gdata->_styleSheet->pens[AUK_COLOR_TRACK_BACKGROUND].pen);
                     RectFill(rp,gdata->_framerec.MinX, y2,
                     gdata->_framerec.MaxX, y2 );
 
             } else
             {
                 // not selected
-                SetAPen(rp,gdata->_styleSheet->trackBackground.pen );
+                SetAPen(rp,gdata->_styleSheet->pens[AUK_COLOR_TRACK_BACKGROUND].pen );
                 RectFill(rp,gdata->_framerec.MinX, y1,
                             gdata->_framerec.MaxX, y2 );
 
@@ -526,7 +526,7 @@ ULONG TrackListArea_Render(Class *C, struct Gadget *Gad, struct gpRender *Render
         int lasttrackY = topedge - gdata->_scrollY + gdata->_domainHeight;
         if(lasttrackY<=gdata->_framerec.MaxY)
         {
-           SetAPen(rp, gdata->_styleSheet->trackBackground.pen);
+           SetAPen(rp, gdata->_styleSheet->pens[AUK_COLOR_TRACK_BACKGROUND].pen);
            RectFill(rp,gdata->_framerec.MinX,
                        lasttrackY,
                        gdata->_framerec.MaxX,
