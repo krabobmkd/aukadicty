@@ -933,8 +933,6 @@ int AukTrack_SlideSound(void* This, AukSound* sound, AukFixed newStartTime,
     AukFixed duration;
     AukFixed clampedStart;
 
- printf("data:AukTrack_SlideSound 1 \n");
-
     if (!track || !sound) {
         return 0;
     }
@@ -958,7 +956,7 @@ int AukTrack_SlideSound(void* This, AukSound* sound, AukFixed newStartTime,
     /* Update sound's time range directly (no resort needed, order preserved) */
     sound->startTime = clampedStart;
     sound->endTime = clampedStart + duration;
- printf("data:AukTrack_SlideSound 2 \n");
+
     /* Send update notification */
     emitMemberChange(track,AUK_MSG_TRACKMODIFIED_CHANGESoundPosition);
 

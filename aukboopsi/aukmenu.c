@@ -48,6 +48,7 @@ static struct NewMenu menuTemplate[] = {
     {NM_TITLE, NULL, 0, 0, 0, (APTR)MSG_MENU_VIEW},
         {NM_ITEM, NULL,"+",0, 0, (APTR)ACTION_VIEW_ZOOMIN},
         {NM_ITEM, NULL,"-",0, 0, (APTR)ACTION_VIEW_ZOOMOUT},
+        {NM_ITEM, NULL,"0",0, 0, (APTR)ACTION_VIEW_ZOOM_PROJECT},
         {NM_ITEM, NM_BARLABEL, 0, 0, 0, NULL},
         {NM_ITEM, NULL, 0, 0, 0, (APTR)ACTION_VIEW_COLLAPSE_TRACKS},
         {NM_ITEM, NULL, 0, 0, 0, (APTR)ACTION_VIEW_EXPAND_TRACKS},

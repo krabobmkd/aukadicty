@@ -91,6 +91,16 @@ ULONG TrackHeader_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
 
     switch(tag->ti_Tag)
     {
+      case GA_BackFill:
+      {
+        gdata->_backfillHook =  (struct Hook *)data;
+      }  break;
+        case GA_DrawInfo:
+        {
+            bdbprintf(" *** ** TH GA_DrawInfo:%08x\n",(int)data);
+
+        }
+        break;
       case TRACKHEADER_StyleSheet:
         /* data points to AukStyle, extract the style member */
         gdata->_style = (struct AukStyle *)data;

@@ -6,8 +6,6 @@
 #include <aukdefs.h>
 #include "aukstyle.h"
 
-
-
 /*
     keeps anything related to track list view in the UI.
     Keeps main layouts and instance of private gadget classes.
@@ -73,6 +71,7 @@ void TrackListView_UpdateTimeRule(TrackListView *pm);
 
 void TrackListView_ZoomIn(TrackListView *pm);
 void TrackListView_ZoomOut(TrackListView *pm);
+void TrackListView_ZoomToProject(TrackListView *pm);
 
 void CloseTrackListView(TrackListView *pm);
 void CloseTrackListView_StaticClasses();

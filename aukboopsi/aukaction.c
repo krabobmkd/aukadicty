@@ -378,6 +378,12 @@ BOOL Action_ViewZoomOut(AukActionContext *context) {
     return TRUE;
 }
 
+BOOL Action_ViewZoomProject(AukActionContext *context) {
+    (void)context;
+    TrackListView_ZoomToProject(context->trackListView);
+    return TRUE;
+}
+
 BOOL Action_ViewCollapseTracks(AukActionContext *context) {
     (void)context;
     /* TODO: Implement collapse all tracks */
@@ -440,6 +446,7 @@ static AukAction actionTable[ACTION_COUNT] = {
     /* View actions */
     [ACTION_VIEW_ZOOMIN]          = {Action_ViewZoomIn,         MSG_VIEW_ZOOMIN,          NULL, 0x5D, 0}, /* Numpad + */
     [ACTION_VIEW_ZOOMOUT]         = {Action_ViewZoomOut,        MSG_VIEW_ZOOMOUT,         NULL, 0x4A, 0}, /* Numpad - */
+    [ACTION_VIEW_ZOOM_PROJECT]    = {Action_ViewZoomProject,    MSG_VIEW_ZOOM_PROJECT,    NULL, 0, 0},
     [ACTION_VIEW_COLLAPSE_TRACKS] = {Action_ViewCollapseTracks, MSG_VIEW_COLLAPSE_TRACKS, NULL, 0, 0},
     [ACTION_VIEW_EXPAND_TRACKS]   = {Action_ViewExpandTracks,   MSG_VIEW_EXPAND_TRACKS,   NULL, 0, 0},
     [ACTION_VIEW_ICONIFY]         = {Action_ViewIconify,        MSG_VIEW_ICONIFY,         NULL, 0, 0},

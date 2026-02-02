@@ -68,6 +68,7 @@ static const char *defaultStrings[MSG_COUNT] = {
     [MSG_MENU_VIEW] = "View",
     [MSG_VIEW_ZOOMIN] = "Zoom In",
     [MSG_VIEW_ZOOMOUT] = "Zoom Out",
+    [MSG_VIEW_ZOOM_PROJECT] = "Zoom to Project",
     [MSG_VIEW_COLLAPSE_TRACKS] = "Collapse Tracks",
     [MSG_VIEW_EXPAND_TRACKS] = "Expand Tracks",
     [MSG_VIEW_ICONIFY] = "Iconify",

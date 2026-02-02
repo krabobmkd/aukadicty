@@ -58,6 +58,8 @@ typedef struct ITrackHeader {
 
     struct GadgetInfo	*_gadgetInfo;
 
+
+    struct Hook *_backfillHook;
     /* domain -> layout vars  */
    //int row1height,row2height, sliderheight;
 

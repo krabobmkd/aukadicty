@@ -133,6 +133,9 @@ Zoom avant
 MSG_VIEW_ZOOMOUT
 Zoom arrière
 ;
+MSG_VIEW_ZOOM_PROJECT
+Zoom sur le projet
+;
 MSG_VIEW_COLLAPSE_TRACKS
 Réduire les pistes
 ;

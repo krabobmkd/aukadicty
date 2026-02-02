@@ -20,6 +20,10 @@
 #include "compilers.h"
 #include "FooterView.h"
 
+#include <aukobject.h>
+#include <aukaproject.h>
+#include "TimeRule/class_timerule_private.h"
+
 /* This can be reallocated, so this is shared like this */
 extern struct Window *CurrentMainWindow;
 
@@ -135,8 +139,89 @@ void FooterView_UpdatePlayPosition(FooterView *fv, const char *position)
                    TAG_END);
 }
 
+/* Listener callback for project updates */
+static void AukUpdate_FooterView(AukObject* listenerObject, AukObject* modifiedObject, void *userData, AukMessage *message)
+{
+    FooterView *fv = (FooterView *)userData;
+    AukAProject *project = (AukAProject*)modifiedObject;
+
+    (void)listenerObject; /* unused */
+
+    if(!fv || !project || !message) return;
+
+    switch(message->type)
+    {
+        case AUK_MSG_SELECTIONCHANGED:
+        {
+            AukSelection *sel = &project->selection;
+            char startBuf[32], endBuf[32];
+            /* TIMESCALE_MSEC = 1 for millisecond precision */
+            TimeRule_FormatTime(sel->_start, startBuf, 1);
+            TimeRule_FormatTime(sel->_end, endBuf, 1);
+            FooterView_UpdateSelection(fv, startBuf, endBuf);
+        }
+        break;
+        default:
+        break;
+    }
+}
+
+void FooterView_SetProject(FooterView *fv, AukObjectPtr project)
+{
+    AukAProject *proj;
+    if(!fv || !project) return;
+
+    proj = (AukAProject *)project;
+
+    /* Remove listener from previous project if any */
+    if(fv->project && fv->updateListener)
+    {
+        AukObject_RemoveListener((AukObject *)fv->project, fv->updateListener);
+    }
+
+    fv->project = project;
+
+    /* Create listener object if not already created */
+    if(!fv->updateListener)
+    {
+        AukObject_New(&fv->updateListener);
+    }
+
+    /* Register listener on new project */
+    if(fv->updateListener)
+    {
+        AukObject_AddListener(&proj->base.base,
+                            fv->updateListener,
+                            (void*)fv,
+                            &AukUpdate_FooterView);
+
+        /* Initialize footer with current selection */
+        {
+            AukSelection *sel = &proj->selection;
+            char startBuf[32], endBuf[32];
+            TimeRule_FormatTime(sel->_start, startBuf, 1);
+            TimeRule_FormatTime(sel->_end, endBuf, 1);
+            FooterView_UpdateSelection(fv, startBuf, endBuf);
+        }
+    }
+}
+
 void CloseFooterView(FooterView *fv)
 {
+    if(!fv) return;
+
+    /* Remove listener from project */
+    if(fv->project && fv->updateListener)
+    {
+        AukObject_RemoveListener((AukObject *)fv->project, fv->updateListener);
+    }
+
+    /* Release the listener and project references */
+    AukObjectPtr_Release(&fv->updateListener);
+    AukObjectPtr_Release(&fv->project);
+
+    fv->project = NULL;
+
     /* Disposing mainHl will cascade to all child objects */
     /* Note: Actually handled by main window disposal */
 }

@@ -106,6 +106,7 @@ void CreateTrackListView(TrackListView *pm,struct DrawInfo *drawInfo,
                                 TRACKLIST_StyleSheet, (ULONG)stylesheet,
                                 GA_ID,GAD_TRACKLIST, /* allows to redirect notify messages */
                                 ICA_TARGET,appModel, /* will send messages, that will be received by the main app boopsi object model */
+                                GA_DrawInfo,(ULONG)drawInfo,
                                 TAG_END);
 
         pm->scrollerV = (Object *)NewObject( SCROLLER_GetClass(), NULL,
@@ -253,7 +254,6 @@ static void AukUpdate_Track(AukObject* listenerObject, AukObject* modifiedObject
         break;
         case AUK_MSG_TRACKMODIFIED_CHANGESoundPosition:
         {
-        bdbprintf(" tlv AUK_MSG_TRACKMODIFIED_CHANGESoundPosition\n");
             TrackListArea_TrackRedraw((struct Gadget *)pm->trackList,message->_track_id);
             pm->updateBits |= TLVB_UPDATE_HORIZSCROLLDOMAIN ;
             if(myTask) Signal(myTask, SIGBREAKF_CTRL_F);
@@ -338,7 +338,6 @@ static void AukUpdate_TrackList(AukObject* listenerObject, AukObject* modifiedOb
         break;
         case AUK_MSG_SELECTIONCHANGED:
         {
-            //AukAProject *project = (AukAProject*)modifiedObject;
             AukSelection *sel = &project->selection;
             TrackListArea_SetCurrentSelection(trackListAreaUi,sel);
             if(pm->timerule)
@@ -1058,4 +1057,43 @@ void TrackListView_ZoomIn(TrackListView *pm)
 void TrackListView_ZoomOut(TrackListView *pm)
 {
     TrackListView_ZoomChange(pm,0x00010000 + (0x00010000>>2) ); // X 1.25
+}
+
+void TrackListView_ZoomToProject(TrackListView *pm)
+{
+    TimeProjection trackListTimeproj;
+    ULONG headerWidth = 0;
+    struct Gadget *Gadtracklist;
+    ULONG trackAreaWidth;
+    AukAProject *project;
+    long long duration;
+
+    if(!pm || !pm->trackList || !pm->project) return;
+
+    project = (AukAProject *)pm->project;
+    duration = project->GetDuration(project);
+    if(duration <= 0) return;
+
+    GetAttr(TRACKLIST_HeaderWidth, pm->trackList, &headerWidth);
+    GetAttr(TRACKLIST_TimeProjection, pm->trackList,(ULONG*) &trackListTimeproj);
+
+    Gadtracklist = (struct Gadget *)pm->trackList;
+    trackAreaWidth = ((ULONG)Gadtracklist->Width - headerWidth);
+    if(trackAreaWidth == 0) return;
+
+    /* Calculate timePerPixelWidth so entire duration fits in visible area */
+    trackListTimeproj._timePerPixelWidth = duration / trackAreaWidth;
+
+    /* Clamp to min/max zoom */
+    if(trackListTimeproj._timePerPixelWidth < TRACKLIST_MINZOOM)
+        trackListTimeproj._timePerPixelWidth = TRACKLIST_MINZOOM;
+    else if(trackListTimeproj._timePerPixelWidth > TRACKLIST_MAXZOOM)
+        trackListTimeproj._timePerPixelWidth = TRACKLIST_MAXZOOM;
+
+    /* Start at time 0 */
+    trackListTimeproj._pixAtLeft = 0;
+
+    TrackListView_SetHScrollPos(pm,&trackListTimeproj);
+    updateHorizontalScrollDomain(pm);
+    TrackListArea_FullTrackRedraw((struct Gadget *)pm->trackList);
 }

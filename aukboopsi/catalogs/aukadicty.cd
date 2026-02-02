@@ -158,6 +158,9 @@ Zoom In
 MSG_VIEW_ZOOMOUT (//)
 Zoom Out
 ;
+MSG_VIEW_ZOOM_PROJECT (//)
+Zoom to Project
+;
 MSG_VIEW_COLLAPSE_TRACKS (//)
 Collapse Tracks
 ;

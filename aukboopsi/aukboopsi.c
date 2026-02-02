@@ -643,6 +643,7 @@ int initProject()
     }
     // link document with UI
     TrackListView_setProject(&app->tracksListView,project);
+    FooterView_SetProject(&app->footerView,project);
 
     /* Set project properties */
     project->base.SetName(&project->base, "My First Project");

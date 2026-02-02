@@ -104,19 +104,26 @@ typedef enum {
 } TimeScale;
 
 /**
- * Format a time value with appropriate unit suffix.
- * Outputs formats like "100µs", "50ms", "1.5s", "2m30s"
+ * Format a time value with hierarchical unit display.
+ *
+ * Output formats by scale:
+ * - TIMESCALE_USEC: "1h05m03s450986µs", "05m03s450986µs", "03s450986µs", "450986µs"
+ * - TIMESCALE_MSEC: "1h05m03s450ms", "05m03s450ms", "03s450ms", "450ms"
+ * - TIMESCALE_SEC:  "1h05m03s", "05m03s", "03s"
+ * - TIMESCALE_MIN:  "1h05m", "05m"
+ *
+ * Minutes and seconds are always 2 digits when displayed.
+ * The smallest unit (ms/µs) has no leading zeros.
  *
  * @param stime      Time value in 32.32 fixed-point (integer part = seconds)
- * @param buffer     Output buffer (must be at least 16 chars)
+ * @param buffer     Output buffer (must be at least 24 chars for safety)
  * @param scale      The scale to use for formatting
  */
 void TimeRule_FormatTime(long long stime, char *buffer, int scale)
 {
     char *p = buffer;
     int negative = 0;
-    ULONG seconds, minutes, hours;
-    (void)p;  /* Suppress unused warning if buffer manipulation changes */
+    ULONG totalSeconds, seconds, minutes, hours;
 
     if(stime < 0)
     {
@@ -124,41 +131,73 @@ void TimeRule_FormatTime(long long stime, char *buffer, int scale)
         stime = -stime;
     }
 
-    /* Extract integer seconds */
-    seconds = (ULONG)(stime >> 32);
-
-    minutes = seconds / 60;
-    seconds = seconds % 60;
-    hours = minutes / 60;
-    minutes = minutes % 60;
-
     if(negative) *p++ = '-';
+
+    /* Extract integer seconds and break into h:m:s */
+    totalSeconds = (ULONG)(stime >> 32);
+    hours = totalSeconds / 3600;
+    minutes = (totalSeconds % 3600) / 60;
+    seconds = totalSeconds % 60;
 
     switch(scale)
     {
         case TIMESCALE_USEC:
         {
-            /* Format as microseconds - timePerPixel determined we need µs precision,
-             * so that's what we show. Always. No second-guessing the zoom level. */
-            /* Add 0x80000000 for rounding before shift */
-            ULONG totalUs = (ULONG)(((stime * 1000000ULL) + 0x80000000ULL) >> 32);
+            /* Microseconds replace milliseconds entirely: "05m03s450986µs" */
+            /* Extract fractional part as microseconds (0-999999) */
+            ULONG fracUs = (ULONG)(((stime & 0xFFFFFFFFULL) * 1000000ULL + 0x80000000ULL) >> 32);
+            if(fracUs >= 1000000) fracUs = 999999;  /* Clamp for rounding edge case */
 
-            p += sprintf(p, "%lu", (unsigned long)totalUs);
-            /* µ is 0xB5 in ISO-8859-1 / Amiga charset */
-            *p++ = (char)0xB5;
+            if(hours > 0)
+            {
+                p += sprintf(p, "%luh%02lum%02lus%06lu",
+                    (unsigned long)hours, (unsigned long)minutes,
+                    (unsigned long)seconds, (unsigned long)fracUs);
+            }
+            else if(minutes > 0)
+            {
+                p += sprintf(p, "%02lum%02lus%06lu",
+                    (unsigned long)minutes, (unsigned long)seconds, (unsigned long)fracUs);
+            }
+            else if(seconds > 0)
+            {
+                p += sprintf(p, "%02lus%06lu", (unsigned long)seconds, (unsigned long)fracUs);
+            }
+            else
+            {
+                p += sprintf(p, "%lu", (unsigned long)fracUs);
+            }
+            *p++ = (char)0xB5;  /* µ in ISO-8859-1 / Amiga charset */
             *p++ = 's';
             break;
         }
 
         case TIMESCALE_MSEC:
         {
-            /* Format as milliseconds - ALWAYS show ms at this zoom level
-             * because that's what the user zoomed in to see! */
-            /* Add 0x80000000 for rounding before shift */
-            ULONG totalMs = (ULONG)(((stime * 1000ULL) + 0x80000000ULL) >> 32);
+            /* Hierarchical display: "1h05m03s450ms" */
+            /* Extract fractional part as milliseconds (0-999) */
+            ULONG fracMs = (ULONG)(((stime & 0xFFFFFFFFULL) * 1000ULL + 0x80000000ULL) >> 32);
+            if(fracMs >= 1000) fracMs = 999;  /* Clamp for rounding edge case */
 
-            /* Always show full milliseconds: "7500ms" not "7.5s" */
-            p += sprintf(p, "%lu", (unsigned long)totalMs);
+            if(hours > 0)
+            {
+                p += sprintf(p, "%luh%02lum%02lus%03lu",
+                    (unsigned long)hours, (unsigned long)minutes,
+                    (unsigned long)seconds, (unsigned long)fracMs);
+            }
+            else if(minutes > 0)
+            {
+                p += sprintf(p, "%02lum%02lus%03lu",
+                    (unsigned long)minutes, (unsigned long)seconds, (unsigned long)fracMs);
+            }
+            else if(seconds > 0)
+            {
+                p += sprintf(p, "%02lus%03lu", (unsigned long)seconds, (unsigned long)fracMs);
+            }
+            else
+            {
+                p += sprintf(p, "%lu", (unsigned long)fracMs);
+            }
             *p++ = 'm';
             *p++ = 's';
             break;
@@ -166,70 +205,33 @@ void TimeRule_FormatTime(long long stime, char *buffer, int scale)
 
         case TIMESCALE_SEC:
         {
-            /* Format as seconds with s suffix */
-            if(minutes > 0 || hours > 0)
+            /* Hierarchical display: "1h05m03s" */
+            if(hours > 0)
             {
-                /* Show minutes:seconds format */
-                if(hours > 0)
-                {
-                    p += sprintf(p, "%lu", (unsigned long)hours);
-                    *p++ = 'h';
-                }
-                if(minutes > 0 || hours > 0)
-                {
-                    p += sprintf(p, "%lu", (unsigned long)minutes);
-                    *p++ = 'm';
-                }
-                if(seconds > 0)
-                {
-                    p += sprintf(p, "%lu", (unsigned long)seconds);
-                    *p++ = 's';
-                }
+                p += sprintf(p, "%luh%02lum%02lus",
+                    (unsigned long)hours, (unsigned long)minutes, (unsigned long)seconds);
+            }
+            else if(minutes > 0)
+            {
+                p += sprintf(p, "%02lum%02lus", (unsigned long)minutes, (unsigned long)seconds);
             }
             else
             {
-                /* Just seconds */
-                ULONG totalSec = (ULONG)(stime >> 32);
-                /* Add 0x80000000 for rounding before shift */
-                ULONG fracTenth = (ULONG)((((stime & 0xFFFFFFFFULL) * 10) + 0x80000000ULL) >> 32);
-                if(fracTenth > 0 && totalSec < 10)
-                {
-                    p += sprintf(p, "%lu.%lu", (unsigned long)totalSec, (unsigned long)fracTenth);
-                }
-                else
-                {
-                    p += sprintf(p, "%lu", (unsigned long)totalSec);
-                }
-                *p++ = 's';
+                p += sprintf(p, "%lus", (unsigned long)seconds);
             }
             break;
         }
 
         case TIMESCALE_MIN:
         {
-            /* Format as minutes with m suffix */
-            ULONG totalMin = (ULONG)(stime >> 32) / 60;
-            ULONG remainSec = (ULONG)(stime >> 32) % 60;
-
+            /* Hierarchical display: "1h05m" */
             if(hours > 0)
             {
-                p += sprintf(p, "%lu", (unsigned long)hours);
-                *p++ = 'h';
-                if(minutes > 0)
-                {
-                    p += sprintf(p, "%lu", (unsigned long)minutes);
-                    *p++ = 'm';
-                }
+                p += sprintf(p, "%luh%02lum", (unsigned long)hours, (unsigned long)minutes);
             }
             else
             {
-                p += sprintf(p, "%lu", (unsigned long)totalMin);
-                *p++ = 'm';
-                if(remainSec > 0 && totalMin < 10)
-                {
-                    p += sprintf(p, "%lu", (unsigned long)remainSec);
-                    *p++ = 's';
-                }
+                p += sprintf(p, "%lum", (unsigned long)minutes);
             }
             break;
         }

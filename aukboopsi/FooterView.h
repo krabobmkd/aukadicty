@@ -2,12 +2,15 @@
 #define FooterView_H
 
 #include <intuition/classusr.h>
+#include <aukdefs.h>
 #include "aukstyle.h"
 
 /*
     Manages the bottom status bar section of the GUI.
     Displays project mixing frequency, selection start/end times,
     and current playback position.
+
+    Registers as a listener on the project to receive selection updates.
 */
 typedef struct FooterView
 {
@@ -26,11 +29,17 @@ typedef struct FooterView
     /* Visual style configuration */
     AukStyle *pstyleSheet;
 
+    /* Listener for project updates */
+    AukObjectPtr updateListener;
+    AukObjectPtr project;  /* Reference to project for listener registration */
+
 } FooterView;
 
 void CreateFooterView(FooterView *fv, struct DrawInfo *drawInfo,
                       Object *appModel,
                       AukStyle *style);
+
+void FooterView_SetProject(FooterView *fv, AukObjectPtr project);
 
 void FooterView_UpdateFrequency(FooterView *fv, ULONG frequency);
 void FooterView_UpdateSelection(FooterView *fv, const char *startTime, const char *endTime);

@@ -62,6 +62,7 @@ enum {
     /* View actions */
     ACTION_VIEW_ZOOMIN,
     ACTION_VIEW_ZOOMOUT,
+    ACTION_VIEW_ZOOM_PROJECT,
     ACTION_VIEW_COLLAPSE_TRACKS,
     ACTION_VIEW_EXPAND_TRACKS,
     ACTION_VIEW_ICONIFY,
@@ -107,6 +108,7 @@ BOOL Action_TracksAdd(AukActionContext *context);
 
 BOOL Action_ViewZoomIn(AukActionContext *context);
 BOOL Action_ViewZoomOut(AukActionContext *context);
+BOOL Action_ViewZoomProject(AukActionContext *context);
 BOOL Action_ViewCollapseTracks(AukActionContext *context);
 BOOL Action_ViewExpandTracks(AukActionContext *context);
 BOOL Action_ViewIconify(AukActionContext *context);

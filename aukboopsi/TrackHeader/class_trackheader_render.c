@@ -352,19 +352,29 @@ void TrackHeader_Render(Class *C, struct Gadget *Gad, struct gpRender *Render)
 
 
     sub = (struct Gadget *)gdata->subs[THS_CloseButton];
-    if(sub)
+    if(sub && gdata->_backfillHook)
     {
+        // LAYERS_NOBACKFILL
+        struct Hook *oldHook =  InstallLayerHook( rp->Layer , gdata->_backfillHook );
+
         SetAPen(rp,style->pens[AUK_COLOR_WHITE].pen);
         RectFill(rp,
                     leftedge,topedge,
                     leftedge,topedge+height
                     );
-        RectFill(rp,
+//        RectFill(rp,
+//                    leftedge+sub->Width+1,topedge,
+//                    leftedge+sub->Width+1,topedge+sub->Height
+//                    );
+//        EraseRect(rp,
+//                    leftedge,topedge,
+//                    leftedge,topedge+height
+//                    );
+        EraseRect(rp,
                     leftedge+sub->Width+1,topedge,
                     leftedge+sub->Width+1,topedge+sub->Height
                     );
-
-
+        InstallLayerHook( rp->Layer , oldHook );
     }
 
 }

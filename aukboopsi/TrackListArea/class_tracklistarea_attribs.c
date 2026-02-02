@@ -32,6 +32,9 @@
 #include "bdbprintf.h"
 extern struct IClass   *TrackListClassPtr;
 
+/* This can be reallocated, so this is shared like this */
+extern struct Window *CurrentMainWindow;
+
 ULONG TrackListArea_NotifyAttribValue(struct Gadget *Gad, struct GadgetInfo *GInfo,ULONG attrib, ULONG value)
 {
     struct opUpdate notifymsg;
@@ -126,6 +129,7 @@ ULONG TrackListArea_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
 
     switch(tag->ti_Tag)
     {
+
       case TRACKLIST_ScrollY:
         {            
           LONG newScrollY = (LONG)data;
@@ -159,8 +163,30 @@ ULONG TrackListArea_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
       used = 1;
         gdata->_styleSheet = (struct AukStyle *)data;
         break;
-       case GA_DrawInfo:
-        gdata->_drawInfo = (struct DrawInfo *)data;
+        case GA_DrawInfo:
+        {
+            bdbprintf(" *** ** ------------- TLA GA_DrawInfo:%08x\n",(int)data);
+            if(data)
+            {   ULONG it,ic;
+                gdata->_drawInfo = (struct DrawInfo *)data;
+
+                for(it=0;it<gdata->_trackCount ;it++)
+                {
+                    TrackChild *tracks = gdata->_tracks + it;
+                    for(ic=0;ic<tracks->_nbChannels ;ic++)
+                    {
+                        TrackChannelChild *tcc = tracks->_channels + ic;
+                        if(tcc->_trackHeader)
+                        {
+                            SetGadgetAttrs((struct Gadget *)tcc->_trackHeader,
+                                            CurrentMainWindow,NULL,
+                                            GA_DrawInfo,data,TAG_END );
+                        }
+                    }
+                } // end loop per track
+
+            } // if di ok
+        }
         break;
 
      // - - - actually we have to manage super class attribs:
@@ -219,8 +245,7 @@ ULONG TrackListArea_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
     break;
 
     default:
-        //does not seems to do anything for gadgets.... DoSuperMethodA(C,(APTR)Gad,(Msg)Set);
-        //note: apparently super call is not to be managed here (not sure !!!)
+        // done at dispatch DoSuperMethodA(C,(APTR)Gad,(Msg)Set);
         break;
 
     } // end switch
