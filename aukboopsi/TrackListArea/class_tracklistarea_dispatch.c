@@ -92,7 +92,10 @@ ULONG ASM SAVEDS TrackListArea_Dispatcher(
         gdata->_timeProjection._pixAtLeft = 0;
         gdata->_timeProjection._timePerPixelWidth = (10LL<<32)/640; /* 10 seconds for 640 pixel width.*/
 
- bdbprintf(" init_timePerPixelWidth: %08x.%08x\n",(int)(gdata->_timeProjection._timePerPixelWidth>>32),(int)gdata->_timeProjection._timePerPixelWidth);
+        gdata->_drawInfo = NULL;
+        gdata->_BackFillHook = NULL;
+
+ //bdbprintf(" init_timePerPixelWidth: %08x.%08x\n",(int)(gdata->_timeProjection._timePerPixelWidth>>32),(int)gdata->_timeProjection._timePerPixelWidth);
 
         /* set gadget (super class) attributes for this instance like this: */
         /* (BOOL) Indicate whether gadget is part of TAB/SHIFT-TAB cycle. */

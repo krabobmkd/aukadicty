@@ -93,6 +93,7 @@ ULONG TrackHeader_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
     {
       case GA_BackFill:
       {
+            bdbprintf(" *** ** TH GA_BackFill:%08x\n",(int)data);
         gdata->_backfillHook =  (struct Hook *)data;
       }  break;
         case GA_DrawInfo:
@@ -157,7 +158,7 @@ ULONG TrackHeader_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
                 strcat(tname,"..");
                 name = &tname[0];
             }
- bdbprintf("*** TRACKHEADER_Name %s\n",name);
+ //bdbprintf("*** TRACKHEADER_Name %s\n",name);
             SetAttrs(btname,GA_Text,(ULONG)name,TAG_END);
           }
           actuallydone = 1;

@@ -187,7 +187,7 @@ static int TrackListArea_CreateTrackChannelLine(
 
     if(dataTrack && dataTrack->name) trackname = dataTrack->name;
     if(trackname) TRACKHEADER_Nametag = TRACKHEADER_Name;
-    bdbprintf("TrackListArea_CreateTrackLine trackname:%s\n",trackname);
+  //  bdbprintf("TrackListArea_CreateTrackLine trackname:%s\n",trackname);
     /* Create TrackHeader gadget */
     if(iChannel ==0)
     {
@@ -199,7 +199,7 @@ static int TrackListArea_CreateTrackChannelLine(
                            //test LAYOUT_FillPen, gdata->_styleSheet->trackHeaderBG.pen,
                             TRACKHEADER_TrackIndex,iTrack,
                             ICA_TARGET,TargetInstance,
-                            GA_DrawInfo, (ULONG)gdata->_drawInfo,
+                             GA_DrawInfo, (ULONG)gdata->_drawInfo,
                             TRACKHEADER_Nametag,trackname, // optional, must be last
                             TAG_END);
 
@@ -361,7 +361,7 @@ void TrackListArea_insertTrack(struct Gadget *Gad, AukTrack *track, int indexToI
     if(indexToInsert < 0) indexToInsert = 0;
     if((ULONG)indexToInsert > gdata->_trackCount) indexToInsert = gdata->_trackCount;
 
-    bdbprintf("TrackListArea_insertTrack index:%d count:%ld\n", indexToInsert, gdata->_trackCount);
+  //  bdbprintf("TrackListArea_insertTrack index:%d count:%ld\n", indexToInsert, gdata->_trackCount);
 
     /* Shift existing tracks up to make room */
     if((ULONG)indexToInsert < gdata->_trackCount)
@@ -414,7 +414,7 @@ void TrackListArea_insertTrack(struct Gadget *Gad, AukTrack *track, int indexToI
             }
 
         } // end loop per chan
-  printf("///// pchild->_nbChannels %d\n",track->channelCount);
+
         pchild->_nbChannels = track->channelCount;
     }
 
@@ -721,29 +721,6 @@ void TrackListArea_SetZoomSelectorRun(struct Gadget *Gad, AukSelection *zoomsel)
    /* when used for zoom span run, _mode ==1 means draw span,
       _mode == 0 means zoom span lasso ended, must apply zoom
    */
-   if(zoomsel->_mode == 0)
-   {
-        ULONG trackwidth = Gad->Width - ( gdata->_headerWidth + gdata->_volruleWidth );
-        TimeProjection newtimeproj;
-        long long t1 = zoomsel->_start;
-        long long t2 = zoomsel->_end;
-
-        if(t2 == t1 || trackwidth==0) return;
-        if(t2<t1) {
-            long long s=t1; t1=t2; t2=s;
-        }
-
-        newtimeproj._timePerPixelWidth = (unsigned long long)(t2-t1)/trackwidth ;
-
-        if( newtimeproj._timePerPixelWidth < TRACKLIST_MINZOOM ) newtimeproj._timePerPixelWidth = TRACKLIST_MINZOOM;
-        else if( newtimeproj._timePerPixelWidth > TRACKLIST_MAXZOOM ) newtimeproj._timePerPixelWidth = TRACKLIST_MAXZOOM;
-
-        newtimeproj._pixAtLeft = t1 / newtimeproj._timePerPixelWidth;
-        SetGadgetAttrs(Gad,CurrentMainWindow,NULL,
-                    TRACKLIST_TimeProjection,(ULONG)&newtimeproj,TAG_END);
-   } else
-   {
-        /* propagate state with full redraw */
-        TrackListArea_FullTrackRedraw(Gad);
-    }
+    /* propagate state with full redraw */
+    TrackListArea_FullTrackRedraw(Gad);
 }

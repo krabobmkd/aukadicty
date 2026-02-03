@@ -5,6 +5,7 @@
 #include <intuition/intuition.h>
 #include <aukdefs.h>
 #include "aukstyle.h"
+#include "aukselection.h"
 
 /*
     keeps anything related to track list view in the UI.
@@ -72,6 +73,7 @@ void TrackListView_UpdateTimeRule(TrackListView *pm);
 void TrackListView_ZoomIn(TrackListView *pm);
 void TrackListView_ZoomOut(TrackListView *pm);
 void TrackListView_ZoomToProject(TrackListView *pm);
+void TrackListView_ZoomToSpan(TrackListView *pm,AukSelection *zoomsel);
 
 void CloseTrackListView(TrackListView *pm);
 void CloseTrackListView_StaticClasses();

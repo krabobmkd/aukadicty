@@ -105,6 +105,7 @@ ULONG ASM SAVEDS TrackHeader_Dispatcher(
         {
             drawInfo = (struct DrawInfo *)ptag->ti_Data;
         }
+        bdbprintf("drawInfo at new:%08x\n",(int)drawInfo);
 
         if(!trackname)
         {
@@ -127,6 +128,8 @@ ULONG ASM SAVEDS TrackHeader_Dispatcher(
             gdata=INST_DATA(C, Gad);
             bdbprintf_new("TrackHeader", Gad);
             Gad->GadgetID = GAD_TRACKHEADER_BASE+(iTrack<<4);
+
+            TrackHeader_SetAttrs(C,Gad,(struct opSet *)M);
 
             // more than not sure: actually crash at boot.
            //not sure:  SetSuperAttrs(C,Gad,LAYOUT_DeferLayout,TRUE,TAG_END);

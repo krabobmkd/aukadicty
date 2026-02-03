@@ -61,7 +61,7 @@ ULONG VolumeRule_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
         {
             case VOLUMERULE_StyleSheet:
                 gdata->_style = (AukStyle *)tag->ti_Data;
-                bdbprintf("VolumeRule_SetAttrs VOLUMERULE_StyleSheet %08x\n",(int)gdata->_style);
+             //   bdbprintf("VolumeRule_SetAttrs VOLUMERULE_StyleSheet %08x\n",(int)gdata->_style);
                 actuallydone = 1;
                 break;
 

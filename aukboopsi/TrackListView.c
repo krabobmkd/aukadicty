@@ -194,7 +194,7 @@ static void AukUpdate_Track(AukObject* listenerObject, AukObject* modifiedObject
 
     AukTrack *track = message->_track;
     if(!pm || !track) return;
-    bdbprintf(" **** AukUpdate_Track ! \n");
+ //   bdbprintf(" **** AukUpdate_Track ! \n");
     switch(message->type)
     {
         case AUK_MSG_TRACKMODIFIED_TIMECHANGE:
@@ -271,7 +271,7 @@ static void AukUpdate_TrackList(AukObject* listenerObject, AukObject* modifiedOb
     AukAProject *project = (AukAProject*)modifiedObject;
     TrackListView *pm = (TrackListView *)userData;
 
-    printf(" **** AukUpdate_TrackList ! \n");
+   // printf(" **** AukUpdate_TrackList ! \n");
     if(!pm || !project || !message) return;
 
     trackListAreaUi = (struct Gadget *)pm->trackList;
@@ -281,7 +281,7 @@ static void AukUpdate_TrackList(AukObject* listenerObject, AukObject* modifiedOb
         {
             AukMessage_AProject *m = (AukMessage_AProject *)message;
             AukTrack *track = m->_track;
-    printf(" **** AUK_MSG_TRACKADDED ! \n");
+   // printf(" **** AUK_MSG_TRACKADDED ! \n");
             if(track)  AukObject_AddListener((AukObject *)track,
                   pm->updateListener, // AukObject* listenerObject,
                   (void*)pm, // userData
@@ -311,7 +311,7 @@ static void AukUpdate_TrackList(AukObject* listenerObject, AukObject* modifiedOb
             AukMessage_AProject *m = (AukMessage_AProject *)message;
             AukTrack *track = m->_track;
 
-    bdbprintf(" **** receive from data AUK_MSG_TRACKREMOVED ! \n");
+  //  bdbprintf(" **** receive from data AUK_MSG_TRACKREMOVED ! \n");
             if(track)  AukObject_RemoveListener((AukObject *)track,
                         pm->updateListener // AukObject* listenerObject,
                   );
@@ -410,7 +410,7 @@ void updateVerticalScrollDomain(TrackListView *pm)
  * min = 1/(44100*2) seconds/pixel = 1/88200 sec/px
  * In fixed-point 32.32: (1LL << 32) / 88200 = approximately 48693
  */
-#define MIN_TIME_PER_PIXEL_WIDTH (48693LL>>8)
+//#define MIN_TIME_PER_PIXEL_WIDTH (48693LL>>8)
 
 /**
  * Update the Horizontal scroller's domain based on the trackList's max time length
@@ -421,14 +421,14 @@ void updateVerticalScrollDomain(TrackListView *pm)
  *
  * Also updates TimeRule's time border attributes to match visible time range.
  */
-void updateHorizontalScrollDomain(TrackListView *pm)
+void updateHorizontalScrollDomain(TrackListView *pm, int alsoSetoffset)
 {
     TimeProjection trackListTimeproj;
     struct Gadget *trackListGad;
     AukAProject *project;
     long long duration;
     long long timePerPixelWidth;
-    ULONG domainWidthPix;
+    unsigned long long domainWidthPix;
     ULONG visibleWidthRelative;
     ULONG trackPixelWidth;
     ULONG scrollerTop;
@@ -465,16 +465,16 @@ void updateHorizontalScrollDomain(TrackListView *pm)
      GetAttr(TRACKLIST_TrackAreaWidth, pm->trackList, &trackPixelWidth);
     if(trackPixelWidth==0) return;
 
-    // may move scrollerTop or not...
-    GetAttr(SCROLLER_Top, pm->scrollerH, &scrollerTop);
+
+
 
 
     /* Clamp timePerPixelWidth to minimum (prevent divide by zero and over-zoom) */
-    if(timePerPixelWidth < MIN_TIME_PER_PIXEL_WIDTH) {
-        timePerPixelWidth = MIN_TIME_PER_PIXEL_WIDTH;
+    if(timePerPixelWidth < TRACKLIST_MINZOOM) {
+        timePerPixelWidth = TRACKLIST_MINZOOM;
     }
 
-    domainWidthPix =  (ULONG)((unsigned long long)duration/(unsigned long long)timePerPixelWidth);
+    domainWidthPix =  ((unsigned long long)duration/(unsigned long long)timePerPixelWidth);
      if(domainWidthPix==0) domainWidthPix=1;
 
     if(domainWidthPix <=trackPixelWidth) {
@@ -490,6 +490,18 @@ void updateHorizontalScrollDomain(TrackListView *pm)
     }
     // shouldnt happen, but well...
     if(visibleWidthRelative>SCROLLERH_FIXEDTOTAL) visibleWidthRelative = SCROLLERH_FIXEDTOTAL;
+
+    // may move scrollerTop or not...
+    if(alsoSetoffset)
+    {
+        scrollerTop = (trackListTimeproj._pixAtLeft*SCROLLERH_FIXEDTOTAL)/
+                    domainWidthPix
+                     ;
+    } else
+    {
+        /* reuse  */
+        GetAttr(SCROLLER_Top, pm->scrollerH, &scrollerTop);
+    }
 
     if(scrollerTop>(SCROLLERH_FIXEDTOTAL-visibleWidthRelative))
     scrollerTop = SCROLLERH_FIXEDTOTAL-visibleWidthRelative;
@@ -774,7 +786,18 @@ void TrackListView_ListenTrackHeaderMessage(TrackListView *pm,struct opUpdate *M
                             This is all TrackListArea (UI) internal things...
                         */
                         AukSelection *sel = (AukSelection *)ptag->ti_Data;
-                        TrackListArea_SetZoomSelectorRun((struct Gadget *)pm->trackList,sel);
+                        /* when the zoom move ends, apply zoom change */
+                        if(sel->_mode == 0)
+                        {
+                            TrackListView_ZoomToSpan(pm,sel);
+                            TrackListArea_SetZoomSelectorRun((struct Gadget *)pm->trackList,sel);
+                        } else
+                        {
+                            // when moving just display span
+                            /* for the display */
+                            TrackListArea_SetZoomSelectorRun((struct Gadget *)pm->trackList,sel);
+
+                        }
                     } break;
                     case TRACKAREA_SoundSlideChange:
                     {
@@ -924,7 +947,7 @@ void TrackListView_SetEditMode(TrackListView *pm, int editMode)
 void TrackListView_CheckUpdates(TrackListView *pm)
 {
     if(pm->updateBits & TLVB_UPDATE_VERTSCROLLDOMAIN) updateVerticalScrollDomain(pm);
-    if(pm->updateBits & TLVB_UPDATE_HORIZSCROLLDOMAIN) updateHorizontalScrollDomain(pm);
+    if(pm->updateBits & TLVB_UPDATE_HORIZSCROLLDOMAIN) updateHorizontalScrollDomain(pm,0);
 
     if(pm->updateBits & TLVB_UPDATE_REDRAW_TRACKLIST)
     {
@@ -1043,7 +1066,7 @@ static void TrackListView_ZoomChange(TrackListView *pm, ULONG factor)
 
     TrackListView_SetHScrollPos(pm,&trackListTimeproj);
 
-    updateHorizontalScrollDomain(pm);
+    updateHorizontalScrollDomain(pm,1);
     // same as TLVB_UPDATE_REDRAW_TRACKLIST, but do not redraw headers
     //SetGadgetAttrs((struct Gadget *)pm->trackList, CurrentMainWindow, NULL,TRACKLIST_JustTracksRefresh,TRUE,TAG_END);
     /* need full time refresh on all tracks */
@@ -1057,6 +1080,46 @@ void TrackListView_ZoomIn(TrackListView *pm)
 void TrackListView_ZoomOut(TrackListView *pm)
 {
     TrackListView_ZoomChange(pm,0x00010000 + (0x00010000>>2) ); // X 1.25
+}
+
+/* sent during moving the zoom selctor */
+void TrackListView_ZoomToSpan(TrackListView *pm,AukSelection *zoomsel)
+{
+    ULONG trackwidth;
+    TimeProjection newtimeproj;
+    long long t1,t2;
+    LONG headerWidth = 0;
+    struct Gadget *Gadtracklist;
+
+   if(!pm || !pm->trackList || !pm->project || !zoomsel) return;
+
+    t1 = zoomsel->_start;
+    t2 = zoomsel->_end;
+
+    if(t2 == t1) return;
+    if(t2<t1) {
+        long long s=t1; t1=t2; t2=s;
+    }
+    GetAttr(TRACKLIST_HeaderWidth, pm->trackList, &headerWidth);
+    Gadtracklist = (struct Gadget *)pm->trackList ;
+    trackwidth = Gadtracklist->Width - headerWidth ;
+    if(trackwidth ==0 ) return;
+
+    newtimeproj._timePerPixelWidth = (unsigned long long)(t2-t1)/trackwidth ;
+
+    if( newtimeproj._timePerPixelWidth < TRACKLIST_MINZOOM ) newtimeproj._timePerPixelWidth = TRACKLIST_MINZOOM;
+    else if( newtimeproj._timePerPixelWidth > TRACKLIST_MAXZOOM ) newtimeproj._timePerPixelWidth = TRACKLIST_MAXZOOM;
+
+    newtimeproj._pixAtLeft = t1 / newtimeproj._timePerPixelWidth;
+
+    TrackListView_SetHScrollPos(pm,&newtimeproj);
+    //done by SetAttrs( pm->trackList,TRACKLIST_TimeProjection,(ULONG)&newtimeproj,TAG_END);
+    updateHorizontalScrollDomain(pm,1);
+
+
+    /* need full time refresh on all tracks */
+    TrackListArea_FullTrackRedraw((struct Gadget *)pm->trackList);
+
 }
 
 void TrackListView_ZoomToProject(TrackListView *pm)
@@ -1094,6 +1157,6 @@ void TrackListView_ZoomToProject(TrackListView *pm)
     trackListTimeproj._pixAtLeft = 0;
 
     TrackListView_SetHScrollPos(pm,&trackListTimeproj);
-    updateHorizontalScrollDomain(pm);
+    updateHorizontalScrollDomain(pm,0);
     TrackListArea_FullTrackRedraw((struct Gadget *)pm->trackList);
 }

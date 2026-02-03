@@ -110,6 +110,8 @@ typedef struct TrackListArea {
     /* Better to pass this when creating sub-gadgets */
     struct DrawInfo *_drawInfo;
 
+    struct Hook *_BackFillHook;
+
     /* allow our scroll strategy */
     struct Region *_clipRegion;
 

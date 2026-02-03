@@ -159,35 +159,40 @@ ULONG TrackListArea_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
       break;
 
       case TRACKLIST_StyleSheet:
-      bdbprintf("TRACKLIST_StyleSheet set:%08x\n",(int)data);
+     // / bdbprintf("TRACKLIST_StyleSheet set:%08x\n",(int)data);
       used = 1;
         gdata->_styleSheet = (struct AukStyle *)data;
         break;
-        case GA_DrawInfo:
-        {
-            bdbprintf(" *** ** ------------- TLA GA_DrawInfo:%08x\n",(int)data);
-            if(data)
-            {   ULONG it,ic;
-                gdata->_drawInfo = (struct DrawInfo *)data;
+    case GA_BackFill:
+    {
+        gdata->_BackFillHook = (struct Hook *)data;
+        bdbprintf(" *** ** ----- TLA GA_BackFill:%08x\n",(int)data);
+    } break;
+    case GA_DrawInfo:
+    {
+        bdbprintf(" *** ** ----- TLA GA_DrawInfo:%08x\n",(int)data);
+        if(data)
+        {   ULONG it,ic;
+            gdata->_drawInfo = (struct DrawInfo *)data;
 
-                for(it=0;it<gdata->_trackCount ;it++)
+            for(it=0;it<gdata->_trackCount ;it++)
+            {
+                TrackChild *tracks = gdata->_tracks + it;
+                for(ic=0;ic<tracks->_nbChannels ;ic++)
                 {
-                    TrackChild *tracks = gdata->_tracks + it;
-                    for(ic=0;ic<tracks->_nbChannels ;ic++)
+                    TrackChannelChild *tcc = tracks->_channels + ic;
+                    if(tcc->_trackHeader)
                     {
-                        TrackChannelChild *tcc = tracks->_channels + ic;
-                        if(tcc->_trackHeader)
-                        {
-                            SetGadgetAttrs((struct Gadget *)tcc->_trackHeader,
-                                            CurrentMainWindow,NULL,
-                                            GA_DrawInfo,data,TAG_END );
-                        }
+                        SetGadgetAttrs((struct Gadget *)tcc->_trackHeader,
+                                        CurrentMainWindow,NULL,
+                                        GA_DrawInfo,data,TAG_END );
                     }
-                } // end loop per track
+                }
+            } // end loop per track
 
-            } // if di ok
-        }
-        break;
+        } // if di ok
+    }
+    break;
 
      // - - - actually we have to manage super class attribs:
      // with GA_XXX and struct Gadget members...

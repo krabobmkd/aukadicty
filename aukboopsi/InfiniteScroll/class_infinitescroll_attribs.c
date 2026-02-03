@@ -100,7 +100,10 @@ ULONG InfiniteScroll_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
             case INFINITESCROLL_FullTilesRefresh:
             {
                 // this is enough to flush the cache at rendering.
-               //    bdbprintf(" //// set INFINITESCROLL_FullTilesRefresh:\n");
+                if(Gad->LeftEdge<16)
+                {
+                   bdbprintf(" //// set INFINITESCROLL_FullTilesRefresh:\n");
+                   }
                 gdata->_currentLeftBorderTileIndex = -1;
                 needsRefresh = TRUE;
             } break;

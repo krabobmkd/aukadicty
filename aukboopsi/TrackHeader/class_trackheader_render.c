@@ -334,6 +334,7 @@ void TrackHeader_Render(Class *C, struct Gadget *Gad, struct gpRender *Render)
     struct Gadget *sub;
     struct RastPort *rp;
     AukStyle *style;
+    struct Hook *bfh=NULL;
     LONG topedge,leftedge,width,height;
 
     if(!Render->gpr_RPort) return;
@@ -349,13 +350,14 @@ void TrackHeader_Render(Class *C, struct Gadget *Gad, struct gpRender *Render)
     width = Gad->Width;
     height = Gad->Height;
 
-
+    GetAttr(GA_BackFill,Gad,&bfh);
+//bdbprintf("gdata->_backfillHook %08x %08x\n",(int)gdata->_backfillHook,bfh);
 
     sub = (struct Gadget *)gdata->subs[THS_CloseButton];
-    if(sub && gdata->_backfillHook)
+    if(sub /*&& gdata->_backfillHook*/)
     {
         // LAYERS_NOBACKFILL
-        struct Hook *oldHook =  InstallLayerHook( rp->Layer , gdata->_backfillHook );
+       // struct Hook *oldHook =  InstallLayerHook( rp->Layer , gdata->_backfillHook );
 
         SetAPen(rp,style->pens[AUK_COLOR_WHITE].pen);
         RectFill(rp,
@@ -374,7 +376,7 @@ void TrackHeader_Render(Class *C, struct Gadget *Gad, struct gpRender *Render)
                     leftedge+sub->Width+1,topedge,
                     leftedge+sub->Width+1,topedge+sub->Height
                     );
-        InstallLayerHook( rp->Layer , oldHook );
+      //  InstallLayerHook( rp->Layer , oldHook );
     }
 
 }

@@ -230,6 +230,7 @@ if((Gad->Flags & GFLG_DISABLED)==0)
 
                         if(sound)
                         {
+
                             /* Found a sound - start sliding */
                             gdata->_MoveType = TRCKMOVE_Slide;
                             gdata->_slidingSound = sound;

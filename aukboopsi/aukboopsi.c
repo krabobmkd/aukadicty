@@ -258,7 +258,7 @@ int main(int argc, char **argv)
 
     /* Open fonts from specifications */
     app->styleSheet->ApplyStyle( app->styleSheet,app->lockedscreen );
-   bdbprintf(" **** main init style:%08x fontTiny:%08x \n",(int)&app->styleSheet->style,(int)app->styleSheet->style.fontTiny);
+   //bdbprintf(" **** main init style:%08x fontTiny:%08x \n",(int)&app->styleSheet->style,(int)app->styleSheet->style.fontTiny);
 
     CreateHeaderView(&app->headerView, app->drawInfo, TargetInstance, &app->styleSheet->style);
 
