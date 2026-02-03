@@ -52,9 +52,10 @@ void AukSoundFile_Serialize(AukObject* This, ISerializer* ser, const char* pName
     ser->t_string_mutable(ser, "filename", &soundFile->filename);
 
     /* Serialize audio properties */
-    ser->t_ulonglong(ser, "sampleRate", (unsigned long long*)&soundFile->sampleRate);
-    ser->t_ulonglong(ser, "channels", (unsigned long long*)&soundFile->channels);
-    ser->t_ulonglong(ser, "frameCount", (unsigned long long*)&soundFile->frameCount);
+ /* no, this information is caught from files */
+//    ser->t_ulonglong(ser, "sampleRate", (unsigned long long*)&soundFile->sampleRate);
+//    ser->t_ulonglong(ser, "channels", (unsigned long long*)&soundFile->channels);
+//    ser->t_ulonglong(ser, "frameCount", (unsigned long long*)&soundFile->frameCount);
 }
 
 int AukSoundFile_SetFilename(void* This, const char* filename) {

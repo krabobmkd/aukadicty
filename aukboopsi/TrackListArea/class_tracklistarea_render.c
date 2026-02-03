@@ -537,6 +537,43 @@ ULONG TrackListArea_Render(Class *C, struct Gadget *Gad, struct gpRender *Render
 
     InstallClipRegion( rp->Layer,oldClipRegion); // important to pass NULL if oldClipRegion is NULL.
 
+    /* may render zoom span when running */
+    if(gdata->_zoomSpan._mode == 1)
+    {
+        AukStyle *style;
+        TimeProjection *tproj;
+        WORD penline;
+        LONG xstart,xend;
+        LONG trackareax1,trackareax2;
+
+        tproj = &gdata->_timeProjection;
+        style = gdata->_styleSheet;
+
+        trackareax1 = Gad->LeftEdge + gdata->_headerWidth + gdata->_volruleWidth;
+        trackareax2 = Gad->LeftEdge + Gad->Width;
+
+        penline = style->pens[AUK_COLOR_BLACK].pen;
+
+        xstart = (gdata->_zoomSpan._start / tproj->_timePerPixelWidth) - tproj->_pixAtLeft
+                        + trackareax1;
+        xend = (gdata->_zoomSpan._end / tproj->_timePerPixelWidth) - tproj->_pixAtLeft
+                        + trackareax1;
+
+        SetAPen(rp, penline);
+        if(xstart>=trackareax1 && xstart<trackareax2)
+        {
+            Move(rp, Gad->LeftEdge + xstart,Gad->TopEdge );
+            Draw(rp, Gad->LeftEdge + xstart,Gad->TopEdge+Gad->Height );
+        }
+        if(xend>=trackareax1 && xend<trackareax2)
+        {
+            Move(rp, Gad->LeftEdge + xend,Gad->TopEdge );
+            Draw(rp, Gad->LeftEdge + xend,Gad->TopEdge+Gad->Height );
+        }
+
+    }
+
+
  //   if(oldfont) SetFont(rp,oldfont);
 
     // if(bLayerUpdating)

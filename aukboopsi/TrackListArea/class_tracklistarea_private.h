@@ -20,6 +20,7 @@ extern "C" {
 #include <graphics/regions.h>
 
 #include "aukaproject.h"
+#include "aukselection.h"
 
 // enable or not some parts of code...
 #define USE_REGION_CLIPPING 1
@@ -112,6 +113,9 @@ typedef struct TrackListArea {
     /* allow our scroll strategy */
     struct Region *_clipRegion;
 
+    /*zoom span draw info when moving */
+    AukSelection _zoomSpan;
+
 } TrackListArea;
 
 // internal tool
@@ -156,8 +160,6 @@ void TrackListArea_TrackRedraw(struct Gadget *Gad, int itrack);
 void TrackListArea_SetCurrentSelection(struct Gadget *Gad, AukSelection *sel);
 /* sent during moving the zoom selector */
 void TrackListArea_SetZoomSelectorRun(struct Gadget *Gad, AukSelection *zoomsel);
-/* Apply last value sent to TrackListArea_SetZoomSelectorRun() at bt up */
-void TrackListArea_ApplyZoomSelectorRun(struct Gadget *Gad);
 /* - - - - -- - */
 
 

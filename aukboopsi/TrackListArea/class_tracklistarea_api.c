@@ -716,16 +716,34 @@ void TrackListArea_SetZoomSelectorRun(struct Gadget *Gad, AukSelection *zoomsel)
     if(!Gad) return;
     gdata=INST_DATA(OCLASS(Gad), Gad);
 
+    /* do this so we draw zoom span at TrackListArea level, not track level */
+    gdata->_zoomSpan = *zoomsel;
+   /* when used for zoom span run, _mode ==1 means draw span,
+      _mode == 0 means zoom span lasso ended, must apply zoom
+   */
+   if(zoomsel->_mode == 0)
+   {
+        ULONG trackwidth = Gad->Width - ( gdata->_headerWidth + gdata->_volruleWidth );
+        TimeProjection newtimeproj;
+        long long t1 = zoomsel->_start;
+        long long t2 = zoomsel->_end;
 
-}
-/* Apply last value sent to TrackListArea_SetZoomSelectorRun() at bt up */
-void TrackListArea_ApplyZoomSelectorRun(struct Gadget *Gad)
-{
-   TrackListArea *gdata;
-    TrackChild *strack;
-    AukTrackPtr aukTrack;
-    ULONG nnbc;
+        if(t2 == t1 || trackwidth==0) return;
+        if(t2<t1) {
+            long long s=t1; t1=t2; t2=s;
+        }
 
-    if(!Gad) return;
-    gdata=INST_DATA(OCLASS(Gad), Gad);
+        newtimeproj._timePerPixelWidth = (unsigned long long)(t2-t1)/trackwidth ;
+
+        if( newtimeproj._timePerPixelWidth < TRACKLIST_MINZOOM ) newtimeproj._timePerPixelWidth = TRACKLIST_MINZOOM;
+        else if( newtimeproj._timePerPixelWidth > TRACKLIST_MAXZOOM ) newtimeproj._timePerPixelWidth = TRACKLIST_MAXZOOM;
+
+        newtimeproj._pixAtLeft = t1 / newtimeproj._timePerPixelWidth;
+        SetGadgetAttrs(Gad,CurrentMainWindow,NULL,
+                    TRACKLIST_TimeProjection,(ULONG)&newtimeproj,TAG_END);
+   } else
+   {
+        /* propagate state with full redraw */
+        TrackListArea_FullTrackRedraw(Gad);
+    }
 }

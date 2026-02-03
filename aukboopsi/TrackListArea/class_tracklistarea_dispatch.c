@@ -81,6 +81,8 @@ ULONG ASM SAVEDS TrackListArea_Dispatcher(
         gdata->_domainHeight = 0;
         gdata->_drawInfo = NULL;
 
+        gdata->_zoomSpan._mode = 0;
+
         /* Initialize time projection:
          * _pixAtLeft: Time at left border, can be negative
          * _timePerPixelWidth: Amount of time per pixel in AukFixed 32.32 format.

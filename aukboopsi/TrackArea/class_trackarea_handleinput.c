@@ -134,16 +134,23 @@ if((Gad->Flags & GFLG_DISABLED)==0)
             if( gdata->_MoveType == TRCKMOVE_Selection ||
                gdata->_MoveType == TRCKMOVE_PanZoom )
             {
+                BYTE prevMoveType = gdata->_MoveType;
+
                 gdata->_inputselection._end =
                     (gdata->_pTimeProjection->_pixAtLeft
                     + Input->gpi_Mouse.X) * gdata->_pTimeProjection->_timePerPixelWidth;
 
                 gdata->_MoveType = TRCKMOVE_NoMove;
 
+                // in case of zoom selection, tells we end move, will apply zoom.
+                if(prevMoveType == TRCKMOVE_PanZoom)  gdata->_inputselection._mode = 0;
+
                 TrackArea_NotifyAttribValue(Gad,Input->gpi_GInfo,
-                   (gdata->_MoveType == TRCKMOVE_Selection)?
+                   (prevMoveType == TRCKMOVE_Selection) ?
                         TRACKAREA_TimeSelectionChange:TRACKAREA_TimeZoomChange,
                     (ULONG)&gdata->_inputselection);
+
+
             }
             else if(gdata->_MoveType == TRCKMOVE_Slide && gdata->_slidingSound)
             {
@@ -187,12 +194,11 @@ if((Gad->Flags & GFLG_DISABLED)==0)
             {
                 // mouse click inside gadget !
                 if((CurrentEditMode == EDITMODE_SELECT ||
-                   CurrentEditMode == EDITMODE_VOLUME ) &&
+                   CurrentEditMode == EDITMODE_ZOOM ) &&
                     gdata->_pTimeProjection )
                    {
                         gdata->_MoveType = (CurrentEditMode==EDITMODE_SELECT)
                             ? TRCKMOVE_Selection : TRCKMOVE_PanZoom ;
-
 
                         gdata->_inputselection._mode = 1;
                         gdata->_inputselection._itrack = gdata->_dataTrack->trackIndex ;
@@ -200,6 +206,8 @@ if((Gad->Flags & GFLG_DISABLED)==0)
                         gdata->_inputselection._end =
                             (gdata->_pTimeProjection->_pixAtLeft
                             + Input->gpi_Mouse.X) * gdata->_pTimeProjection->_timePerPixelWidth;
+
+
                     // sendmessage
                     TrackArea_NotifyAttribValue(Gad,Input->gpi_GInfo,
                        (gdata->_MoveType == TRCKMOVE_Selection)?
