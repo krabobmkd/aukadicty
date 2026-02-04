@@ -671,7 +671,8 @@ void TrackListArea_TrackRedraw(struct Gadget *Gad, int itrack)
     for( ichan=0 ; ichan<strack->_nbChannels ; ichan++)
     {
         TrackChannelChild *chanchild = &strack->_channels[ichan];
-        if(chanchild->_layouted && chanchild->_trackArea)
+        if(/*no when slide all chans slide even if hidden! Will refresh later
+            chanchild->_layouted &&*/ chanchild->_trackArea)
         {
             //todo optimize, if not selected should redraw.
             /* because they are InifniteScroll, need explicit tile refresh */

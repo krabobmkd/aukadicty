@@ -96,7 +96,7 @@ ULONG TrackArea_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
 
       case TRACKAREA_DataTrack:
         /* data is a pointer to AukTrack - use AukObjectPtr_Set for reference counting */
-         bdbprintf(" **** TRACKAREA_DataTrack %08x\n",data);
+        // bdbprintf(" **** TRACKAREA_DataTrack %08x\n",data);
         AukObjectPtr_Set((AukObjectPtr*)&gdata->_dataTrack, (AukObject*)data);
         redraw = 1;
         break;

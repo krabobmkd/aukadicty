@@ -40,12 +40,14 @@ ULONG TrackListArea_HandleHitTest(Class *C, struct Gadget *Gad,struct gpHitTest 
         {
             TrackChild *strack;
             strack = &gdata->_tracks[itrack];
-            if(!strack->_layouted) continue;
+           // if(!strack->_layouted) continue;
             for(iChannel = 0; iChannel < strack->_nbChannels; iChannel++)
             {
                 TrackChannelChild *chan = &strack->_channels[iChannel];
                 struct Gadget *headerGad,*volumeRule;
                 struct Gadget *trackGad;
+
+                if(!chan->_layouted) continue;
 
                 headerGad = (struct Gadget*)chan->_trackHeader;
                 volumeRule =  (struct Gadget*)chan->_volumeRule;
@@ -119,17 +121,19 @@ ULONG TrackListArea_HandleInput(Class *C, struct Gadget *Gad,struct gpInput *M, 
         {
             TrackChild *strack;
             strack = &gdata->_tracks[itrack];
-            if(!strack->_layouted) continue;
+          // if(!strack->_layouted) continue;
             for(iChannel = 0; iChannel < strack->_nbChannels; iChannel++)
             {
                 TrackChannelChild *chan = &strack->_channels[iChannel];
                 struct Gadget *headerGad,*volumeRule;
                 struct Gadget *trackGad;
 
+                if(!chan->_layouted) continue;
+
                 headerGad = (struct Gadget*)chan->_trackHeader;
                 volumeRule =  (struct Gadget*)chan->_volumeRule;
                 trackGad = (struct Gadget*)chan->_trackArea;
-                //if(!chan->_layouted) continue;
+
 
                 if(y>=chan->_top && y< chan->_bottom )
                 {
@@ -147,11 +151,12 @@ ULONG TrackListArea_HandleInput(Class *C, struct Gadget *Gad,struct gpInput *M, 
                     } else
                     if(trackGad && x>=chan->_xmid )
                     {
-                        M->gpi_Mouse.X -= trackGad->LeftEdge;
-                        M->gpi_Mouse.Y -= trackGad->TopEdge;
+                        M->gpi_Mouse.X -= trackGad->LeftEdge-leftedge;
+                        M->gpi_Mouse.Y -= trackGad->TopEdge- topedge;
+                       // bdbprintf("prop X:%d Y:%d\n",M->gpi_Mouse.X, M->gpi_Mouse.Y);
                         retval = DoMethodA((Object*)trackGad, (Msg)M);
-                        M->gpi_Mouse.X += trackGad->LeftEdge;
-                        M->gpi_Mouse.Y += trackGad->TopEdge;
+                        M->gpi_Mouse.X += trackGad->LeftEdge-leftedge;
+                        M->gpi_Mouse.Y += trackGad->TopEdge- topedge;
                         break;
                     }
                 } // y test
@@ -187,12 +192,14 @@ window or screen, an application removed the active gadget with RemoveGList(),
         {
             TrackChild *strack;
             strack = &gdata->_tracks[itrack];
-            if(!strack->_layouted) continue;
+          //  if(!strack->_layouted) continue;
             for(iChannel = 0; iChannel < strack->_nbChannels; iChannel++)
             {
                 TrackChannelChild *chan = &strack->_channels[iChannel];
                 struct Gadget *headerGad,*volumeRule;
                 struct Gadget *trackGad;
+
+                if(!chan->_layouted) continue;
 
                 headerGad = (struct Gadget*)chan->_trackHeader;
                 volumeRule = (struct Gadget*)chan->_volumeRule;

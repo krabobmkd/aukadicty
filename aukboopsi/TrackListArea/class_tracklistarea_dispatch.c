@@ -143,17 +143,17 @@ ULONG ASM SAVEDS TrackListArea_Dispatcher(
 //      retval =TrackListArea_HandleHitTest(C,Gad,(struct gpHitTest *)M);
 //      break;
 //    /* you are now going to be fed input */
-//    case GM_GOACTIVE:
-//        retval=TrackListArea_HandleInput(C,Gad,(struct gpInput *)M, M->gpInput.gpi_Mouse.X,M->gpInput.gpi_Mouse.Y);
-//      break;
+   // case GM_GOACTIVE:
+   //     retval=TrackListArea_HandleInput(C,Gad,(struct gpInput *)M, M->gpInput.gpi_Mouse.X,M->gpInput.gpi_Mouse.Y);
+   //   break;
 
-//    case GM_GOINACTIVE:
-//        TrackListArea_GoInactive(C,Gad,(struct gpRender *)M);
-//      break;
-//    case GM_HANDLEINPUT:
-//      gdata=INST_DATA(C, Gad);
-//      retval=TrackListArea_HandleInput(C,Gad,(struct gpInput *)M,M->gpInput.gpi_Mouse.X,M->gpInput.gpi_Mouse.Y);
-//      break;
+   // case GM_GOINACTIVE:
+   //     TrackListArea_GoInactive(C,Gad,(struct gpRender *)M);
+   //   break;
+   // case GM_HANDLEINPUT:
+   //   gdata=INST_DATA(C, Gad);
+   //   retval=TrackListArea_HandleInput(C,Gad,(struct gpInput *)M,M->gpInput.gpi_Mouse.X,M->gpInput.gpi_Mouse.Y);
+   //   break;
 
 
     case GM_LAYOUT:

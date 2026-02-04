@@ -189,9 +189,13 @@ if((Gad->Flags & GFLG_DISABLED)==0)
             {// outside gadget or disabled.
                 // click outside ?
                  retval = GMR_NOREUSE;
+    bdbprintf("SELECTDOWN GMR_NOREUSE\n");
             }
             else // don't manage clicks if disabled.
             {
+    bdbprintf("cem:%d tp:%08x dtt:%08x \n",CurrentEditMode,(int)gdata->_pTimeProjection,
+    (int)gdata->_pTimeProjection);
+
                 // mouse click inside gadget !
                 if((CurrentEditMode == EDITMODE_SELECT ||
                    CurrentEditMode == EDITMODE_ZOOM ) &&
@@ -249,12 +253,14 @@ if((Gad->Flags & GFLG_DISABLED)==0)
                         }
                         else
                         {
+                        bdbprintf("no sound under ->GMR_NOREUSE\n");
                             /* No sound under mouse - don't activate */
                             retval = GMR_NOREUSE;
                         }
                    }
                    else
                    {
+                   bdbprintf("no case to manage ->GMR_NOREUSE\n");
                         retval = GMR_NOREUSE;
                    }
             }
@@ -291,7 +297,7 @@ if((Gad->Flags & GFLG_DISABLED)==0)
                     gdata->_slideInfo.sound = gdata->_slidingSound;
                     gdata->_slideInfo.newStartTime = newStartTime;
                     gdata->_slideInfo.isEnd = 0;
-
+  //bdbprintf("go NotifySoundSlide\n");
                     TrackArea_NotifySoundSlide(Gad, Input->gpi_GInfo, &gdata->_slideInfo);
                 }
 

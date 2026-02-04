@@ -208,7 +208,7 @@ ULONG TrackListArea_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout
                 TrackChannelChild *chan = &strack->_channels[iChannel];
                 UWORD trackHeight=0;
                 if(iChannel == 0)
-                {   /* the header is always only on tyhe first chan
+                {   /* the header is always only on the first chan
                     This is layouted after the loop
                     */
                     headerGad = (struct Gadget *) chan->_trackHeader;
@@ -227,36 +227,50 @@ ULONG TrackListArea_Layout(Class *C, struct Gadget *Gad, struct gpLayout *layout
                     (trackTop > topedge + height)
                      )
                 {
-                    chan->_top = trackTop;
-                    chan->_bottom = trackTop+trackHeight;
-                    trackTop += trackHeight ;
-                    continue;
-                }
-                // now header is layout after all chans trackareas
-                if(volumeRule)
+                    // got to sort of hide
+                    if(volumeRule)
+                    {
+                        volumeRule->LeftEdge =-1;
+                        volumeRule->TopEdge = 0;
+                        volumeRule->Width = 0,
+                        volumeRule->Height = 0;
+                    }
+                    if(trackGad)
+                    {
+                        trackGad->LeftEdge =-1;
+                        trackGad->TopEdge = 0;
+                        trackGad->Width = 0,
+                        trackGad->Height = 0;
+                    }
+                } else
                 {
-                    volumeRule->LeftEdge = leftedge + gdata->_headerWidth;
-                    volumeRule->TopEdge = trackTop;
-                    volumeRule->Width = gdata->_volruleWidth;
-                    volumeRule->Height = trackHeight;
+                    // now header is layout after all chans trackareas
+                    if(volumeRule)
+                    {
+                        volumeRule->LeftEdge = leftedge + gdata->_headerWidth;
+                        volumeRule->TopEdge = trackTop;
+                        volumeRule->Width = gdata->_volruleWidth;
+                        volumeRule->Height = trackHeight;
 
-                    /* Call child's GM_LAYOUT */
-                   DoMethodA((Object*)volumeRule, (Msg)layout);
+                        /* Call child's GM_LAYOUT */
+                       DoMethodA((Object*)volumeRule, (Msg)layout);
+                    }
+                    if(trackGad)
+                    {
+
+                        /* Position TrackArea on the right, after header */
+                        trackGad->LeftEdge = leftedge + gdata->_headerWidth+gdata->_volruleWidth;
+                        trackGad->TopEdge = trackTop;
+                        trackGad->Width = width - (gdata->_headerWidth+gdata->_volruleWidth);
+                        trackGad->Height = trackHeight;
+
+                        /* Call child's GM_LAYOUT */
+                       DoMethodA((Object*)trackGad, (Msg)layout);
+                    }
+                    chan->_layouted = 1;
+                    strack->_layouted = 1;
                 }
-                if(trackGad)
-                {
 
-                    /* Position TrackArea on the right, after header */
-                    trackGad->LeftEdge = leftedge + gdata->_headerWidth+gdata->_volruleWidth;
-                    trackGad->TopEdge = trackTop;
-                    trackGad->Width = width - (gdata->_headerWidth+gdata->_volruleWidth);
-                    trackGad->Height = trackHeight;
-
-                    /* Call child's GM_LAYOUT */
-                   DoMethodA((Object*)trackGad, (Msg)layout);
-                }
-                chan->_layouted = 1;
-                strack->_layouted = 1;
                 chan->_top = trackTop;
                 chan->_bottom = trackTop+trackHeight;
                 chan->_xmid = leftedge+ gdata->_headerWidth+gdata->_volruleWidth;

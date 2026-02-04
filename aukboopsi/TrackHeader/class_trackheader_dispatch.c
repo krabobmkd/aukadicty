@@ -405,7 +405,8 @@ ULONG ASM SAVEDS HeaderButton_Dispatcher(
       //bdbprintf("hbt GOA isPushButton:%d\n",gdata->_isPushButton);
         /* Only become active if the GM_GOACTIVE   */
         /* was triggered by direct user input.     */
-        if (((struct gpInput *)M)->gpi_IEvent)
+        if (((struct gpInput *)M)->gpi_IEvent &&
+           (Gad->Flags & GFLG_DISABLED )==0 )
         {
             int changed = 0;
             ULONG prevselected;
@@ -534,17 +535,6 @@ ULONG ASM SAVEDS HeaderButton_Dispatcher(
 //        TrackListView_UpdateTrackList_Headers();
         retval = 1;
         break;
-//    case GM_RENDER:
-//    {
-//        struct TextFont *prevfont = NULL;
-//        if(M->gpRender.gpr_RPort) prevfont = M->gpRender.gpr_RPort->Font;
-
-//            retval=DoSuperMethodA(C,(Object *)Gad,(Msg)M);
-//       // bdbprintf("bt GM_RENDER:%d\n",retval);
-//       if( prevfont ) SetFont( M->gpRender.gpr_RPort , prevfont );
-//    }
-//    break;
-
     default:
     {
       // for anything, use default  behaviour.
