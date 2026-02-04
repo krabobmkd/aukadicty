@@ -10,7 +10,7 @@
 #include "class_timerule_private.h"
 
 /* Include InfiniteScroll private for access to superclass data */
-//#include "../InfiniteScroll/class_infinitescroll_private.h"
+#include "../InfiniteScroll/class_infinitescroll_private.h"
 #include "../InfiniteScroll/class_infinitescroll.h"
 #include <proto/exec.h>
 #include <proto/intuition.h>
@@ -83,6 +83,11 @@ ULONG ASM SAVEDS TimeRule_Dispatcher(
         {
             TimeRule_SetAttrs(C,Gad,&M->opSet);
         }
+
+            {
+                InfiniteScroll *infdt = INST_DATA(C->cl_Super, Gad);
+                infdt->_implname = "TimeRule";
+            }
 
 
         /* means new object OK so far: */

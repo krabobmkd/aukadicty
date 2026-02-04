@@ -749,6 +749,7 @@ project->CreateTrack(project);
 void TrackListView_UpdateTrackList_Generic()
 {
     if(!app) return;
+    bdbprintf("TrackListView_UpdateTrackList_Generic-> TLVB_UPDATE_REDRAW_TRACKLIST\n");
     //TrackListView_UpdateTrackList(&app->tracksListView);
         app->tracksListView.updateBits |= TLVB_UPDATE_REDRAW_TRACKLIST;
         if(myTask) Signal(myTask,SIGBREAKF_CTRL_F);
@@ -757,6 +758,7 @@ void TrackListView_UpdateTrackList_Generic()
 void TrackListView_UpdateTrackList_Headers()
 {
     if(!app) return;
+    bdbprintf("TrackListView_UpdateTrackList_Headers-> TLVB_UPDATE_REDRAW_JUSTHEADERS\n");
     //TrackListView_UpdateTrackList(&app->tracksListView);
         app->tracksListView.updateBits |= TLVB_UPDATE_REDRAW_JUSTHEADERS;
         if(myTask) Signal(myTask,SIGBREAKF_CTRL_F);

@@ -92,7 +92,7 @@ ULONG TrackListArea_GetAttr(Class *C, struct Gadget *Gad, struct opGet *Get)
       break;
      case TRACKLIST_TrackAreaWidth:
      {
-        LONG w = (LONG)Gad->Width - (WORD)gdata->_headerWidth;
+        LONG w = (LONG)Gad->Width - (LONG)( (LONG)gdata->_headerWidth + gdata->_volruleWidth + gdata->_styleSheet->borderSelectionWidth );
         if(w<0) w=0;
         *data = w;
       }
@@ -225,6 +225,7 @@ ULONG TrackListArea_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
         int filter=(tag->ti_Tag==TRACKLIST_JustTracksRefresh)?1:3;
         if(tag->ti_Tag==TRACKLIST_JustHeadersRefresh) filter=2;
 
+// bdbprintf("TRACKLIST_Refresh with f:%d\n",filter);
         // goes layout...
         {
             struct gpLayout gpl;

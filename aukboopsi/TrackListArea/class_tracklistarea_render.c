@@ -330,7 +330,7 @@ ULONG TrackListArea_Render(Class *C, struct Gadget *Gad, struct gpRender *Render
     }
 
  //   oldfont = rp->Font;
-
+// bdbprintf("TrackListArea_Render f:%d\n",filter);
     gdata=INST_DATA(C, Gad);
 
     if(gdata->_styleSheet)

@@ -81,6 +81,7 @@ ULONG ASM SAVEDS InfiniteScroll_Dispatcher(
         gdata->_layoutedForHeight = 0;
 
         gdata->_renderFunction = NULL;
+        gdata->_implname = "Inf";
 
         /* Process initial attributes */
         InfiniteScroll_SetAttrs(C,Gad,(struct opSet *)M);

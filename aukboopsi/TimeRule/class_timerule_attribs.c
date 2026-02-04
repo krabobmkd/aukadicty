@@ -111,13 +111,15 @@ ULONG TimeRule_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set)
         case TIMERULE_TimePerPixelWidth:
         {
             long long *pv = (long long *)data;
-            if( gdata->_timePerPixelWidth != *pv) fullRedraw=1;
-            gdata->_timePerPixelWidth = *pv;
+            if( gdata->_timePerPixelWidth != *pv)
+            {
+                fullRedraw=1;
+                gdata->_timePerPixelWidth = *pv;
+                TimeRule_UpdateTimeInterval(gdata);
+            }
 
        //  bdbprintf(" TIMERULE_TimePerPixelWidth set %08x.%08x fullRedraw:%d\n",
         //  (int)(gdata->_timePerPixelWidth>>32),(int)gdata->_timePerPixelWidth,fullRedraw);
-
-            TimeRule_UpdateTimeInterval(gdata);
            // fullRedraw = 1;
             used=1;
         }

@@ -39,6 +39,10 @@ typedef struct TrackListView
     /* current edit mode aukeditmode.h */
     int editMode;
 
+    long long lastDomainDurationChecked;
+    long long lastDomainTimePerPixel;
+    ULONG lastDomainWidth;
+
 } TrackListView;
 
 
@@ -46,8 +50,8 @@ typedef struct TrackListView
 #define TLVB_UPDATE_HORIZSCROLLDOMAIN 2
 #define TLVB_UPDATE_REDRAW_JUSTHEADERS 4
 #define TLVB_UPDATE_REDRAW_JUSTTRACKS 8
-#define TLVB_UPDATE_REDRAW_TRACKLIST (4+8)
-#define TLVB_UPDATE_REDRAW_TIMERULE 16
+#define TLVB_UPDATE_REDRAW_TRACKLIST 16
+#define TLVB_UPDATE_REDRAW_TIMERULE 32
 
 void CreateTrackListView(TrackListView *pm,struct DrawInfo *drawInfo,
                 Object *appModel,

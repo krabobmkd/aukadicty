@@ -77,6 +77,10 @@ typedef struct IInfiniteScroll {
 
     /* internal use, allow using target screen pixel format in our bitmap */
     struct BitMap *_friendBitmap;
+
+    /* debug purpose */
+
+    const char *_implname;
 } InfiniteScroll;
 
 ULONG InfiniteScroll_SetAttrs(Class *C, struct Gadget *Gad, struct opSet *Set);

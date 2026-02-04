@@ -323,7 +323,7 @@ static void InfiniteScroll_FullRedraw(
 
     // need full redraw...
     int nbTilesX = (Gad->Width / gdata->_tileWidth)+1;
- //   bdbprintf("InfiniteScroll_FullRedraw: %d\n",nbTilesX);
+    bdbprintf("InfiniteScroll_FullRedraw %s: %d\n",gdata->_implname,nbTilesX);
     InfiniteScroll_RenderTilesRow(renderParams, gdata,0,nbTilesX,
     gdata->_pposition);
     gdata->_currentLeftBorderTileIndex = 0;

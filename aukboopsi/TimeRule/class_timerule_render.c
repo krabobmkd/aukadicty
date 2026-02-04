@@ -124,6 +124,7 @@ void TimeRule_FormatTime(long long stime, char *buffer, int scale)
     char *p = buffer;
     int negative = 0;
     ULONG totalSeconds, seconds, minutes, hours;
+    ULONG frac;
 
     if(stime < 0)
     {
@@ -133,7 +134,34 @@ void TimeRule_FormatTime(long long stime, char *buffer, int scale)
 
     if(negative) *p++ = '-';
 
-    /* Extract integer seconds and break into h:m:s */
+    /* Round based on scale FIRST, then extract h:m:s
+     * This ensures proper carry-over when rounding crosses second boundary */
+    switch(scale)
+    {
+        case TIMESCALE_USEC:
+            /* Round to nearest microsecond */
+            frac = (ULONG)(((stime & 0xFFFFFFFFULL) * 1000000ULL + 0x80000000ULL) >> 32);
+            if(frac >= 1000000)
+            {
+                frac = 0;
+                stime += SEC_FP;  /* Carry to next second */
+            }
+            break;
+        case TIMESCALE_MSEC:
+            /* Round to nearest millisecond */
+            frac = (ULONG)(((stime & 0xFFFFFFFFULL) * 1000ULL + 0x80000000ULL) >> 32);
+            if(frac >= 1000)
+            {
+                frac = 0;
+                stime += SEC_FP;  /* Carry to next second */
+            }
+            break;
+        default:
+            frac = 0;
+            break;
+    }
+
+    /* Now extract integer seconds and break into h:m:s */
     totalSeconds = (ULONG)(stime >> 32);
     hours = totalSeconds / 3600;
     minutes = (totalSeconds % 3600) / 60;
@@ -144,28 +172,24 @@ void TimeRule_FormatTime(long long stime, char *buffer, int scale)
         case TIMESCALE_USEC:
         {
             /* Microseconds replace milliseconds entirely: "05m03s450986µs" */
-            /* Extract fractional part as microseconds (0-999999) */
-            ULONG fracUs = (ULONG)(((stime & 0xFFFFFFFFULL) * 1000000ULL + 0x80000000ULL) >> 32);
-            if(fracUs >= 1000000) fracUs = 999999;  /* Clamp for rounding edge case */
-
             if(hours > 0)
             {
                 p += sprintf(p, "%luh%02lum%02lus%06lu",
                     (unsigned long)hours, (unsigned long)minutes,
-                    (unsigned long)seconds, (unsigned long)fracUs);
+                    (unsigned long)seconds, (unsigned long)frac);
             }
             else if(minutes > 0)
             {
                 p += sprintf(p, "%02lum%02lus%06lu",
-                    (unsigned long)minutes, (unsigned long)seconds, (unsigned long)fracUs);
+                    (unsigned long)minutes, (unsigned long)seconds, (unsigned long)frac);
             }
             else if(seconds > 0)
             {
-                p += sprintf(p, "%02lus%06lu", (unsigned long)seconds, (unsigned long)fracUs);
+                p += sprintf(p, "%02lus%06lu", (unsigned long)seconds, (unsigned long)frac);
             }
             else
             {
-                p += sprintf(p, "%lu", (unsigned long)fracUs);
+                p += sprintf(p, "%lu", (unsigned long)frac);
             }
             *p++ = (char)0xB5;  /* µ in ISO-8859-1 / Amiga charset */
             *p++ = 's';
@@ -175,28 +199,24 @@ void TimeRule_FormatTime(long long stime, char *buffer, int scale)
         case TIMESCALE_MSEC:
         {
             /* Hierarchical display: "1h05m03s450ms" */
-            /* Extract fractional part as milliseconds (0-999) */
-            ULONG fracMs = (ULONG)(((stime & 0xFFFFFFFFULL) * 1000ULL + 0x80000000ULL) >> 32);
-            if(fracMs >= 1000) fracMs = 999;  /* Clamp for rounding edge case */
-
             if(hours > 0)
             {
                 p += sprintf(p, "%luh%02lum%02lus%03lu",
                     (unsigned long)hours, (unsigned long)minutes,
-                    (unsigned long)seconds, (unsigned long)fracMs);
+                    (unsigned long)seconds, (unsigned long)frac);
             }
             else if(minutes > 0)
             {
                 p += sprintf(p, "%02lum%02lus%03lu",
-                    (unsigned long)minutes, (unsigned long)seconds, (unsigned long)fracMs);
+                    (unsigned long)minutes, (unsigned long)seconds, (unsigned long)frac);
             }
             else if(seconds > 0)
             {
-                p += sprintf(p, "%02lus%03lu", (unsigned long)seconds, (unsigned long)fracMs);
+                p += sprintf(p, "%02lus%03lu", (unsigned long)seconds, (unsigned long)frac);
             }
             else
             {
-                p += sprintf(p, "%lu", (unsigned long)fracMs);
+                p += sprintf(p, "%lu", (unsigned long)frac);
             }
             *p++ = 'm';
             *p++ = 's';
