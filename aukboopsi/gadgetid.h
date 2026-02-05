@@ -42,6 +42,9 @@
 
 #define GAD_BUTTON_ABOUT 16
 
+
+#define GAD_BUTTON_SETTINGSW_TEST 17
+
 /* Individual track area gadgets start from this base */
 //#define GAD_TRACKAREA_BASE      4096
 

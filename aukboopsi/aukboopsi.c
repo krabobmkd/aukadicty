@@ -167,6 +167,8 @@ struct App
     Object *window_obj; // window as boopsi object
     // now it's CurrentMainWindow struct Window *win; // current re-opened windows, as a classic intuition Window.
 
+    Object *window_prefs; // window as boopsi object
+
     struct MsgPort *app_port;
 
     struct Screen *lockedscreen;
@@ -201,6 +203,9 @@ struct App *app=NULL;
 // Yet, it's needed for most Gadget method calls, and this is not retained by boopsi objects.
 // note there vould be many windows.
 struct Window *CurrentMainWindow=NULL;
+struct Window *CurrentProjectSettingsWindow=NULL;
+//struct MsgPort *projsettings_app_port=NULL;
+
 // shared global state...
 int CurrentEditMode = 0;
 
@@ -208,10 +213,26 @@ BoopsiDisposeQueue *ObjectLateDisposer=NULL;
 
 static int testprojectinited=0;
 int initProject();
+
+void OpenSettingsWindow()
+{
+    if(!app || !app->window_prefs) return;
+    if( CurrentProjectSettingsWindow ) return; /* already open */
+
+    CurrentProjectSettingsWindow = boopsi_OpenWindow(app->window_prefs);
+}
+void CloseSettingsWindow()
+{
+    if(!app || !app->window_prefs || CurrentProjectSettingsWindow==NULL) return;
+    DoMethod(app->window_prefs, WM_CLOSE, NULL);
+    CurrentProjectSettingsWindow = NULL;
+}
+
 //  - - - -- - - - -  end of App modelclass management.
 
 int main(int argc, char **argv)
 {
+    int y;
     myTask = FindTask(NULL);
     atexit(&exitclose);
 
@@ -318,12 +339,19 @@ int main(int argc, char **argv)
 
     }
 
+
+
+
     app->app_port = CreateMsgPort();
 
+    // projsettings_app_port = CreateMsgPort();
+
+    y = 12;
+    if(app->lockedscreen->Font) y = (app->lockedscreen->Font->ta_YSize) + 3 + 16;
     /* Create the window object. */
     app->window_obj = (Object *)NewObject( WINDOW_GetClass(), NULL,
         WA_Left, 40,
-        WA_Top, (ULONG)(app->lockedscreen->Font->ta_YSize) + 3 + 16,
+        WA_Top, (ULONG)y,
         WA_Width,320,
         WA_Height,240,
         WA_CustomScreen, (ULONG) app->lockedscreen,
@@ -338,6 +366,43 @@ int main(int argc, char **argv)
     TAG_END);
     if(!app->window_obj) cleanexit("can't create window");
 
+    {
+        Object *btt = (Object *)NewObject(BUTTON_GetClass(), NULL,
+                       // GA_DrawInfo, app->drawInfo,
+                        GA_Text, (ULONG)"test win",
+                        ICA_TARGET, TargetInstance,
+                        GA_ID, GAD_BUTTON_SETTINGSW_TEST,
+                        TAG_END);
+
+    Object *prwl  = NewObject(LAYOUT_GetClass(), NULL,
+
+            GA_DrawInfo, app->drawInfo,
+            LAYOUT_DeferLayout, TRUE, /* Layout refreshes done on task's context (by thewindow class)*/
+            LAYOUT_Orientation, LAYOUT_ORIENT_VERT,
+
+                        LAYOUT_BevelStyle, BVS_NONE,
+                        LAYOUT_SpaceOuter, TRUE,
+                        LAYOUT_SpaceInner, TRUE,
+                        LAYOUT_AddChild,(ULONG) btt,
+                        TAG_END);
+
+        app->window_prefs = (Object *)NewObject( WINDOW_GetClass(), NULL,
+            WA_Left, 140,
+            WA_Top, (ULONG)y,
+            WA_Width,180,
+            WA_Height,220,
+            WA_CustomScreen, (ULONG) app->lockedscreen,
+            WA_IDCMP, IDCMP_CLOSEWINDOW | IDCMP_MENUPICK | IDCMP_RAWKEY ,
+            WA_Flags, WFLG_DRAGBAR | WFLG_DEPTHGADGET | WFLG_CLOSEGADGET | WFLG_SIZEGADGET | WFLG_ACTIVATE | WFLG_SMART_REFRESH,
+            WA_Title,(ULONG)  LOC(MSG_SETTINGS_PROJECT),
+            WINDOW_ParentGroup,(ULONG)prwl,
+       //     WINDOW_IconifyGadget, TRUE,
+      //re      WINDOW_Icon,(ULONG) GetDiskObject("PROGDIR:ReAction"),
+       //     WINDOW_AppPort, (ULONG)app->app_port,
+      //test  WINDOW_AppPort,(ULONG) projsettings_app_port,
+        TAG_END);
+        }
+
     /*  Open the window. */
     CurrentMainWindow = boopsi_OpenWindow(app->window_obj);
     if(!CurrentMainWindow) cleanexit("can't open window");
@@ -347,14 +412,19 @@ int main(int argc, char **argv)
         printf("Warning: Could not create menus\n");
     }
 
-
-
     {
-        ULONG winsignal;
+        ULONG winsignal;        
+
         BOOL ok = TRUE;
 
         /* Obtain the window wait signal mask.*/
         GetAttr(WINDOW_SigMask, app->window_obj, &winsignal);
+
+        /* Obtain the window wait signal mask also for this window */
+
+//        { ULONG s; GetAttr(WINDOW_SigMask, app->window_prefs, &s);
+//         printf("\n **** signal for prefswin:%08x\n",(int)s);
+//         winsignal |= s; }
 
         /* Input Event Loop */
         while (ok)
@@ -363,14 +433,19 @@ int main(int argc, char **argv)
 
             flushbdbprint();
             /* What to wait for ? */
-            waitedSignals = winsignal |  // window boopsi level wait port (different than Window->UserPort ?)
-                        (1L << app->app_port->mp_SigBit) |
-                        SIGBREAKF_CTRL_C |  // quit on Ctrl-C
-                        SIGBREAKF_CTRL_F    // we use that as special refresh if something happen.
+            waitedSignals = winsignal |  /* window boopsi level wait port (different than Window->UserPort ?)*/
+                        (1L << app->app_port->mp_SigBit) | /* apparently just for uniconify ? */
+                        SIGBREAKF_CTRL_C |  /* will quit on Ctrl-C */
+                        SIGBREAKF_CTRL_F    /* we use this available signal for additional messaging (asked by logs and messaging delayed). */
                         ;
+            /* if subsidiary windows are open, we also listen them while othey are open. */
+            if(CurrentProjectSettingsWindow) waitedSignals |= (1L << CurrentProjectSettingsWindow->UserPort->mp_SigBit);
 
+            /* AmigaOS magic, GUI process uses 0% cpu if it has nothing to do,
+             * then wake up when anything needs it. */
             currentSignals = Wait(waitedSignals);
 
+            /* exit app at any moment from Ctrl-C signal, atexit() magic does anything needed. */
             if(currentSignals & SIGBREAKF_CTRL_C) exit(0);
 
             /* CA_HandleInput() returns the gadget ID of a clicked
@@ -442,6 +517,25 @@ int main(int argc, char **argv)
                 }
 
 
+            } // end while messages
+
+            /* other windows management : */
+            /*  Settings window */
+           while ((result = DoMethod(app->window_prefs, WM_HANDLEINPUT, /*code*/NULL)) != WMHI_LASTMSG)
+            {
+               // printf("sub win %08x\n",result);
+                switch(result & WMHI_CLASSMASK)
+                {
+                   case WMHI_RAWKEY: break;
+                    case WMHI_CLOSEWINDOW: CloseSettingsWindow(); break; /* works */
+                     /* the quick way to get button events at this level.
+                        Doesnt work... no idea why doesnt work on second window ??
+                        So second window messages are only caught with TargetInstance/BoopsiDelay
+                     */
+                   /* case WMHI_GADGETUP:{ break;  }*/
+                    default:
+                        break;
+                }
             } // end while messages
 
             /* removing gadgets children that are currently in action may crash when disposed
@@ -528,6 +622,7 @@ int main(int argc, char **argv)
     // all close done in exitclose().
     return 0;
 }
+extern int AukObjectCount;
 
 void exitclose(void)
 {
@@ -551,8 +646,13 @@ void exitclose(void)
             printf("app->window_obj:%08x\n",(int)app->window_obj);
 
         // this should cascade all OM_DISPOSE:
+
+        if(app->window_prefs) DisposeObject(app->window_prefs);
+        CurrentProjectSettingsWindow = NULL;
+
         if(app->window_obj) DisposeObject(app->window_obj);
         CurrentMainWindow = NULL;
+
 
         if( ObjectLateDisposer)
         {
@@ -571,7 +671,8 @@ void exitclose(void)
 
         /* Delete message port */
         if (app->app_port) DeleteMsgPort(app->app_port);
-
+        /*test if (projsettings_app_port) DeleteMsgPort(projsettings_app_port);
+        projsettings_app_port = NULL;*/
         FreeVec(app);
         app = NULL;
     }
@@ -586,6 +687,11 @@ void exitclose(void)
 
     /* Close localization system */
     AukLocale_Close();
+
+    if(AukObjectCount !=0)
+    {
+        printf(" **** AukObject leaks: %d ****\n");
+    }
 
     /* Close all libraries via table (in reverse order) */
     {
@@ -659,10 +765,6 @@ int initProject()
 
  project->CreateTrack(project);
 project->CreateTrack(project);
-//project->CreateTrack(project);
-//project->CreateTrack(project);
-//project->CreateTrack(project);
-//project->CreateTrack(project);
 
     if (!track1 || !track2) {
         printf("Failed to create tracks\n");

@@ -402,15 +402,20 @@ BOOL Action_ViewIconify(AukActionContext *context) {
     return TRUE;
 }
 
+
 BOOL Action_SettingsProject(AukActionContext *context) {
     (void)context;
-    /* TODO: Show project settings dialog */
+    extern void OpenSettingsWindow();
+    /* Show view settings dialog */
+    OpenSettingsWindow();
+
     return TRUE;
 }
 
+
 BOOL Action_SettingsView(AukActionContext *context) {
     (void)context;
-    /* TODO: Show view settings dialog */
+
     return TRUE;
 }
 

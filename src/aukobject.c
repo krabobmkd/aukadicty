@@ -2,6 +2,9 @@
 #include <proto/exec.h>
 #include <string.h>
 
+
+int AukObjectCount = 0;
+
 /*
  * Base object implementation
  * This is the root of our object hierarchy
@@ -42,6 +45,7 @@ void AukObject_Delete(AukObject* obj) {
             listener = nextListener;
         }
 
+        AukObjectCount--;
         FreeVec(obj);
     }
 }
@@ -170,6 +174,8 @@ void AukObject_Init(AukObject* obj) {
 
         /* Initialize project context */
         obj->_project = NULL;
+
+        AukObjectCount++;
     }
 }
 
