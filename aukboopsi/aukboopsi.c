@@ -45,17 +45,17 @@
 #include <proto/texteditor.h>
 #include <gadgets/texteditor.h>
 
-#include <proto/virtual.h>
-#include <gadgets/virtual.h>
-
 #include <proto/requester.h>
 #include <classes/requester.h>
 
-#include <proto/scroller.h>
-#include <gadgets/scroller.h>
+//#include <proto/scroller.h>
+//#include <gadgets/scroller.h>
 
-#include <proto/slider.h>
-#include <gadgets/slider.h>
+//#include <proto/slider.h>
+//#include <gadgets/slider.h>
+
+//#include <proto/getfile.h>
+//#include <gadgets/getfile.h>
 
 #include <proto/asl.h>
 #include <libraries/asl.h>
@@ -64,6 +64,7 @@
 #include "TrackListView.h"
 #include "HeaderView.h"
 #include "FooterView.h"
+#include "ProjectSettingsView.h"
 #include "auklocale.h"
 #include "aukerrors.h"
 #include "aukaction.h"
@@ -74,6 +75,7 @@
 
 //#include "aukaproject.h"
 #include <aukadicty.h>
+#include <auksoundfileengine.h>
 
 #include "compilers.h"
 #include "bdbprintf.h"
@@ -111,6 +113,7 @@ struct Library *TextFieldBase=NULL;
 struct Library *RequesterBase=NULL;
 struct Library *ScrollerBase=NULL;
 struct Library *SliderBase=NULL;
+struct Library *GetFileBase=NULL;
 struct LocaleBase *LocaleBase=NULL;
 
 /* Library table for automated opening/closing */
@@ -147,6 +150,7 @@ static LibraryEntry libraryTable[] = {
     {"gadgets/texteditor.gadget", 45, &TextFieldBase},
     {"gadgets/scroller.gadget", 45, &ScrollerBase},
     {"gadgets/slider.gadget", 45, &SliderBase},
+    {"gadgets/getfile.gadget", 45, &GetFileBase},
     {NULL, 0, NULL} /* Terminator */
 };
 
@@ -167,7 +171,7 @@ struct App
     Object *window_obj; // window as boopsi object
     // now it's CurrentMainWindow struct Window *win; // current re-opened windows, as a classic intuition Window.
 
-    Object *window_prefs; // window as boopsi object
+    ProjectSettingsView projectSettingsView; /* Project Settings window */
 
     struct MsgPort *app_port;
 
@@ -194,6 +198,8 @@ struct App
      // - - - retain document object
      AukAProjectPtr _project;
 
+     // Sound file loading engine
+     AukSoundFileEngine *soundFileEngine;
 };
 
 // App Modelinstance as our private struct.
@@ -201,10 +207,8 @@ struct App *app=NULL;
 // This is the intuition level Window, on OS3 it's recreated when iconizing/reopening !
 // when  iconizing/reopening BOOPSI objects are kept, but Intuition level instances and buffers are wiped out.
 // Yet, it's needed for most Gadget method calls, and this is not retained by boopsi objects.
-// note there vould be many windows.
+// note there could be many windows.
 struct Window *CurrentMainWindow=NULL;
-struct Window *CurrentProjectSettingsWindow=NULL;
-//struct MsgPort *projsettings_app_port=NULL;
 
 // shared global state...
 int CurrentEditMode = 0;
@@ -216,16 +220,13 @@ int initProject();
 
 void OpenSettingsWindow()
 {
-    if(!app || !app->window_prefs) return;
-    if( CurrentProjectSettingsWindow ) return; /* already open */
-
-    CurrentProjectSettingsWindow = boopsi_OpenWindow(app->window_prefs);
+    if(!app) return;
+    ProjectSettingsView_Open(&app->projectSettingsView);
 }
 void CloseSettingsWindow()
 {
-    if(!app || !app->window_prefs || CurrentProjectSettingsWindow==NULL) return;
-    DoMethod(app->window_prefs, WM_CLOSE, NULL);
-    CurrentProjectSettingsWindow = NULL;
+    if(!app) return;
+    ProjectSettingsView_Close(&app->projectSettingsView);
 }
 
 //  - - - -- - - - -  end of App modelclass management.
@@ -263,6 +264,10 @@ int main(int argc, char **argv)
 
     app = AllocVec(sizeof(struct App),MEMF_CLEAR);
     if(!app)  cleanexit("Can't create app");
+
+    /* Initialize sound file engine for background loading */
+    app->soundFileEngine = AukSoundFileEngine_Init();
+    /* Note: Engine init failure is non-fatal - features that need it will be disabled */
 
     /* BOOPSI needs */
     app->lockedscreen = LockPubScreen(NULL);
@@ -366,42 +371,14 @@ int main(int argc, char **argv)
     TAG_END);
     if(!app->window_obj) cleanexit("can't create window");
 
+    /* Initialize Project Settings window */
+    if(!ProjectSettingsView_Init(&app->projectSettingsView,
+                                  app->lockedscreen,
+                                  app->drawInfo,
+                                  LOC(MSG_SETTINGS_PROJECT)))
     {
-        Object *btt = (Object *)NewObject(BUTTON_GetClass(), NULL,
-                       // GA_DrawInfo, app->drawInfo,
-                        GA_Text, (ULONG)"test win",
-                        ICA_TARGET, TargetInstance,
-                        GA_ID, GAD_BUTTON_SETTINGSW_TEST,
-                        TAG_END);
-
-    Object *prwl  = NewObject(LAYOUT_GetClass(), NULL,
-
-            GA_DrawInfo, app->drawInfo,
-            LAYOUT_DeferLayout, TRUE, /* Layout refreshes done on task's context (by thewindow class)*/
-            LAYOUT_Orientation, LAYOUT_ORIENT_VERT,
-
-                        LAYOUT_BevelStyle, BVS_NONE,
-                        LAYOUT_SpaceOuter, TRUE,
-                        LAYOUT_SpaceInner, TRUE,
-                        LAYOUT_AddChild,(ULONG) btt,
-                        TAG_END);
-
-        app->window_prefs = (Object *)NewObject( WINDOW_GetClass(), NULL,
-            WA_Left, 140,
-            WA_Top, (ULONG)y,
-            WA_Width,180,
-            WA_Height,220,
-            WA_CustomScreen, (ULONG) app->lockedscreen,
-            WA_IDCMP, IDCMP_CLOSEWINDOW | IDCMP_MENUPICK | IDCMP_RAWKEY ,
-            WA_Flags, WFLG_DRAGBAR | WFLG_DEPTHGADGET | WFLG_CLOSEGADGET | WFLG_SIZEGADGET | WFLG_ACTIVATE | WFLG_SMART_REFRESH,
-            WA_Title,(ULONG)  LOC(MSG_SETTINGS_PROJECT),
-            WINDOW_ParentGroup,(ULONG)prwl,
-       //     WINDOW_IconifyGadget, TRUE,
-      //re      WINDOW_Icon,(ULONG) GetDiskObject("PROGDIR:ReAction"),
-       //     WINDOW_AppPort, (ULONG)app->app_port,
-      //test  WINDOW_AppPort,(ULONG) projsettings_app_port,
-        TAG_END);
-        }
+        printf("Warning: Could not create Project Settings window\n");
+    }
 
     /*  Open the window. */
     CurrentMainWindow = boopsi_OpenWindow(app->window_obj);
@@ -438,8 +415,8 @@ int main(int argc, char **argv)
                         SIGBREAKF_CTRL_C |  /* will quit on Ctrl-C */
                         SIGBREAKF_CTRL_F    /* we use this available signal for additional messaging (asked by logs and messaging delayed). */
                         ;
-            /* if subsidiary windows are open, we also listen them while othey are open. */
-            if(CurrentProjectSettingsWindow) waitedSignals |= (1L << CurrentProjectSettingsWindow->UserPort->mp_SigBit);
+            /* if subsidiary windows are open, we also listen them while they are open. */
+            waitedSignals |= ProjectSettingsView_GetSignalMask(&app->projectSettingsView);
 
             /* AmigaOS magic, GUI process uses 0% cpu if it has nothing to do,
              * then wake up when anything needs it. */
@@ -520,23 +497,8 @@ int main(int argc, char **argv)
             } // end while messages
 
             /* other windows management : */
-            /*  Settings window */
-           while ((result = DoMethod(app->window_prefs, WM_HANDLEINPUT, /*code*/NULL)) != WMHI_LASTMSG)
-            {
-               // printf("sub win %08x\n",result);
-                switch(result & WMHI_CLASSMASK)
-                {
-                   case WMHI_RAWKEY: break;
-                    case WMHI_CLOSEWINDOW: CloseSettingsWindow(); break; /* works */
-                     /* the quick way to get button events at this level.
-                        Doesnt work... no idea why doesnt work on second window ??
-                        So second window messages are only caught with TargetInstance/BoopsiDelay
-                     */
-                   /* case WMHI_GADGETUP:{ break;  }*/
-                    default:
-                        break;
-                }
-            } // end while messages
+            /*  Project Settings window */
+            ProjectSettingsView_HandleInput(&app->projectSettingsView);
 
             /* removing gadgets children that are currently in action may crash when disposed
                     ie: the trackheader exit button. In a general way it's better to do
@@ -647,8 +609,7 @@ void exitclose(void)
 
         // this should cascade all OM_DISPOSE:
 
-        if(app->window_prefs) DisposeObject(app->window_prefs);
-        CurrentProjectSettingsWindow = NULL;
+        ProjectSettingsView_Dispose(&app->projectSettingsView);
 
         if(app->window_obj) DisposeObject(app->window_obj);
         CurrentMainWindow = NULL;
@@ -660,6 +621,12 @@ void exitclose(void)
             FreeVec(ObjectLateDisposer);
          }
         ObjectLateDisposer = NULL;
+
+        /* Shutdown sound file engine */
+        if (app->soundFileEngine) {
+            AukSoundFileEngine_Shutdown(app->soundFileEngine);
+            app->soundFileEngine = NULL;
+        }
 
         /* Release stylesheet object (will close fonts automatically) */
         if (app->styleSheet) {

@@ -61,6 +61,8 @@ set(AUKBOOPSI_SOURCES
     HeaderView.h
     FooterView.c
     FooterView.h
+    ProjectSettingsView.c
+    ProjectSettingsView.h
 
     auklocale.c
     auklocale.h

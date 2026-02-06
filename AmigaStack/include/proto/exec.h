@@ -4,6 +4,13 @@
 /*
  * AmigaStack - Exec Library Compatibility Layer
  * Redirects AmigaOS exec.library calls to standard C equivalents
+ *
+ * Threading model:
+ * - CreateNewProc creates a thread with its own pr_MsgPort
+ * - Main process sends messages via PutMsg to thread's pr_MsgPort
+ * - Thread waits with WaitPort, receives with GetMsg
+ * - Thread replies with ReplyMsg to msg->mn_ReplyPort
+ * - Main process waits for reply with WaitPort on its own port
  */
 
 #include <exec/types.h>
@@ -26,9 +33,21 @@ void PutMsg(struct MsgPort* port, struct Message* msg);
 struct Message* GetMsg(struct MsgPort* port);
 void ReplyMsg(struct Message* msg);
 void WaitPort(struct MsgPort* port);
-void WaitTOF();
-/* Process creation */
+
+/* Task/Process functions */
+struct Task* FindTask(const char* name);
+void WaitTOF(void);
+
+/* Process creation - TagItem variant for Amiga compatibility */
 struct Process* CreateNewProc(const struct TagItem* tags);
+
+/* Process creation - Simple variant for PC (no casting needed) */
+struct Process* CreateNewProcSimple(void (*entry)(void), const char* name, int priority);
+
+/* Signal functions (simplified) */
+ULONG Wait(ULONG signalSet);
+void Signal(struct Task* task, ULONG signalSet);
+ULONG SetSignal(ULONG newSignals, ULONG signalSet);
 
 #ifdef __cplusplus
 }

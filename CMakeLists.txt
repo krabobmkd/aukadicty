@@ -13,8 +13,12 @@ option(ENABLEJSONSERIAL " embbed json lib" ON)
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
-# Compiler flags
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra")
+# Compiler flags - conditional for MSVC vs GCC/Clang
+if(MSVC)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W3")
+else()
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra")
+endif()
 set(CMAKE_C_FLAGS_DEBUG "-g -O0")
 set(CMAKE_C_FLAGS_RELEASE "-O2")
 
@@ -75,6 +79,7 @@ set(AUKADICTY_SOURCES
     src/auktrack.c
     src/auksound.c
     src/auksoundfile.c
+    src/auksoundfileengine.c
     src/aukscalararray.c
     src/auktyperegistry.c
     src/aukiffserializer.c
@@ -125,7 +130,7 @@ set(AUKADICTY_HEADERS
     include/serializer.h
     include/aukiffserializer.h
     include/aukselection.h
-
+    include/auksoundfileengine.h
 )
 if(ENABLEJSONSERIAL)
     list(APPEND AUKADICTY_HEADERS
@@ -188,24 +193,31 @@ install(FILES ${AUKSTREAMCACHE_HEADERS}
 # Optional: Build examples
 option(BUILD_EXAMPLES "Build example programs" ON)
 
+# Thread library - pthread on Unix, native on Windows
+if(WIN32)
+    set(THREAD_LIBS "")
+elseif(UNIX)
+    set(THREAD_LIBS pthread)
+endif()
+
 if(BUILD_EXAMPLES)
     # Example: Basic usage
     add_executable(example_basic examples/example_basic.c)
-    target_link_libraries(example_basic aukproject pthread)
+    target_link_libraries(example_basic aukproject ${THREAD_LIBS})
     set_target_properties(example_basic PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/examples
     )
 
     # Example: Load project
     add_executable(example_load examples/example_load.c)
-    target_link_libraries(example_load aukproject pthread)
+    target_link_libraries(example_load aukproject ${THREAD_LIBS})
     set_target_properties(example_load PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/examples
     )
 
     # Example: Listener pattern
     add_executable(example_listener examples/example_listener.c)
-    target_link_libraries(example_listener aukproject pthread)
+    target_link_libraries(example_listener aukproject ${THREAD_LIBS})
     set_target_properties(example_listener PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/examples
     )
@@ -219,8 +231,15 @@ if(BUILD_EXAMPLES)
 
     # Example: IFF serialization
     add_executable(example_iff examples/example_iff.c)
-    target_link_libraries(example_iff aukproject pthread)
+    target_link_libraries(example_iff aukproject ${THREAD_LIBS})
     set_target_properties(example_iff PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/examples
+    )
+
+    # Example: Sound file engine (threading test)
+    add_executable(example_soundfileengine examples/example_soundfileengine.c)
+    target_link_libraries(example_soundfileengine aukproject ${THREAD_LIBS})
+    set_target_properties(example_soundfileengine PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/examples
     )
 

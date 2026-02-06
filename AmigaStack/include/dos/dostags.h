@@ -6,15 +6,16 @@
  */
 
 #include <exec/types.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/* Tag structure */
+/* Tag structure - ti_Data uses pointer-sized integer for 64-bit compatibility */
 struct TagItem {
     unsigned long ti_Tag;
-    unsigned long ti_Data;
+    uintptr_t ti_Data;
 };
 
 /* Standard tags */
