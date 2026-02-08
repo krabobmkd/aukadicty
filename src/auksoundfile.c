@@ -1,12 +1,32 @@
+/*
+ * AukSoundFile implementation
+ * Manages sound file metadata, buffer parts, and consumer lock/unlock mechanism.
+ */
+
 #include "auksoundfile.h"
 #include "aukstring.h"
 #include "serializer.h"
-#include <proto/exec.h>
 
-/*
- * AukSoundFile implementation
- * Manages sound file metadata and filename
- */
+#ifdef AMIGA
+#include <proto/exec.h>
+#else
+#include <stdlib.h>
+#include <string.h>
+
+static void* pc_AllocVec(unsigned long size, unsigned long flags) {
+    void* p = malloc(size);
+    if (p && (flags & MEMF_CLEAR)) memset(p, 0, size);
+    return p;
+}
+static void pc_FreeVec(void* p) { free(p); }
+
+#define AllocVec(size, flags) pc_AllocVec(size, flags)
+#define FreeVec(p) pc_FreeVec(p)
+#endif
+
+/* ============================================================
+ * Constructor / Destructor
+ * ============================================================ */
 
 void AukSoundFile_New(AukObjectPtr* firstPtr) {
     AukSoundFile* soundFile;
@@ -15,8 +35,8 @@ void AukSoundFile_New(AukObjectPtr* firstPtr) {
         return;
     }
 
-    /* as it is written and read by manby process we need specially MEMF_PUBLIC */
-    soundFile = (AukSoundFile*)AllocVec(sizeof(AukSoundFile), MEMF_CLEAR | MEMF_PUBLIC );
+    /* MEMF_PUBLIC for multi-process access */
+    soundFile = (AukSoundFile*)AllocVec(sizeof(AukSoundFile), MEMF_CLEAR | MEMF_PUBLIC);
     if (soundFile) {
         AukSoundFile_Init(soundFile);
         AukObjectPtr_Set(firstPtr, &soundFile->base);
@@ -26,6 +46,20 @@ void AukSoundFile_New(AukObjectPtr* firstPtr) {
 void AukSoundFile_Delete(AukObject* This) {
     AukSoundFile* soundFile = (AukSoundFile*)This;
     if (soundFile) {
+        /* Close plugin if open */
+        if (soundFile->fileformatreader && soundFile->soundReaderPluginData) {
+            soundFile->fileformatreader->close(soundFile);
+        }
+
+        /* Free buffer parts */
+        AukSoundFile_FreeBufferParts(soundFile);
+
+        /* Free min/max array */
+        if (soundFile->minmaxdiv256) {
+            FreeVec(soundFile->minmaxdiv256);
+            soundFile->minmaxdiv256 = NULL;
+        }
+
         /* Free filename string */
         if (soundFile->filename) {
             AukString_Free(soundFile->filename);
@@ -49,15 +83,53 @@ void AukSoundFile_Serialize(AukObject* This, ISerializer* ser, const char* pName
         return;
     }
 
-    /* Serialize filename (relative path) */
+    /* Serialize filename (relative path) - this is the only persisted data */
     ser->t_string_mutable(ser, "filename", &soundFile->filename);
 
-    /* Serialize audio properties */
- /* no, this information is caught from files */
-//    ser->t_ulonglong(ser, "sampleRate", (unsigned long long*)&soundFile->sampleRate);
-//    ser->t_ulonglong(ser, "channels", (unsigned long long*)&soundFile->channels);
-//    ser->t_ulonglong(ser, "frameCount", (unsigned long long*)&soundFile->frameCount);
+    /* Note: sampleRate, channels, frameCount are read from file, not serialized */
 }
+
+void AukSoundFile_Init(AukSoundFile* soundFile) {
+    if (soundFile) {
+        /* Initialize base object */
+        AukObject_Init(&soundFile->base);
+
+        /* Override virtual methods */
+        soundFile->base.New = AukSoundFile_New;
+        soundFile->base.Delete = AukSoundFile_Delete;
+        soundFile->base.GetTypeName = AukSoundFile_GetTypeName;
+        soundFile->base.Serialize = AukSoundFile_Serialize;
+
+        /* Set AukSoundFile specific methods */
+        soundFile->SetFilename = AukSoundFile_SetFilename;
+        soundFile->GetFilename = AukSoundFile_GetFilename;
+
+        /* Initialize data members */
+        soundFile->status = AUKSF_STATUS_PENDING;
+        soundFile->filename = NULL;
+        soundFile->sampleRate = 0;
+        soundFile->channels = 0;
+        soundFile->frameCount = 0;
+        soundFile->bytesPerSample = 0;
+
+        soundFile->minmaxdiv256 = NULL;
+        soundFile->minmaxdiv256_allocated = 0;
+        soundFile->minmaxdiv256_length = 0;
+        soundFile->minmaxStride = 0;
+
+        soundFile->buffers = NULL;
+        soundFile->nbBufferParts = 0;
+
+        soundFile->fileformatreader = NULL;
+        soundFile->soundReaderPluginData = NULL;
+
+        soundFile->fileformat[0] = '\0';
+    }
+}
+
+/* ============================================================
+ * Property Methods
+ * ============================================================ */
 
 int AukSoundFile_SetFilename(void* This, const char* filename) {
     AukSoundFile* soundFile = (AukSoundFile*)This;
@@ -84,11 +156,9 @@ int AukSoundFile_SetFilename(void* This, const char* filename) {
 
     if (soundFile->filename) {
         /* Send update notification */
-        {
-            AukMessage msg;
-            msg.type = AUK_MSG_MODIFY;
-            soundFile->base.SendUpdate(&soundFile->base, &msg);
-        }
+        AukMessage msg;
+        msg.type = AUK_MSG_MODIFY;
+        soundFile->base.SendUpdate(&soundFile->base, &msg);
     }
 
     return soundFile->filename != NULL;
@@ -102,112 +172,333 @@ const char* AukSoundFile_GetFilename(void* This) {
 void AukSoundFile_SetProperties(AukSoundFile* soundFile,
                                  unsigned long sampleRate,
                                  unsigned long channels,
-                                 unsigned long frameCount) {
-    int changed;
+                                 unsigned long frameCount,
+                                 unsigned long bytesPerSample) {
+    if (!soundFile) return;
 
-    if (soundFile) {
-        /* Check if values actually changed */
-        changed = (soundFile->sampleRate != sampleRate ||
-                   soundFile->channels != channels ||
-                   soundFile->frameCount != frameCount);
+    soundFile->sampleRate = sampleRate;
+    soundFile->channels = channels;
+    soundFile->frameCount = frameCount;
+    soundFile->bytesPerSample = bytesPerSample;
 
-        if (changed) {
-            soundFile->sampleRate = sampleRate;
-            soundFile->channels = channels;
-            soundFile->frameCount = frameCount;
+    /* Allocate buffer parts structure */
+    AukSoundFile_AllocBufferParts(soundFile);
 
-            /* Send update notification */
-            {
-                AukMessage msg;
-                msg.type = AUK_MSG_MODIFY;
-                soundFile->base.SendUpdate(&soundFile->base, &msg);
+    /* Send update notification */
+    {
+        AukMessage msg;
+        msg.type = AUK_MSG_MODIFY;
+        soundFile->base.SendUpdate(&soundFile->base, &msg);
+    }
+}
+
+/* ============================================================
+ * Buffer Parts Management
+ * ============================================================ */
+
+int AukSoundFile_AllocBufferParts(AukSoundFile* soundFile) {
+    unsigned long nParts, iChan, iPart;
+
+    if (!soundFile || soundFile->frameCount == 0 || soundFile->channels == 0) {
+        return 0;
+    }
+
+    /* Free existing if any */
+    AukSoundFile_FreeBufferParts(soundFile);
+
+    /* Calculate number of parts */
+    nParts = (soundFile->frameCount + SOUNDBUFFERPARTSIZE - 1) >> SOUNDBUFFERPARTSIZEL2;
+    soundFile->nbBufferParts = nParts;
+
+    /* Allocate channel array */
+    soundFile->buffers = (SoundBufferPart**)AllocVec(
+        sizeof(SoundBufferPart*) * soundFile->channels,
+        MEMF_CLEAR | MEMF_PUBLIC
+    );
+    if (!soundFile->buffers) return 0;
+
+    /* Allocate parts array for each channel */
+    for (iChan = 0; iChan < soundFile->channels; iChan++) {
+        soundFile->buffers[iChan] = (SoundBufferPart*)AllocVec(
+            sizeof(SoundBufferPart) * nParts,
+            MEMF_CLEAR | MEMF_PUBLIC
+        );
+        if (!soundFile->buffers[iChan]) {
+            AukSoundFile_FreeBufferParts(soundFile);
+            return 0;
+        }
+
+        /* Initialize each part */
+        for (iPart = 0; iPart < nParts; iPart++) {
+            SoundBufferPart* part = &soundFile->buffers[iChan][iPart];
+            part->_state = 0;
+            part->_nblocks = 0;
+            part->_sampleRate = soundFile->sampleRate;
+            part->_sampleoffset = iPart << SOUNDBUFFERPARTSIZEL2;
+
+            /* Last part may have fewer samples */
+            if (iPart == nParts - 1) {
+                unsigned long remaining = soundFile->frameCount - part->_sampleoffset;
+                part->_nbSamples = remaining;
+            } else {
+                part->_nbSamples = SOUNDBUFFERPARTSIZE;
+            }
+
+            part->_buffer = NULL;
+            part->_lastAccessTime = 0;
+        }
+    }
+
+    return 1;
+}
+
+void AukSoundFile_FreeBufferParts(AukSoundFile* soundFile) {
+    unsigned long iChan, iPart;
+
+    if (!soundFile || !soundFile->buffers) return;
+
+    for (iChan = 0; iChan < soundFile->channels; iChan++) {
+        if (soundFile->buffers[iChan]) {
+            for (iPart = 0; iPart < (unsigned long)soundFile->nbBufferParts; iPart++) {
+                SoundBufferPart* part = &soundFile->buffers[iChan][iPart];
+                /* Note: _buffer comes from pool, not freed here */
+                part->_buffer = NULL;
+            }
+            FreeVec(soundFile->buffers[iChan]);
+        }
+    }
+
+    FreeVec(soundFile->buffers);
+    soundFile->buffers = NULL;
+    soundFile->nbBufferParts = 0;
+}
+
+/* ============================================================
+ * Min/Max Array Allocation
+ * ============================================================ */
+
+int AukSoundFile_AllocMinMax(AukSoundFile* soundFile) {
+    unsigned long chunksPerChannel, totalChunks;
+
+    if (!soundFile || soundFile->frameCount == 0 || soundFile->channels == 0) {
+        return 0;
+    }
+
+    /* Free existing if any */
+    if (soundFile->minmaxdiv256) {
+        FreeVec(soundFile->minmaxdiv256);
+        soundFile->minmaxdiv256 = NULL;
+    }
+
+    /* Calculate array size */
+    chunksPerChannel = (soundFile->frameCount + 255) >> 8;
+    totalChunks = chunksPerChannel * soundFile->channels;
+
+    soundFile->minmaxdiv256 = (AukSFMinMax*)AllocVec(
+        sizeof(AukSFMinMax) * totalChunks,
+        MEMF_CLEAR | MEMF_PUBLIC
+    );
+    if (!soundFile->minmaxdiv256) return 0;
+
+    soundFile->minmaxdiv256_allocated = totalChunks;
+    soundFile->minmaxdiv256_length = 0;  /* Filled during Phase 2 */
+    soundFile->minmaxStride = chunksPerChannel;
+
+    return 1;
+}
+
+/* ============================================================
+ * Consumer API Implementation
+ * ============================================================ */
+
+void SoundFileConsumer_Init(SoundFileConsumer* consumer, AukSoundFile* soundFile) {
+    if (!consumer) return;
+
+    consumer->soundFile = soundFile;
+    consumer->iPartStart = 0;
+    consumer->iPartEnd = -1;  /* -1 = no parts locked */
+    consumer->channelMask = 0;
+}
+
+int SoundFileConsumer_LockSampleRange(SoundFileConsumer* consumer,
+                                       unsigned long sampleStart,
+                                       unsigned long sampleEnd,
+                                       unsigned int channelMask) {
+    AukSoundFile* sf;
+    int newPartStart, newPartEnd;
+    int iPart, iChan;
+    unsigned int chanBit;
+    int allReady;
+
+    if (!consumer || !consumer->soundFile) return 0;
+
+    sf = consumer->soundFile;
+
+    /* Must be at least in Phase 1 */
+    if (sf->status < AUKSF_STATUS_STATED_PHASE1 || !sf->buffers) return 0;
+
+    /* Clamp range */
+    if (sampleEnd >= sf->frameCount) {
+        sampleEnd = sf->frameCount - 1;
+    }
+    if (sampleStart > sampleEnd) return 0;
+
+    /* Calculate part range */
+    newPartStart = sampleStart >> SOUNDBUFFERPARTSIZEL2;
+    newPartEnd = sampleEnd >> SOUNDBUFFERPARTSIZEL2;
+
+    if (newPartEnd >= sf->nbBufferParts) {
+        newPartEnd = sf->nbBufferParts - 1;
+    }
+
+    /* If same range and mask, just check readiness */
+    if (newPartStart == consumer->iPartStart &&
+        newPartEnd == consumer->iPartEnd &&
+        channelMask == consumer->channelMask) {
+        return SoundFileConsumer_IsReady(consumer);
+    }
+
+    /* Unlock old parts that are no longer needed */
+    if (consumer->iPartEnd >= 0) {
+        for (iChan = 0, chanBit = 1; iChan < (int)sf->channels; iChan++, chanBit <<= 1) {
+            if (!(consumer->channelMask & chanBit)) continue;
+
+            for (iPart = consumer->iPartStart; iPart <= consumer->iPartEnd; iPart++) {
+                /* If this part is outside new range or channel not in new mask */
+                if (iPart < newPartStart || iPart > newPartEnd ||
+                    !(channelMask & chanBit)) {
+                    SoundBufferPart* part = &sf->buffers[iChan][iPart];
+                    if (part->_nblocks > 0) {
+                        part->_nblocks--;
+                    }
+                }
             }
         }
     }
-}
 
-void AukSoundFile_Init(AukSoundFile* soundFile) {
-    if (soundFile) {
-        /* Initialize base object */
-        AukObject_Init(&soundFile->base);
+    /* Lock new parts */
+    allReady = 1;
+    for (iChan = 0, chanBit = 1; iChan < (int)sf->channels; iChan++, chanBit <<= 1) {
+        if (!(channelMask & chanBit)) continue;
 
-        /* Override virtual methods */
-        soundFile->base.New = AukSoundFile_New;
-        soundFile->base.Delete = AukSoundFile_Delete;
-        soundFile->base.GetTypeName = AukSoundFile_GetTypeName;
-        soundFile->base.Serialize = AukSoundFile_Serialize;
+        for (iPart = newPartStart; iPart <= newPartEnd; iPart++) {
+            /* If this part wasn't previously locked */
+            if (consumer->iPartEnd < 0 ||
+                iPart < consumer->iPartStart || iPart > consumer->iPartEnd ||
+                !(consumer->channelMask & chanBit)) {
+                SoundBufferPart* part = &sf->buffers[iChan][iPart];
+                part->_nblocks++;
+            }
 
-        /* Set AukSoundFile specific methods */
-        soundFile->SetFilename = AukSoundFile_SetFilename;
-        soundFile->GetFilename = AukSoundFile_GetFilename;
-
-        /* Initialize data members */
-        soundFile->filename = NULL;
-        soundFile->sampleRate = 44100; /* Default */
-        soundFile->channels = 2;       /* Default stereo */
-        soundFile->frameCount = 0;
-    }
-}
-
-/* for a single SoundFileConsumer, we must only lock once a part */
-void SoundFileConsumer_ReadAndLockTimeSpan(SoundFileConsumer *sfc,
-                            long long tstart,long long tend, unsigned int channelMask )
-{
-    int newiPartStart,newiPartEnd;
-    unsigned int b,bmask, iChan;
-
-    if(!sfc || !sfc->soundFile || sfc->soundFile->status
-        < AUKSF_STATUS_STATED_PHASE1 || !channelMask) return;
-        if(tend< start) return;
-        if(start<0) return;
-
-    newiPartStart = (((unsigned int)(start>>32)) * sfc->soundFile->sampleRate
-                    +
-                    ((((unsigned int)start)>>16) * sfc->soundFile->sampleRate)>>16)
-                    >>SOUNDBUFFERPARTSIZEL2;
-
-    newiPartEnd = (((unsigned int)(tend>>32)) * sfc->soundFile->sampleRate
-                    +
-                    ((((unsigned int)tend)>>16) * sfc->soundFile->sampleRate)>>16)
-                    >>SOUNDBUFFERPARTSIZEL2;
-    if(newiPartStart == sfc->iPartStart &&
-        newiPartEnd == sfc->iPartEnd) return;
-
-    b = 1;
-    bmask = ~0;
-    iChan = 0;
-    while(b)
-    {
-        if((bmask & channelMask)==0) break;
-        if((b & channelMask)!=0 &&
-           sfc->channelMask )
-        {
-
-
+            /* Check if ready */
+            if (sf->buffers[iChan][iPart]._state == 0) {
+                allReady = 0;
+            }
         }
-        bmask <<=1;
-        b<<=1;
-        iChan++;
     }
-    if()
 
-   // sfc->soundFile->buffers[]
+    /* Update consumer state */
+    consumer->iPartStart = newPartStart;
+    consumer->iPartEnd = newPartEnd;
+    consumer->channelMask = channelMask;
 
-
-    sfc->iPartStart = newiPartStart;
-    sfc->iPartEnd = newiPartEnd;
-    sfc->channelMask = channelMask;
+    return allReady;
 }
 
-void SoundFileConsumer_UnlockTimeSpan(SoundFileConsumer *sfc )
-{
+int SoundFileConsumer_LockTimeRange(SoundFileConsumer* consumer,
+                                     long long tstart,
+                                     long long tend,
+                                     unsigned int channelMask) {
+    AukSoundFile* sf;
+    unsigned long sampleStart, sampleEnd;
 
-    if(!sfc || !sfc->soundFile || sfc->soundFile->status
-        < AUKSF_STATUS_STATED_PHASE1) return;
+    if (!consumer || !consumer->soundFile) return 0;
 
-    if(sfc->iPartStart == 0 && sfc->iPartEnd == 0 ) return;
+    sf = consumer->soundFile;
 
+    /* Must be at least in Phase 1 */
+    if (sf->status < AUKSF_STATUS_STATED_PHASE1 || sf->sampleRate == 0) return 0;
 
-    sfc->iPartStart = sfc->iPartEnd = 0;
-    sfc->channelMask = 0;
+    /* Validate time range */
+    if (tend < tstart || tstart < 0) return 0;
+
+    /*
+     * Convert 32.32 fixed-point seconds to samples.
+     * tstart/tend are in 32.32 format: upper 32 bits = seconds, lower 32 bits = fraction
+     *
+     * samples = time * sampleRate
+     *         = (time_hi + time_lo/2^32) * sampleRate
+     *         = time_hi * sampleRate + (time_lo * sampleRate) / 2^32
+     */
+    {
+        unsigned long tstart_hi = (unsigned long)(tstart >> 32);
+        unsigned long tstart_lo = (unsigned long)tstart;
+        unsigned long tend_hi = (unsigned long)(tend >> 32);
+        unsigned long tend_lo = (unsigned long)tend;
+
+        /* Compute start sample */
+        sampleStart = tstart_hi * sf->sampleRate;
+        /* Add fractional part: (tstart_lo * sampleRate) >> 32 */
+        /* To avoid overflow, split the multiplication */
+        sampleStart += ((tstart_lo >> 16) * sf->sampleRate) >> 16;
+
+        /* Compute end sample */
+        sampleEnd = tend_hi * sf->sampleRate;
+        sampleEnd += ((tend_lo >> 16) * sf->sampleRate) >> 16;
+    }
+
+    return SoundFileConsumer_LockSampleRange(consumer, sampleStart, sampleEnd, channelMask);
+}
+
+void SoundFileConsumer_Unlock(SoundFileConsumer* consumer) {
+    AukSoundFile* sf;
+    int iPart, iChan;
+    unsigned int chanBit;
+
+    if (!consumer || !consumer->soundFile) return;
+
+    sf = consumer->soundFile;
+
+    if (consumer->iPartEnd < 0 || !sf->buffers) return;
+
+    /* Decrement nblocks for all locked parts */
+    for (iChan = 0, chanBit = 1; iChan < (int)sf->channels; iChan++, chanBit <<= 1) {
+        if (!(consumer->channelMask & chanBit)) continue;
+
+        for (iPart = consumer->iPartStart; iPart <= consumer->iPartEnd; iPart++) {
+            SoundBufferPart* part = &sf->buffers[iChan][iPart];
+            if (part->_nblocks > 0) {
+                part->_nblocks--;
+            }
+        }
+    }
+
+    /* Reset consumer state */
+    consumer->iPartStart = 0;
+    consumer->iPartEnd = -1;
+    consumer->channelMask = 0;
+}
+
+int SoundFileConsumer_IsReady(SoundFileConsumer* consumer) {
+    AukSoundFile* sf;
+    int iPart, iChan;
+    unsigned int chanBit;
+
+    if (!consumer || !consumer->soundFile) return 0;
+
+    sf = consumer->soundFile;
+
+    if (consumer->iPartEnd < 0 || !sf->buffers) return 1;  /* Nothing locked = ready */
+
+    for (iChan = 0, chanBit = 1; iChan < (int)sf->channels; iChan++, chanBit <<= 1) {
+        if (!(consumer->channelMask & chanBit)) continue;
+
+        for (iPart = consumer->iPartStart; iPart <= consumer->iPartEnd; iPart++) {
+            if (sf->buffers[iChan][iPart]._state == 0) {
+                return 0;  /* At least one part not ready */
+            }
+        }
+    }
+
+    return 1;  /* All locked parts are ready */
 }

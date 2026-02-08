@@ -203,7 +203,7 @@ int main(void) {
         return 1;
     }
     AukSoundFile_SetFilename(soundFile1, "sounds/vocals.wav");
-    AukSoundFile_SetProperties(soundFile1, 48000, 2, 144000);
+    AukSoundFile_SetProperties(soundFile1, 48000, 2, 144000,2);
 
     AukSoundFile_New((AukObjectPtr*)&soundFile2);
     if (!soundFile2) {
@@ -213,7 +213,7 @@ int main(void) {
         return 1;
     }
     AukSoundFile_SetFilename(soundFile2, "sounds/guitar.8svx");
-    AukSoundFile_SetProperties(soundFile2, 48000, 1, 96000);
+    AukSoundFile_SetProperties(soundFile2, 48000, 1, 96000,2);
 
     /* Create sounds on tracks */
     sound1 = track1->CreateSound(track1, soundFile1,

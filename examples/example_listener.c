@@ -116,7 +116,7 @@ int main(void) {
     printf("Adding sound to track...\n");
     AukSoundFile_New(&soundFile);
     AukSoundFile_SetFilename(soundFile, "test.wav");
-    AukSoundFile_SetProperties(soundFile, 44100, 2, 88200);
+    AukSoundFile_SetProperties(soundFile, 44100, 2, 88200,2);
     sound = track->CreateSound(track, soundFile,
                                AukFixed_FromInt(0),
                                AukFixed_FromInt(5));

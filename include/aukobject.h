@@ -1,6 +1,8 @@
 #ifndef AUKOBJECT_H
 #define AUKOBJECT_H
 
+#include <exec/types.h>
+
 /*
  * Base object system for Aukadicty
  * Provides root object structure with New/Delete methods

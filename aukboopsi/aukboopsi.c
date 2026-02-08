@@ -266,7 +266,7 @@ int main(int argc, char **argv)
     if(!app)  cleanexit("Can't create app");
 
     /* Initialize sound file engine for background loading */
-    app->soundFileEngine = AukSoundFileEngine_Init();
+    app->soundFileEngine = AukSoundFileEngine_Init((struct Process *)myTask,"PROGDIR:",0);
     /* Note: Engine init failure is non-fatal - features that need it will be disabled */
 
     /* BOOPSI needs */
@@ -750,7 +750,7 @@ project->CreateTrack(project);
         return 1;
     }
     AukSoundFile_SetFilename(soundFile1, "sounds/sample1.wav");
-    AukSoundFile_SetProperties(soundFile1, 44100, 2, 88200);
+    AukSoundFile_SetProperties(soundFile1, 44100, 2, 88200,2);
 
     AukSoundFile_New((AukObjectPtr*)&soundFile2);
     if (!soundFile2) {
@@ -759,7 +759,7 @@ project->CreateTrack(project);
         return 1;
     }
     AukSoundFile_SetFilename(soundFile2, "sounds/sample2.wav");
-    AukSoundFile_SetProperties(soundFile2, 22050, 1, 88200);
+    AukSoundFile_SetProperties(soundFile2, 22050, 1, 88200,2);
 
 
     /* Create sounds on tracks */

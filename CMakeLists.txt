@@ -80,6 +80,7 @@ set(AUKADICTY_SOURCES
     src/auksound.c
     src/auksoundfile.c
     src/auksoundfileengine.c
+    src/auksoundfile_plugins.c
     src/aukscalararray.c
     src/auktyperegistry.c
     src/aukiffserializer.c

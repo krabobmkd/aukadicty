@@ -52,7 +52,7 @@ int main(void) {
         return 1;
     }
     AukSoundFile_SetFilename(soundFile1, "sounds/sample1.wav");
-    AukSoundFile_SetProperties(soundFile1, 44100, 2, 88200);
+    AukSoundFile_SetProperties(soundFile1, 44100, 2, 88200,2);
 
     /* Create sounds on tracks */
     sound1 = track1->CreateSound(track1, soundFile1,

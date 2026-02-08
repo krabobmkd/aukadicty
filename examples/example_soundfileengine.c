@@ -31,7 +31,7 @@ static int test_engine_init_shutdown(void)
 
     printf("\n=== Test 1: Engine Init/Shutdown ===\n");
 
-    engine = AukSoundFileEngine_Init();
+    engine = AukSoundFileEngine_Init(NULL,"PROGDIR:",0);
     if (!engine) {
         printf("FAIL: Could not initialize engine\n");
         return 0;
@@ -54,7 +54,7 @@ static int test_request_release_file(void)
 
     printf("\n=== Test 2: Request/Release File ===\n");
 
-    engine = AukSoundFileEngine_Init();
+    engine = AukSoundFileEngine_Init(NULL,"PROGDIR:",0);
     if (!engine) {
         printf("FAIL: Could not initialize engine\n");
         return 0;
@@ -93,7 +93,7 @@ static int test_multiple_requests(void)
 
     printf("\n=== Test 3: Multiple Requests for Same File ===\n");
 
-    engine = AukSoundFileEngine_Init();
+    engine = AukSoundFileEngine_Init(NULL,"PROGDIR:",0);
     if (!engine) {
         printf("FAIL: Could not initialize engine\n");
         return 0;

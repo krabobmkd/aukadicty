@@ -140,22 +140,24 @@ set(AUKBOOPSI_SOURCES
 )
 
 # Create app
-add_executable(aukadicty  ${AUKBOOPSI_SOURCES} )
+if(AMIGA)
+	add_executable(aukadicty  ${AUKBOOPSI_SOURCES} )
 
-# Install targets
-install(TARGETS aukadicty
-    ARCHIVE DESTINATION bin
-)
+	# Install targets
+	install(TARGETS aukadicty
+		ARCHIVE DESTINATION bin
+	)
 
-target_link_libraries(aukadicty aukproject)
-target_compile_definitions(aukadicty PRIVATE
-			TRACKLIST_STATICLINK=1
-			INFINITESCROLL_STATICLINK=1
-			USE_DEBUG_BDBPRINT=1)
-target_compile_options(aukadicty PRIVATE
-		$<$<CONFIG:RELEASE>:-O2 -Wno-narrowing -DNDEBUG>
-		 ${AMIGA_COMPILER_OPTIONS} )
+	target_link_libraries(aukadicty aukproject)
+	target_compile_definitions(aukadicty PRIVATE
+				TRACKLIST_STATICLINK=1
+				INFINITESCROLL_STATICLINK=1
+				USE_DEBUG_BDBPRINT=1)
 
+	target_compile_options(aukadicty PRIVATE
+			$<$<CONFIG:RELEASE>:-O2 -Wno-narrowing -DNDEBUG>
+			 ${AMIGA_COMPILER_OPTIONS} )
+endif()
 
 # Optional: Build examples
 option(BUILD_EXAMPLES "Build example programs" ON)
