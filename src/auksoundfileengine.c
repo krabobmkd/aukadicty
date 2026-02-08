@@ -38,6 +38,31 @@ static AukSFESharedData* g_sharedData = NULL;
  * Worker Thread
  * ============================================================ */
 
+/* open file, choose plugin, get stats */
+static int job_initFile1( struct AukSoundFile *soundfile )
+{
+
+
+}
+
+/* each consumer should lock and unlock by part  */
+static int job_LockAndReadSoundPart( struct AukSoundFile *soundfile, int iPart )
+{
+
+
+}
+static int job_UnlockSoundPart( struct AukSoundFile *soundfile, int iPart )
+{
+
+
+}
+/* init read for min/max stats, we're a consumer like another ones... */
+static int job_initFile2( struct AukSoundFile *soundfile )
+{
+
+
+}
+
 /*
  * Worker thread entry point.
  * Waits for messages, processes file requests.
@@ -54,6 +79,7 @@ static void SoundFileWorkerThread(void)
     if (!thisProcess) {
         return;
     }
+
 
     workerPort = &thisProcess->pr_MsgPort;
 
@@ -86,21 +112,39 @@ static void SoundFileWorkerThread(void)
                     /* TODO: Actually load the file here */
                     /* For now, just mark as stated and reply */
                     printf("[Worker] Received ADD_FILE request\n");
-                    msg->type = AUKSFE_MSG_FILE_STATED;
+                   msg->type = AUKSFE_MSG_FILE_STATED;
                     ReplyMsg(&msg->msg);
                     break;
 
                 case AUKSFE_MSG_REMOVE_FILE:
+                {
                     printf("[Worker] Received REMOVE_FILE request\n");
                     ReplyMsg(&msg->msg);
+                }
                     break;
-
                 default:
                     ReplyMsg(&msg->msg);
                     break;
             }
         }
-    }
+        /* process awaken: get list of the jobs to do,
+        watch out list is shared with other processes:
+        should be a mutex implemented with exec semaphores.
+        Well with just Forbid()/Permit() it's okay for the moment.
+        Getting job information must be quick !
+         */
+        Forbid();
+  // TODO: fill a jobs list from the files_managed
+// and attribute correct job against AukSoundFile state
+// this must be quick, so just made up that list.
+        Permit();
+
+ // and here after the Permit, we'll execute the actuall Jobs for that turn.
+// then send a message to consumer on their process... well do that later. 
+
+
+
+    } // end infinite loop with waiting
 
     g_sharedData->workerShouldExit = 0;
     printf("[Worker] Exiting\n");
@@ -110,11 +154,11 @@ static void SoundFileWorkerThread(void)
  * Engine API
  * ============================================================ */
 
-AukSoundFileEngine* AukSoundFileEngine_Init(void)
+AukSoundFileEngine* AukSoundFileEngine_Init(struct Process *mainProcess)
 {
     AukSoundFileEngine* engine;
     AukSFEMessage initMsg;
-    struct TagItem procTags[4];
+   // struct TagItem procTags[4];
 
     /* Allocate engine structure */
     engine = (AukSoundFileEngine*)AllocVec(sizeof(AukSoundFileEngine), MEMF_CLEAR | MEMF_PUBLIC);
@@ -146,15 +190,14 @@ AukSoundFileEngine* AukSoundFileEngine_Init(void)
     (void)procTags; /* Unused on PC */
     engine->workerProcess = CreateNewProcSimple(SoundFileWorkerThread, "AukSoundFileWorker", 0);
 #else
-    procTags[0].ti_Tag = NP_Entry;
-    procTags[0].ti_Data = (ULONG)SoundFileWorkerThread;
-    procTags[1].ti_Tag = NP_Name;
-    procTags[1].ti_Data = (ULONG)"AukSoundFileWorker";
-//    procTags[2].ti_Tag = NP_Priority;
-//    procTags[2].ti_Data = 0;
-    procTags[2].ti_Tag = TAG_DONE;
-  //  procTags[2].ti_Data = 0;
-    engine->workerProcess = CreateNewProc(procTags);
+    engine->workerProcess = CreateNewProcTags(
+                NP_Entry,(ULONG)SoundFileWorkerThread,
+                NP_Name,(ULONG)"AukSoundFileWorker",
+                NP_Output,mainProcess->pr_COS,
+                NP_CloseOutput,FALSE,
+                NP_FreeSeglist, FALSE,
+                TAG_END
+                );
 #endif
     if (!engine->workerProcess) {
         DeleteMsgPort(engine->mainReplyPort);
@@ -261,16 +304,30 @@ struct AukSoundFile* AukSoundFileEngine_RequestFile(
     }
 
     /* Check if file already in list */
-    for (node = engine->fileList; node; node = node->next) {
+Forbid();
+    for (node = engine->files_new; node; node = node->next) {
         if (node->file) {
             const char* existingPath = node->file->GetFilename(node->file);
             if (existingPath && strcmp(existingPath, filename) == 0) {
                 /* Already have this file, increment ref */
                 node->refCount++;
+                Permit();
                 return node->file;
             }
         }
     }
+    for (node = engine->files_managed; node; node = node->next) {
+        if (node->file) {
+            const char* existingPath = node->file->GetFilename(node->file);
+            if (existingPath && strcmp(existingPath, filename) == 0) {
+                /* Already have this file, increment ref */
+                node->refCount++;
+                Permit();
+                return node->file;
+            }
+        }
+    }
+Permit();
 
     /* Create new sound file object */
     {
@@ -286,7 +343,7 @@ struct AukSoundFile* AukSoundFileEngine_RequestFile(
     file->SetFilename(file, filename);
 
     /* Create file node */
-    newNode = (AukSFEFileNode*)AllocVec(sizeof(AukSFEFileNode), MEMF_CLEAR);
+    newNode = (AukSFEFileNode*)AllocVec(sizeof(AukSFEFileNode), MEMF_CLEAR | MEMF_PUBLIC);
     if (!newNode) {
         file->base.Delete((AukObject*)file);
         return NULL;
@@ -295,11 +352,12 @@ struct AukSoundFile* AukSoundFileEngine_RequestFile(
     newNode->file = file;
     newNode->status = AUKSFE_STATUS_PENDING;
     newNode->refCount = 1;
-    newNode->next = engine->fileList;
-    engine->fileList = newNode;
-    engine->fileCount++;
+Forbid();
+    newNode->next = engine->files_new;
+    engine->files_new = newNode;
+Permit(); /* file considered added from that moment */
 
-    /* Send request to worker */
+    /* Send request to worker, to wake it up */
     memset(&reqMsg, 0, sizeof(reqMsg));
     reqMsg.msg.mn_ReplyPort = engine->mainReplyPort;
     reqMsg.msg.mn_Length = sizeof(AukSFEMessage);
@@ -307,19 +365,19 @@ struct AukSoundFile* AukSoundFileEngine_RequestFile(
     reqMsg.file = file;
 
     PutMsg(&engine->workerProcess->pr_MsgPort, &reqMsg.msg);
-    WaitPort(engine->mainReplyPort);
+    //WaitPort(engine->mainReplyPort);
 
-    {
-        AukSFEMessage* reply = (AukSFEMessage*)GetMsg(engine->mainReplyPort);
-        if (reply) {
-            /* Update status based on reply */
-            if (reply->type == AUKSFE_MSG_FILE_STATED) {
-                newNode->status = AUKSFE_STATUS_STATED;
-            } else if (reply->type == AUKSFE_MSG_FILE_ERROR) {
-                newNode->status = AUKSFE_STATUS_ERROR;
-            }
-        }
-    }
+    // {
+    //     AukSFEMessage* reply = (AukSFEMessage*)GetMsg(engine->mainReplyPort);
+    //     if (reply) {
+    //         /* Update status based on reply */
+    //         if (reply->type == AUKSFE_MSG_FILE_STATED) {
+    //             newNode->status = AUKSFE_STATUS_STATED;
+    //         } else if (reply->type == AUKSFE_MSG_FILE_ERROR) {
+    //             newNode->status = AUKSFE_STATUS_ERROR;
+    //         }
+    //     }
+    // }
 
     /* Return file to caller - node holds reference */
     return file;
@@ -349,7 +407,7 @@ void AukSoundFileEngine_ReleaseFile(
                 } else {
                     engine->fileList = node->next;
                 }
-                engine->fileCount--;
+
 
                 /* Tell worker to release */
                 memset(&reqMsg, 0, sizeof(reqMsg));
