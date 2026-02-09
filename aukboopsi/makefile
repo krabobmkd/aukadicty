@@ -22,6 +22,7 @@ LIBS = ../build-gcc-$(MCPU)/libaukproject$(MCPU).a
 HEADERS = \
  aukstylesheet.h aukstyle.h gadgetid.h bdbprintf.h \
  TrackListView.h HeaderView.h FooterView.h \
+ ProjectSettingsView.h appsettings.h tooltypepref.h \
  auklocale.h aukaction.h aukmenu.h offscreenbm.h \
  InfiniteScroll/class_infinitescroll.h InfiniteScroll/class_infinitescroll_private.h \
  InfiniteScroll2D/class_infinitescroll2d.h InfiniteScroll2D/class_infinitescroll2d_private.h \
@@ -44,6 +45,9 @@ OBJS = \
  $(BUILDDIR)/offscreenbm.o \
  $(BUILDDIR)/boopsimessage.o \
  $(BUILDDIR)/boopsidispose.o \
+ $(BUILDDIR)/ProjectSettingsView.o \
+ $(BUILDDIR)/appsettings.o \
+ $(BUILDDIR)/tooltypepref.o \
  $(BUILDDIRIS)/class_infinitescroll_attribs.o \
  $(BUILDDIRIS)/class_infinitescroll_dispatch.o \
  $(BUILDDIRIS)/class_infinitescroll_lib.o \

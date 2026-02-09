@@ -72,6 +72,7 @@
 #include "aukmenu.h"
 #include "boopsimessage.h"
 #include "boopsidispose.h"
+#include "appsettings.h"
 
 //#include "aukaproject.h"
 #include <aukadicty.h>
@@ -200,6 +201,9 @@ struct App
 
      // Sound file loading engine
      AukSoundFileEngine *soundFileEngine;
+
+     // Application-level settings (temp dir, recent files)
+     AppSettings appSettings;
 };
 
 // App Modelinstance as our private struct.
@@ -226,6 +230,13 @@ void OpenSettingsWindow()
 void CloseSettingsWindow()
 {
     if(!app) return;
+    /* Sync temp dir from settings view back to AppSettings */
+    {
+        const char *tempDir = ProjectSettingsView_GetTempDir(&app->projectSettingsView);
+        if (tempDir) {
+            AppSettings_SetTempDir(&app->appSettings, tempDir);
+        }
+    }
     ProjectSettingsView_Close(&app->projectSettingsView);
 }
 
@@ -264,6 +275,10 @@ int main(int argc, char **argv)
 
     app = AllocVec(sizeof(struct App),MEMF_CLEAR);
     if(!app)  cleanexit("Can't create app");
+
+    /* Initialize and load application settings from icon tooltypes */
+    AppSettings_Init(&app->appSettings);
+    AppSettings_Load(&app->appSettings, "aukadicty");
 
     /* Initialize sound file engine for background loading */
     app->soundFileEngine = AukSoundFileEngine_Init();
@@ -380,6 +395,14 @@ int main(int argc, char **argv)
         printf("Warning: Could not create Project Settings window\n");
     }
 
+    /* Apply loaded temp dir to settings view */
+    {
+        const char *tempDir = AppSettings_GetTempDir(&app->appSettings);
+        if (tempDir) {
+            ProjectSettingsView_SetTempDir(&app->projectSettingsView, tempDir);
+        }
+    }
+
     /*  Open the window. */
     CurrentMainWindow = boopsi_OpenWindow(app->window_obj);
     if(!CurrentMainWindow) cleanexit("can't open window");
@@ -387,6 +410,11 @@ int main(int argc, char **argv)
     /* Create and attach menus */
     if (!AukMenu_Create(&app->appMenu, app->lockedscreen, CurrentMainWindow)) {
         printf("Warning: Could not create menus\n");
+    }
+
+    /* Rebuild menus with recent files from loaded settings */
+    if (AppSettings_GetRecentCount(&app->appSettings) > 0) {
+        AukMenu_Rebuild(&app->appMenu, app->lockedscreen, CurrentMainWindow, &app->appSettings);
     }
 
     {
@@ -472,19 +500,43 @@ int main(int argc, char **argv)
                             if (!AukMenu_Create(&app->appMenu, app->lockedscreen,CurrentMainWindow)) {
                                 cleanexit("Warning: Could not re-create menus\n");
                             }
+                            /* Rebuild with recent files */
+                            if (AppSettings_GetRecentCount(&app->appSettings) > 0) {
+                                AukMenu_Rebuild(&app->appMenu, app->lockedscreen, CurrentMainWindow, &app->appSettings);
+                            }
                         }
                         break;
                     case WMHI_MENUPICK: // and not WMHI_POPUPMENU:
-                        {    
-                            AukAction *action = AukMenu_ToAction(&app->appMenu,result & WMHI_MENUMASK);
+                        {
+                            UWORD menuNum = result & WMHI_MENUMASK;
+                            LONG actionID = AukMenu_ToActionID(&app->appMenu, menuNum);
+                            AukAction *action = (actionID >= 0) ? AukAction_Get(actionID) : NULL;
                             if(action)
                             {
                                 struct AukActionContext actionContext;
+                                memset(&actionContext, 0, sizeof(actionContext));
                                 actionContext.pproject = &app->_project;
                                 actionContext.appWindow = CurrentMainWindow;
                                 actionContext.appData = TargetInstance;
                                 actionContext.trackListView = &app->tracksListView;
-                                action->func(&actionContext);
+                                actionContext.appSettings = &app->appSettings;
+
+                                /* Set recent file index if applicable */
+                                if (actionID >= ACTION_RECENT_FILE_0 && actionID <= ACTION_RECENT_FILE_7) {
+                                    actionContext.recentFileIndex = actionID - ACTION_RECENT_FILE_0;
+                                }
+
+                                if (action->func(&actionContext)) {
+                                    /* Rebuild menu if recent files may have changed */
+                                    if (actionID == ACTION_PROJECT_OPEN ||
+                                        actionID == ACTION_PROJECT_SAVE ||
+                                        actionID == ACTION_PROJECT_SAVEAS ||
+                                        (actionID >= ACTION_RECENT_FILE_0 && actionID <= ACTION_RECENT_FILE_7))
+                                    {
+                                        AukMenu_Rebuild(&app->appMenu, app->lockedscreen,
+                                                        CurrentMainWindow, &app->appSettings);
+                                    }
+                                }
                             }
                         }
                         break;
@@ -592,6 +644,16 @@ void exitclose(void)
     printf("exitclose()\n");
     if(app)
     {
+        /* Save app settings (recent files, temp dir) before closing */
+        {
+            const char *tempDir = ProjectSettingsView_GetTempDir(&app->projectSettingsView);
+            if (tempDir) {
+                AppSettings_SetTempDir(&app->appSettings, tempDir);
+            }
+        }
+        AppSettings_Save(&app->appSettings);
+        AppSettings_Close(&app->appSettings);
+
         /* just release data listener and object retained */
         CloseHeaderView(&app->headerView);
         CloseTrackListView(&app->tracksListView);

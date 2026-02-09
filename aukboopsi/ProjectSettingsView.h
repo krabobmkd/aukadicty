@@ -7,8 +7,8 @@
 struct DrawInfo;
 
 /*
-    Manages the Project Settings window.
-    This is a subsidiary window that can be opened/closed independently.
+    Manages the Settings window.
+    Contains two groups: "App Settings" and "Project Settings".
     When closed, it hides (does not quit the app).
 */
 typedef struct ProjectSettingsView
@@ -19,9 +19,13 @@ typedef struct ProjectSettingsView
     /* Main layout */
     Object *mainLayout;
 
-    /* Form gadgets */
+    /* App Settings group */
+    Object *appSettingsLayout;
     Object *tempDirGetFile;     /* GetFile gadget for temp directory */
     Object *tempDirLabel;       /* Label for temp dir */
+
+    /* Project Settings group */
+    Object *projSettingsLayout;
 
     /* References */
     struct Screen *screen;      /* Screen the window is on */
@@ -33,61 +37,33 @@ typedef struct ProjectSettingsView
 #define GAD_PROJSETTINGS_TEMPDIR 100
 
 /*
- * Initialize the Project Settings window.
+ * Initialize the Settings window.
  * Creates the window object but does not open it.
- *
- * @param psv       The ProjectSettingsView struct to initialize
- * @param screen    The screen to open on
- * @param drawInfo  DrawInfo for gadget rendering
- * @param title     Window title string
- * @return          TRUE on success, FALSE on failure
  */
 BOOL ProjectSettingsView_Init(ProjectSettingsView *psv,
                               struct Screen *screen,
                               struct DrawInfo *drawInfo,
                               const char *title);
 
-/*
- * Open the Project Settings window.
- * Does nothing if already open.
- */
+/* Open the Settings window. Does nothing if already open. */
 void ProjectSettingsView_Open(ProjectSettingsView *psv);
 
-/*
- * Close (hide) the Project Settings window.
- * The window can be reopened with ProjectSettingsView_Open.
- */
+/* Close (hide) the Settings window. */
 void ProjectSettingsView_Close(ProjectSettingsView *psv);
 
-/*
- * Handle input messages for the Project Settings window.
- * Call this in the main loop when the window is open.
- *
- * @param psv   The ProjectSettingsView
- * @return      TRUE if the window should remain open, FALSE if closed
- */
+/* Handle input messages. Call in main loop when window is open. */
 BOOL ProjectSettingsView_HandleInput(ProjectSettingsView *psv);
 
-/*
- * Get the signal bit for waiting on this window.
- * Returns 0 if window is not open.
- */
+/* Get signal bit for waiting on this window. Returns 0 if not open. */
 ULONG ProjectSettingsView_GetSignalMask(ProjectSettingsView *psv);
 
-/*
- * Get the current temp directory path.
- * @return  The path string (owned by the gadget, do not free)
- */
+/* Get current temp directory path. */
 const char *ProjectSettingsView_GetTempDir(ProjectSettingsView *psv);
 
-/*
- * Set the temp directory path.
- */
+/* Set the temp directory path. */
 void ProjectSettingsView_SetTempDir(ProjectSettingsView *psv, const char *path);
 
-/*
- * Dispose all resources for the Project Settings window.
- */
+/* Dispose all resources. */
 void ProjectSettingsView_Dispose(ProjectSettingsView *psv);
 
 #endif

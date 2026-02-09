@@ -73,6 +73,12 @@ set(AUKBOOPSI_SOURCES
     aukmenu.c
     aukmenu.h
 
+    appsettings.c
+    appsettings.h
+
+    tooltypepref.c
+    tooltypepref.h
+
     aukstylesheet.c
     aukstylesheet.h
     gadgetid.h
