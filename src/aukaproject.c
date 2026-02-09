@@ -8,6 +8,9 @@
 #include <string.h>
 #include "serializer.h"
 
+
+#include "auksoundfileengine.h"
+
 #include <stdio.h>
 #ifdef Remove
 #undef Remove
@@ -39,7 +42,7 @@ void AukAProject_Delete(AukObject* This) {
         /* Release audio-specific members */
         AukObjectPtr_Release((AukObjectPtr*)&project->prefs);
         AukObjectPtr_Release((AukObjectPtr*)&project->tracks);
-
+        AukObjectPtr_Release((AukObjectPtr*)&project->soundFiles);
         /* Call base project delete (which deletes name/path and calls AukObject_Delete) */
         AukProject_Delete(&project->base.base);
     }
@@ -363,6 +366,13 @@ void AukAProject_Init(AukAProject* project) {
             project->tracks->base._project = (AukProject*)project;
         }
 
+        AukArray_New((AukObjectPtr*)&project->soundFiles);
+        if(project->soundFiles) {
+            AukArray_SetType(project->soundFiles, AukSoundFile_New, AukSoundFile_GetTypeName(NULL));
+            project->soundFiles->base._project = (AukProject*)project;
+        }
+
+
         /* Initialize selection state (not serialized) */
         project->selection._mode = 0;
         project->selection._itrack = -1;
@@ -629,3 +639,48 @@ void AukAProject_Clear(AukAProject* project)
     /* Reset solo track */
     project->soloTrack = -1;
 }
+
+
+
+
+AukTrack* AukAProject_CreateTrackWithSound(void* This, const char *filepath)
+{
+    AukTrack* track;
+    AukSoundFile* soundFile;
+    AukSound* sound;
+    AukAProject *project = (AukAProject *)This;
+    if(!This || !filepath || *filepath == 0) return NULL;
+
+    project->base.base._blockUpdates = 1;
+        track = project->CreateTrack(project);
+    project->base.base._blockUpdates = 0;
+    if(!track) return;
+
+    /* This just creates the object and return immediately,
+     *  then this is stated asynchronously */
+    soundFile = AukSoundFileEngine_RequestFile(soundFileEngine,filepath);
+    if(!soundFile)
+    {
+        project->RemoveTrack(project,track);
+        return;
+    }
+
+    /* sounds are reference to a time span of a soundFile.
+        We attach the soundFile
+    */
+    track->base._blockUpdates = 1;
+    sound = track->CreateSound(track, soundFile,
+                                 AukFixed_FromInt(0),    /* Start */
+                                 AukFixed_FromInt(1));   /* End */
+    track->base._blockUpdates = 0;
+
+    AukTrack_SetName(track, "...");
+
+}
+
+
+AukTrack* AukAProject_ListenAsync(void* This )
+{
+
+}
+

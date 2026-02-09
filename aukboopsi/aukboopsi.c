@@ -198,12 +198,12 @@ struct App
      // - - - retain document object
      AukAProjectPtr _project;
 
-     // Sound file loading engine
-     AukSoundFileEngine *soundFileEngine;
 };
 
 // App Modelinstance as our private struct.
 struct App *app=NULL;
+
+
 // This is the intuition level Window, on OS3 it's recreated when iconizing/reopening !
 // when  iconizing/reopening BOOPSI objects are kept, but Intuition level instances and buffers are wiped out.
 // Yet, it's needed for most Gadget method calls, and this is not retained by boopsi objects.
@@ -266,7 +266,7 @@ int main(int argc, char **argv)
     if(!app)  cleanexit("Can't create app");
 
     /* Initialize sound file engine for background loading */
-    app->soundFileEngine = AukSoundFileEngine_Init((struct Process *)myTask,"PROGDIR:",0);
+    soundFileEngine = AukSoundFileEngine_Init((struct Process *)myTask,"PROGDIR:",0);
     /* Note: Engine init failure is non-fatal - features that need it will be disabled */
 
     /* BOOPSI needs */
@@ -623,9 +623,9 @@ void exitclose(void)
         ObjectLateDisposer = NULL;
 
         /* Shutdown sound file engine */
-        if (app->soundFileEngine) {
-            AukSoundFileEngine_Shutdown(app->soundFileEngine);
-            app->soundFileEngine = NULL;
+        if (soundFileEngine) {
+            AukSoundFileEngine_Shutdown(soundFileEngine);
+            soundFileEngine = NULL;
         }
 
         /* Release stylesheet object (will close fonts automatically) */
@@ -718,100 +718,102 @@ int initProject()
     TrackListView_setProject(&app->tracksListView,project);
     FooterView_SetProject(&app->footerView,project);
 
-    /* Set project properties */
-    project->base.SetName(&project->base, "My First Project");
-    project->base.SetPath(&project->base, "Work:");
-    AukAProject_SetPreferences(project, 44100, 16);
+    // /* Set project properties */
+    // project->base.SetName(&project->base, "My First Project");
+    // project->base.SetPath(&project->base, "Work:");
+    // AukAProject_SetPreferences(project, 44100, 16);
 
-    /* Update footer with project frequency */
-    FooterView_UpdateFrequency(&app->footerView, 44100);
-
-    /* Create tracks in the project */
-    track1 = project->CreateTrack(project);
-    track2 = project->CreateTrack(project);
-
- project->CreateTrack(project);
-project->CreateTrack(project);
-
-    if (!track1 || !track2) {
-        printf("Failed to create tracks\n");
-        AukObjectPtr_Release((AukObjectPtr*)&app->_project);
-        return 1;
-    }
-    AukTrack_SetName(track1, "Vocals, like that");
-    AukTrack_SetName(track2, "Music");
+    // /* Update footer with project frequency */
+    // FooterView_UpdateFrequency(&app->footerView, 44100);
 
 
-    /* Create a sound file reference */
-    AukSoundFile_New((AukObjectPtr*)&soundFile1);
-    if (!soundFile1) {
-        printf("Failed to create sound file\n");
-        AukObjectPtr_Release((AukObjectPtr*)&app->_project);
-        return 1;
-    }
-    AukSoundFile_SetFilename(soundFile1, "sounds/sample1.wav");
-    AukSoundFile_SetProperties(soundFile1, 44100, 2, 88200,2);
 
-    AukSoundFile_New((AukObjectPtr*)&soundFile2);
-    if (!soundFile2) {
-        printf("Failed to create sound file\n");
-        AukObjectPtr_Release((AukObjectPtr*)&app->_project);
-        return 1;
-    }
-    AukSoundFile_SetFilename(soundFile2, "sounds/sample2.wav");
-    AukSoundFile_SetProperties(soundFile2, 22050, 1, 88200,2);
+//     /* Create tracks in the project */
+//     track1 = project->CreateTrack(project);
+//     track2 = project->CreateTrack(project);
+
+//  project->CreateTrack(project);
+// project->CreateTrack(project);
+
+//     if (!track1 || !track2) {
+//         printf("Failed to create tracks\n");
+//         AukObjectPtr_Release((AukObjectPtr*)&app->_project);
+//         return 1;
+//     }
+//     AukTrack_SetName(track1, "Vocals, like that");
+//     AukTrack_SetName(track2, "Music");
 
 
-    /* Create sounds on tracks */
-    sound1 = track1->CreateSound(track1, soundFile2,
-                                 AukFixed_FromInt(0),    /* Start at 0 seconds */
-                                 AukFixed_FromInt(5));   /* End at 5 seconds */
+//     /* Create a sound file reference */
+//     AukSoundFile_New((AukObjectPtr*)&soundFile1);
+//     if (!soundFile1) {
+//         printf("Failed to create sound file\n");
+//         AukObjectPtr_Release((AukObjectPtr*)&app->_project);
+//         return 1;
+//     }
+//     AukSoundFile_SetFilename(soundFile1, "sounds/sample1.wav");
+//     AukSoundFile_SetProperties(soundFile1, 44100, 2, 88200,2);
 
-    sound2 = track2->CreateSound(track2, soundFile1,
-                                 AukFixed_FromInt(2),    /* Start at 2 seconds */
-                                 AukFixed_FromInt(8));   /* End at 8 seconds */
+//     AukSoundFile_New((AukObjectPtr*)&soundFile2);
+//     if (!soundFile2) {
+//         printf("Failed to create sound file\n");
+//         AukObjectPtr_Release((AukObjectPtr*)&app->_project);
+//         return 1;
+//     }
+//     AukSoundFile_SetFilename(soundFile2, "sounds/sample2.wav");
+//     AukSoundFile_SetProperties(soundFile2, 22050, 1, 88200,2);
 
-    if (!sound1 || !sound2) {
-        printf("Failed to add sounds\n");
-        AukObjectPtr_Release((AukObjectPtr*)&soundFile1);
-        AukObjectPtr_Release((AukObjectPtr*)&app->_project);
-        return 1;
-    }
 
-    /* Release our reference to sound file (sounds now own it) */
-    AukObjectPtr_Release((AukObjectPtr*)&soundFile1);
+//     /* Create sounds on tracks */
+//     sound1 = track1->CreateSound(track1, soundFile2,
+//                                  AukFixed_FromInt(0),    /* Start at 0 seconds */
+//                                  AukFixed_FromInt(5));   /* End at 5 seconds */
 
-    /* Set sound properties */
-    sound1->SetLoopCount(sound1, 2);  /* Loop twice */
+//     sound2 = track2->CreateSound(track2, soundFile1,
+//                                  AukFixed_FromInt(2),    /* Start at 2 seconds */
+//                                  AukFixed_FromInt(8));   /* End at 8 seconds */
 
-    /* Add envelope points to track1 */
-    track1->AddEnvelopePoint(track1,
-                             AukFixed_FromDouble(-0.25),
-                             0x0100);  /* Full volume at start (0x0100 = 1.0) */
-    track1->AddEnvelopePoint(track1,
-                             AukFixed_FromInt(5),
-                             0x0080);  /* Half volume at 5 seconds (0x0080 = 0.5) */
+//     if (!sound1 || !sound2) {
+//         printf("Failed to add sounds\n");
+//         AukObjectPtr_Release((AukObjectPtr*)&soundFile1);
+//         AukObjectPtr_Release((AukObjectPtr*)&app->_project);
+//         return 1;
+//     }
 
-    /* Get project duration */
-    duration = project->GetDuration(project);
-    printf("Project duration: %d seconds\n",(int) AukFixed_ToInt(duration));
+//     /* Release our reference to sound file (sounds now own it) */
+//     AukObjectPtr_Release((AukObjectPtr*)&soundFile1);
 
-    /* Save project to JSON file */
-//    if (project->base.Save(project, "my_project.auk")) {
-//        printf("Project saved successfully\n");
-//    } else {
-//        printf("Failed to save project\n");
-//    }
+//     /* Set sound properties */
+//     sound1->SetLoopCount(sound1, 2);  /* Loop twice */
 
-    /* Display project info */
-    printf("Project: %s\n", project->base.GetName(project));
-    printf("Tracks: %d\n", (int)project->GetTrackCount(project));
-    printf("Track 1: %s, Sounds: %d\n",
-           AukTrack_GetName(track1),
-           (int)track1->GetSoundCount(track1));
-    printf("Track 2: %s, Sounds: %d\n",
-           AukTrack_GetName(track2),
-           (int)track2->GetSoundCount(track2));
+//     /* Add envelope points to track1 */
+//     track1->AddEnvelopePoint(track1,
+//                              AukFixed_FromDouble(-0.25),
+//                              0x0100);  /* Full volume at start (0x0100 = 1.0) */
+//     track1->AddEnvelopePoint(track1,
+//                              AukFixed_FromInt(5),
+//                              0x0080);  /* Half volume at 5 seconds (0x0080 = 0.5) */
+
+//     /* Get project duration */
+//     duration = project->GetDuration(project);
+//     printf("Project duration: %d seconds\n",(int) AukFixed_ToInt(duration));
+
+//     /* Save project to JSON file */
+// //    if (project->base.Save(project, "my_project.auk")) {
+// //        printf("Project saved successfully\n");
+// //    } else {
+// //        printf("Failed to save project\n");
+// //    }
+
+//     /* Display project info */
+//     printf("Project: %s\n", project->base.GetName(project));
+//     printf("Tracks: %d\n", (int)project->GetTrackCount(project));
+//     printf("Track 1: %s, Sounds: %d\n",
+//            AukTrack_GetName(track1),
+//            (int)track1->GetSoundCount(track1));
+//     printf("Track 2: %s, Sounds: %d\n",
+//            AukTrack_GetName(track2),
+//            (int)track2->GetSoundCount(track2));
     return 0;
 }
 

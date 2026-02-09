@@ -13,6 +13,7 @@
 #include "auksoundfileengine.h"
 #include "auksoundfile.h"
 #include "aukstring.h"
+#include <string.h>
 
 #ifdef AMIGA
 #include <proto/dos.h>
@@ -547,6 +548,9 @@ static void* SoundFileWorkerThread(void* arg)
 #endif
 }
 
+/* Sound file loading engine - singleton */
+AukSoundFileEngine *soundFileEngine = NULL;
+
 /* ============================================================
  * Engine API Implementation
  * ============================================================ */
@@ -556,7 +560,7 @@ AukSoundFileEngine* AukSoundFileEngine_Init(struct Process* mainProcess,
                                              unsigned long poolSizeBytes) {
     AukSoundFileEngine* engine;
 
-    (void)mainProcess;
+    if(soundFileEngine) return soundFileEngine;
 
     /* Default pool size: 2MB */
     if (poolSizeBytes == 0) {
@@ -677,6 +681,8 @@ AukSoundFileEngine* AukSoundFileEngine_Init(struct Process* mainProcess,
     engine->jobsCount = 0;
 
     printf("[Engine] Initialized with %lu KB buffer pool\n", poolSizeBytes / 1024);
+
+    soundFileEngine = engine;
     return engine;
 }
 

@@ -170,6 +170,9 @@ typedef struct AukSoundFileEngine {
 
 } AukSoundFileEngine;
 
+/* Sound file loading engine - singleton */
+extern AukSoundFileEngine *soundFileEngine;
+
 /* ============================================================
  * Public API
  * ============================================================ */

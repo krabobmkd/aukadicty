@@ -37,6 +37,10 @@ struct AukAProject {
     AukProjectPrefsPtr prefs;  /* Audio project preferences */
     AukArrayPtr tracks;        /* Array of audio tracks (AukArray) */
 
+    /* Array of soundfile waiting for validation */
+    AukArrayPtr soundFiles;
+
+
     /* Selection state (not serialized) */
     AukSelection selection;
 
@@ -58,6 +62,21 @@ const char* AukAProject_GetTypeName(AukObject* This);
 
 /* Initialize AukAProject structure */
 void AukAProject_Init(AukAProject* project);
+
+/* Actual used API at the end */
+
+/* Create track after AukSoundFile has been created and
+ * format, frequency,length,channelcount inited asynchronously.
+ * Then only, a message return and a new track is created with sound attached.
+ * AukSoundFileEngine has to be inited.
+ * AukAProject_ListenAsync() has to be called on signals to listen AukSoundFileEngine.
+*/
+AukTrack* AukAProject_CreateTrackWithSound(void* This, const char *filepath);
+
+/**
+ * Listen Sound file loading and
+*/
+AukTrack* AukAProject_ListenAsync(void* This );
 
 /* Audio-specific methods */
 void AukAProject_SetPreferences(AukAProject* project, unsigned int sampleRate, unsigned int maxTracks);
