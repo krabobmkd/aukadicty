@@ -72,6 +72,7 @@
 #include "aukmenu.h"
 #include "boopsimessage.h"
 #include "boopsidispose.h"
+#include "appsettings.h"
 
 //#include "aukaproject.h"
 #include <aukadicty.h>
@@ -198,6 +199,9 @@ struct App
      // - - - retain document object
      AukAProjectPtr _project;
 
+
+     // Application-level settings (temp dir, recent files)
+     AppSettings appSettings;
 };
 
 // App Modelinstance as our private struct.
@@ -226,6 +230,13 @@ void OpenSettingsWindow()
 void CloseSettingsWindow()
 {
     if(!app) return;
+    /* Sync temp dir from settings view back to AppSettings */
+    {
+        const char *tempDir = ProjectSettingsView_GetTempDir(&app->projectSettingsView);
+        if (tempDir) {
+            AppSettings_SetTempDir(&app->appSettings, tempDir);
+        }
+    }
     ProjectSettingsView_Close(&app->projectSettingsView);
 }
 
@@ -265,7 +276,12 @@ int main(int argc, char **argv)
     app = AllocVec(sizeof(struct App),MEMF_CLEAR);
     if(!app)  cleanexit("Can't create app");
 
+    /* Initialize and load application settings from icon tooltypes */
+    AppSettings_Init(&app->appSettings);
+    AppSettings_Load(&app->appSettings, "aukadicty");
+
     /* Initialize sound file engine for background loading */
+
     soundFileEngine = AukSoundFileEngine_Init((struct Process *)myTask,"PROGDIR:",0);
     /* Note: Engine init failure is non-fatal - features that need it will be disabled */
 
@@ -380,6 +396,14 @@ int main(int argc, char **argv)
         printf("Warning: Could not create Project Settings window\n");
     }
 
+    /* Apply loaded temp dir to settings view */
+    {
+        const char *tempDir = AppSettings_GetTempDir(&app->appSettings);
+        if (tempDir) {
+            ProjectSettingsView_SetTempDir(&app->projectSettingsView, tempDir);
+        }
+    }
+
     /*  Open the window. */
     CurrentMainWindow = boopsi_OpenWindow(app->window_obj);
     if(!CurrentMainWindow) cleanexit("can't open window");
@@ -387,6 +411,11 @@ int main(int argc, char **argv)
     /* Create and attach menus */
     if (!AukMenu_Create(&app->appMenu, app->lockedscreen, CurrentMainWindow)) {
         printf("Warning: Could not create menus\n");
+    }
+
+    /* Rebuild menus with recent files from loaded settings */
+    if (AppSettings_GetRecentCount(&app->appSettings) > 0) {
+        AukMenu_Rebuild(&app->appMenu, app->lockedscreen, CurrentMainWindow, &app->appSettings);
     }
 
     {
@@ -472,19 +501,46 @@ int main(int argc, char **argv)
                             if (!AukMenu_Create(&app->appMenu, app->lockedscreen,CurrentMainWindow)) {
                                 cleanexit("Warning: Could not re-create menus\n");
                             }
+                            /* Rebuild with recent files */
+                            if (AppSettings_GetRecentCount(&app->appSettings) > 0) {
+                                AukMenu_Rebuild(&app->appMenu, app->lockedscreen, CurrentMainWindow, &app->appSettings);
+                            }
                         }
                         break;
                     case WMHI_MENUPICK: // and not WMHI_POPUPMENU:
-                        {    
-                            AukAction *action = AukMenu_ToAction(&app->appMenu,result & WMHI_MENUMASK);
+//                        {    
+//                            AukAction *action = AukMenu_ToAction(&app->appMenu,result & WMHI_MENUMASK);
+                        {
+                            UWORD menuNum = result & WMHI_MENUMASK;
+                            LONG actionID = AukMenu_ToActionID(&app->appMenu, menuNum);
+                            AukAction *action = (actionID >= 0) ? AukAction_Get(actionID) : NULL;
                             if(action)
                             {
                                 struct AukActionContext actionContext;
+                                memset(&actionContext, 0, sizeof(actionContext));
                                 actionContext.pproject = &app->_project;
                                 actionContext.appWindow = CurrentMainWindow;
                                 actionContext.appData = TargetInstance;
                                 actionContext.trackListView = &app->tracksListView;
-                                action->func(&actionContext);
+                               //old action->func(&actionContext);
+                                actionContext.appSettings = &app->appSettings;
+
+                                /* Set recent file index if applicable */
+                                if (actionID >= ACTION_RECENT_FILE_0 && actionID <= ACTION_RECENT_FILE_7) {
+                                    actionContext.recentFileIndex = actionID - ACTION_RECENT_FILE_0;
+                                }
+
+                                if (action->func(&actionContext)) {
+                                    /* Rebuild menu if recent files may have changed */
+                                    if (actionID == ACTION_PROJECT_OPEN ||
+                                        actionID == ACTION_PROJECT_SAVE ||
+                                        actionID == ACTION_PROJECT_SAVEAS ||
+                                        (actionID >= ACTION_RECENT_FILE_0 && actionID <= ACTION_RECENT_FILE_7))
+                                    {
+                                        AukMenu_Rebuild(&app->appMenu, app->lockedscreen,
+                                                        CurrentMainWindow, &app->appSettings);
+                                    }
+                                }
                             }
                         }
                         break;
@@ -592,6 +648,16 @@ void exitclose(void)
     printf("exitclose()\n");
     if(app)
     {
+        /* Save app settings (recent files, temp dir) before closing */
+        {
+            const char *tempDir = ProjectSettingsView_GetTempDir(&app->projectSettingsView);
+            if (tempDir) {
+                AppSettings_SetTempDir(&app->appSettings, tempDir);
+            }
+        }
+        AppSettings_Save(&app->appSettings);
+        AppSettings_Close(&app->appSettings);
+
         /* just release data listener and object retained */
         CloseHeaderView(&app->headerView);
         CloseTrackListView(&app->tracksListView);
@@ -623,6 +689,7 @@ void exitclose(void)
         ObjectLateDisposer = NULL;
 
         /* Shutdown sound file engine */
+
         if (soundFileEngine) {
             AukSoundFileEngine_Shutdown(soundFileEngine);
             soundFileEngine = NULL;
@@ -718,15 +785,16 @@ int initProject()
     TrackListView_setProject(&app->tracksListView,project);
     FooterView_SetProject(&app->footerView,project);
 
+
     // /* Set project properties */
     // project->base.SetName(&project->base, "My First Project");
     // project->base.SetPath(&project->base, "Work:");
     // AukAProject_SetPreferences(project, 44100, 16);
 
+
+
     // /* Update footer with project frequency */
     // FooterView_UpdateFrequency(&app->footerView, 44100);
-
-
 
 //     /* Create tracks in the project */
 //     track1 = project->CreateTrack(project);
@@ -735,6 +803,7 @@ int initProject()
 //  project->CreateTrack(project);
 // project->CreateTrack(project);
 
+
 //     if (!track1 || !track2) {
 //         printf("Failed to create tracks\n");
 //         AukObjectPtr_Release((AukObjectPtr*)&app->_project);
@@ -742,6 +811,7 @@ int initProject()
 //     }
 //     AukTrack_SetName(track1, "Vocals, like that");
 //     AukTrack_SetName(track2, "Music");
+
 
 
 //     /* Create a sound file reference */
@@ -753,6 +823,7 @@ int initProject()
 //     }
 //     AukSoundFile_SetFilename(soundFile1, "sounds/sample1.wav");
 //     AukSoundFile_SetProperties(soundFile1, 44100, 2, 88200,2);
+
 
 //     AukSoundFile_New((AukObjectPtr*)&soundFile2);
 //     if (!soundFile2) {
@@ -769,9 +840,11 @@ int initProject()
 //                                  AukFixed_FromInt(0),    /* Start at 0 seconds */
 //                                  AukFixed_FromInt(5));   /* End at 5 seconds */
 
+
 //     sound2 = track2->CreateSound(track2, soundFile1,
 //                                  AukFixed_FromInt(2),    /* Start at 2 seconds */
 //                                  AukFixed_FromInt(8));   /* End at 8 seconds */
+
 
 //     if (!sound1 || !sound2) {
 //         printf("Failed to add sounds\n");
@@ -780,11 +853,14 @@ int initProject()
 //         return 1;
 //     }
 
+
 //     /* Release our reference to sound file (sounds now own it) */
 //     AukObjectPtr_Release((AukObjectPtr*)&soundFile1);
 
+
 //     /* Set sound properties */
 //     sound1->SetLoopCount(sound1, 2);  /* Loop twice */
+
 
 //     /* Add envelope points to track1 */
 //     track1->AddEnvelopePoint(track1,
@@ -793,6 +869,7 @@ int initProject()
 //     track1->AddEnvelopePoint(track1,
 //                              AukFixed_FromInt(5),
 //                              0x0080);  /* Half volume at 5 seconds (0x0080 = 0.5) */
+
 
 //     /* Get project duration */
 //     duration = project->GetDuration(project);

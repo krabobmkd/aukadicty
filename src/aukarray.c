@@ -33,7 +33,7 @@ void AukArray_Delete(AukObject* This) {
             }
             FreeVec(array->items);
         }
-
+        aukMutex_close(&array->mutex);
         /* Call base object delete */
         AukObject_Delete(&array->base);
     }
@@ -87,6 +87,7 @@ void AukArray_Init(AukArray* array) {
     if (array) {
         /* Initialize base object */
         AukObject_Init(&array->base);
+        aukMutex_init(&array->mutex);
 
         /* Override virtual methods */
         array->base.Delete = AukArray_Delete;

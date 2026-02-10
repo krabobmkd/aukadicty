@@ -15,6 +15,7 @@ typedef struct AukAction AukAction;
 typedef struct AukActionContext AukActionContext;
 
 struct TrackListView;
+struct AppSettings;
 
 /* Action function signature - returns TRUE if successful */
 typedef BOOL (*AukActionFunc)(AukActionContext *context);
@@ -25,6 +26,8 @@ struct AukActionContext {
     void *appWindow;            /* Application window (struct Window*) */
     void *appData;              /* Application-specific data */
     struct TrackListView *trackListView; /* For View actions */
+    struct AppSettings *appSettings;    /* For recent file actions */
+    int recentFileIndex;               /* Index for ACTION_RECENT_FILE_* */
 };
 
 /* Action definition */
@@ -74,6 +77,16 @@ enum {
     /* Help actions */
     ACTION_HELP_HELP,
 
+    /* Recent file actions (menu-only, 8 max) */
+    ACTION_RECENT_FILE_0,
+    ACTION_RECENT_FILE_1,
+    ACTION_RECENT_FILE_2,
+    ACTION_RECENT_FILE_3,
+    ACTION_RECENT_FILE_4,
+    ACTION_RECENT_FILE_5,
+    ACTION_RECENT_FILE_6,
+    ACTION_RECENT_FILE_7,
+
     /* Must be last */
     ACTION_COUNT
 };
@@ -117,5 +130,7 @@ BOOL Action_SettingsProject(AukActionContext *context);
 BOOL Action_SettingsView(AukActionContext *context);
 
 BOOL Action_HelpHelp(AukActionContext *context);
+
+BOOL Action_RecentFileOpen(AukActionContext *context);
 
 #endif /* AUKACTION_H */

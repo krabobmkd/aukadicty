@@ -39,6 +39,8 @@ BOOL ProjectSettingsView_Init(ProjectSettingsView *psv,
                               struct DrawInfo *drawInfo,
                               const char *title)
 {
+    Object *projPlaceholder;
+
     if(!psv || !screen) return FALSE;
 
     memset(psv, 0, sizeof(ProjectSettingsView));
@@ -62,7 +64,59 @@ BOOL ProjectSettingsView_Init(ProjectSettingsView *psv,
                             LABEL_Text, (ULONG)"Temp Directory:",
                             TAG_END);
 
-    /* Create the main vertical layout */
+    /* App Settings group layout */
+    psv->appSettingsLayout = NewObject(LAYOUT_GetClass(), NULL,
+                        GA_DrawInfo, (ULONG)drawInfo,
+                        LAYOUT_Orientation, LAYOUT_ORIENT_VERT,
+                        LAYOUT_BevelStyle, BVS_GROUP,
+                        LAYOUT_Label, (ULONG)"App Settings",
+                        LAYOUT_SpaceOuter, TRUE,
+                        LAYOUT_SpaceInner, TRUE,
+
+                        LAYOUT_AddChild, (ULONG)psv->tempDirGetFile,
+                        CHILD_WeightedHeight, 0,
+                        CHILD_Label, (ULONG)psv->tempDirLabel,
+
+                        TAG_END);
+
+    if(!psv->appSettingsLayout) {
+        DisposeObject(psv->tempDirGetFile);
+        if(psv->tempDirLabel) DisposeObject(psv->tempDirLabel);
+        return FALSE;
+    }
+
+    /* Project Settings group layout (placeholder for now) */
+    projPlaceholder = NewObject(BUTTON_GetClass(), NULL,
+                        GA_DrawInfo, (ULONG)drawInfo,
+                        GA_ReadOnly, TRUE,
+                        BUTTON_BevelStyle, BVS_NONE,
+                        BUTTON_Transparent, TRUE,
+                        GA_Text, (ULONG)"(no project settings yet)",
+                        TAG_END);
+
+    psv->projSettingsLayout = NewObject(LAYOUT_GetClass(), NULL,
+                        GA_DrawInfo, (ULONG)drawInfo,
+                        LAYOUT_Orientation, LAYOUT_ORIENT_VERT,
+                        LAYOUT_BevelStyle, BVS_GROUP,
+                        LAYOUT_Label, (ULONG)"Project Settings",
+                        LAYOUT_SpaceOuter, TRUE,
+                        LAYOUT_SpaceInner, TRUE,
+
+                        LAYOUT_AddChild, (ULONG)projPlaceholder,
+                        CHILD_WeightedHeight, 0,
+
+                        TAG_END);
+
+    if(!psv->projSettingsLayout) {
+        DisposeObject(psv->appSettingsLayout);
+        psv->appSettingsLayout = NULL;
+        psv->tempDirGetFile = NULL;
+        psv->tempDirLabel = NULL;
+        if(projPlaceholder) DisposeObject(projPlaceholder);
+        return FALSE;
+    }
+
+    /* Main vertical layout containing both groups */
     psv->mainLayout = NewObject(LAYOUT_GetClass(), NULL,
                         GA_DrawInfo, (ULONG)drawInfo,
                         LAYOUT_DeferLayout, TRUE,
@@ -71,17 +125,21 @@ BOOL ProjectSettingsView_Init(ProjectSettingsView *psv,
                         LAYOUT_SpaceOuter, TRUE,
                         LAYOUT_SpaceInner, TRUE,
 
-                        /* Temp directory row */
-                        LAYOUT_AddChild, (ULONG)psv->tempDirGetFile,
+                        LAYOUT_AddChild, (ULONG)psv->appSettingsLayout,
                         CHILD_WeightedHeight, 0,
-                        CHILD_Label, (ULONG)psv->tempDirLabel,
+
+                        LAYOUT_AddChild, (ULONG)psv->projSettingsLayout,
+                        CHILD_WeightedHeight, 0,
 
                         TAG_END);
 
-    if(!psv->mainLayout)
-    {
-        if(psv->tempDirGetFile) DisposeObject(psv->tempDirGetFile);
-        if(psv->tempDirLabel) DisposeObject(psv->tempDirLabel);
+    if(!psv->mainLayout) {
+        DisposeObject(psv->projSettingsLayout);
+        DisposeObject(psv->appSettingsLayout);
+        psv->appSettingsLayout = NULL;
+        psv->projSettingsLayout = NULL;
+        psv->tempDirGetFile = NULL;
+        psv->tempDirLabel = NULL;
         return FALSE;
     }
 
@@ -89,8 +147,8 @@ BOOL ProjectSettingsView_Init(ProjectSettingsView *psv,
     psv->windowObj = NewObject(WINDOW_GetClass(), NULL,
                         WA_Left, 140,
                         WA_Top, 80,
-                        WA_Width, 300,
-                        WA_Height, 150,
+                        WA_Width, 340,
+                        WA_Height, 200,
                         WA_CustomScreen, (ULONG)screen,
                         WA_IDCMP, IDCMP_CLOSEWINDOW | IDCMP_GADGETUP | IDCMP_RAWKEY,
                         WA_Flags, WFLG_DRAGBAR | WFLG_DEPTHGADGET | WFLG_CLOSEGADGET |
@@ -99,10 +157,13 @@ BOOL ProjectSettingsView_Init(ProjectSettingsView *psv,
                         WINDOW_ParentGroup, (ULONG)psv->mainLayout,
                         TAG_END);
 
-    if(!psv->windowObj)
-    {
+    if(!psv->windowObj) {
         DisposeObject(psv->mainLayout);
         psv->mainLayout = NULL;
+        psv->appSettingsLayout = NULL;
+        psv->projSettingsLayout = NULL;
+        psv->tempDirGetFile = NULL;
+        psv->tempDirLabel = NULL;
         return FALSE;
     }
 
@@ -192,20 +253,20 @@ void ProjectSettingsView_Dispose(ProjectSettingsView *psv)
     if(!psv) return;
 
     /* Close window if open */
-    if(psv->window)
-    {
+    if(psv->window) {
         DoMethod(psv->windowObj, WM_CLOSE, NULL);
         psv->window = NULL;
     }
 
     /* Dispose window object - this cascades to child gadgets */
-    if(psv->windowObj)
-    {
+    if(psv->windowObj) {
         DisposeObject(psv->windowObj);
         psv->windowObj = NULL;
     }
 
     psv->mainLayout = NULL;
+    psv->appSettingsLayout = NULL;
+    psv->projSettingsLayout = NULL;
     psv->tempDirGetFile = NULL;
     psv->tempDirLabel = NULL;
 }

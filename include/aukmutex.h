@@ -15,6 +15,7 @@ extern "C" {
 #include <exec/semaphores.h>
 #endif
 #include "aukdefs.h"
+#include <stdlib.h>
 
 #ifdef AMIGA
 struct AukMutex {
@@ -24,6 +25,7 @@ struct AukMutex {
 
 INLINE void aukMutex_init(AukMutex *m)
 {
+    if( m->semaphore ) return; // already inited
     m->semaphore = AllocVec(sizeof(struct SignalSemaphore),MEMF_CLEAR|MEMF_PUBLIC);
     if(!m->semaphore) return;
     InitSemaphore(m->semaphore);
@@ -32,12 +34,24 @@ INLINE void aukMutex_init(AukMutex *m)
 
 INLINE void aukMutex_lock(AukMutex *m)
 {
+    if(m->n != 0)
+    {
+        printf(" !!!! aukMutex_lock asked when %d\n",m->n);
+        exit(0);
+    }
     m->n++;
-    ObtainSemaphore(m->semaphore);
+   ObtainSemaphore(m->semaphore);
+   //Forbid();
 }
 INLINE void aukMutex_unlock(AukMutex *m)
 {
+    if(m->n != 1)
+    {
+        printf(" !!!! aukMutex_unlock asked when %d\n",m->n);
+        exit(0);
+    }
     m->n--;
+   //Permit();
     /* "Each ObtainSemaphore() call must be balanced
      * by exactly one ReleaseSemaphore() call." */
     ReleaseSemaphore(m->semaphore);

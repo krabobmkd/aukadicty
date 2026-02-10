@@ -14,6 +14,7 @@
 #include "compilers.h"
 #include "aukiffserializer.h"
 #include "auktyperegistry.h"
+#include "appsettings.h"
 #include <stdio.h>
 
 #include "TrackListView.h"
@@ -51,6 +52,42 @@ static int EndsWithNoCase(const char *str, const char *suffix)
     return 1;
 }
 
+/*
+ * Helper: load a project from a known file path.
+ * Reused by Action_ProjectOpen and Action_RecentFileOpen.
+ * Returns TRUE on success.
+ */
+static BOOL loadProjectFromPath(AukAProjectPtr *pproject, const char *fullPath)
+{
+    BPTR file;
+    ISerializer *ser;
+    const TypeNameToContructor *typeRegistry;
+
+    file = Open((STRPTR)fullPath, MODE_OLDFILE);
+    if (!file) {
+        AukLog_Message(AUKLOG_ERROR, AUKERR_ACTION_FILE_OPEN_FAILED);
+        return FALSE;
+    }
+
+    typeRegistry = AukProject_GetTypeRegistry();
+
+    ser = AukIFFSerializer_CreateReader(file, typeRegistry);
+    if (!ser) {
+        AukLog_Message(AUKLOG_ERROR, AUKERR_ACTION_IFF_READ_FAILED);
+        Close(file);
+        return FALSE;
+    }
+
+    AukAProject_Clear(*pproject);
+    (*pproject)->base.base.Serialize((AukObject *)*pproject, ser, "AukAProject");
+
+    ser->Destroy(ser);
+    Close(file);
+
+    AukLog_MessageStr(AUKLOG_INFO, AUKERR_ACTION_PROJECT_OPENED, fullPath);
+    return TRUE;
+}
+
 /* Action implementations */
 
 BOOL Action_ProjectNew(AukActionContext *context) {
@@ -71,9 +108,6 @@ BOOL Action_ProjectNew(AukActionContext *context) {
 BOOL Action_ProjectOpen(AukActionContext *context) {
     struct FileRequester *request;
     char fullPath[512];
-    BPTR file;
-    ISerializer *ser;
-    const TypeNameToContructor *typeRegistry;
     AukAProject **pproject;
 
     AukLog_Message(AUKLOG_INFO, AUKERR_ACTION_PROJECT_OPEN);
@@ -132,40 +166,16 @@ BOOL Action_ProjectOpen(AukActionContext *context) {
 
     FreeAslRequest(request);
 
-    /* Open file for reading */
-    file = Open((STRPTR)fullPath, MODE_OLDFILE);
-    if (!file) {
-        AukLog_Message(AUKLOG_ERROR, AUKERR_ACTION_FILE_OPEN_FAILED);
+    /* Load using shared helper */
+    if (!loadProjectFromPath(pproject, fullPath)) {
         return FALSE;
     }
 
-    /* Get type registry */
-    typeRegistry = AukProject_GetTypeRegistry();
-
-    /* Create IFF reader serializer */
-    ser = AukIFFSerializer_CreateReader(file, typeRegistry);
-    if (!ser) {
-        AukLog_Message(AUKLOG_ERROR, AUKERR_ACTION_IFF_READ_FAILED);
-        Close(file);
-        return FALSE;
+    /* Track in recent files */
+    if (context->appSettings) {
+        AppSettings_AddRecentFile(context->appSettings, fullPath);
     }
 
-    /* Clear existing project data first */
-    //no need ?
-    AukAProject_Clear(*pproject);
-
-    /* Deserialize into existing project */
-    //ser->t_object(ser, "project",pproject);
-    /* This version keep same object, so keep listener list */
-    (*pproject)->base.base.Serialize((AukObject *)*pproject,ser,"AukAProject");
-
-    /* Clean up serializer and file */
-    ser->Destroy(ser);
-    Close(file);
-
-
-
-    AukLog_MessageStr(AUKLOG_INFO, AUKERR_ACTION_PROJECT_OPENED, fullPath);
     return TRUE;
 }
 
@@ -282,6 +292,12 @@ BOOL Action_ProjectSave(AukActionContext *context) {
     Close(file);
 
     AukLog_MessageStr(AUKLOG_INFO, AUKERR_ACTION_PROJECT_SAVED, fullPath);
+
+    /* Track in recent files */
+    if (context->appSettings) {
+        AppSettings_AddRecentFile(context->appSettings, fullPath);
+    }
+
     return TRUE;
 }
 
@@ -425,6 +441,32 @@ BOOL Action_HelpHelp(AukActionContext *context) {
     return TRUE;
 }
 
+BOOL Action_RecentFileOpen(AukActionContext *context) {
+    const char *path;
+    AukAProject **pproject;
+
+    if (!context || !context->appSettings || !context->pproject || !*context->pproject) {
+        return FALSE;
+    }
+
+    pproject = context->pproject;
+    path = AppSettings_GetRecentFile(context->appSettings, context->recentFileIndex);
+    if (!path) {
+        AukLog_Message(AUKLOG_ERROR, AUKERR_ACTION_FILE_INVALID);
+        return FALSE;
+    }
+
+    /* Load using shared helper */
+    if (!loadProjectFromPath(pproject, path)) {
+        return FALSE;
+    }
+
+    /* Move to top of recent list */
+    AppSettings_AddRecentFile(context->appSettings, path);
+
+    return TRUE;
+}
+
 /* Global action table */
 static AukAction actionTable[ACTION_COUNT] = {
     /* Project actions */
@@ -462,6 +504,16 @@ static AukAction actionTable[ACTION_COUNT] = {
 
     /* Help actions */
     [ACTION_HELP_HELP] = {Action_HelpHelp, MSG_MENU_HELP, NULL, 0, 0},
+
+    /* Recent file actions - names set dynamically, no locale string */
+    [ACTION_RECENT_FILE_0] = {Action_RecentFileOpen, 0, NULL, 0, 0},
+    [ACTION_RECENT_FILE_1] = {Action_RecentFileOpen, 0, NULL, 0, 0},
+    [ACTION_RECENT_FILE_2] = {Action_RecentFileOpen, 0, NULL, 0, 0},
+    [ACTION_RECENT_FILE_3] = {Action_RecentFileOpen, 0, NULL, 0, 0},
+    [ACTION_RECENT_FILE_4] = {Action_RecentFileOpen, 0, NULL, 0, 0},
+    [ACTION_RECENT_FILE_5] = {Action_RecentFileOpen, 0, NULL, 0, 0},
+    [ACTION_RECENT_FILE_6] = {Action_RecentFileOpen, 0, NULL, 0, 0},
+    [ACTION_RECENT_FILE_7] = {Action_RecentFileOpen, 0, NULL, 0, 0},
 };
 
 void AukAction_Init(void)

@@ -33,18 +33,23 @@ void AukObject_Delete(AukObject* obj) {
 
         /* Free all listeners */
         listener = obj->listeners;
-        while (listener) {
-            nextListener = listener->next;
+        if(listener)
+        {
+             aukMutex_lock( &obj->listeners_mutex );
+            while (listener) {
+                nextListener = listener->next;
 
-            /* Release reference to listener object */
-            if (listener->listenerObject) {
-                AukObjectPtr_Release(&listener->listenerObject);
+                /* Release reference to listener object */
+                if (listener->listenerObject) {
+                    AukObjectPtr_Release(&listener->listenerObject);
+                }
+
+                FreeVec(listener);
+                listener = nextListener;
             }
-
-            FreeVec(listener);
-            listener = nextListener;
+             aukMutex_unlock( &obj->listeners_mutex );
+            aukMutex_close(&obj->listeners_mutex);
         }
-
         AukObjectCount--;
         FreeVec(obj);
     }
@@ -71,6 +76,8 @@ int AukObject_AddListener(AukObject* obj, AukObject* listenerObject, void* userD
         return 0;
     }
 
+    /*we only initialize mutex at the first AddListener() */
+    if(!obj->listeners) aukMutex_init(&obj->listeners_mutex);
     aukMutex_lock( &obj->listeners_mutex );
 
     /* Check if listener already exists */

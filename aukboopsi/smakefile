@@ -10,6 +10,7 @@ BUILDDIR = build-sasc
 HEADERS = \
  aukstylesheet.h aukstyle.h gadgetid.h bdbprintf.h \
  TrackListView.h HeaderView.h FooterView.h \
+ ProjectSettingsView.h appsettings.h tooltypepref.h \
  auklocale.h aukaction.h aukmenu.h offscreenbm.h
 
 OBJS = \
@@ -23,6 +24,11 @@ OBJS = \
  $(BUILDDIR)/aukstylesheet.o \
  $(BUILDDIR)/bdbprintf.o \
  $(BUILDDIR)/offscreenbm.o \
+ $(BUILDDIR)/boopsimessage.o \
+ $(BUILDDIR)/boopsidispose.o \
+ $(BUILDDIR)/ProjectSettingsView.o \
+ $(BUILDDIR)/appsettings.o \
+ $(BUILDDIR)/tooltypepref.o \
  $(BUILDDIR)/class_infinitescroll_attribs.o \
  $(BUILDDIR)/class_infinitescroll_dispatch.o \
  $(BUILDDIR)/class_infinitescroll_lib.o \
@@ -92,6 +98,21 @@ $(BUILDDIR)/bdbprintf.o: bdbprintf.c $(BUILDDIR) $(HEADERS)
 
 $(BUILDDIR)/offscreenbm.o: offscreenbm.c $(BUILDDIR) $(HEADERS)
 	sc offscreenbm.c $(SCOPTS) $(STATICDEFS) OBJNAME=$@
+
+$(BUILDDIR)/boopsimessage.o: boopsimessage.c $(BUILDDIR) $(HEADERS)
+	sc boopsimessage.c $(SCOPTS) $(STATICDEFS) OBJNAME=$@
+
+$(BUILDDIR)/boopsidispose.o: boopsidispose.c $(BUILDDIR) $(HEADERS)
+	sc boopsidispose.c $(SCOPTS) $(STATICDEFS) OBJNAME=$@
+
+$(BUILDDIR)/ProjectSettingsView.o: ProjectSettingsView.c $(BUILDDIR) $(HEADERS)
+	sc ProjectSettingsView.c $(SCOPTS) $(STATICDEFS) OBJNAME=$@
+
+$(BUILDDIR)/appsettings.o: appsettings.c $(BUILDDIR) $(HEADERS)
+	sc appsettings.c $(SCOPTS) $(STATICDEFS) OBJNAME=$@
+
+$(BUILDDIR)/tooltypepref.o: tooltypepref.c $(BUILDDIR) $(HEADERS)
+	sc tooltypepref.c $(SCOPTS) $(STATICDEFS) OBJNAME=$@
 
 # InfiniteScroll class
 $(BUILDDIR)/class_infinitescroll_attribs.o: InfiniteScroll/class_infinitescroll_attribs.c $(BUILDDIR)
