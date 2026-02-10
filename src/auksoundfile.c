@@ -15,7 +15,8 @@ void AukSoundFile_New(AukObjectPtr* firstPtr) {
         return;
     }
 
-    soundFile = (AukSoundFile*)AllocVec(sizeof(AukSoundFile), MEMF_CLEAR);
+    /* as it is written and read by manby process we need specially MEMF_PUBLIC */
+    soundFile = (AukSoundFile*)AllocVec(sizeof(AukSoundFile), MEMF_CLEAR | MEMF_PUBLIC );
     if (soundFile) {
         AukSoundFile_Init(soundFile);
         AukObjectPtr_Set(firstPtr, &soundFile->base);
@@ -146,4 +147,67 @@ void AukSoundFile_Init(AukSoundFile* soundFile) {
         soundFile->channels = 2;       /* Default stereo */
         soundFile->frameCount = 0;
     }
+}
+
+/* for a single SoundFileConsumer, we must only lock once a part */
+void SoundFileConsumer_ReadAndLockTimeSpan(SoundFileConsumer *sfc,
+                            long long tstart,long long tend, unsigned int channelMask )
+{
+    int newiPartStart,newiPartEnd;
+    unsigned int b,bmask, iChan;
+
+    if(!sfc || !sfc->soundFile || sfc->soundFile->status
+        < AUKSF_STATUS_STATED_PHASE1 || !channelMask) return;
+        if(tend< start) return;
+        if(start<0) return;
+
+    newiPartStart = (((unsigned int)(start>>32)) * sfc->soundFile->sampleRate
+                    +
+                    ((((unsigned int)start)>>16) * sfc->soundFile->sampleRate)>>16)
+                    >>SOUNDBUFFERPARTSIZEL2;
+
+    newiPartEnd = (((unsigned int)(tend>>32)) * sfc->soundFile->sampleRate
+                    +
+                    ((((unsigned int)tend)>>16) * sfc->soundFile->sampleRate)>>16)
+                    >>SOUNDBUFFERPARTSIZEL2;
+    if(newiPartStart == sfc->iPartStart &&
+        newiPartEnd == sfc->iPartEnd) return;
+
+    b = 1;
+    bmask = ~0;
+    iChan = 0;
+    while(b)
+    {
+        if((bmask & channelMask)==0) break;
+        if((b & channelMask)!=0 &&
+           sfc->channelMask )
+        {
+
+
+        }
+        bmask <<=1;
+        b<<=1;
+        iChan++;
+    }
+    if()
+
+   // sfc->soundFile->buffers[]
+
+
+    sfc->iPartStart = newiPartStart;
+    sfc->iPartEnd = newiPartEnd;
+    sfc->channelMask = channelMask;
+}
+
+void SoundFileConsumer_UnlockTimeSpan(SoundFileConsumer *sfc )
+{
+
+    if(!sfc || !sfc->soundFile || sfc->soundFile->status
+        < AUKSF_STATUS_STATED_PHASE1) return;
+
+    if(sfc->iPartStart == 0 && sfc->iPartEnd == 0 ) return;
+
+
+    sfc->iPartStart = sfc->iPartEnd = 0;
+    sfc->channelMask = 0;
 }

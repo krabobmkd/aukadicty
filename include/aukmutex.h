@@ -12,30 +12,25 @@ extern "C" {
 #ifdef AMIGA
 #include <proto/exec.h>
 #include <proto/graphics.h>
+#include <exec/semaphores.h>
 #endif
 #include "aukdefs.h"
-/* Base object vtable - all objects must implement these */
+
+#ifdef AMIGA
 struct AukMutex {
-    signed short n,m;
+    struct SignalSemaphore *semaphore;
 };
 
+INLINE void aukMutex_init(AukMutex *m)
+{
+    m->semaphore = AllocVec(sizeof(struct SignalSemaphore),MEMF_CLEAR|MEMF_PUBLIC);
+    if(!m->semaphore) return;
+    InitSemaphore(m->semaphore);
+}
 
-#include <proto/exec.h>
-/* simple quick version
-*/
 INLINE void aukMutex_lock(AukMutex *m)
 {
-    while(m->m>0)
-    {
-        WaitTOF();
-    }
-    m->m++;
-    while(m->n>0)
-    {
-        WaitTOF();
-    }
-    m->n++;
-    m->m--;
+
 }
 INLINE void aukMutex_unlock(AukMutex *m)
 {
@@ -45,6 +40,22 @@ INLINE void aukMutex_unlock(AukMutex *m)
    }
    m->n--;
 }
+INLINE void aukMutex_close(AukMutex *m)
+{
+
+
+}
+
+#else
+struct AukMutex {
+    signed short n,m;
+};
+
+#endif
+
+/*  */
+
+
 
 
 #ifdef __cplusplus

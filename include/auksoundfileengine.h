@@ -23,6 +23,8 @@
 
 #include <exec/types.h>
 #include <exec/ports.h>
+#include <exec/tasks.h>
+#include <dos/dosextens.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -43,24 +45,26 @@ typedef enum {
     AUKSFE_MSG_SHUTDOWN         /* Shutdown worker thread */
 } AukSFEMessageType;
 
-/* File status */
-typedef enum {
-    AUKSFE_STATUS_NONE = 0,
-    AUKSFE_STATUS_PENDING,      /* Waiting to be processed */
-    AUKSFE_STATUS_STATING,      /* Reading file header/stats */
-    AUKSFE_STATUS_STATED,       /* Stats ready, not fully loaded */
-    AUKSFE_STATUS_LOADING,      /* Loading file data */
-    AUKSFE_STATUS_LOADED,       /* Fully loaded */
-    AUKSFE_STATUS_ERROR         /* Error occurred */
-} AukSFEFileStatus;
 
-/* Message structure for inter-thread communication */
+struct AukSoundFile;
+struct AukSoundFileEngine;
+
+/* internal, Message structure for inter-thread communication */
 typedef struct AukSFEMessage {
     struct Message msg;         /* Amiga message header (must be first) */
+    AukSoundFileEngine *engine;
     AukSFEMessageType type;     /* Message type */
     struct AukSoundFile* file;  /* Sound file (retained) */
     int errorCode;              /* Error code if type == ERROR */
 } AukSFEMessage;
+
+/* internal, for compiled list of jobs to do in a row */
+typedef struct AukSFEJob {
+    struct AukSoundFile *soundfile; /* weak pointer, alredy retained in Node */
+    /* could either init or load a part, ...or anything? !=0 means error. */
+    int job( struct AukSoundFile *soundfile );
+} AukSFEJob;
+
 
 /* Engine state */
 typedef struct AukSoundFileEngine {
@@ -71,9 +75,35 @@ typedef struct AukSoundFileEngine {
     /* Message ports */
     struct MsgPort* mainReplyPort;  /* For receiving replies */
 
-    /* Pending file requests (simple linked list) */
-    struct AukSFEFileNode* fileList;
-    int fileCount;
+    /* main process put new files here:  */
+    struct AukSFEFileNode* files_new;
+
+    /* read process
+       - remove files in  files_new set them in files_managed.
+       From then, files pass multiple states:
+       - 0 unknown
+       - 1 file type/length/frequency/nbchans known. ->message it back to main process.
+       - 2 stream all file part by part to just keep min/max and stats.
+          If many files, we read parts of each in turns.
+          For each files/Part message the main process.
+       - 3 state is "file known", no more immediate task for it.
+
+       For state 2 and 3,It can be asked to read again the sound signal to make
+       the buffer available to mixer, player or exporter.
+
+       If asked to remove file at any moment with AukSoundFileEngine_ReleaseFile,
+       file is being released on the last use.
+       */
+       /*
+        note as
+       */
+    struct AukSFEFileNode* files_managed;
+
+    /* thread internal vars */
+    /* jobs to be done in a row between messagings. If not enough will just be done later. */
+#define SFEMaxJobs 32
+    AukSFEJob jobs[SFEMaxJobs];
+    int     jobsCount;
 
     /* Shutdown flag */
     int shutdownRequested;
@@ -84,9 +114,10 @@ typedef struct AukSoundFileEngine {
  * Initialize the sound file engine.
  * Creates the worker thread.
  *
+ * @myProcess process just to get standard output
  * @return  Pointer to engine, or NULL on failure
  */
-AukSoundFileEngine* AukSoundFileEngine_Init(void);
+AukSoundFileEngine* AukSoundFileEngine_Init(struct Process *mainProcess);
 
 /*
  * Shutdown the sound file engine.
