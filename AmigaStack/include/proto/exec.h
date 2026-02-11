@@ -49,6 +49,10 @@ ULONG Wait(ULONG signalSet);
 void Signal(struct Task* task, ULONG signalSet);
 ULONG SetSignal(ULONG newSignals, ULONG signalSet);
 
+/* Task scheduling (no-op on PC) */
+void Forbid(void);
+void Permit(void);
+
 #ifdef __cplusplus
 }
 #endif

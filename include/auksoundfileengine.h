@@ -1,7 +1,6 @@
 #ifndef AUKSOUNDFILEENGINE_H
 #define AUKSOUNDFILEENGINE_H
 
-#include <exec/types.h>
 /*
  * AukSoundFileEngine - Background Sound File Loading Engine
  *
@@ -25,26 +24,11 @@
  * 5. Call AukSoundFileEngine_Shutdown() at app exit
  */
 
-#ifndef AMIGA
-
-// struct Message { void *mn_ReplyPort; unsigned short mn_Length; };
-// struct MsgPort { int mp_SigBit; };
-// struct Process { struct MsgPort pr_MsgPort; void *pr_COS; };
-//struct Task;
 #include <exec/types.h>
+#include <exec/memory.h>
 #include <exec/ports.h>
 #include <exec/tasks.h>
-/* Stub functions for PC */
-#define MEMF_CLEAR 0x10000
-#define MEMF_PUBLIC 0x1
-#define OFFSET_BEGINNING -1
-#define OFFSET_CURRENT 0
-#define TAG_END 0
-
-#else
-#include <exec/types.h>
-#include <exec/ports.h>
-#include <exec/tasks.h>
+#ifdef AMIGA
 #include <dos/dosextens.h>
 #endif
 

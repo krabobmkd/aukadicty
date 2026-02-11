@@ -1,7 +1,10 @@
 #include "aukarray.h"
 #include <proto/exec.h>
 #include <string.h>
-#include <stdio.h>
+
+/* warning no stdio.h and printf here, may be call from aukboopsi boopsi context.
+ may defer bdbprint.h
+ */
 #include "serializer.h"
 
 /*
@@ -242,7 +245,6 @@ void AukArray_Get(void* This, AukObjectPtr *ptr, unsigned int index) {
     if (!array ) {
         return;
     }
-
     aukMutex_lock(&array->mutex);
     if(  index >= array->count) {
         aukMutex_unlock(&array->mutex);
@@ -258,9 +260,11 @@ void AukArray_Get(void* This, AukObjectPtr *ptr, unsigned int index) {
 unsigned int AukArray_GetCount(void* This) {
     unsigned int l=0;
     AukArray* array = (AukArray*)This;
+
     aukMutex_lock(&array->mutex);
-    l = array ? array->count : 0;
+        l = array ? array->count : 0;
     aukMutex_unlock(&array->mutex);
+
     return l;
 }
 
@@ -270,6 +274,7 @@ int AukArray_Insert(void* This, unsigned int index, AukObject* item) {
     if (!array || !item || index > array->count) {
         return 0;
     }
+
     aukMutex_lock(&array->mutex);
     /* Ensure capacity */
     if (!AukArray_EnsureCapacity(array, array->count + 1)) {
@@ -304,6 +309,7 @@ void AukArray_Clear(void* This) {
     if (!array) {
         return;
     }
+
     aukMutex_lock(&array->mutex);
     /* Release all items */
     if (array->items) {

@@ -77,7 +77,6 @@ void AukAProject_Serialize(AukObject* This, ISerializer* ser, const char* pName)
         return;
     }
 
- if(IS_READING(ser)) printf("aukaprj_ser1 \n");
     /* Write version only when saving */
     if (IS_WRITING(ser)) {
         const char* version = "0.1";
@@ -94,7 +93,7 @@ void AukAProject_Serialize(AukObject* This, ISerializer* ser, const char* pName)
 
     /* Serialize tracks array */
     ser->t_arrayobj(ser, "tracks", &project->tracks,(AukObjectNewFunc) AukTrack_New, AukTrack_GetTypeName(NULL));
- //if(IS_READING(ser)) printf("aukaprj_ser1 project->tracks:%d\n",project->tracks->count);
+
     if(IS_READING(ser) && project->tracks)
     {
         reattributeTrackIndex((AukArray*) project->tracks);
@@ -110,15 +109,15 @@ void AukAProject_Serialize(AukObject* This, ISerializer* ser, const char* pName)
         /* need to send project load updates at this level.
           Set()/Add() does this, but serialization will not automatize this */
           tracksArray = project->tracks;
-                printf("READING tracksArray->count:%d\n",tracksArray->count);
+
           icount = tracksArray->count;
-           printf("nblisteners:%08x\n",project->base.base.listeners); // obj->listeners
+
         for(itrack=0;itrack<icount;itrack++)
         {
             AukMessage_AProject msg;
             msg.type = AUK_MSG_TRACKADDED;
             msg._track = (AukTrack *) tracksArray->items[itrack]; // should we lock ?
-                printf("   sg._track:%08x\n",(int)msg._track);
+             //   printf("   sg._track:%08x\n",(int)msg._track);
             msg._track_id = itrack;
             msg._timeStart = 0;
             project->base.base.SendUpdate(&project->base.base,(AukMessage*) &msg);
@@ -194,6 +193,7 @@ static int AukAProject_AddTrack(void* This, AukTrack* track) {
     /* Send update notification */
     msg.type = AUK_MSG_TRACKADDED;
     msg._track = track;
+
     msg._track_id = tracksArray->GetCount(tracksArray) -1;
     msg._timeStart = 0;
     project->base.base.SendUpdate(&project->base.base,(AukMessage*) &msg);
@@ -651,28 +651,28 @@ AukTrack* AukAProject_CreateTrackWithSound(void* This, const char *filepath)
     AukAProject *project = (AukAProject *)This;
     if(!This || !filepath || *filepath == 0) return NULL;
 
-    project->base.base._blockUpdates = 1;
+ //re   project->base.base._blockUpdates = 1;
         track = project->CreateTrack(project);
-    project->base.base._blockUpdates = 0;
-    if(!track) return;
+  //re  project->base.base._blockUpdates = 0;
+    if(!track) return NULL;
 
     /* This just creates the object and return immediately,
      *  then this is stated asynchronously */
-    soundFile = AukSoundFileEngine_RequestFile(soundFileEngine,filepath);
+    soundFile = NULL;// AukSoundFileEngine_RequestFile(soundFileEngine,filepath);
     if(!soundFile)
     {
         project->RemoveTrack(project,track);
-        return;
+        return NULL;
     }
 
     /* sounds are reference to a time span of a soundFile.
         We attach the soundFile
     */
-    track->base._blockUpdates = 1;
+ //Re   track->base._blockUpdates = 1;
     sound = track->CreateSound(track, soundFile,
                                  AukFixed_FromInt(0),    /* Start */
                                  AukFixed_FromInt(1));   /* End */
-    track->base._blockUpdates = 0;
+  //Re  track->base._blockUpdates = 0;
 
     AukTrack_SetName(track, "...");
 

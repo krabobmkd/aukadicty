@@ -6,7 +6,10 @@
 #include "serializer.h"
 #include <proto/exec.h>
 #include <string.h>
-#include <stdio.h>
+/* warning no stdio.h and printf here, may be call from aukboopsi boopsi context.
+ may defer bdbprint.h
+ */
+
 #include "aukaproject.h"
 
 // resolve some amiga os include collisions
@@ -251,7 +254,6 @@ AukSound* AukTrack_CreateSound(void* This, AukSoundFilePtr soundFile, AukFixed s
 
     /* if first sound on track, consider track format is the same */
 
-// printf("track->sounds->count %d soundFile->channels:%d\n",track->sounds->count,soundFile->channels);
     if( track->sounds->count == 0 && soundFile->channels>0 )
     {
         track->channelCount = soundFile->channels;
@@ -295,6 +297,7 @@ int AukTrack_MoveSound(void* This, AukSound* sound, AukFixed newStartTime) {
     }
 
     /* Find the sound in the array */
+
     count = soundsArray->GetCount(soundsArray);
     oldIndex = (unsigned int)-1;
     for (i = 0; i < count; i++) {
@@ -778,7 +781,7 @@ int AukTrack_GetChannelCount(AukTrack* track)
 void AukTrack_SetSilent(AukTrack* track, int isSilent)
 {
     if (!track) return;
-   // printf("AukTrack_SetSilent track trackIndex:%d\n",track->trackIndex);
+
     if(((track->stateFlags & AukTrackFlag_Silent)!=0) ==
        (isSilent !=0) ) return;
     if(isSilent)

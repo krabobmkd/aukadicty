@@ -14,13 +14,8 @@ set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
 # Compiler flags - conditional for MSVC vs GCC/Clang
-if(MSVC)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W3")
-else()
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra")
-endif()
-set(CMAKE_C_FLAGS_DEBUG "-g -O0")
-set(CMAKE_C_FLAGS_RELEASE "-O2")
+
+if(AMIGA)
 
 	list(APPEND AMIGA_COMPILER_OPTIONS -save-temps )
 
@@ -40,7 +35,7 @@ set(CMAKE_C_FLAGS_RELEASE "-O2")
 			list(APPEND AMIGA_COMPILER_OPTIONS -msoft-float)
 		endif()
 	endif()
-
+endif()
 # Detect platform and set AmigaStack for non-Amiga builds
 if(NOT AMIGA)
     set(USE_AMIGA_STACK ON)
@@ -51,10 +46,9 @@ else()
 endif()
 
 # Include directories
-if(USE_AMIGA_STACK)
+if(AMIGA)
     include_directories(
         ${CMAKE_CURRENT_SOURCE_DIR}/include
-        ${CMAKE_CURRENT_SOURCE_DIR}/AmigaStack/include
         ${CMAKE_CURRENT_SOURCE_DIR}/cjson
         ${CMAKE_CURRENT_SOURCE_DIR}/aukstreamcache/include
     )

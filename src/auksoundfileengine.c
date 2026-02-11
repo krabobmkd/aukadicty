@@ -4,6 +4,9 @@
  * Implements a worker thread pattern for loading sound files
  * in the background using Amiga-style message passing.
  *
+ * On Amiga: uses native CreateNewProcTags/MsgPort
+ * On PC: uses AmigaStack compatibility layer (Windows + Linux)
+ *
  * Phases:
  * 1. Open file, detect format, read metadata
  * 2. Stream through file computing min/max statistics
@@ -14,108 +17,18 @@
 #include "auksoundfile.h"
 #include "aukstring.h"
 #include <string.h>
+#include <stdio.h>
 
 #ifdef AMIGA
 #include <proto/dos.h>
 #include <proto/exec.h>
 #include <dos/dostags.h>
 #else
-/* PC stubs */
-#include <stdio.h>
+/* PC: Use AmigaStack compatibility layer (works on Windows + Linux) */
+#include <proto/exec.h>
+#include <proto/dos.h>
+#include <dos/dostags.h>
 #include <stdlib.h>
-#include <string.h>
-#include <pthread.h>
-#include <unistd.h>
-
-static void* pc_AllocVec(unsigned long size, unsigned long flags) {
-    void* p = malloc(size);
-    if (p && (flags & MEMF_CLEAR)) memset(p, 0, size);
-    return p;
-}
-static void pc_FreeVec(void* p) { free(p); }
-
-#define AllocVec(size, flags) pc_AllocVec(size, flags)
-#define FreeVec(p) pc_FreeVec(p)
-
-/* Simple message queue for PC */
-typedef struct PCMessage {
-    struct PCMessage* next;
-    AukSFEMessageType type;
-    AukSoundFile* file;
-    int errorCode;
-    int iChannel;
-    int iPart;
-} PCMessage;
-
-typedef struct PCMsgPort {
-    pthread_mutex_t mutex;
-    pthread_cond_t cond;
-    PCMessage* head;
-    PCMessage* tail;
-    int mp_SigBit;
-} PCMsgPort;
-
-static PCMsgPort* pc_CreateMsgPort(void) {
-    PCMsgPort* port = (PCMsgPort*)malloc(sizeof(PCMsgPort));
-    if (port) {
-        pthread_mutex_init(&port->mutex, NULL);
-        pthread_cond_init(&port->cond, NULL);
-        port->head = port->tail = NULL;
-        port->mp_SigBit = 0;
-    }
-    return port;
-}
-
-static void pc_DeleteMsgPort(PCMsgPort* port) {
-    if (port) {
-        pthread_mutex_destroy(&port->mutex);
-        pthread_cond_destroy(&port->cond);
-        free(port);
-    }
-}
-
-static void pc_PutMsg(PCMsgPort* port, PCMessage* msg) {
-    pthread_mutex_lock(&port->mutex);
-    msg->next = NULL;
-    if (port->tail) {
-        port->tail->next = msg;
-    } else {
-        port->head = msg;
-    }
-    port->tail = msg;
-    pthread_cond_signal(&port->cond);
-    pthread_mutex_unlock(&port->mutex);
-}
-
-static PCMessage* pc_GetMsg(PCMsgPort* port) {
-    PCMessage* msg;
-    pthread_mutex_lock(&port->mutex);
-    msg = port->head;
-    if (msg) {
-        port->head = msg->next;
-        if (!port->head) port->tail = NULL;
-    }
-    pthread_mutex_unlock(&port->mutex);
-    return msg;
-}
-
-static void pc_WaitPort(PCMsgPort* port) {
-    pthread_mutex_lock(&port->mutex);
-    while (!port->head) {
-        pthread_cond_wait(&port->cond, &port->mutex);
-    }
-    pthread_mutex_unlock(&port->mutex);
-}
-
-#define CreateMsgPort() (struct MsgPort*)pc_CreateMsgPort()
-#define DeleteMsgPort(p) pc_DeleteMsgPort((PCMsgPort*)(p))
-#define PutMsg(port, msg) pc_PutMsg((PCMsgPort*)(port), (PCMessage*)(msg))
-#define GetMsg(port) (struct Message*)pc_GetMsg((PCMsgPort*)(port))
-#define WaitPort(port) pc_WaitPort((PCMsgPort*)(port))
-#define Forbid() do {} while(0)
-#define Permit() do {} while(0)
-#define FindTask(x) NULL
-
 #endif
 
 /* ============================================================
@@ -384,33 +297,28 @@ static int job_loadBufferPart(AukSoundFileEngine* engine, AukSoundFile* soundFil
 /* Shared data between main and worker */
 typedef struct {
     AukSoundFileEngine* engine;
-    int workerShouldExit;
     int workerReady;
-#ifndef AMIGA
-    pthread_t thread;
-    PCMsgPort* workerPort;
-#endif
 } AukSFESharedData;
 
 static AukSFESharedData* g_sharedData = NULL;
 
-#ifdef AMIGA
+/*
+ * Worker thread entry point.
+ * Uses Amiga-style message passing on all platforms:
+ * - On Amiga: native CreateNewProcTags + MsgPort
+ * - On PC: AmigaStack's CreateNewProcSimple + emulated MsgPort
+ */
 static void SoundFileWorkerThread(void)
-#else
-static void* SoundFileWorkerThread(void* arg)
-#endif
 {
     AukSoundFileEngine* engine;
     AukSFEFileNode* node;
     int running = 1;
     int workDone;
-
-#ifdef AMIGA
     struct Process* thisProcess = (struct Process*)FindTask(NULL);
     struct MsgPort* workerPort = &thisProcess->pr_MsgPort;
     AukSFEMessage* msg;
 
-    /* Wait for handshake */
+    /* Wait for handshake message from main thread */
     WaitPort(workerPort);
     msg = (AukSFEMessage*)GetMsg(workerPort);
     if (!msg || !g_sharedData) {
@@ -420,24 +328,12 @@ static void* SoundFileWorkerThread(void* arg)
     engine = g_sharedData->engine;
     g_sharedData->workerReady = 1;
     ReplyMsg(&msg->msg);
-#else
-    (void)arg;
-    if (!g_sharedData) return NULL;
-    engine = g_sharedData->engine;
-
-    /* Signal ready */
-    g_sharedData->workerReady = 1;
-#endif
 
     printf("[Worker] Started\n");
 
     /* Main worker loop */
     while (running) {
-#ifdef AMIGA
-        /* Wait for messages or timeout */
-        WaitPort(workerPort);
-
-        /* Process messages */
+        /* Drain all pending messages (non-blocking) */
         while ((msg = (AukSFEMessage*)GetMsg(workerPort)) != NULL) {
             switch (msg->type) {
                 case AUKSFE_MSG_SHUTDOWN:
@@ -455,16 +351,6 @@ static void* SoundFileWorkerThread(void* arg)
                     break;
             }
         }
-#else
-        /* PC: Check for shutdown */
-        if (g_sharedData->workerShouldExit) {
-            running = 0;
-            break;
-        }
-
-        /* Small sleep to avoid busy loop */
-        usleep(10000);  /* 10ms */
-#endif
 
         if (!running) break;
 
@@ -533,19 +419,15 @@ static void* SoundFileWorkerThread(void* arg)
             }
         }
 
-        /* If no work was done, sleep a bit */
+        /* If no work was done, wait for a message (blocks efficiently) */
         if (workDone == 0) {
-#ifndef AMIGA
-            usleep(50000);  /* 50ms */
-#endif
+            WaitPort(workerPort);
+            /* Message is still in port - next iteration's GetMsg will retrieve it */
         }
+        /* If work was done, loop immediately to continue processing */
     }
 
     printf("[Worker] Exiting\n");
-
-#ifndef AMIGA
-    return NULL;
-#endif
 }
 
 /* Sound file loading engine - singleton */
@@ -559,6 +441,7 @@ AukSoundFileEngine* AukSoundFileEngine_Init(struct Process* mainProcess,
                                              const char* basePath,
                                              unsigned long poolSizeBytes) {
     AukSoundFileEngine* engine;
+    AukSFEMessage initMsg;
 
     if(soundFileEngine) return soundFileEngine;
 
@@ -592,7 +475,6 @@ AukSoundFileEngine* AukSoundFileEngine_Init(struct Process* mainProcess,
         return NULL;
     }
     g_sharedData->engine = engine;
-    g_sharedData->workerShouldExit = 0;
     g_sharedData->workerReady = 0;
 
     /* Create reply port */
@@ -606,11 +488,9 @@ AukSoundFileEngine* AukSoundFileEngine_Init(struct Process* mainProcess,
         return NULL;
     }
 
-#ifdef AMIGA
+    /* Create worker process/thread */
     {
-        AukSFEMessage initMsg;
-
-        /* Create worker process */
+#ifdef AMIGA
         engine->workerProcess = CreateNewProcTags(
             NP_Entry, (ULONG)SoundFileWorkerThread,
             NP_Name, (ULONG)"AukSoundFileWorker",
@@ -619,46 +499,20 @@ AukSoundFileEngine* AukSoundFileEngine_Init(struct Process* mainProcess,
             NP_FreeSeglist, FALSE,
             TAG_END
         );
-        if (!engine->workerProcess) {
-            DeleteMsgPort(engine->mainReplyPort);
-            FreeVec(g_sharedData);
-            g_sharedData = NULL;
-            AukSFEBufferPool_Destroy(engine->bufferPool);
-            if (engine->basePath) AukString_Free(engine->basePath);
-            FreeVec(engine);
-            return NULL;
-        }
-
-        /* Send handshake */
-        memset(&initMsg, 0, sizeof(initMsg));
-        initMsg.msg.mn_ReplyPort = engine->mainReplyPort;
-        initMsg.msg.mn_Length = sizeof(AukSFEMessage);
-        initMsg.type = AUKSFE_MSG_NONE;
-
-        PutMsg(&engine->workerProcess->pr_MsgPort, &initMsg.msg);
-        WaitPort(engine->mainReplyPort);
-        (void)GetMsg(engine->mainReplyPort);
-
-        if (!g_sharedData->workerReady) {
-            printf("[Engine] Worker failed to start\n");
-            DeleteMsgPort(engine->mainReplyPort);
-            FreeVec(g_sharedData);
-            g_sharedData = NULL;
-            AukSFEBufferPool_Destroy(engine->bufferPool);
-            if (engine->basePath) AukString_Free(engine->basePath);
-            FreeVec(engine);
-            return NULL;
-        }
-
-        engine->workerPort = &engine->workerProcess->pr_MsgPort;
-    }
 #else
-    /* PC: Create worker thread */
-    g_sharedData->workerPort = pc_CreateMsgPort();
-    engine->workerPort = (struct MsgPort*)g_sharedData->workerPort;
-
-    if (pthread_create(&g_sharedData->thread, NULL, SoundFileWorkerThread, NULL) != 0) {
-        pc_DeleteMsgPort(g_sharedData->workerPort);
+        struct TagItem tags[4];
+        (void)mainProcess;
+        tags[0].ti_Tag = NP_Entry;
+        tags[0].ti_Data = (uintptr_t)SoundFileWorkerThread;
+        tags[1].ti_Tag = NP_Name;
+        tags[1].ti_Data = (uintptr_t)"AukSoundFileWorker";
+        tags[2].ti_Tag = NP_Priority;
+        tags[2].ti_Data = 0;
+        tags[3].ti_Tag = TAG_DONE;
+        engine->workerProcess = CreateNewProc(tags);
+#endif
+    }
+    if (!engine->workerProcess) {
         DeleteMsgPort(engine->mainReplyPort);
         FreeVec(g_sharedData);
         g_sharedData = NULL;
@@ -668,12 +522,28 @@ AukSoundFileEngine* AukSoundFileEngine_Init(struct Process* mainProcess,
         return NULL;
     }
 
-    /* Wait for worker to be ready */
-    while (!g_sharedData->workerReady) {
-        usleep(1000);
-    }
-#endif
+    /* Handshake: send init message and wait for reply */
+    memset(&initMsg, 0, sizeof(initMsg));
+    initMsg.msg.mn_ReplyPort = engine->mainReplyPort;
+    initMsg.msg.mn_Length = sizeof(AukSFEMessage);
+    initMsg.type = AUKSFE_MSG_NONE;
 
+    PutMsg(&engine->workerProcess->pr_MsgPort, &initMsg.msg);
+    WaitPort(engine->mainReplyPort);
+    (void)GetMsg(engine->mainReplyPort);
+
+    if (!g_sharedData->workerReady) {
+        printf("[Engine] Worker failed to start\n");
+        DeleteMsgPort(engine->mainReplyPort);
+        FreeVec(g_sharedData);
+        g_sharedData = NULL;
+        AukSFEBufferPool_Destroy(engine->bufferPool);
+        if (engine->basePath) AukString_Free(engine->basePath);
+        FreeVec(engine);
+        return NULL;
+    }
+
+    engine->workerPort = &engine->workerProcess->pr_MsgPort;
     engine->workerRunning = 1;
     engine->files_new = NULL;
     engine->files_managed = NULL;
@@ -692,8 +562,7 @@ void AukSoundFileEngine_Shutdown(AukSoundFileEngine* engine) {
 
     if (!engine) return;
 
-#ifdef AMIGA
-    /* Send shutdown message */
+    /* Send shutdown message to worker and wait for reply */
     if (engine->workerProcess && engine->workerRunning) {
         AukSFEMessage shutdownMsg;
         memset(&shutdownMsg, 0, sizeof(shutdownMsg));
@@ -705,14 +574,6 @@ void AukSoundFileEngine_Shutdown(AukSoundFileEngine* engine) {
         WaitPort(engine->mainReplyPort);
         (void)GetMsg(engine->mainReplyPort);
     }
-#else
-    /* PC: Signal shutdown and wait for thread */
-    if (g_sharedData) {
-        g_sharedData->workerShouldExit = 1;
-        pthread_join(g_sharedData->thread, NULL);
-        pc_DeleteMsgPort(g_sharedData->workerPort);
-    }
-#endif
 
     engine->workerRunning = 0;
 
@@ -751,6 +612,7 @@ void AukSoundFileEngine_Shutdown(AukSoundFileEngine* engine) {
     }
 
     FreeVec(engine);
+    soundFileEngine = NULL;
     printf("[Engine] Shutdown complete\n");
 }
 
@@ -758,6 +620,8 @@ struct AukSoundFile* AukSoundFileEngine_RequestFile(AukSoundFileEngine* engine, 
     AukSFEFileNode* node;
     AukSFEFileNode* newNode;
     AukSoundFile* file;
+
+ return NULL;
 
     if (!engine || !filename) return NULL;
 
@@ -896,7 +760,6 @@ ULONG AukSoundFileEngine_GetSignalMask(AukSoundFileEngine* engine) {
 }
 
 void AukSoundFileEngine_WakeWorker(AukSoundFileEngine* engine) {
-#ifdef AMIGA
     if (engine && engine->workerPort && engine->mainReplyPort) {
         AukSFEMessage wakeMsg;
         memset(&wakeMsg, 0, sizeof(wakeMsg));
@@ -906,8 +769,4 @@ void AukSoundFileEngine_WakeWorker(AukSoundFileEngine* engine) {
         PutMsg(engine->workerPort, &wakeMsg.msg);
         /* Don't wait for reply */
     }
-#else
-    (void)engine;
-    /* PC: Worker polls, no explicit wake needed */
-#endif
 }

@@ -282,7 +282,7 @@ int main(int argc, char **argv)
 
     /* Initialize sound file engine for background loading */
 
-    soundFileEngine = AukSoundFileEngine_Init((struct Process *)myTask,"PROGDIR:",0);
+  //Re  soundFileEngine = AukSoundFileEngine_Init((struct Process *)myTask,"PROGDIR:",0);
     /* Note: Engine init failure is non-fatal - features that need it will be disabled */
 
     /* BOOPSI needs */
@@ -793,8 +793,8 @@ int initProject()
 
 
 
-    // /* Update footer with project frequency */
-    // FooterView_UpdateFrequency(&app->footerView, 44100);
+     /* Update footer with project frequency */
+     FooterView_UpdateFrequency(&app->footerView, 44100);
 
 //     /* Create tracks in the project */
 //     track1 = project->CreateTrack(project);
@@ -897,7 +897,7 @@ int initProject()
 void TrackListView_UpdateTrackList_Generic()
 {
     if(!app) return;
-    bdbprintf("TrackListView_UpdateTrackList_Generic-> TLVB_UPDATE_REDRAW_TRACKLIST\n");
+   // bdbprintf("TrackListView_UpdateTrackList_Generic-> TLVB_UPDATE_REDRAW_TRACKLIST\n");
     //TrackListView_UpdateTrackList(&app->tracksListView);
         app->tracksListView.updateBits |= TLVB_UPDATE_REDRAW_TRACKLIST;
         if(myTask) Signal(myTask,SIGBREAKF_CTRL_F);
@@ -906,7 +906,7 @@ void TrackListView_UpdateTrackList_Generic()
 void TrackListView_UpdateTrackList_Headers()
 {
     if(!app) return;
-    bdbprintf("TrackListView_UpdateTrackList_Headers-> TLVB_UPDATE_REDRAW_JUSTHEADERS\n");
+   // bdbprintf("TrackListView_UpdateTrackList_Headers-> TLVB_UPDATE_REDRAW_JUSTHEADERS\n");
     //TrackListView_UpdateTrackList(&app->tracksListView);
         app->tracksListView.updateBits |= TLVB_UPDATE_REDRAW_JUSTHEADERS;
         if(myTask) Signal(myTask,SIGBREAKF_CTRL_F);

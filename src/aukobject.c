@@ -1,7 +1,10 @@
 #include "aukobject.h"
 #include <proto/exec.h>
 #include <string.h>
-
+//#include <stdio.h>
+/* warning no stdio.h and printf here, may be call from aukboopsi boopsi context.
+ may defer bdbprint.h
+ */
 
 int AukObjectCount = 0;
 
@@ -35,6 +38,7 @@ void AukObject_Delete(AukObject* obj) {
         listener = obj->listeners;
         if(listener)
         {
+
              aukMutex_lock( &obj->listeners_mutex );
             while (listener) {
                 nextListener = listener->next;
@@ -78,6 +82,7 @@ int AukObject_AddListener(AukObject* obj, AukObject* listenerObject, void* userD
 
     /*we only initialize mutex at the first AddListener() */
     if(!obj->listeners) aukMutex_init(&obj->listeners_mutex);
+
     aukMutex_lock( &obj->listeners_mutex );
 
     /* Check if listener already exists */
@@ -117,7 +122,11 @@ int AukObject_RemoveListener(AukObject* obj, AukObject* listenerObject) {
     if (!obj || !listenerObject) {
         return 0;
     }
-    aukMutex_lock( &obj->listeners_mutex );
+
+     if(obj->listeners_mutex.inited)
+     {
+        aukMutex_lock( &obj->listeners_mutex );
+      }
     prev = NULL;
     current = obj->listeners;
 
@@ -139,7 +148,11 @@ int AukObject_RemoveListener(AukObject* obj, AukObject* listenerObject) {
         prev = current;
         current = current->next;
     }
-    aukMutex_unlock( &obj->listeners_mutex );
+     if(obj->listeners_mutex.inited)
+     {
+            aukMutex_unlock( &obj->listeners_mutex );
+      }
+
     return 0;
 }
 
@@ -147,11 +160,20 @@ void AukObject_SendUpdate(AukObject* obj, AukMessage* message) {
     AukListener* current;
     AukObject* listenerPtr;
 
-    if (!obj || obj->_blockUpdates) {
+    if (!obj || obj->_blockUpdates || !obj->listeners) {
         return;
     }
-    if(obj->listeners_mutex.n>0) return; // recursive message shouldnt happen !
-    aukMutex_lock( &obj->listeners_mutex );
+    /*  note, for the mutex keeping listener list we play a dangerous game:
+        AukObject does not init that mutex until the object has a first listener.
+        This should optimize as Semaphores looks heavy for AmigaOS
+        and only listsned AukObject needs that mutex.
+        But watch out, don't access it if not inited yet !
+    */
+    if(obj->listeners_mutex.inited)
+    {
+        if(obj->listeners_mutex.n>0) return; // recursive message shouldnt happen !
+        aukMutex_lock( &obj->listeners_mutex );
+    }
     /* Notify all listeners */
     current = obj->listeners;
     while (current) {
@@ -161,7 +183,10 @@ void AukObject_SendUpdate(AukObject* obj, AukMessage* message) {
         }
         current = current->next;
     }
-    aukMutex_unlock( &obj->listeners_mutex );
+    if(obj->listeners_mutex.inited)
+    {
+        aukMutex_unlock( &obj->listeners_mutex );
+    }
 }
 
 void AukObject_Init(AukObject* obj) {

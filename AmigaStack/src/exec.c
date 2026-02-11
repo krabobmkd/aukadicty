@@ -658,3 +658,16 @@ struct Process* CreateNewProc(const struct TagItem* tags) {
 
     return CreateNewProcSimple(entry, name, priority);
 }
+
+/*
+ * Forbid/Permit - Task scheduling control (no-op on PC)
+ * On real Amiga, Forbid() disables task switching.
+ * On PC, these are no-ops (message passing uses proper mutexes).
+ */
+void Forbid(void) {
+    /* no-op on PC */
+}
+
+void Permit(void) {
+    /* no-op on PC */
+}

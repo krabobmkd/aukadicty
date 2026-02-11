@@ -36,12 +36,6 @@ option(AMIGA_USE_68060 " use 68060" OFF)
 		endif()
 	endif()
 
-
-# Compiler flags
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra")
-set(CMAKE_C_FLAGS_DEBUG "-g -O0")
-set(CMAKE_C_FLAGS_RELEASE "-Os")
-
 add_subdirectory(../ AukProject)
 
 # Include directories

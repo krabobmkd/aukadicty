@@ -12,60 +12,13 @@
 #include <proto/dos.h>
 #include <proto/exec.h>
 #else
-/* PC stubs for file I/O */
+/* PC: Use AmigaStack compatibility layer (works on Windows + Linux) */
+#include <proto/exec.h>
+#include <proto/dos.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-/* BPTR is a file handle on PC */
-static BPTR pc_Open(const char* path, int mode) {
-    (void)mode;
-    return (BPTR)fopen(path, "rb");
-}
-
-static void pc_Close(BPTR file) {
-    if (file) fclose((FILE*)file);
-}
-
-static long pc_Read(BPTR file, void* buffer, long length) {
-    if (!file) return -1;
-    return (long)fread(buffer, 1, length, (FILE*)file);
-}
-
-static long pc_Seek(BPTR file, long offset, long mode) {
-    if (!file) return -1;
-    int whence = SEEK_SET;
-    if (mode == OFFSET_CURRENT) whence = SEEK_CUR;
-    else if (mode == OFFSET_BEGINNING) whence = SEEK_SET;
-    fseek((FILE*)file, offset, whence);
-    return ftell((FILE*)file);
-}
-
-#define Open(path, mode) pc_Open(path, mode)
-#define Close(file) pc_Close(file)
-#define Read(file, buf, len) pc_Read(file, buf, len)
-#define Seek(file, off, mode) pc_Seek(file, off, mode)
-#define MODE_OLDFILE 1005
-
-#ifndef MEMF_CLEAR
-#define MEMF_CLEAR 0x10000
-#define MEMF_PUBLIC 0x1
 #endif
-
-static void* pc_AllocVec(unsigned long size, unsigned long flags) {
-    void* p = malloc(size);
-    if (p && (flags & MEMF_CLEAR)) memset(p, 0, size);
-    return p;
-}
-
-static void pc_FreeVec(void* p) {
-    free(p);
-}
-
-#define AllocVec(size, flags) pc_AllocVec(size, flags)
-#define FreeVec(p) pc_FreeVec(p)
-
-#endif /* !AMIGA */
 
 /* ============================================================
  * WAVE File Reader

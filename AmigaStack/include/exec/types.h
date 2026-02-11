@@ -21,7 +21,6 @@ typedef unsigned long ULONG;
 /* String and pointer types */
 typedef char* STRPTR;
 typedef unsigned char* APTR;
-
 /* Boolean type */
 typedef long BOOL;
 
