@@ -18,6 +18,7 @@
 #include <stdio.h>
 
 #include "TrackListView.h"
+#include "boopsimainwindow.h"
 
 /* External references to app globals from aukboopsi.c */
 extern struct Library *AslBase;
@@ -418,6 +419,20 @@ BOOL Action_ViewIconify(AukActionContext *context) {
     return TRUE;
 }
 
+BOOL Action_SwitchFullscreen(AukActionContext *context) {
+
+    if(!context->mainWindow) return;
+
+    if(!context->mainWindow->fullscreen)
+    {
+        // back to WB
+        BMainWindow_SwitchToFullScreen(context->mainWindow,context->window_obj,context->appSettings);
+    } else
+    {
+        BMainWindow_SwitchToWB(context->mainWindow,context->window_obj,context->appSettings);
+    }
+    return TRUE;
+}
 
 BOOL Action_SettingsProject(AukActionContext *context) {
     (void)context;
@@ -496,6 +511,9 @@ static AukAction actionTable[ACTION_COUNT] = {
     [ACTION_VIEW_ZOOM_PROJECT]    = {Action_ViewZoomProject,    MSG_VIEW_ZOOM_PROJECT,    NULL, 0, 0},
     [ACTION_VIEW_COLLAPSE_TRACKS] = {Action_ViewCollapseTracks, MSG_VIEW_COLLAPSE_TRACKS, NULL, 0, 0},
     [ACTION_VIEW_EXPAND_TRACKS]   = {Action_ViewExpandTracks,   MSG_VIEW_EXPAND_TRACKS,   NULL, 0, 0},
+
+    [ACTION_VIEW_SWITCH_TO_FULLSCREEN]         = {Action_SwitchFullscreen,        MSG_VIEW_SWITCH_FULLSCREEN,         NULL, 0, 0},
+
     [ACTION_VIEW_ICONIFY]         = {Action_ViewIconify,        MSG_VIEW_ICONIFY,         NULL, 0, 0},
 
     /* Settings actions */

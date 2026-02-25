@@ -12,6 +12,8 @@
 
 #include "aukmenu.h"
 #include "appsettings.h"
+
+#include <stdio.h>
 // This is the intuition level Window, on OS3 it's recreated when iconizing/reopening !
 // when  iconizing/reopening BOOPSI objects are kept, but Intuition level instances and buffers are wiped out.
 // Yet, it's needed for most Gadget method calls, and this is not retained by boopsi objects.
@@ -86,7 +88,6 @@ void BMainWindow_Close(struct BoopsiMainWindow *mw,Object *window_obj)
     }
 }
 
-extern void UpdateRecentMenu();
 /* Used in both WB window and fullscreen cases. doing WM_OPEN implies:
     - recreating and refreshing the menu.
 */
@@ -117,7 +118,7 @@ void GenericOpenWindow(BoopsiMainWindow *mw,Object *window_obj, AppSettings *app
 void BMainWindow_SwitchToFullScreen(struct BoopsiMainWindow *mw,Object *window_obj, AppSettings *appSettings)
 {
     struct Screen *myScreen;
-
+    printf("go fs\n");
     if(!mw || !window_obj) return;
     if(mw->fullPubScreen) return; // already ok
 
@@ -132,24 +133,59 @@ void BMainWindow_SwitchToFullScreen(struct BoopsiMainWindow *mw,Object *window_o
     mw->fullPubScreen = myScreen;
     /* You may set these while the window is NOT open, at NewObject() time or SetAttrs() - between WM_CLOSE and WM_OPEN for example.
         WA_PubScreen WA_CustomScreen, ...
-     */
+     */     
     if(CurrentMainWindow)
     {
-        // todo save window position
+        // save window position
+        GetAttr(WA_Top,window_obj,&mw->top);
+        GetAttr(WA_Left,window_obj,&mw->left);
+        GetAttr(WA_Width,window_obj,&mw->width);
+        GetAttr(WA_Height,window_obj,&mw->height);
+        if(mw->width<128) mw->width=128;
+        if(mw->height<64) mw->height=64;
 
         AukMenu_Close(&mw->appMenu, CurrentMainWindow);
         DoMethod(window_obj, WM_CLOSE );
         CurrentMainWindow = NULL;
     }
+
     /* reconfigure persistant boopsi window object while closed */
-    SetAttrs(window_obj,
+    {
+        /* get screen dimension */
+        int x1 =0;
+        int y1 = myScreen->BarHeight;
+        int w = myScreen->Width;
+        int h = myScreen->Height - y1;
+
+        SetAttrs(window_obj,
             WA_CustomScreen,(ULONG)myScreen,
+            WA_Borderless, TRUE,
+            WA_SizeGadget,FALSE,
+            WA_DepthGadget,FALSE,
+            WA_CloseGadget,FALSE,
+            WA_DragBar,FALSE,
+          //  WA_GimmeZeroZero,TRUE,
+            WA_Title,NULL,
+            WA_Flags,WFLG_ACTIVATE | WFLG_SMART_REFRESH ,
         //  WA_PubScreen,(ULONG)myScreen,
             WA_Backdrop,TRUE,
-            TAG_END);
+            WINDOW_IconifyGadget, FALSE,
+            WA_Top,y1,
+            WA_Left,x1,
+            WA_Width,w,
+            WA_Height,h,
+            WA_MaxWidth,w,
+            WA_MaxHeight,h,
 
+
+
+            // WFLG_DRAGBAR | WFLG_DEPTHGADGET | WFLG_CLOSEGADGET | WFLG_SIZEGADGET | WFLG_ACTIVATE | WFLG_SMART_REFRESH,
+
+            TAG_END);
+    }
     /* re-open */
     GenericOpenWindow( mw, window_obj, appSettings );
+
 
     mw->fullscreen = TRUE;
 }
@@ -158,7 +194,7 @@ void BMainWindow_SwitchToFullScreen(struct BoopsiMainWindow *mw,Object *window_o
 void BMainWindow_SwitchToWB(struct BoopsiMainWindow *mw,Object *window_obj, AppSettings *appSettings)
 {
     if(!mw || !window_obj) return;
-
+    printf("go wnd\n");
     /* close backdrop window at boopsi level */
     if(CurrentMainWindow)
     {
@@ -173,13 +209,45 @@ void BMainWindow_SwitchToWB(struct BoopsiMainWindow *mw,Object *window_obj, AppS
         CloseScreen(mw->fullPubScreen);
         mw->fullPubScreen = NULL;
     }
-    /* reconfigure persistant boopsi window object while closed */
-    SetAttrs(window_obj,
+
+    {
+        int x1,y1,w,h;
+        /* if dimension has been kept by settings or screen switch, recover them */
+        if(mw->width>0)
+        {
+            x1 = mw->left;
+            y1 = mw->top;
+            w = mw->width;
+            h = mw->height;
+        } else
+        {
+            /* else some default */
+            x1 = 40;
+            y1 = 40;
+            w = 320;
+            h= 240;
+        }
+
+        /* reconfigure persistant boopsi window object while closed */
+        SetAttrs(window_obj,
             WA_CustomScreen,(ULONG)mw->lockedscreen,
+            WA_Borderless, FALSE,
         //  WA_PubScreen,(ULONG)myScreen,
             WA_Backdrop,FALSE,
+            WA_Flags,WFLG_ACTIVATE | WFLG_SMART_REFRESH ,
+           // WA_Flags, WFLG_DRAGBAR | WFLG_DEPTHGADGET | WFLG_CLOSEGADGET | WFLG_SIZEGADGET | WFLG_ACTIVATE | WFLG_SMART_REFRESH,
+            WA_DragBar,TRUE,
+            WA_SizeGadget,TRUE,
+            WA_DepthGadget,TRUE,
+            WA_CloseGadget,TRUE,
+          //  WA_GimmeZeroZero,FALSE,
+            WINDOW_IconifyGadget, TRUE,
+            WA_Top,y1,
+            WA_Left,x1,
+            WA_Width,w,
+            WA_Height,h,
             TAG_END);
-
+    }
     /* re-open */
     GenericOpenWindow( mw, window_obj, appSettings );
 

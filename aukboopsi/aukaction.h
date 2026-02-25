@@ -16,6 +16,7 @@ typedef struct AukActionContext AukActionContext;
 
 struct TrackListView;
 struct AppSettings;
+struct BoopsiMainWindow;
 
 /* Action function signature - returns TRUE if successful */
 typedef BOOL (*AukActionFunc)(AukActionContext *context);
@@ -24,9 +25,11 @@ typedef BOOL (*AukActionFunc)(AukActionContext *context);
 struct AukActionContext {
     AukAProjectPtr *pproject;       /* Current project */
     void *appWindow;            /* Application window (struct Window*) */
+    void *window_obj; /* boopsi window */
     void *appData;              /* Application-specific data */
     struct TrackListView *trackListView; /* For View actions */
     struct AppSettings *appSettings;    /* For recent file actions */
+    struct BoopsiMainWindow *mainWindow; /* fullscreen, window position things */
     int recentFileIndex;               /* Index for ACTION_RECENT_FILE_* */
 };
 
@@ -68,6 +71,7 @@ enum {
     ACTION_VIEW_ZOOM_PROJECT,
     ACTION_VIEW_COLLAPSE_TRACKS,
     ACTION_VIEW_EXPAND_TRACKS,
+    ACTION_VIEW_SWITCH_TO_FULLSCREEN,
     ACTION_VIEW_ICONIFY,
 
     /* Settings actions */

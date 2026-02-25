@@ -24,7 +24,7 @@
 
 /* structure */
 typedef struct BoopsiMainWindow {
-    WORD top,left,width,height;
+    LONG top,left,width,height;
     int fullscreen; // keep state when hidding.
 
     struct Screen *lockedscreen; // when using window on WB or else

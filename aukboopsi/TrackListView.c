@@ -735,6 +735,7 @@ int requesterName(char *buffer, int charmax,
             const char *requesterTitle,
             const char *interfaceString)
 {
+
     Object *reqobj;
     int result;
 
@@ -753,7 +754,7 @@ int requesterName(char *buffer, int charmax,
     if (!reqobj) return 0;
 
      // Show the requester
-    result = DoMethod(reqobj, RM_OPENREQ, NULL, NULL, NULL);
+    result = DoMethod(reqobj, RM_OPENREQ, NULL, CurrentMainWindow, NULL);
 
     // Clean ups
     DisposeObject(reqobj);

@@ -368,10 +368,10 @@ int main(int argc, char **argv)
         WA_Height,240,
      //set by window or fullscreen   WA_CustomScreen, (ULONG) app->mainwindow.lockedscreen,
         WA_IDCMP, IDCMP_CLOSEWINDOW | IDCMP_MENUPICK | IDCMP_RAWKEY ,
-        WA_Flags, WFLG_DRAGBAR | WFLG_DEPTHGADGET | WFLG_CLOSEGADGET | WFLG_SIZEGADGET | WFLG_ACTIVATE | WFLG_SMART_REFRESH,
+//        WA_Flags, WFLG_DRAGBAR | WFLG_DEPTHGADGET | WFLG_CLOSEGADGET | WFLG_SIZEGADGET | WFLG_ACTIVATE | WFLG_SMART_REFRESH,
         WA_Title,(ULONG) "Aukadicty",
         WINDOW_ParentGroup,(ULONG) app->mainvlayout,
-        WINDOW_IconifyGadget, TRUE,
+  //      WINDOW_IconifyGadget, TRUE,
   //re      WINDOW_Icon,(ULONG) GetDiskObject("PROGDIR:ReAction"),
         WINDOW_IconTitle,(ULONG)  "Aukadicty",
         WINDOW_AppPort, (ULONG)app->app_port,
@@ -396,7 +396,9 @@ int main(int argc, char **argv)
 
     /*  Open the window or screen. */
    // BMainWindow_SwitchToWB(&app->mainwindow,app->window_obj,&app->appSettings);
-     BMainWindow_Show(&app->mainwindow,app->window_obj,&app->appSettings);
+     //BMainWindow_Show(&app->mainwindow,app->window_obj,&app->appSettings);
+     BMainWindow_SwitchToFullScreen(&app->mainwindow,app->window_obj,&app->appSettings);
+
 
     if(!CurrentMainWindow) cleanexit("can't open window");
 
@@ -492,8 +494,10 @@ int main(int argc, char **argv)
                                 memset(&actionContext, 0, sizeof(actionContext));
                                 actionContext.pproject = &app->_project;
                                 actionContext.appWindow = CurrentMainWindow;
+                                actionContext.window_obj = app->window_obj;
                                 actionContext.appData = TargetInstance;
                                 actionContext.trackListView = &app->tracksListView;
+                                actionContext.mainWindow = &app->mainwindow;
                                //old action->func(&actionContext);
                                 actionContext.appSettings = &app->appSettings;
 
