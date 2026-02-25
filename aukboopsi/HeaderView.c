@@ -28,7 +28,7 @@ extern struct Window *CurrentMainWindow;
 
 void cleanexit(const char *pmessage);
 
-void CreateHeaderView(HeaderView *hv, struct DrawInfo *drawInfo,
+void CreateHeaderView(HeaderView *hv/*, struct DrawInfo *drawInfo*/,
                       Object *appModel,
                        AukStyle *stylesheet)
 {
@@ -39,7 +39,7 @@ void CreateHeaderView(HeaderView *hv, struct DrawInfo *drawInfo,
 
     /* Transport control buttons */
     hv->btRewind = NewObject(BUTTON_GetClass(), NULL,
-                        GA_DrawInfo, drawInfo,
+                        //GA_DrawInfo, drawInfo,
                         GA_ID, GAD_HEADER_REWIND,
                         GA_RelVerify, TRUE,
                         GA_Text, (ULONG)"|<<",
@@ -48,7 +48,7 @@ void CreateHeaderView(HeaderView *hv, struct DrawInfo *drawInfo,
                         TAG_END);
 
     hv->btStop = NewObject(BUTTON_GetClass(), NULL,
-                        GA_DrawInfo, drawInfo,
+                        //GA_DrawInfo, drawInfo,
                         GA_ID, GAD_HEADER_STOP,
                         GA_RelVerify, TRUE,
                         GA_Text, (ULONG)"[]",
@@ -57,7 +57,7 @@ void CreateHeaderView(HeaderView *hv, struct DrawInfo *drawInfo,
                         TAG_END);
 
     hv->btPlay = NewObject(BUTTON_GetClass(), NULL,
-                        GA_DrawInfo, drawInfo,
+                       // GA_DrawInfo, drawInfo,
                         GA_ID, GAD_HEADER_PLAY,
                         GA_RelVerify, TRUE,
                         GA_Text, (ULONG)">",
@@ -66,7 +66,7 @@ void CreateHeaderView(HeaderView *hv, struct DrawInfo *drawInfo,
                         TAG_END);
 
     hv->btPause = NewObject(BUTTON_GetClass(), NULL,
-                        GA_DrawInfo, drawInfo,
+                        //GA_DrawInfo, drawInfo,
                         GA_ID, GAD_HEADER_PAUSE,
                         GA_RelVerify, TRUE,
                         GA_Text, (ULONG)"||",
@@ -75,7 +75,7 @@ void CreateHeaderView(HeaderView *hv, struct DrawInfo *drawInfo,
                         TAG_END);
 
     hv->btForward = NewObject(BUTTON_GetClass(), NULL,
-                        GA_DrawInfo, drawInfo,
+                       // GA_DrawInfo, drawInfo,
                         GA_ID, GAD_HEADER_FORWARD,
                         GA_RelVerify, TRUE,
                         GA_Text, (ULONG)">>|",
@@ -99,7 +99,7 @@ void CreateHeaderView(HeaderView *hv, struct DrawInfo *drawInfo,
 
     /* Edit mode buttons (3x2 grid) - PushButton (toggle) style, mutually exclusive */
     hv->btEditModes[EDITMODE_SELECT] = NewObject(BUTTON_GetClass(), NULL,
-                        GA_DrawInfo, drawInfo,
+                       // GA_DrawInfo, drawInfo,
                         GA_ID, GAD_HEADER_SELECTTOOL,
                         GA_RelVerify, TRUE,
                         GA_Selected, TRUE,  /* Selection tool selected by default */
@@ -110,7 +110,7 @@ void CreateHeaderView(HeaderView *hv, struct DrawInfo *drawInfo,
                         TAG_END);
 
     hv->btEditModes[EDITMODE_VOLUME] = NewObject(BUTTON_GetClass(), NULL,
-                        GA_DrawInfo, drawInfo,
+                       // GA_DrawInfo, drawInfo,
                         GA_ID, GAD_HEADER_VOLUMEENV,
                         GA_RelVerify, TRUE,
                         GA_Text, (ULONG)LOC(MSG_EDITMODE_VOLUMEENV),
@@ -120,7 +120,7 @@ void CreateHeaderView(HeaderView *hv, struct DrawInfo *drawInfo,
                         TAG_END);
 
     hv->btEditModes[EDITMODE_COPY] = NewObject(BUTTON_GetClass(), NULL,
-                        GA_DrawInfo, drawInfo,
+                       // GA_DrawInfo, drawInfo,
                         GA_ID, GAD_HEADER_COPY,
                         GA_RelVerify, TRUE,
                         GA_Text, " ", //(ULONG)LOC(MSG_EDITMODE_COPY),
@@ -130,7 +130,7 @@ void CreateHeaderView(HeaderView *hv, struct DrawInfo *drawInfo,
                         TAG_END);
 
     hv->btEditModes[EDITMODE_ZOOM] = NewObject(BUTTON_GetClass(), NULL,
-                        GA_DrawInfo, drawInfo,
+                       // GA_DrawInfo, drawInfo,
                         GA_ID, GAD_HEADER_ZOOMTOOL,
                         GA_RelVerify, TRUE,
                         GA_Text, (ULONG)LOC(MSG_EDITMODE_ZOOMTOOL),
@@ -140,7 +140,7 @@ void CreateHeaderView(HeaderView *hv, struct DrawInfo *drawInfo,
                         TAG_END);
 
     hv->btEditModes[EDITMODE_TIMESLIDE] = NewObject(BUTTON_GetClass(), NULL,
-                        GA_DrawInfo, drawInfo,
+                       // GA_DrawInfo, drawInfo,
                         GA_ID, GAD_HEADER_TIMESLIDE,
                         GA_RelVerify, TRUE,
                         GA_Text, (ULONG)LOC(MSG_EDITMODE_TIMESLIDE),
@@ -150,7 +150,7 @@ void CreateHeaderView(HeaderView *hv, struct DrawInfo *drawInfo,
                         TAG_END);
 
     hv->btEditModes[EDITMODE_PASTE] = NewObject(BUTTON_GetClass(), NULL,
-                        GA_DrawInfo, drawInfo,
+                       // GA_DrawInfo, drawInfo,
                         GA_ID, GAD_HEADER_PASTE,
                         GA_RelVerify, TRUE,
                         GA_Text, " ", // (ULONG)LOC(MSG_EDITMODE_PASTE),

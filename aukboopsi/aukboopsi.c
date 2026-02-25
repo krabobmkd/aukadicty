@@ -70,6 +70,7 @@
 #include "aukaction.h"
 #include "aukstylesheet.h"
 #include "aukmenu.h"
+#include "boopsimainwindow.h"
 #include "boopsimessage.h"
 #include "boopsidispose.h"
 #include "appsettings.h"
@@ -80,9 +81,6 @@
 
 #include "compilers.h"
 #include "bdbprintf.h"
-INLINE struct Window *boopsi_OpenWindow(Object *owin) {
-    return  (struct Window *)DoMethod(owin, WM_OPEN, NULL);
-}
 
 struct Task	*myTask=NULL;
 
@@ -99,6 +97,9 @@ struct Library *IconBase=NULL;
 struct Library *AslBase=NULL;
 struct Library *DiskfontBase=NULL;
 struct Library *GadToolsBase=NULL;
+
+// this lib is optional, and allow using graphics cards and special RGB truecolor bitmaps drawing functions.
+struct Library *CyberGfxBase = NULL;
 
 // boopsi classes bases:
 struct Library *WindowBase=NULL;
@@ -170,18 +171,13 @@ void openAboutReq();
 struct App
 {
     Object *window_obj; // window as boopsi object
-    // now it's CurrentMainWindow struct Window *win; // current re-opened windows, as a classic intuition Window.
+
+    BoopsiMainWindow mainwindow; /* main window management */
 
     ProjectSettingsView projectSettingsView; /* Project Settings window */
 
     struct MsgPort *app_port;
-
-    struct Screen *lockedscreen;
-    struct DrawInfo *drawInfo; // informations on how to draw on the screen, passed to gagdets.
-
     AukStyleSheetPtr styleSheet; /* shared stylesheet instance pointer */
-
-    AukMenu appMenu; /* GadTools menu */
 
     Object *mainvlayout;
 
@@ -208,11 +204,6 @@ struct App
 struct App *app=NULL;
 
 
-// This is the intuition level Window, on OS3 it's recreated when iconizing/reopening !
-// when  iconizing/reopening BOOPSI objects are kept, but Intuition level instances and buffers are wiped out.
-// Yet, it's needed for most Gadget method calls, and this is not retained by boopsi objects.
-// note there could be many windows.
-struct Window *CurrentMainWindow=NULL;
 
 // shared global state...
 int CurrentEditMode = 0;
@@ -261,6 +252,8 @@ int main(int argc, char **argv)
             }
         }
     }
+    // try optional libs, pointer will be null if missing, valid case.
+    CyberGfxBase  = OpenLibrary("cybergraphics.library", 1);
 
     /* Initialize localization system */
     AukLocale_Init("aukadicty.catalog", 1);
@@ -286,10 +279,8 @@ int main(int argc, char **argv)
     /* Note: Engine init failure is non-fatal - features that need it will be disabled */
 
     /* BOOPSI needs */
-    app->lockedscreen = LockPubScreen(NULL);
-    if (!app->lockedscreen) cleanexit("Can't lock screen");
-
-    app->drawInfo = GetScreenDrawInfo(app->lockedscreen);
+    BMainWindow_Init(&app->mainwindow);
+    if (!app->mainwindow.lockedscreen) cleanexit("Can't lock screen");
 
     /* Create AukStyleSheet object */
     AukStyleSheet_New(&app->styleSheet);
@@ -299,19 +290,19 @@ int main(int argc, char **argv)
     app->styleSheet->SetFontTiny(app->styleSheet, "SevenAlone.font", 7);
 
     /* Open fonts from specifications */
-    app->styleSheet->ApplyStyle( app->styleSheet,app->lockedscreen );
+    app->styleSheet->ApplyStyle( app->styleSheet,app->mainwindow.lockedscreen );
    //bdbprintf(" **** main init style:%08x fontTiny:%08x \n",(int)&app->styleSheet->style,(int)app->styleSheet->style.fontTiny);
 
-    CreateHeaderView(&app->headerView, app->drawInfo, TargetInstance, &app->styleSheet->style);
+    CreateHeaderView(&app->headerView, TargetInstance, &app->styleSheet->style);
 
-    CreateTrackListView(&app->tracksListView,app->drawInfo, TargetInstance,&app->styleSheet->style);
+    CreateTrackListView(&app->tracksListView, TargetInstance,&app->styleSheet->style);
 
-    CreateFooterView(&app->footerView, app->drawInfo, TargetInstance, &app->styleSheet->style);
+    CreateFooterView(&app->footerView, TargetInstance, &app->styleSheet->style);
 
     /* Create status bar */
     {
         app->statusBarLabel = (Object *)NewObject(BUTTON_GetClass(), NULL,
-            GA_DrawInfo, (ULONG)app->drawInfo,
+          //  GA_DrawInfo, (ULONG)app->drawInfo,
             GA_ReadOnly, TRUE,
             BUTTON_BevelStyle, BVS_NONE,
             BUTTON_Transparent, TRUE,
@@ -320,17 +311,17 @@ int main(int argc, char **argv)
             TAG_END);
 
         app->statusBarLayout = (Object *)NewObject(LAYOUT_GetClass(), NULL,
-            GA_DrawInfo, app->drawInfo,
+           //   GA_DrawInfo,(ULONG) app->drawInfo,
             LAYOUT_Orientation, LAYOUT_ORIENT_HORIZ,
             LAYOUT_BevelStyle, BVS_SBAR_VERT,
-            LAYOUT_AddChild, app->statusBarLabel,
+            LAYOUT_AddChild,(ULONG) app->statusBarLabel,
             TAG_END);
     }
 
     /* create final layout */
     {
         app->mainvlayout = (Object *)NewObject( LAYOUT_GetClass(), NULL,
-            GA_DrawInfo, app->drawInfo,
+           //   GA_DrawInfo,(ULONG) app->drawInfo,
             LAYOUT_DeferLayout, TRUE, /* Layout refreshes done on task's context (by thewindow class)*/
             LAYOUT_SpaceOuter, TRUE,
             LAYOUT_BottomSpacing, 2,
@@ -354,7 +345,7 @@ int main(int argc, char **argv)
         app->reportReq = NewObject(REQUESTER_GetClass(), NULL,
 			// REQ_TitleText, "Project Generated",
 			REQ_Image,REQIMAGE_INFO,
-			REQ_BodyText,"....",
+			REQ_BodyText,(ULONG)"....",
 			REQ_GadgetText,(ULONG)"_Ok", //
             TAG_END);
 
@@ -368,14 +359,14 @@ int main(int argc, char **argv)
     // projsettings_app_port = CreateMsgPort();
 
     y = 12;
-    if(app->lockedscreen->Font) y = (app->lockedscreen->Font->ta_YSize) + 3 + 16;
+    if(app->mainwindow.lockedscreen->Font) y = (app->mainwindow.lockedscreen->Font->ta_YSize) + 3 + 16;
     /* Create the window object. */
     app->window_obj = (Object *)NewObject( WINDOW_GetClass(), NULL,
         WA_Left, 40,
         WA_Top, (ULONG)y,
         WA_Width,320,
         WA_Height,240,
-        WA_CustomScreen, (ULONG) app->lockedscreen,
+     //set by window or fullscreen   WA_CustomScreen, (ULONG) app->mainwindow.lockedscreen,
         WA_IDCMP, IDCMP_CLOSEWINDOW | IDCMP_MENUPICK | IDCMP_RAWKEY ,
         WA_Flags, WFLG_DRAGBAR | WFLG_DEPTHGADGET | WFLG_CLOSEGADGET | WFLG_SIZEGADGET | WFLG_ACTIVATE | WFLG_SMART_REFRESH,
         WA_Title,(ULONG) "Aukadicty",
@@ -389,8 +380,7 @@ int main(int argc, char **argv)
 
     /* Initialize Project Settings window */
     if(!ProjectSettingsView_Init(&app->projectSettingsView,
-                                  app->lockedscreen,
-                                  app->drawInfo,
+                                  app->mainwindow.lockedscreen,
                                   LOC(MSG_SETTINGS_PROJECT)))
     {
         printf("Warning: Could not create Project Settings window\n");
@@ -404,19 +394,11 @@ int main(int argc, char **argv)
         }
     }
 
-    /*  Open the window. */
-    CurrentMainWindow = boopsi_OpenWindow(app->window_obj);
+    /*  Open the window or screen. */
+   // BMainWindow_SwitchToWB(&app->mainwindow,app->window_obj,&app->appSettings);
+     BMainWindow_Show(&app->mainwindow,app->window_obj,&app->appSettings);
+
     if(!CurrentMainWindow) cleanexit("can't open window");
-
-    /* Create and attach menus */
-    if (!AukMenu_Create(&app->appMenu, app->lockedscreen, CurrentMainWindow)) {
-        printf("Warning: Could not create menus\n");
-    }
-
-    /* Rebuild menus with recent files from loaded settings */
-    if (AppSettings_GetRecentCount(&app->appSettings) > 0) {
-        AukMenu_Rebuild(&app->appMenu, app->lockedscreen, CurrentMainWindow, &app->appSettings);
-    }
 
     {
         ULONG winsignal;        
@@ -488,23 +470,13 @@ int main(int argc, char **argv)
                     }
                     case WMHI_ICONIFY:
                         {
-                            AukMenu_Close(&app->appMenu, CurrentMainWindow);
-                            if(DoMethod(app->window_obj, WM_ICONIFY, NULL)) CurrentMainWindow = NULL;
+                            BMainWindow_Iconify(&app->mainwindow,app->window_obj);
                         }
                         break;
-
                     case WMHI_UNICONIFY:
                         {
-                            CurrentMainWindow = boopsi_OpenWindow(app->window_obj);
+                           BMainWindow_Show(&app->mainwindow,app->window_obj,&app->appSettings);
                             if (!CurrentMainWindow) cleanexit("can't re-open window");
-                            /* re-Create and attach menus */
-                            if (!AukMenu_Create(&app->appMenu, app->lockedscreen,CurrentMainWindow)) {
-                                cleanexit("Warning: Could not re-create menus\n");
-                            }
-                            /* Rebuild with recent files */
-                            if (AppSettings_GetRecentCount(&app->appSettings) > 0) {
-                                AukMenu_Rebuild(&app->appMenu, app->lockedscreen, CurrentMainWindow, &app->appSettings);
-                            }
                         }
                         break;
                     case WMHI_MENUPICK: // and not WMHI_POPUPMENU:
@@ -512,7 +484,7 @@ int main(int argc, char **argv)
 //                            AukAction *action = AukMenu_ToAction(&app->appMenu,result & WMHI_MENUMASK);
                         {
                             UWORD menuNum = result & WMHI_MENUMASK;
-                            LONG actionID = AukMenu_ToActionID(&app->appMenu, menuNum);
+                            LONG actionID = AukMenu_ToActionID(&app->mainwindow.appMenu, menuNum);
                             AukAction *action = (actionID >= 0) ? AukAction_Get(actionID) : NULL;
                             if(action)
                             {
@@ -537,7 +509,7 @@ int main(int argc, char **argv)
                                         actionID == ACTION_PROJECT_SAVEAS ||
                                         (actionID >= ACTION_RECENT_FILE_0 && actionID <= ACTION_RECENT_FILE_7))
                                     {
-                                        AukMenu_Rebuild(&app->appMenu, app->lockedscreen,
+                                        AukMenu_Rebuild(&app->mainwindow.appMenu, app->mainwindow.lockedscreen,
                                                         CurrentMainWindow, &app->appSettings);
                                     }
                                 }
@@ -640,6 +612,7 @@ int main(int argc, char **argv)
     // all close done in exitclose().
     return 0;
 }
+
 extern int AukObjectCount;
 
 void exitclose(void)
@@ -663,8 +636,7 @@ void exitclose(void)
         CloseTrackListView(&app->tracksListView);
         CloseFooterView(&app->footerView);
 
-        /* Close menus before closing window */
-        AukMenu_Close(&app->appMenu, CurrentMainWindow);
+
 
         /* Disposing of the window object will also close the
          * window if it is already opened and it will dispose of
@@ -677,9 +649,12 @@ void exitclose(void)
 
         ProjectSettingsView_Dispose(&app->projectSettingsView);
 
-        if(app->window_obj) DisposeObject(app->window_obj);
+        if(app->window_obj)
+        {
+           BMainWindow_Close(&app->mainwindow,app->window_obj);
+            DisposeObject(app->window_obj);
+        }
         CurrentMainWindow = NULL;
-
 
         if( ObjectLateDisposer)
         {
@@ -699,9 +674,6 @@ void exitclose(void)
         if (app->styleSheet) {
             AukObjectPtr_Release((AukObjectPtr*)&app->styleSheet);
         }
-
-        if(app->drawInfo) FreeScreenDrawInfo(app->lockedscreen, app->drawInfo);
-        if(app->lockedscreen) UnlockPubScreen(0, app->lockedscreen);        
 
         /* Delete message port */
         if (app->app_port) DeleteMsgPort(app->app_port);

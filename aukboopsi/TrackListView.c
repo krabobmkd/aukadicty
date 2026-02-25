@@ -77,7 +77,7 @@ void cleanexit(const char *pmessage);
 //    { TAG_END, 0 }
 //};
 
-void CreateTrackListView(TrackListView *pm,struct DrawInfo *drawInfo,
+void CreateTrackListView(TrackListView *pm,
                 Object *appModel,
                 AukStyle *stylesheet)
 {
@@ -106,11 +106,11 @@ void CreateTrackListView(TrackListView *pm,struct DrawInfo *drawInfo,
                                 TRACKLIST_StyleSheet, (ULONG)stylesheet,
                                 GA_ID,GAD_TRACKLIST, /* allows to redirect notify messages */
                                 ICA_TARGET,appModel, /* will send messages, that will be received by the main app boopsi object model */
-                                GA_DrawInfo,(ULONG)drawInfo,
+                               // GA_DrawInfo,(ULONG)drawInfo,
                                 TAG_END);
 
         pm->scrollerV = (Object *)NewObject( SCROLLER_GetClass(), NULL,
-                                    GA_DrawInfo, drawInfo,
+                                 //   GA_DrawInfo, drawInfo,
                                     GA_RelVerify, TRUE,
                                 SCROLLER_Top, 0,
                                 SCROLLER_Total, 40,
@@ -147,7 +147,7 @@ void CreateTrackListView(TrackListView *pm,struct DrawInfo *drawInfo,
 
     // - - - - - C
     pm->scrollerH = (Object *)NewObject( SCROLLER_GetClass(), NULL,
-                                GA_DrawInfo, drawInfo,
+                             //   GA_DrawInfo, drawInfo,
                                 GA_ID, GAD_SCROLLER_H,
                                 GA_RelVerify, TRUE, // needed
                             SCROLLER_Top, 0,

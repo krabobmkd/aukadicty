@@ -53,7 +53,7 @@ typedef struct TrackListView
 #define TLVB_UPDATE_REDRAW_TRACKLIST 16
 #define TLVB_UPDATE_REDRAW_TIMERULE 32
 
-void CreateTrackListView(TrackListView *pm,struct DrawInfo *drawInfo,
+void CreateTrackListView(TrackListView *pm,
                 Object *appModel,
                 AukStyle *stylesheet);
 

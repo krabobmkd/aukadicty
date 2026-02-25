@@ -49,6 +49,8 @@ include_directories(
 # AukApp source files
 set(AUKBOOPSI_SOURCES
     aukboopsi.c
+    boopsimainwindow.c
+    boopsimainwindow.h
     TrackListView.c
     TrackListView.h
     HeaderView.c

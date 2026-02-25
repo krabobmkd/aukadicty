@@ -36,7 +36,6 @@ INLINE struct Window *boopsi_OpenWindow(Object *owin) {
 
 BOOL ProjectSettingsView_Init(ProjectSettingsView *psv,
                               struct Screen *screen,
-                              struct DrawInfo *drawInfo,
                               const char *title)
 {
     Object *projPlaceholder;
@@ -45,7 +44,7 @@ BOOL ProjectSettingsView_Init(ProjectSettingsView *psv,
 
     memset(psv, 0, sizeof(ProjectSettingsView));
     psv->screen = screen;
-    psv->drawInfo = drawInfo;
+    //psv->drawInfo = drawInfo;
 
     /* Create the GetFile gadget for temp directory selection */
     psv->tempDirGetFile = NewObject(GETFILE_GetClass(), NULL,
@@ -66,7 +65,7 @@ BOOL ProjectSettingsView_Init(ProjectSettingsView *psv,
 
     /* App Settings group layout */
     psv->appSettingsLayout = NewObject(LAYOUT_GetClass(), NULL,
-                        GA_DrawInfo, (ULONG)drawInfo,
+                       // GA_DrawInfo, (ULONG)drawInfo,
                         LAYOUT_Orientation, LAYOUT_ORIENT_VERT,
                         LAYOUT_BevelStyle, BVS_GROUP,
                         LAYOUT_Label, (ULONG)"App Settings",
@@ -87,7 +86,7 @@ BOOL ProjectSettingsView_Init(ProjectSettingsView *psv,
 
     /* Project Settings group layout (placeholder for now) */
     projPlaceholder = NewObject(BUTTON_GetClass(), NULL,
-                        GA_DrawInfo, (ULONG)drawInfo,
+                //        GA_DrawInfo, (ULONG)drawInfo,
                         GA_ReadOnly, TRUE,
                         BUTTON_BevelStyle, BVS_NONE,
                         BUTTON_Transparent, TRUE,
@@ -95,7 +94,7 @@ BOOL ProjectSettingsView_Init(ProjectSettingsView *psv,
                         TAG_END);
 
     psv->projSettingsLayout = NewObject(LAYOUT_GetClass(), NULL,
-                        GA_DrawInfo, (ULONG)drawInfo,
+                       // GA_DrawInfo, (ULONG)drawInfo,
                         LAYOUT_Orientation, LAYOUT_ORIENT_VERT,
                         LAYOUT_BevelStyle, BVS_GROUP,
                         LAYOUT_Label, (ULONG)"Project Settings",
@@ -118,7 +117,7 @@ BOOL ProjectSettingsView_Init(ProjectSettingsView *psv,
 
     /* Main vertical layout containing both groups */
     psv->mainLayout = NewObject(LAYOUT_GetClass(), NULL,
-                        GA_DrawInfo, (ULONG)drawInfo,
+                      //  GA_DrawInfo, (ULONG)drawInfo,
                         LAYOUT_DeferLayout, TRUE,
                         LAYOUT_Orientation, LAYOUT_ORIENT_VERT,
                         LAYOUT_BevelStyle, BVS_NONE,

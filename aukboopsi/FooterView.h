@@ -35,7 +35,7 @@ typedef struct FooterView
 
 } FooterView;
 
-void CreateFooterView(FooterView *fv, struct DrawInfo *drawInfo,
+void CreateFooterView(FooterView *fv,
                       Object *appModel,
                       AukStyle *style);
 

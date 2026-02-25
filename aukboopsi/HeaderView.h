@@ -44,7 +44,7 @@ typedef struct HeaderView
 
 } HeaderView;
 
-void CreateHeaderView(HeaderView *hv, struct DrawInfo *drawInfo,
+void CreateHeaderView(HeaderView *hv/*, struct DrawInfo *drawInfo*/,
                       Object *appModel,
                        AukStyle *stylesheet);
 

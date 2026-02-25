@@ -29,7 +29,7 @@ extern struct Window *CurrentMainWindow;
 
 void cleanexit(const char *pmessage);
 
-void CreateFooterView(FooterView *fv, struct DrawInfo *drawInfo,
+void CreateFooterView(FooterView *fv,
                       Object *appModel,
                       AukStyle *style)
 {
@@ -38,7 +38,7 @@ void CreateFooterView(FooterView *fv, struct DrawInfo *drawInfo,
 
     /* Mixing frequency label */
     fv->labelFrequency = NewObject(BUTTON_GetClass(), NULL,
-                        GA_DrawInfo, drawInfo,
+                       // GA_DrawInfo, drawInfo,
                         GA_ReadOnly, TRUE,
                         BUTTON_BevelStyle, BVS_NONE,
                         BUTTON_Transparent, TRUE,
@@ -48,7 +48,7 @@ void CreateFooterView(FooterView *fv, struct DrawInfo *drawInfo,
 
     /* Selection start time label */
     fv->labelSelStart = NewObject(BUTTON_GetClass(), NULL,
-                        GA_DrawInfo, drawInfo,
+                     //   GA_DrawInfo, drawInfo,
                         GA_ReadOnly, TRUE,
                         BUTTON_BevelStyle, BVS_NONE,
                         BUTTON_Transparent, TRUE,
@@ -58,7 +58,7 @@ void CreateFooterView(FooterView *fv, struct DrawInfo *drawInfo,
 
     /* Selection end time label */
     fv->labelSelEnd = NewObject(BUTTON_GetClass(), NULL,
-                        GA_DrawInfo, drawInfo,
+                   //     GA_DrawInfo, drawInfo,
                         GA_ReadOnly, TRUE,
                         BUTTON_BevelStyle, BVS_NONE,
                         BUTTON_Transparent, TRUE,
@@ -68,7 +68,7 @@ void CreateFooterView(FooterView *fv, struct DrawInfo *drawInfo,
 
     /* Playback position label */
     fv->labelPlayPos = NewObject(BUTTON_GetClass(), NULL,
-                        GA_DrawInfo, drawInfo,
+                     //   GA_DrawInfo, drawInfo,
                         GA_ReadOnly, TRUE,
                         BUTTON_BevelStyle, BVS_NONE,
                         BUTTON_Transparent, TRUE,
