@@ -27,12 +27,13 @@ typedef struct BoopsiMainWindow {
     LONG top,left,width,height;
     int fullscreen; // keep state when hidding.
 
-    struct Screen *lockedscreen; // when using window on WB or else
-    struct Screen *fullPubScreen;  // when using our own public screen, reallocated. (experimental)
+    struct Screen *lockedScreen; /* when using window on WB or else */
+    struct Screen *fullPubScreen;  /* when using our own public screen, reallocated. */
 
     AukMenu appMenu; /* GadTools menu */
 
     //struct DrawInfo *drawInfo; // informations on how to draw on the screen, passed to gagdets.
+    char title[80];
 
 } BoopsiMainWindow;
 
@@ -40,14 +41,15 @@ typedef struct BoopsiMainWindow {
 void BMainWindow_Init(struct BoopsiMainWindow *mw);
 void BMainWindow_SwitchToFullScreen(struct BoopsiMainWindow *mw,Object *window_obj, AppSettings *appSettings);
 void BMainWindow_SwitchToWB(struct BoopsiMainWindow *mw,Object *window_obj, AppSettings *appSettings);
-/* at iconify */
-//void BMainWindow_Hide(struct BoopsiMainWindow *mw,Object *window_obj);
-void BMainWindow_Iconify(struct BoopsiMainWindow *mw,Object *window_obj);
+/* would either set the window title or Screen title according to mode */
+void BMainWindow_SetTitle(struct BoopsiMainWindow *mw, const char *title);
+
 /* at uniconify */
 void BMainWindow_Show(struct BoopsiMainWindow *mw,Object *window_obj, AppSettings *appSettings);
-/* at quitting */
-void BMainWindow_Close(struct BoopsiMainWindow *mw,Object *window_obj);
+/* at iconify or quitting */
+void BMainWindow_Close(struct BoopsiMainWindow *mw,Object *window_obj, int iconify);
 
 extern struct Window *CurrentMainWindow;
+extern struct Screen *CurrentMainScreen;
 
 #endif /* AUKMENU_H */

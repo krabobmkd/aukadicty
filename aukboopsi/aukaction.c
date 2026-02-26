@@ -421,7 +421,7 @@ BOOL Action_ViewIconify(AukActionContext *context) {
 
 BOOL Action_SwitchFullscreen(AukActionContext *context) {
 
-    if(!context->mainWindow) return;
+    if(!context->mainWindow) return TRUE;
 
     if(!context->mainWindow->fullscreen)
     {

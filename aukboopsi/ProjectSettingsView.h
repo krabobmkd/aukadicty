@@ -27,9 +27,6 @@ typedef struct ProjectSettingsView
     /* Project Settings group */
     Object *projSettingsLayout;
 
-    /* References */
-    struct Screen *screen;      /* Screen the window is on */
-    //struct DrawInfo *drawInfo;  /* DrawInfo for gadgets */
 
 } ProjectSettingsView;
 
@@ -41,7 +38,6 @@ typedef struct ProjectSettingsView
  * Creates the window object but does not open it.
  */
 BOOL ProjectSettingsView_Init(ProjectSettingsView *psv,
-                              struct Screen *screen,
                               const char *title);
 
 /* Open the Settings window. Does nothing if already open. */

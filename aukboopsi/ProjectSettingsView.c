@@ -29,21 +29,22 @@
 #include "compilers.h"
 #include "ProjectSettingsView.h"
 
+extern struct Screen *CurrentMainScreen;
+
 /* Helper to open a BOOPSI window object */
 INLINE struct Window *boopsi_OpenWindow(Object *owin) {
     return (struct Window *)DoMethod(owin, WM_OPEN, NULL);
 }
 
 BOOL ProjectSettingsView_Init(ProjectSettingsView *psv,
-                              struct Screen *screen,
                               const char *title)
 {
     Object *projPlaceholder;
 
-    if(!psv || !screen) return FALSE;
+    if(!psv) return FALSE;
 
     memset(psv, 0, sizeof(ProjectSettingsView));
-    psv->screen = screen;
+
     //psv->drawInfo = drawInfo;
 
     /* Create the GetFile gadget for temp directory selection */
@@ -148,7 +149,8 @@ BOOL ProjectSettingsView_Init(ProjectSettingsView *psv,
                         WA_Top, 80,
                         WA_Width, 340,
                         WA_Height, 200,
-                        WA_CustomScreen, (ULONG)screen,
+                      //later
+                     // WA_CustomScreen, (ULONG)CurrentMainScreen,
                         WA_IDCMP, IDCMP_CLOSEWINDOW | IDCMP_GADGETUP | IDCMP_RAWKEY,
                         WA_Flags, WFLG_DRAGBAR | WFLG_DEPTHGADGET | WFLG_CLOSEGADGET |
                                   WFLG_SIZEGADGET | WFLG_ACTIVATE | WFLG_SMART_REFRESH,
@@ -173,6 +175,11 @@ void ProjectSettingsView_Open(ProjectSettingsView *psv)
 {
     if(!psv || !psv->windowObj) return;
     if(psv->window) return;  /* Already open */
+
+    if(CurrentMainScreen)
+    {
+        SetAttrs(psv->windowObj,WA_CustomScreen, (ULONG)CurrentMainScreen,TAG_END);
+    }
 
     psv->window = boopsi_OpenWindow(psv->windowObj);
 }

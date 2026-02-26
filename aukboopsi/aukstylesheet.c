@@ -262,15 +262,8 @@ int AukStyleSheet_SetFontBig(void* This, const char* name, int height) {
     return styleSheet->fontBigName != NULL;
 }
 
-/* AukStyleSheet_ApplyStyle - Obtain pens and open fonts
- *
- * This method synchronizes the color values to screen pens and
- * the font specifications to actual runtime font pointers.
- * Call this after setting colors/fonts, or after deserializing.
- *
- * @param scr The locked screen to obtain pens from
- */
-int AukStyleSheet_ApplyStyle(void* This, struct Screen *scr) {
+/* sync color pens to a given screen */
+int AukStyleSheet_ApplyStyle_Colors(void* This, struct Screen *scr) {
     AukStyleSheet* styleSheet = (AukStyleSheet*)This;
     struct ColorMap *cm;
     int success = 1;
@@ -293,6 +286,26 @@ int AukStyleSheet_ApplyStyle(void* This, struct Screen *scr) {
             ObtainPenForRGB(cm, &styleSheet->style.pens[i]);
         }
     }
+}
+
+/* AukStyleSheet_ApplyStyle - Obtain pens and open fonts
+ *
+ * This method synchronizes the color values to screen pens and
+ * the font specifications to actual runtime font pointers.
+ * Call this after setting colors/fonts, or after deserializing.
+ *
+ * @param scr The locked screen to obtain pens from
+ */
+int AukStyleSheet_ApplyStyle(void* This, struct Screen *scr) {
+    AukStyleSheet* styleSheet = (AukStyleSheet*)This;
+    struct ColorMap *cm;
+    int success = 1;
+    int i;
+
+    if (!styleSheet) {
+        return 0;
+    }
+    AukStyleSheet_ApplyStyle_Colors(This,scr);
 
     /* Close any existing fonts first */
     AukStyleSheet_CloseFonts(This);

@@ -59,7 +59,7 @@ static struct NewMenu baseTemplate[] = {
         {NM_ITEM, NULL, 0, 0, 0, (APTR)ACTION_VIEW_COLLAPSE_TRACKS},
         {NM_ITEM, NULL, 0, 0, 0, (APTR)ACTION_VIEW_EXPAND_TRACKS},
         {NM_ITEM, NM_BARLABEL, 0, 0, 0, NULL},
-        {NM_ITEM, NULL, 0, 0, 0, (APTR)ACTION_VIEW_SWITCH_TO_FULLSCREEN},
+        {NM_ITEM, NULL, /*"F10"*/ 0, 0, 0, (APTR)ACTION_VIEW_SWITCH_TO_FULLSCREEN},
         {NM_ITEM, NULL, 0, 0, 0, (APTR)ACTION_VIEW_ICONIFY},
 
     /* Modify menu */

@@ -71,8 +71,7 @@ static const char *defaultStrings[MSG_COUNT] = {
     [MSG_VIEW_ZOOM_PROJECT] = "Zoom to Project",
     [MSG_VIEW_COLLAPSE_TRACKS] = "Collapse Tracks",
     [MSG_VIEW_EXPAND_TRACKS] = "Expand Tracks",
-    [MSG_VIEW_SWITCH_FULLSCREEN] = "Switch to Full Screen",
-    [MSG_VIEW_SWITCH_WORKBENCH] = "Switch to Workbench",
+    [MSG_VIEW_SWITCH_FULLSCREEN] = "Toggle Full Screen",
     [MSG_VIEW_ICONIFY] = "Iconify",
 
     /* Menu: Modify */

@@ -66,6 +66,8 @@ void AukStyleSheet_Serialize(AukObject* This, ISerializer* ser, const char* pNam
 int AukStyleSheet_SetFontTiny(void* This, const char* name, int height);
 int AukStyleSheet_SetFontNormal(void* This, const char* name, int height);
 int AukStyleSheet_SetFontBig(void* This, const char* name, int height);
+
+int AukStyleSheet_ApplyStyle_Colors(void* This, struct Screen *scr) ;
 int AukStyleSheet_ApplyStyle(void* This, struct Screen *scr);  /* Obtain pens and open fonts */
 void AukStyleSheet_ReleasePens(void* This);    /* Release obtained pens */
 void AukStyleSheet_CloseFonts(void* This);

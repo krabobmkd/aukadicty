@@ -235,7 +235,6 @@ void CloseSettingsWindow()
 
 int main(int argc, char **argv)
 {
-    int y;
     myTask = FindTask(NULL);
     atexit(&exitclose);
 
@@ -279,8 +278,8 @@ int main(int argc, char **argv)
     /* Note: Engine init failure is non-fatal - features that need it will be disabled */
 
     /* BOOPSI needs */
-    BMainWindow_Init(&app->mainwindow);
-    if (!app->mainwindow.lockedscreen) cleanexit("Can't lock screen");
+    //BMainWindow_Init(&app->mainwindow);
+    //if (!app->mainwindow.lockedscreen) cleanexit("Can't lock screen");
 
     /* Create AukStyleSheet object */
     AukStyleSheet_New(&app->styleSheet);
@@ -288,10 +287,6 @@ int main(int argc, char **argv)
 
     /* Set stylesheet font specifications */
     app->styleSheet->SetFontTiny(app->styleSheet, "SevenAlone.font", 7);
-
-    /* Open fonts from specifications */
-    app->styleSheet->ApplyStyle( app->styleSheet,app->mainwindow.lockedscreen );
-   //bdbprintf(" **** main init style:%08x fontTiny:%08x \n",(int)&app->styleSheet->style,(int)app->styleSheet->style.fontTiny);
 
     CreateHeaderView(&app->headerView, TargetInstance, &app->styleSheet->style);
 
@@ -351,19 +346,13 @@ int main(int argc, char **argv)
 
     }
 
-
-
-
     app->app_port = CreateMsgPort();
 
     // projsettings_app_port = CreateMsgPort();
-
-    y = 12;
-    if(app->mainwindow.lockedscreen->Font) y = (app->mainwindow.lockedscreen->Font->ta_YSize) + 3 + 16;
     /* Create the window object. */
     app->window_obj = (Object *)NewObject( WINDOW_GetClass(), NULL,
         WA_Left, 40,
-        WA_Top, (ULONG)y,
+        WA_Top, 44,
         WA_Width,320,
         WA_Height,240,
      //set by window or fullscreen   WA_CustomScreen, (ULONG) app->mainwindow.lockedscreen,
@@ -380,7 +369,6 @@ int main(int argc, char **argv)
 
     /* Initialize Project Settings window */
     if(!ProjectSettingsView_Init(&app->projectSettingsView,
-                                  app->mainwindow.lockedscreen,
                                   LOC(MSG_SETTINGS_PROJECT)))
     {
         printf("Warning: Could not create Project Settings window\n");
@@ -394,6 +382,7 @@ int main(int argc, char **argv)
         }
     }
 
+     BMainWindow_SetTitle(&app->mainwindow,"Aukadicty");
     /*  Open the window or screen. */
    // BMainWindow_SwitchToWB(&app->mainwindow,app->window_obj,&app->appSettings);
      //BMainWindow_Show(&app->mainwindow,app->window_obj,&app->appSettings);
@@ -472,7 +461,8 @@ int main(int argc, char **argv)
                     }
                     case WMHI_ICONIFY:
                         {
-                            BMainWindow_Iconify(&app->mainwindow,app->window_obj);
+                            #define DO_ICONIFY 1
+                            BMainWindow_Close(&app->mainwindow,app->window_obj,DO_ICONIFY);
                         }
                         break;
                     case WMHI_UNICONIFY:
@@ -513,7 +503,7 @@ int main(int argc, char **argv)
                                         actionID == ACTION_PROJECT_SAVEAS ||
                                         (actionID >= ACTION_RECENT_FILE_0 && actionID <= ACTION_RECENT_FILE_7))
                                     {
-                                        AukMenu_Rebuild(&app->mainwindow.appMenu, app->mainwindow.lockedscreen,
+                                        AukMenu_Rebuild(&app->mainwindow.appMenu, CurrentMainScreen,
                                                         CurrentMainWindow, &app->appSettings);
                                     }
                                 }
@@ -617,6 +607,16 @@ int main(int argc, char **argv)
     return 0;
 }
 
+/* this is used when changing screen */
+void UpdatePensToCurrentMainScreen()
+{
+    if(!app || !app->styleSheet || !CurrentMainScreen) return;
+
+    /* Open fonts from specifications */
+    app->styleSheet->ApplyStyle( app->styleSheet,CurrentMainScreen );
+
+}
+
 extern int AukObjectCount;
 
 void exitclose(void)
@@ -655,7 +655,7 @@ void exitclose(void)
 
         if(app->window_obj)
         {
-           BMainWindow_Close(&app->mainwindow,app->window_obj);
+           BMainWindow_Close(&app->mainwindow,app->window_obj,0);
             DisposeObject(app->window_obj);
         }
         CurrentMainWindow = NULL;
