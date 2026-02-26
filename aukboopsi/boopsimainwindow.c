@@ -192,6 +192,7 @@ void BMainWindow_SwitchToFullScreen(struct BoopsiMainWindow *mw,Object *window_o
         y1 = myScreen->BarHeight;
         w = myScreen->Width;
         h = myScreen->Height - y1;
+        printf("fs w:%d h:%d myScreen->BarHeight:%d\n",w,h,myScreen->BarHeight);
 
         SetAttrs(window_obj,
             WA_CustomScreen,(ULONG)myScreen,
@@ -204,12 +205,12 @@ void BMainWindow_SwitchToFullScreen(struct BoopsiMainWindow *mw,Object *window_o
             WA_Flags,WFLG_ACTIVATE | WFLG_SMART_REFRESH ,
             WA_Backdrop,TRUE,
             WINDOW_IconifyGadget, FALSE,
-            WA_Top,y1,
+            WA_Top,y1+1,
             WA_Left,x1,
-            WA_Width,w+16,
-            WA_Height,h+16,
-            WA_MaxWidth,w+16,
-            WA_MaxHeight,h+16,
+            WA_Width,w+32,
+            WA_Height,h+y1+1, // works
+          //  WA_MaxWidth,w,
+          //  WA_MaxHeight,h+16,
             // WFLG_DRAGBAR | WFLG_DEPTHGADGET | WFLG_CLOSEGADGET | WFLG_SIZEGADGET | WFLG_ACTIVATE | WFLG_SMART_REFRESH,
 
             TAG_END);
